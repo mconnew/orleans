@@ -8,7 +8,7 @@
     <title>Running the Application | Microsoft Orleans Website </title>
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Running the Application | Microsoft Orleans Website ">
-    <meta name="generator" content="docfx 2.5.3.0">
+    <meta name="generator" content="docfx 2.5.4.0">
     
     <link rel="shortcut icon" href="../../favicon.ico">
     <link rel="stylesheet" href="../../styles/docfx.vendor.css">
@@ -71,27 +71,43 @@
         <div class="article row grid-right">
           <div class="col-md-10">
             <article class="content wrap" id="_content" data-uid="">
-              <h2 id="configuring-connections-to-orleans" sourcefile="Documentation/Getting-Started-With-Orleans/Running-the-Application.md" sourcestartlinenumber="7" sourceendlinenumber="7">Configuring Connections to Orleans</h2>
+              <h2 id="设置到orleans的连接" sourcefile="Documentation/Getting-Started-With-Orleans/Running-the-Application.md" sourcestartlinenumber="7" sourceendlinenumber="7">设置到Orleans的连接</h2>
               
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Running-the-Application.md" sourcestartlinenumber="9" sourceendlinenumber="12">To allow applications to communicate with grains from outside Orleans, the framework includes a client library.
-This client library might be used by a desktop or mobile application, or by a front end server that renders interactive web pages or exposes a web services API.
-The client library provides an API for writing asynchronous clients that communicate with Orleans grains.
-Once the client library is connected to an Orleans gateway, a client can send messages to grains, receive responses and receive asynchronous notifications from grains via observers.</p>
-<h2 id="connecting-to-a-gateway" sourcefile="Documentation/Getting-Started-With-Orleans/Running-the-Application.md" sourcestartlinenumber="14" sourceendlinenumber="14">Connecting to a Gateway</h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Running-the-Application.md" sourcestartlinenumber="16" sourceendlinenumber="19">To establish a connection, a client calls <code>GrainClient.Initialize()</code>.
-This will connect to the gateway silo at the IP address and port specified in the <em>ClientConfiguration.xml</em> file.
-This file must be placed in the same directory as the <em>Orleans.dll</em> library used by the client.
-As an alternative, a configuration object can be passed to <code>GrainClient.Initialize()</code> programmatically instead of loading it from a file.</p>
-<h2 id="configuring-the-client" sourcefile="Documentation/Getting-Started-With-Orleans/Running-the-Application.md" sourcestartlinenumber="21" sourceendlinenumber="21">Configuring the Client</h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Running-the-Application.md" sourcestartlinenumber="23" sourceendlinenumber="23">In <em>ClientConfiguration.xml</em>, the <code>Gateway</code> element specifies the address and port of the gateway endpoint that need to match those in <em>OrleansConfiguration.xml</em> on the silo side:</p>
-<pre sourcefile="Documentation/Getting-Started-With-Orleans/Running-the-Application.md" sourcestartlinenumber="25" sourceendlinenumber="29"><code class="lang-xml">&lt;ClientConfiguration xmlns=&quot;urn:orleans&quot;&gt;
+<!--## Configuring Connections to Orleans-->
+<!--To allow applications to communicate with grains from outside Orleans, the framework includes a client library.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Running-the-Application.md" sourcestartlinenumber="11" sourceendlinenumber="17">框架提供一个客户端库，来让Orleans外的应用于grain进行通信。
+<!--This client library might be used by a desktop or mobile application, or by a front end server that renders interactive web pages or exposes a web services API.-->
+刻个客户端库可以被桌面或者移动应用使用，或者渲染web页的前段服务器使用或者暴露一个web服务API。
+<!--The client library provides an API for writing asynchronous clients that communicate with Orleans grains.-->
+客户端库提供了编写与Orleans grain通信的异步客户端所需的API。
+<!--Once the client library is connected to an Orleans gateway, a client can send messages to grains, receive responses and receive asynchronous notifications from grains via observers.-->
+一旦客户端库连接上Orleans的网关，客户端可以发送消息给grain，收取响应并且通过观察者收取来自grain的异步通知。</p>
+<h2 id="连接网关" sourcefile="Documentation/Getting-Started-With-Orleans/Running-the-Application.md" sourcestartlinenumber="19" sourceendlinenumber="19">连接网关</h2>
+<!--## Connecting to a Gateway-->
+<!--To establish a connection, a client calls `GrainClient.Initialize()`.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Running-the-Application.md" sourcestartlinenumber="23" sourceendlinenumber="29">客户端调用<code>GrainClient.Initialize()</code>建立一个连接。
+<!--This will connect to the gateway silo at the IP address and port specified in the _ClientConfiguration.xml_ file.-->
+这会连接到 <em>ClientConfiguration.xml</em> 文件中指定的IP地址和端口的网关silo。
+<!--This file must be placed in the same directory as the _Orleans.dll_ library used by the client.-->
+这个文件必须与客户端使用的 <em>Orleans.dll</em> 放在相同目录。
+<!--As an alternative, a configuration object can be passed to `GrainClient.Initialize()` programmatically instead of loading it from a file.-->
+一个替代方案是，可以以编程的方式传递一个配置对象给<code>GrainClient.Initialize()</code>而不是从文件读取。</p>
+<h2 id="配置客户端" sourcefile="Documentation/Getting-Started-With-Orleans/Running-the-Application.md" sourcestartlinenumber="31" sourceendlinenumber="31">配置客户端</h2>
+<!--## Configuring the Client-->
+<!--In _ClientConfiguration.xml_, the `Gateway` element specifies the address and port of the gateway endpoint that need to match those in _OrleansConfiguration.xml_ on the silo side:-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Running-the-Application.md" sourcestartlinenumber="35" sourceendlinenumber="35">在_ClientConfiguration.xml_中，<code>Gateway</code>指定网关终结点的IP地址和端口，需要与silo的_OrleansConfiguration.xml_配置一致。</p>
+<pre sourcefile="Documentation/Getting-Started-With-Orleans/Running-the-Application.md" sourcestartlinenumber="37" sourceendlinenumber="41"><code class="lang-xml">&lt;ClientConfiguration xmlns=&quot;urn:orleans&quot;&gt;
     &lt;Gateway Address=&quot;&lt;IP address or host name of silo&gt;&quot; Port=&quot;30000&quot; /&gt;
 &lt;/ClientConfiguration&gt;
-</code></pre><p sourcefile="Documentation/Getting-Started-With-Orleans/Running-the-Application.md" sourcestartlinenumber="31" sourceendlinenumber="32">If an Orleans-based application runs in Windows Azure, the client automatically discovers silo gateways and shouldn&#39;t be statically configured.
-Refer to the <a href="../Samples-Overview/Azure-Web-Sample.html" sourcefile="Documentation/Getting-Started-With-Orleans/Running-the-Application.md" sourcestartlinenumber="32" sourceendlinenumber="32">Azure application sample</a> for an example of how to configure the client.</p>
-<h2 id="configuring-silos" sourcefile="Documentation/Getting-Started-With-Orleans/Running-the-Application.md" sourcestartlinenumber="34" sourceendlinenumber="34">Configuring Silos</h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Running-the-Application.md" sourcestartlinenumber="36" sourceendlinenumber="36">In <em>OrleansConfiguration.xml</em>, the <code>ProxyingGateway</code> element specifies the gateway endpoint of the silo, which is separate from the inter-silo endpoint defined by the Networking element and must have a different port number:</p>
-<pre sourcefile="Documentation/Getting-Started-With-Orleans/Running-the-Application.md" sourcestartlinenumber="38" sourceendlinenumber="46"><code class="lang-xml">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+</code></pre><!--If an Orleans-based application runs in Windows Azure, the client automatically discovers silo gateways and shouldn't be statically configured.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Running-the-Application.md" sourcestartlinenumber="44" sourceendlinenumber="46">如果一个基于Orleans的应用运行在Windows Azure中，客户端自动发现silo网关并且不应该被静态配置。
+<!--Refer to the [Azure application sample](../Samples-Overview/Azure-Web-Sample) for an example of how to configure the client.-->
+参考<a href="../Samples-Overview/Azure-Web-Sample.html" sourcefile="Documentation/Getting-Started-With-Orleans/Running-the-Application.md" sourcestartlinenumber="46" sourceendlinenumber="46">Azure应用示例</a>中的例子来学习怎么配置客户端。</p>
+<h2 id="配置silo" sourcefile="Documentation/Getting-Started-With-Orleans/Running-the-Application.md" sourcestartlinenumber="48" sourceendlinenumber="48">配置Silo</h2>
+<!--## Configuring Silos-->
+<!--In _OrleansConfiguration.xml_, the `ProxyingGateway` element specifies the gateway endpoint of the silo, which is separate from the inter-silo endpoint defined by the Networking element and must have a different port number:-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Running-the-Application.md" sourcestartlinenumber="52" sourceendlinenumber="52">在_OrleansConfiguration.xml_中的<code>ProxyingGateway</code>元素指定silo的网关终结点，与<code>Networking</code>元素定义的内部终结点不同并且必须有不同的端口号：</p>
+<pre sourcefile="Documentation/Getting-Started-With-Orleans/Running-the-Application.md" sourcestartlinenumber="54" sourceendlinenumber="62"><code class="lang-xml">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
 &lt;OrleansConfiguration xmlns=&quot;urn:orleans&quot;&gt;
     &lt;Defaults&gt;
     &lt;Networking Address=&quot;&quot; Port=&quot;11111&quot; /&gt;

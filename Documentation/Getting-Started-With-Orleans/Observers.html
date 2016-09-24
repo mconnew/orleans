@@ -8,7 +8,7 @@
     <title>Client Observers | Microsoft Orleans Website </title>
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Client Observers | Microsoft Orleans Website ">
-    <meta name="generator" content="docfx 2.5.3.0">
+    <meta name="generator" content="docfx 2.5.4.0">
     
     <link rel="shortcut icon" href="../../favicon.ico">
     <link rel="stylesheet" href="../../styles/docfx.vendor.css">
@@ -72,37 +72,56 @@
           <div class="col-md-10">
             <article class="content wrap" id="_content" data-uid="">
               
-              <p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="7" sourceendlinenumber="8">There are situations in which a simple message/response pattern is not enough, and the client needs to receive asynchronous notifications.
-For example, a user might want to be notified when a new instant message has been published by a friend.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="10" sourceendlinenumber="16">Client observers is a mechanism that allows notifying clients asynchronously.
-An observer is a one-way asynchronous interface that inherits from <code>IGrainObserver</code>, and all its methods must be void.
-The grain sends a notification to the observer by invoking it like a grain interface method, except that it has no return value, and so the grain need not depend on the result.
-The Orleans runtime will ensure one-way delivery of the notifications.
-A grain that publishes such notifications should provide an API to add or remove observers.
-In addition, it is usually convenient to expose a method that allows an existing subscription to be cancelled.
-Grain developers may use the Orleans <code>ObserverSubscriptionManager&lt;T&gt;</code> generic class to simplify development of observed grain types.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="18" sourceendlinenumber="19">To subscribe to a notification, the client must first create a local C# object that implements the observer interface.
-It then calls a static method on the observer factory, <code>CreateObjectReference()</code>, to turn the C# object into a grain reference, which can then be passed to the subscription method on the notifying grain.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="21" sourceendlinenumber="22">This model can also be used by other grains to receive asynchronous notifications.
-Unlike in the client subscription case, the subscribing grain simply implements the observer interface as a facet, and passes in a reference to itself (e.g. <code>this.AsReference&lt;IMyGrainObserverInterface&gt;</code>).</p>
-<h2 id="code-example" sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="24" sourceendlinenumber="24">Code Example</h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="26" sourceendlinenumber="26">Let&#39;s assume that we have a grain that periodicaly sends messages to clients. For simplicity, the message in our example will be a  string. We first define the interface on the client that will receive the message.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="28" sourceendlinenumber="28">the interface will look like this</p>
-<pre sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="30" sourceendlinenumber="36"><code class="lang-csharp">public interface IChat : IGrainObserver
+              <!--There are situations in which a simple message/response pattern is not enough, and the client needs to receive asynchronous notifications.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="8" sourceendlinenumber="10">有些情况下简单的消息/响应模式是不够的，并且客户端需要收到异步通知。
+<!--For example, a user might want to be notified when a new instant message has been published by a friend.-->
+例如，一个用户可能想要在他的朋友发布新即时消息的时候收到通知。</p>
+<!--Client observers is a mechanism that allows notifying clients asynchronously.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="13" sourceendlinenumber="25">客户端观察者是一个允许异步通知客户端的机制。
+<!--An observer is a one-way asynchronous interface that inherits from `IGrainObserver`, and all its methods must be void.-->
+一个观察者是一个继承自<code>IGrainObserver</code>的单向的异步接口，并且它的所有方法都是void的。
+<!--The grain sends a notification to the observer by invoking it like a grain interface method, except that it has no return value, and so the grain need not depend on the result.-->
+grain通过像调用grain接口的方法一样调用观察者的方法来发送一个通知给观察者，不同是观察者方法没有返回值并且grain不会依赖调用结果。
+<!--The Orleans runtime will ensure one-way delivery of the notifications.-->
+Orleans运行时将会确保单向传递通知的成功。 
+<!--A grain that publishes such notifications should provide an API to add or remove observers.-->
+发布通知的grain应该提供API来添加或者删除观察者。
+<!--In addition, it is usually convenient to expose a method that allows an existing subscription to be cancelled.-->
+另外，为了方便通常会暴露一个取消已有订阅的方法。
+<!--Grain developers may use the Orleans `ObserverSubscriptionManager<T>` generic class to simplify development of observed grain types.-->
+grain的开发者可以使用Orleans的<code>ObserverSubscriptionManager&lt;T&gt;</code>泛型类来简化被观察的grain类型的开发。</p>
+<!--To subscribe to a notification, the client must first create a local C# object that implements the observer interface.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="28" sourceendlinenumber="30">为了订阅一个通知，客户端必须首先创建一个本地的实现了观察者接口的C#对象。
+<!--It then calls a static method on the observer factory, `CreateObjectReference()`, to turn the C# object into a grain reference, which can then be passed to the subscription method on the notifying grain.-->
+然后调用然后调用观察者工厂的<code>CreateObjectReference()</code>方法来把C#对象转换成一个grain引用，这样就可以传递给通知grain的订阅方法了。</p>
+<!--This model can also be used by other grains to receive asynchronous notifications.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="33" sourceendlinenumber="35">这个模型也可以用作其他grain接口异步通知。
+<!--Unlike in the client subscription case, the subscribing grain simply implements the observer interface as a facet, and passes in a reference to itself (e.g. `this.AsReference<IMyGrainObserverInterface>`).-->
+不像客户端订阅的情况，订阅的grain只要实现观察者接口，并且把自身作为一个引用传递给自己（例如this.AsReference<ichirperviewer>）。<p>
+<h2 id="代码例子" sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="37" sourceendlinenumber="37">代码例子</h2>
+<!--## Code Example-->
+<!--Let's assume that we have a grain that periodicaly sends messages to clients. For simplicity, the message in our example will be a  string. We first define the interface on the client that will receive the message.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="41" sourceendlinenumber="41">让我们假设有一个grain周期性地给客户端发送消息。为了简单期间，我们例子中的消息将会是一个字符串。我们首先在客户端定义接收这个消息的接口。</p>
+<!--the interface will look like this-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="44" sourceendlinenumber="44">这个接口将会是这样</p>
+<pre sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="46" sourceendlinenumber="52"><code class="lang-csharp">public interface IChat : IGrainObserver
 {
     void ReceiveMessage(string message);
 }
-</code></pre><p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="38" sourceendlinenumber="38">The only special thing is that the interface should inherit from <code>IGrainObserver</code>. Now any client that wants to observe those messages should implement a class which implements <code>IChat</code>.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="40" sourceendlinenumber="40">The simplest case would be something like this:</p>
-<pre sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="42" sourceendlinenumber="50"><code class="lang-csharp">public class Chat : IChat
+</code></pre><!--The only special thing is that the interface should inherit from `IGrainObserver`. Now any client that wants to observe those messages should implement a class which implements `IChat`.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="55" sourceendlinenumber="55">唯一特殊的一点是这个接口要继承自<code>IGrainObserver</code>。现在任何想要接受这些消息的客户端应该实现一个实现了<code>IChat</code>接口的类。</p>
+<!--The simplest case would be something like this:-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="58" sourceendlinenumber="58">最简单的例子是这样的：</p>
+<pre sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="60" sourceendlinenumber="68"><code class="lang-csharp">public class Chat : IChat
 {
     public void ReceiveMessage(string message)
     {
         Console.WriteLine(message);
     }
 }
-</code></pre><p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="52" sourceendlinenumber="52">Now on the server we should have a Grain which sends these chat messages to clients. The Grain also should have a mechanism for clients to subscribe and unsubscribe themselves to receive notifications. For subscription the Grain can use the utility class <code>ObserverSubscriptionManager</code>:</p>
-<pre sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="54" sourceendlinenumber="78"><code class="lang-csharp">class HelloGrain : Grain, IHello
+</code></pre><!--Now on the server we should have a Grain which sends these chat messages to clients. The Grain also should have a mechanism for clients to subscribe and unsubscribe themselves to receive notifications. For subscription the Grain can use the utility class `ObserverSubscriptionManager`:-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="71" sourceendlinenumber="71">现在在服务器上我应该有一个发送聊天消息给客户端的grain。这个grain也应该有让客户端来订阅和退订他们自己的机制。订阅这个grain可以使用实用类<code>ObserverSubscriptionManager</code>:</p>
+<pre sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="73" sourceendlinenumber="97"><code class="lang-csharp">class HelloGrain : Grain, IHello
 {
     private ObserverSubscriptionManager&lt;IChat&gt; _subsManager;
 
@@ -125,28 +144,44 @@ Unlike in the client subscription case, the subscribing grain simply implements 
         _SubsManager.Unsubscribe(observer);
     }
 }
-</code></pre><p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="80" sourceendlinenumber="80">To send the message to clients the <code>Notify</code> method of the <code>ObserverSubscriptionManager&lt;IChat&gt;</code> instance can be used. The method takes an <code>Action&lt;T&gt;</code> method or lambda expression (where <code>T</code> is of type <code>IChat</code> here). You can call any method on the interface to send it to clients. In our case we only have one method <code>ReceiveMessage</code> and our sending code on the server would look like this:</p>
-<pre sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="82" sourceendlinenumber="89"><code class="lang-csharp">public Task SendUpdateMessage(string message)
+</code></pre><!--To send the message to clients the `Notify` method of the `ObserverSubscriptionManager<IChat>` instance can be used. The method takes an `Action<T>` method or lambda expression (where `T` is of type `IChat` here). You can call any method on the interface to send it to clients. In our case we only have one method `ReceiveMessage` and our sending code on the server would look like this:-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="100" sourceendlinenumber="100">给客户端发消息可以使用<code>ObserverSubscriptionManager&lt;IChat&gt;</code>实例<code>Notify</code>方法。这个方法接受一个<code>Action&lt;T&gt;</code>方法或者lambda表达式（这里的T是<code>IChat</code>的类型）</p>
+<pre sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="102" sourceendlinenumber="109"><code class="lang-csharp">public Task SendUpdateMessage(string message)
 {
     _SubsManager.Notify(s =&gt; s.ReceiveMessage(message));
     return TaskDone.Done;
 }
-</code></pre><p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="91" sourceendlinenumber="91">Now our server has a method to send messages to observer clients, two methods for subscribing/unsubscribing and the client implemented a class to be able to observe the grain messages. The last step is to create an observer reference on the client using our previously implemented <code>Chat</code> class and let it receive the messages after subscribing it.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="93" sourceendlinenumber="93">The code would look like this:</p>
-<pre sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="95" sourceendlinenumber="104"><code class="lang-csharp">//First create the grain reference
+</code></pre><!--Now our server has a method to send messages to observer clients, two methods for subscribing/unsubscribing and the client implemented a class to be able to observe the grain messages. The last step is to create an observer reference on the client using our previously implemented `Chat` class and let it receive the messages after subscribing it.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="112" sourceendlinenumber="112">现在我们的服务器已经有一个发送消息给观察者客户端的方法，有两个订阅/退订的方法和一个实现了一个可以观察grain消息的类的客户端。最后的异步是在客户端创建一个使用我们之前实现的<code>Chat</code> 类的观察者的引用并且让它在订阅后接受消息。</p>
+<!--The code would look like this:-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="115" sourceendlinenumber="115">代码如下：</p>
+<pre sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="117" sourceendlinenumber="126"><code class="lang-csharp">//首先创建grain的引用
 var friend = GrainClient.GrainFactory.GetGrain&lt;IHello&gt;(0);
 Chat c = new Chat();
 
-//Create a reference for chat usable for subscribing to the observable grain.
+//为chat创建一个用来订阅可观察的grain的引用。
 var obj = await GrainClient.GrainFactory.CreateObjectReference&lt;IChat&gt;(c);
-//Subscribe the instance to receive messages.
+//订阅这个实例来接受消息。
 await friend.Subscribe(obj);
-</code></pre><p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="106" sourceendlinenumber="106">Now whenever our grain on the server calls the <code>SendUpdateMessage</code> method, all subscribed clients will receive the message. In our client code, the <code>Chat</code> instance in variable <code>c</code> will receive the message and output it to the console.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="108" sourceendlinenumber="108"><strong>Note:</strong> Objects passed to <code>CreateObjectReference</code> are held via a <a href="https://msdn.microsoft.com/en-us/library/system.weakreference" sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="108" sourceendlinenumber="108"><code>WeakReference&lt;T&gt;</code></a> and will therefore be garbage collected if no other references exist. Users should maintain a reference for each observer which they do not want to be collected.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="110" sourceendlinenumber="110"><strong>Note:</strong> Support for observers might be removed in a future version and replaced with a Simple Message Stream <a href="http://dotnet.github.io/orleans/Orleans-Streams/" sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="110" sourceendlinenumber="110">SMS</a>, which can support the same concept with more power, flexibility, and reliability.</p>
-<h2 id="next" sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="112" sourceendlinenumber="112">Next</h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="114" sourceendlinenumber="114">Next we look at <a href="Developing-a-Grain.html" sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="114" sourceendlinenumber="114">Developing a Grain</a></p>
-
+</code></pre><!--``` csharp-->
+<!--//First create the grain reference-->
+<!--var friend = GrainClient.GrainFactory.GetGrain<IHello>(0);-->
+<!--Chat c = new Chat();-->
+<!--//Create a reference for chat usable for subscribing to the observable grain.-->
+<!--var obj = await GrainClient.GrainFactory.CreateObjectReference<IChat>(c);-->
+<!--//Subscribe the instance to receive messages.-->
+<!--await friend.Subscribe(obj);-->
+<!--```-->
+<!--Now whenever our grain on the server calls the `SendUpdateMessage` method, all subscribed clients will receive the message. In our client code, the `Chat` instance in variable `c` will receive the message and output it to the console.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="139" sourceendlinenumber="139">现在无论何时我们服务器上的grain调用<code>SendUpdateMessage</code>方法，所有订阅了得客户端都将受到消息。在我们的客户端代码里，<code>Chat</code>的实例变量<code>c</code>会受到消息并且打印到控制台。</p>
+<!--**Note:** Objects passed to `CreateObjectReference` are held via a [`WeakReference<T>`](https://msdn.microsoft.com/en-us/library/system.weakreference) and will therefore be garbage collected if no other references exist. Users should maintain a reference for each observer which they do not want to be collected.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="142" sourceendlinenumber="142"><strong>注意：</strong> 传递给<code>CreateObjectReference</code>的对象是通过通过一个<a href="https://msdn.microsoft.com/en-us/library/system.weakreference" sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="142" sourceendlinenumber="142"><code>WeakReference&lt;T&gt;</code></a>实现并且因此如果没有其他的引用存在会被垃圾收集掉。用户应该为每一个不像被垃圾回收的观察者维护一个引用。</p>
+<!--**Note:** Support for observers might be removed in a future version and replaced with a Simple Message Stream [SMS](http://dotnet.github.io/orleans/Orleans-Streams/), which can support the same concept with more power, flexibility, and reliability.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="145" sourceendlinenumber="145"><strong>注意：</strong> 对观察者的支持可能在将来会被移除并且被简单消息流<a href="http://dotnet.github.io/orleans/Orleans-Streams/" sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="145" sourceendlinenumber="145">SMS</a>取代，简单消息流能更强大灵活和可靠地支持同样的功能。</p>
+<h2 id="next" sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="147" sourceendlinenumber="147">Next</h2>
+<!--Next we look at [Developing a Grain](Developing-a-Grain)-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="150" sourceendlinenumber="150">下面我们看一下<a href="Developing-a-Grain.html" sourcefile="Documentation/Getting-Started-With-Orleans/Observers.md" sourcestartlinenumber="150" sourceendlinenumber="150">开发一个grain</a></p>
+</ichirperviewer>
             </article>
           </div>
           

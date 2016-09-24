@@ -8,7 +8,7 @@
     <title>Developing a Client | Microsoft Orleans Website </title>
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Developing a Client | Microsoft Orleans Website ">
-    <meta name="generator" content="docfx 2.5.3.0">
+    <meta name="generator" content="docfx 2.5.4.0">
     
     <link rel="shortcut icon" href="../../favicon.ico">
     <link rel="stylesheet" href="../../styles/docfx.vendor.css">
@@ -72,18 +72,23 @@
           <div class="col-md-10">
             <article class="content wrap" id="_content" data-uid="">
               
-              <p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="7" sourceendlinenumber="7">Once we have our grain type implemented, we can write a client application that uses the type.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="9" sourceendlinenumber="9">The following Orleans DLLs from either the <code>[SDK-ROOT]\Binaries\PresenceClient_ or _[SDK-ROOT]\Samples\References</code> directories need to be referenced in the client application project:</p>
-<ul sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="11" sourceendlinenumber="12">
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="11" sourceendlinenumber="11">Orleans.dll</li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="12" sourceendlinenumber="12">OrleansRuntimeInterfaces.dll</li>
+              <!--Once we have our grain type implemented, we can write a client application that uses the type.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="8" sourceendlinenumber="8">一旦我们实现了grain类型，我们就可以写一个客户端应用来说使用这个类型。</p>
+<!--The following Orleans DLLs from either the `[SDK-ROOT]\Binaries\PresenceClient_ or _[SDK-ROOT]\Samples\References` directories need to be referenced in the client application project:-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="11" sourceendlinenumber="11">下面的来自<code>[SDK-ROOT]\Binaries\PresenceClient_ or _[SDK-ROOT]\Samples\References</code>目录的Orleans DLL需要引入到客户端的应用工程中：</p>
+<ul sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="13" sourceendlinenumber="14">
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="13" sourceendlinenumber="13">Orleans.dll</li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="14" sourceendlinenumber="14">OrleansRuntimeInterfaces.dll</li>
 </ul>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="14" sourceendlinenumber="16">Almost any client will involve use of the grain factory class.
-The <code>GetGrain()</code> method is used for getting a grain reference for a particular ID.
-As was already mentioned, grains cannot be explicitly created or deleted.</p>
-<pre sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="18" sourceendlinenumber="29"><code class="lang-csharp">GrainClient.Initialize();
+<!--Almost any client will involve use of the grain factory class.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="17" sourceendlinenumber="21">几乎任何客户端都会用到grain的工厂类。
+<!--The `GetGrain()` method is used for getting a grain reference for a particular ID.-->
+<code>GetGrain()</code>用来得到一个特定ID的grain引用。
+<!--As was already mentioned, grains cannot be explicitly created or deleted.-->
+就像之前所说的，grain不能够显式地创建和销毁。</p>
+<pre sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="23" sourceendlinenumber="34"><code class="lang-csharp">GrainClient.Initialize();
 
-// Hardcoded player ID
+// 硬编码了玩家ID
 Guid playerId = new Guid(&quot;{2349992C-860A-4EDA-9590-000000000006}&quot;);
 IPlayerGrain player = GrainClient.GrainFactory.GetGrain&lt;IPlayerGrain&gt;(playerId);
 
@@ -91,32 +96,67 @@ IGameGrain game = player.CurrentGame.Result;
 var watcher = new GameObserver();
 var observer = GrainClient.GrainFactory.CreateObjectReference&lt;IGameObserver&gt;(watcher);
 await game.SubscribeForGameUpdates();
-</code></pre><p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="31" sourceendlinenumber="31">If this code is used from the main thread of a console application, you have to call <code>Wait()</code> on the task returned by <code>game.SubscribeForGameUpdates()</code> because <code>await</code> does not prevent the <code>Main()</code> function from returning, which will cause the client process to exit.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="33" sourceendlinenumber="33">See the Key Concepts section for more details on the various ways to use <code>Task</code>s for execution scheduling and exception flow.</p>
-<h2 id="find-or-create-grains" sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="35" sourceendlinenumber="35">Find or create grains</h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="37" sourceendlinenumber="37">After establishing a connection by calling <code>GrainClient.Initialize()</code>, static methods in the generic factory class may be used to get a reference to a grain, such as <code>GrainClient.GrainFactory.GetGrain&lt;IPlayerGrain&gt;()</code> for the <code>PlayerGrain</code>. The grain interface is passed as a type argument to <code>GrainFactory.GetGrain&lt;T&gt;()</code>.</p>
-<h2 id="sending-messages-to-grains" sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="39" sourceendlinenumber="39">Sending messages to grains</h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="41" sourceendlinenumber="44">The programming model for communicating with grains from a client is almost the same as from a grain.
-The client holds grain references which implement a grain interface like <code>IPlayerGrain</code>.
-It invokes methods on that grain reference, and these return asynchronous values: <code>Task</code>/<code>Task&lt;T&gt;</code>, or another grain interface inheriting from <code>IGrain</code>.
-The client can use the <code>await</code> keyword or <code>ContinueWith()</code> method to queue continuations to be executed when these asynchronous values resolve, or the <code>Wait()</code> method to block the current thread.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="46" sourceendlinenumber="48">The one key difference between communicating with a grain from within a client or from within another grain is the single-threaded execution model.
-Grains are constrained to be single-threaded by the Orleans scheduler, while clients may be multi-threaded.
-The client library uses the TPL thread pool to manage continuations and callbacks, and so it is up to the client to manage its own concurrency using whatever synchronization constructs are appropriate for its environment – locks, events, TPL tasks, etc.</p>
-<h2 id="receiving-notifications" sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="50" sourceendlinenumber="50">Receiving notifications</h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="52" sourceendlinenumber="53">There are situations in which a simple message/response pattern is not enough, and the client needs to receive asynchronous notifications.
-For example, a user might want to be notified when a new message has been published by someone that she is following.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="55" sourceendlinenumber="58">An observer is a one-way asynchronous interface that inherits from <code>IGrainObserver</code>, and all its methods must be <code>void</code>.
-The grain sends a notification to the observer by invoking it like a grain interface method, except that it has no return value, and so the grain need not depend on the result.
-The Orleans runtime will ensure one-way delivery of the notifications.
-A grain that publishes such notifications should provide an API to add or remove observers.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="60" sourceendlinenumber="61">To subscribe to a notification, the client must first create a local C# object that implements the observer interface.
-It then calls <code>CreateObjectReference()</code> method on the grain factory, to turn the C# object into a grain reference, which can then be passed to the subscription method on the notifying grain.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="63" sourceendlinenumber="64">This model can also be used by other grains to receive asynchronous notifications.
-Unlike in the client subscription case, the subscribing grain simply implements the observer interface as a facet, and passes in a reference to itself (e.g. <code>this.AsReference&lt;IChirperViewer&gt;</code>).</p>
-<h2 id="example" sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="66" sourceendlinenumber="66">Example</h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="68" sourceendlinenumber="68">Here is an extended version of the example given above of a client application that connects to Orleans, finds the player account, subscribes for updates to the game session the player is part of, and prints out notifications until the program is manually terminated.</p>
-<pre sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="70" sourceendlinenumber="138"><code class="lang-csharp">namespace PlayerWatcher
+</code></pre><!--``` csharp-->
+<!--GrainClient.Initialize();-->
+<!--// Hardcoded player ID-->
+<!--Guid playerId = new Guid("{2349992C-860A-4EDA-9590-000000000006}");-->
+<!--IPlayerGrain player = GrainClient.GrainFactory.GetGrain<IPlayerGrain>(playerId);-->
+<!--IGameGrain game = player.CurrentGame.Result;-->
+<!--var watcher = new GameObserver();-->
+<!--var observer = GrainClient.GrainFactory.CreateObjectReference<IGameObserver>(watcher);-->
+<!--await game.SubscribeForGameUpdates();-->
+<!--```-->
+<!--If this code is used from the main thread of a console application, you have to call `Wait()` on the task returned by `game.SubscribeForGameUpdates()` because `await` does not prevent the `Main()` function from returning, which will cause the client process to exit.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="49" sourceendlinenumber="49">如果这段代码用在控制台应用的主线程，你需要在<code>game.SubscribeForGameUpdates()</code>返回后调用<code>Wait()</code>，因为<code>await</code>不会组织 <code>Main()</code>函数返回，这样会使进程退出。</p>
+<!--See the Key Concepts section for more details on the various ways to use `Task`s for execution scheduling and exception flow.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="52" sourceendlinenumber="52">阅读关键概念部分来获取更多<code>Task</code>执行调度和异常流的不同用法的细节。</p>
+<h2 id="找到或者创建grain" sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="54" sourceendlinenumber="54">找到或者创建grain</h2>
+<!--## Find or create grains-->
+<!--After establishing a connection by calling `GrainClient.Initialize()`, static methods in the generic factory class may be used to get a reference to a grain, such as `GrainClient.GrainFactory.GetGrain<IPlayerGrain>()` for the `PlayerGrain`. The grain interface is passed as a type argument to `GrainFactory.GetGrain<T>()`.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="58" sourceendlinenumber="58">在通过调用<code>GrainClient.Initialize()</code>创建链接后，泛型工厂类中的静态方法可以用来获取一个grain的引用，例如<code>GrainClient.GrainFactory.GetGrain&lt;IPlayerGrain&gt;()</code>来获取<code>PlayerGrain</code>。grain接口作为类参数传递给<code>GrainFactory.GetGrain&lt;T&gt;()</code>。</p>
+<h2 id="向grain发送消息" sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="60" sourceendlinenumber="60">向grain发送消息</h2>
+<!--## Sending messages to grains-->
+<!--The programming model for communicating with grains from a client is almost the same as from a grain.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="64" sourceendlinenumber="70">客户端与grain的通信编程模型跟grain之间的通信编程模型一样。
+<!--The client holds grain references which implement a grain interface like `IPlayerGrain`.-->
+client持有一个实现了grain接口<code>IPlayerGrain</code>的grain引用。
+<!--It invokes methods on that grain reference, and these return asynchronous values: `Task`/`Task<T>`, or another grain interface inheriting from `IGrain`.-->
+它调用那个grain引用或者其他继承自<code>IGrain</code>的grain接口的方法，并且这些方法有异步返回值<code>Task</code>/<code>Task&lt;T&gt;</code>。
+<!--The client can use the `await` keyword or `ContinueWith()` method to queue continuations to be executed when these asynchronous values resolve, or the `Wait()` method to block the current thread.-->
+当这些异步返回值求值得时候，客户端可以使用<code>await</code>关键字或者<code>ContinueWith()</code>方法来伫列被运行的延续体，或者使用<code>Wait()</code>方法阻塞当前线程。</p>
+<!--The one key difference between communicating with a grain from within a client or from within another grain is the single-threaded execution model.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="73" sourceendlinenumber="77">一个客户端与grain的通信和grain与grain的通信关键的不同是单线程执行模型。
+<!--Grains are constrained to be single-threaded by the Orleans scheduler, while clients may be multi-threaded.-->
+grain被Orleans调度器线支撑单线程的，但是客户端可能是多线程的。
+<!--The client library uses the TPL thread pool to manage continuations and callbacks, and so it is up to the client to manage its own concurrency using whatever synchronization constructs are appropriate for its environment – locks, events, TPL tasks, etc.-->
+客户端库使用TPL线程池来管理延续提或者毁掉，并且客户端根据自身环境适用什么同步机制（锁、事件、TPL任务、等等）来自由决定使用什么方法管理它自己的并发。</p>
+<h2 id="收到通知" sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="79" sourceendlinenumber="79">收到通知</h2>
+<!--## Receiving notifications-->
+<!--There are situations in which a simple message/response pattern is not enough, and the client needs to receive asynchronous notifications.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="83" sourceendlinenumber="85">有些情况下简单的消息/响应模式是不够的，并且客户端需要收到异步通知。
+<!--For example, a user might want to be notified when a new message has been published by someone that she is following.-->
+例如，一个用户可能想要在他粉的某人发布新消息的时候收到通知。</p>
+<!--An observer is a one-way asynchronous interface that inherits from `IGrainObserver`, and all its methods must be `void`.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="88" sourceendlinenumber="94">观察者是一个单向实现了<code>IGrainObserver</code>的单向异步接口，并且它的所有的方法都必须是<code>void</code>的。
+<!--The grain sends a notification to the observer by invoking it like a grain interface method, except that it has no return value, and so the grain need not depend on the result.-->
+grain通过像调用grain接口的方法一样调用观察者的方法来发送一个通知给观察者，不同是观察者方法没有返回值并且grain不会以来调用结果。
+<!--The Orleans runtime will ensure one-way delivery of the notifications.-->
+Orleans运行时将会确保单向传递通知的成功。
+<!--A grain that publishes such notifications should provide an API to add or remove observers.-->
+发布通知的grain应该提供API来添加或者删除观察者。</p>
+<!--To subscribe to a notification, the client must first create a local C# object that implements the observer interface.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="97" sourceendlinenumber="99">想要订阅通知，客户端必须首先创建一个本地的实现了观察者接口的C#对象。
+<!--It then calls `CreateObjectReference()` method on the grain factory, to turn the C# object into a grain reference, which can then be passed to the subscription method on the notifying grain.-->
+然后调用grain工厂的<code>CreateObjectReference()</code>将C#对象转换成一个grain引用，之后会被传递给通知grain上的订阅方法。</p>
+<!--This model can also be used by other grains to receive asynchronous notifications.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="102" sourceendlinenumber="104">这个模型也可以被其他的grain使用来接收异步通知。
+<!--Unlike in the client subscription case, the subscribing grain simply implements the observer interface as a facet, and passes in a reference to itself (e.g. `this.AsReference<IChirperViewer>`).-->
+不像客户端订阅的情况，订阅的grain只要实现观察者接口，并且把自身作为一个引用传递给自己（例如<code>this.AsReference&lt;IChirperViewer&gt;</code>）。</p>
+<h2 id="举例" sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="106" sourceendlinenumber="106">举例</h2>
+<!--## Example-->
+<!--Here is an extended version of the example given above of a client application that connects to Orleans, finds the player account, subscribes for updates to the game session the player is part of, and prints out notifications until the program is manually terminated.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="110" sourceendlinenumber="110">这里是一个上面给出的客户端应用连接Orleans的扩展版本，找到玩家账号，订阅玩家所在的游戏的会话的更新，并且打印出通知，直到程序被手动关闭。</p>
+<pre sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="112" sourceendlinenumber="180"><code class="lang-csharp">namespace PlayerWatcher
 {
     class Program
     {
@@ -183,8 +223,8 @@ Unlike in the client subscription case, the subscribing grain simply implements 
         }
     }
 }
-</code></pre><h2 id="next" sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="140" sourceendlinenumber="140">Next</h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="142" sourceendlinenumber="142"><a href="Running-the-Application.html" sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="142" sourceendlinenumber="142">Running the Application</a></p>
+</code></pre><h2 id="next" sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="182" sourceendlinenumber="182">Next</h2>
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="184" sourceendlinenumber="184"><a href="Running-the-Application.html" sourcefile="Documentation/Getting-Started-With-Orleans/Developing-a-Client.md" sourcestartlinenumber="184" sourceendlinenumber="184">运行一个应用</a></p>
 
             </article>
           </div>

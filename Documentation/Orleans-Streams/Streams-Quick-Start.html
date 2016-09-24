@@ -8,7 +8,7 @@
     <title>Orleans Streams Quick Start | Microsoft Orleans Website </title>
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Orleans Streams Quick Start | Microsoft Orleans Website ">
-    <meta name="generator" content="docfx 2.5.3.0">
+    <meta name="generator" content="docfx 2.5.4.0">
     
     <link rel="shortcut icon" href="../../favicon.ico">
     <link rel="stylesheet" href="../../styles/docfx.vendor.css">
@@ -71,13 +71,17 @@
         <div class="article row grid-right">
           <div class="col-md-10">
             <article class="content wrap" id="_content" data-uid="">
-              <h1 id="orleans-streams-quick-start" sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="6" sourceendlinenumber="6">Orleans Streams Quick Start</h1>
+              <h1 id="orleans流快速入门" sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="6" sourceendlinenumber="6">Orleans流快速入门</h1>
               
-<p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="8" sourceendlinenumber="9">This guide will show you a quick way to setup and use Orleans Streams.
-To learn more about the details of the streaming features, read other parts of this documentation.</p>
-<h2 id="required-configurations" sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="11" sourceendlinenumber="11">Required Configurations</h2>
-<p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="13" sourceendlinenumber="13">In this guide we&#39;ll use a Simple Message based Stream which uses grain messaging to send stream data to subscribers. We will use the in-memory storage provider to store lists of subscriptions so it is not a wise choise for real production applications.</p>
-<pre sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="15" sourceendlinenumber="24"><code class="lang-xml">&lt;Globals&gt;
+<p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="8" sourceendlinenumber="11">这个指南将会展示设置和使用Orleans Streams的快速方法。
+阅读这个文档的其他部分来学习更多关于流的细节。
+<!--This guide will show you a quick way to setup and use Orleans Streams.-->
+<!--To learn more about the details of the streaming features, read other parts of this documentation.--></p>
+<h2 id="必要的设置" sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="13" sourceendlinenumber="13">必要的设置</h2>
+<!--## Required Configurations-->
+<p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="16" sourceendlinenumber="17">在这个指导中，我们用一个使用了grain消息给订阅者发送流数据的简单消息流。使用内存存储提供者存储订阅者列表，尽管在实际生产环境中不是一个明智的选择。
+<!--In this guide we'll use a Simple Message based Stream which uses grain messaging to send stream data to subscribers. We will use the in-memory storage provider to store lists of subscriptions so it is not a wise choise for real production applications.--></p>
+<pre sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="19" sourceendlinenumber="28"><code class="lang-xml">&lt;Globals&gt;
     &lt;StorageProviders&gt;
       &lt;Provider Type=&quot;Orleans.Storage.MemoryStorage&quot; Name=&quot;Default&quot; /&gt;
       &lt;Provider Type=&quot;Orleans.Storage.MemoryStorage&quot; Name=&quot;PubSubStore&quot; /&gt;
@@ -85,29 +89,39 @@ To learn more about the details of the streaming features, read other parts of t
     &lt;StreamProviders&gt;
       &lt;Provider Type=&quot;Orleans.Providers.Streams.SimpleMessageStream.SimpleMessageStreamProvider&quot; Name=&quot;SMSProvider&quot;/&gt;
     &lt;/StreamProviders&gt;
-</code></pre><p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="26" sourceendlinenumber="26">Now we can create streams, send data using them as producers and also receive data as subscribers.</p>
-<h2 id="producing-events" sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="28" sourceendlinenumber="28">Producing Events</h2>
-<p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="30" sourceendlinenumber="30">Producing events for streams is relatively easy. You should first get access to the stream provider which you defined in the config above (<code>SMSProvider</code>) and then choose a stream and push data to it.</p>
-<pre sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="32" sourceendlinenumber="39"><code class="lang-csharp">//Pick a guid for a chat room grain and chat room stream
+</code></pre><p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="30" sourceendlinenumber="31">现在我们可以创建流，使用它们作为生产者发送数据同时作为订阅者接收数据。
+<!--Now we can create streams, send data using them as producers and also receive data as subscribers.--></p>
+<h2 id="创建事件" sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="33" sourceendlinenumber="33">创建事件</h2>
+<!--## Producing Events-->
+<!--Producing events for streams is relatively easy. You should first get access to the stream provider which you defined in the config above (`SMSProvider`) and then choose a stream and push data to it.-->
+<p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="37" sourceendlinenumber="37">对于流来说创建事件相对简单。你首先需要访问到你上面再配置文件中(<code>SMSProvider</code>) 定义的流提供者，并且选择一个流推送数据给它。</p>
+<pre sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="39" sourceendlinenumber="46"><code class="lang-csharp">//Pick a guid for a chat room grain and chat room stream
 var guid = some guid identifying the chat room
 //Get one of the providers which we defined in config
 var streamProvider = GetStreamProvider(&quot;SMSProvider&quot;);
 //Get the reference to a stream
 var stream = streamProvider.GetStream&lt;int&gt;(guid, &quot;RANDOMDATA&quot;);
-</code></pre><p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="41" sourceendlinenumber="41">As you can see our stream has a GUID and a namespace. This will make it easy to identify unique streams. For example, in a chat room namespace can &quot;Rooms&quot; and GUID be the owning RoomGrain&#39;s GUID.</p>
-<p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="43" sourceendlinenumber="43">Here we use the GUID of some known chat room. Now using the <code>OnNext</code> method of the stream we can push data to it. Let&#39;s do it inside a timer and using random numbers. You could use any other data type for the stream as well.</p>
-<pre sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="45" sourceendlinenumber="50"><code class="lang-csharp">RegisterTimer(s =&gt;
+</code></pre><!--As you can see our stream has a GUID and a namespace. This will make it easy to identify unique streams. For example, in a chat room namespace can "Rooms" and GUID be the owning RoomGrain's GUID.-->
+<p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="49" sourceendlinenumber="49">你能看到我们的流有一个GUID和一个命名空间。这使得鉴别唯一的流变得容易。例如，在一个聊天室中，命名空间是&quot;Rooms&quot;并且GUID是特有的RoomGrain的GUID。</p>
+<!--Here we use the GUID of some known chat room. Now using the `OnNext` method of the stream we can push data to it. Let's do it inside a timer and using random numbers. You could use any other data type for the stream as well.-->
+<p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="52" sourceendlinenumber="52">这里我们使用一些已知的聊天室的GUID。现在可以使用流的<code>OnNext</code>方法给它推送数据。我们在一个定时器中做这些并且使用随机数字。你也可以使用任何其他的数据类型。</p>
+<pre sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="54" sourceendlinenumber="59"><code class="lang-csharp">RegisterTimer(s =&gt;
         {
             return stream.OnNextAsync(new System.Random().Next());
         }, null, TimeSpan.FromMilliseconds(1000), TimeSpan.FromMilliseconds(1000));
-</code></pre><h2 id="subscribing-and-receiving-streaming-data" sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="52" sourceendlinenumber="52">Subscribing and receiving streaming data</h2>
-<p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="54" sourceendlinenumber="54">For receiving data we can use implicit/explicit subscriptions, which are fully described in other pages of the manual. Here we use implicit subscriptions which are easier. When a grain type wants to implicitly subscribe to a stream it uses the attribute <code>ImplicitStreamSubscription (namespace)]</code>.</p>
-<p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="56" sourceendlinenumber="56">For our case we&#39;ll define a ReceiverGrain like this:</p>
-<pre sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="58" sourceendlinenumber="61"><code class="lang-csharp">[ImplicitStreamSubscription(&quot;RANDOMDATA&quot;)]
+</code></pre><h2 id="订阅和接收流数据" sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="61" sourceendlinenumber="61">订阅和接收流数据</h2>
+<!--## Subscribing and receiving streaming data-->
+<!--For receiving data we can use implicit/explicit subscriptions, which are fully described in other pages of the manual. Here we use implicit subscriptions which are easier. When a grain type wants to implicitly subscribe to a stream it uses the attribute `ImplicitStreamSubscription (namespace)]`.-->
+<p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="65" sourceendlinenumber="65">接收数据我们可以使用显式/隐式的订阅，这在本手册的其它页会详细介绍。这里我们使用较简单的隐式订阅。当一个grain类型想要隐式地描述一个流的时候，它使用<code>ImplicitStreamSubscription (namespace)]</code>特性。</p>
+<!--For our case we'll define a ReceiverGrain like this:-->
+<p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="68" sourceendlinenumber="68">在我们的例子中，我们这样定义一个ReceiverGrain：</p>
+<pre sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="70" sourceendlinenumber="73"><code class="lang-csharp">[ImplicitStreamSubscription(&quot;RANDOMDATA&quot;)]
 public class ReceiverGrain : Grain, IRandomReceiver
-</code></pre><p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="63" sourceendlinenumber="63">Now whenever some data is pushed to the streams of namespace RANDOMDATA as we have in the timer, a grain of type <code>ReceiverGrain</code> with the same guid of the stream will receive the message. Even if no activations of the grain currently exist, the runtime will automatically create a new one and send the message to it.</p>
-<p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="65" sourceendlinenumber="65">In order for this to work however, we need to complete the subscription process by setting our <code>OnNext</code> method for receiving data. So our <code>ReceiverGrain</code> should call in its <code>OnActivateAsync</code> something like this</p>
-<pre sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="67" sourceendlinenumber="76"><code class="lang-csharp">//Create a GUID based on our GUID as a grain
+</code></pre><!--Now whenever some data is pushed to the streams of namespace RANDOMDATA as we have in the timer, a grain of type `ReceiverGrain` with the same guid of the stream will receive the message. Even if no activations of the grain currently exist, the runtime will automatically create a new one and send the message to it.-->
+<p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="76" sourceendlinenumber="76">现在无论何时给命名空间是RANDOMDATA的流推送数据，具有相同guid类型是<code>ReceiverGrain</code>的grain将会收到消息。甚至当前没有激活的grain存在，运行时会自动创建一个新的并且发送消息给它。</p>
+<!--In order for this to work however, we need to complete the subscription process by setting our `OnNext` method for receiving data. So our `ReceiverGrain` should call in its `OnActivateAsync` something like this-->
+<p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="79" sourceendlinenumber="79">为了让这个工作，我们需要通过设置我们的接受数据的<code>OnNext</code>方法完成订阅的过程。<code>ReceiverGrain</code>应该在它的<code>OnActivateAsync</code>有类似如下的调用。</p>
+<pre sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="81" sourceendlinenumber="90"><code class="lang-csharp">//Create a GUID based on our GUID as a grain
 var guid = this.GetPrimaryKey();
 //Get one of the providers which we defined in config
 var streamProvider = GetStreamProvider(&quot;SMSProvider&quot;);
@@ -115,11 +129,14 @@ var streamProvider = GetStreamProvider(&quot;SMSProvider&quot;);
 var stream = streamProvider.GetStream&lt;int&gt;(guid, &quot;RANDOMDATA&quot;);
 //Set our OnNext method to the lambda which simply prints the data, this doesn&#39;t make new subscriptions
 await stream.SubscribeAsync&lt;int&gt;(async (data, token) =&gt; Console.WriteLine(data));
-</code></pre><p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="78" sourceendlinenumber="78">We are all set now. The only requirement is that something triggers our producer grain&#39;s creation and then it will registers the timer and starts sending random ints to all interested parties.</p>
-<p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="80" sourceendlinenumber="80">Again, this guide skips lots of details and is only good for showing the big picture. Read other parts of this manual and other resources on RX to gain a good understanding on what is available and how.</p>
-<p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="82" sourceendlinenumber="82">Reactive programming can be a very powerful approach to solve many problems. You could for example use LINQ in the subscriber to filter numbers and do all sorts of interesting stuff.</p>
-<h2 id="next" sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="85" sourceendlinenumber="85">Next</h2>
-<p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="86" sourceendlinenumber="86"><a href="Streams-Programming-APIs.html" sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="86" sourceendlinenumber="86">Orleans Streams Programming APIs</a></p>
+</code></pre><!--We are all set now. The only requirement is that something triggers our producer grain's creation and then it will registers the timer and starts sending random ints to all interested parties.-->
+<p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="93" sourceendlinenumber="93">所有的都设置好了。现在唯一需要的是触发我们的生产者grain创建并且之后它将注册定时器并且开始发送随机整数给所有感兴趣的订阅者。</p>
+<!--Again, this guide skips lots of details and is only good for showing the big picture. Read other parts of this manual and other resources on RX to gain a good understanding on what is available and how.-->
+<p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="96" sourceendlinenumber="96">此外，这个指南跳过了许多细节并且只是展示了重点。阅读手册的其他部分和其他的关于RX的资源来更好地理解可以和如何干什么。</p>
+<!--Reactive programming can be a very powerful approach to solve many problems. You could for example use LINQ in the subscriber to filter numbers and do all sorts of interesting stuff.-->
+<p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="99" sourceendlinenumber="99">响应式编程是解决许多问题的有效方式。例如你可以在订阅者中使用LINQ来过滤数字和各式各样有趣的事。</p>
+<h2 id="next" sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="102" sourceendlinenumber="102">Next</h2>
+<p sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="103" sourceendlinenumber="103"><a href="Streams-Programming-APIs.html" sourcefile="Documentation/Orleans-Streams/Streams-Quick-Start.md" sourcestartlinenumber="103" sourceendlinenumber="103">Orleans Streams Programming APIs</a></p>
 
             </article>
           </div>

@@ -8,7 +8,7 @@
     <title>Troubleshooting Deployments | Microsoft Orleans Website </title>
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Troubleshooting Deployments | Microsoft Orleans Website ">
-    <meta name="generator" content="docfx 2.5.3.0">
+    <meta name="generator" content="docfx 2.5.4.0">
     
     <link rel="shortcut icon" href="../../favicon.ico">
     <link rel="stylesheet" href="../../styles/docfx.vendor.css">
@@ -71,56 +71,85 @@
         <div class="article row grid-right">
           <div class="col-md-10">
             <article class="content wrap" id="_content" data-uid="">
-              <h1 id="troubleshooting-deployments" sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="6" sourceendlinenumber="6">Troubleshooting Deployments</h1>
+              <h1 id="部署故障排除" sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="6" sourceendlinenumber="6">部署故障排除</h1>
               
-<p sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="8" sourceendlinenumber="9">This page gives some general guidelines for troubleshooting any issues that occur while deploying to Azure Cloud Services.
-These are very common issues to watch out for. Be sure to check the logs for more information.</p>
-<h2 id="getting-a-silounavailableexception" sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="11" sourceendlinenumber="11">Getting a SiloUnavailableException</h2>
-<p sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="13" sourceendlinenumber="15">First check to make sure that you are actually starting the silos before attempting to initialize the client. Sometimes the
-silos take a long time to start so it can be beneficial to try to initialize the client multiple times. If it still throws an
-exception, then there might be another issue with the silos.</p>
-<p sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="17" sourceendlinenumber="17">Check the silo configuration and make sure that the silos are starting up properly.</p>
-<h2 id="common-connection-string-issues" sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="19" sourceendlinenumber="19">Common Connection String Issues</h2>
-<ul sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="20" sourceendlinenumber="22">
-<li sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="20" sourceendlinenumber="20">Using the local connection string when deploying to Azure – the website will fail to connect</li>
-<li sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="21" sourceendlinenumber="22">Using different connection strings for the silos and the front end (web and worker roles) – the website will fail to
-initialize the client because it cannot connect to the silos</li>
+<!--This page gives some general guidelines for troubleshooting any issues that occur while deploying to Azure Cloud Services. -->
+<p sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="9" sourceendlinenumber="11">这个页面给出一些在部署到Azure云服务的时候发生的问题的故障检测指导。
+<!--These are very common issues to watch out for. Be sure to check the logs for more information.-->
+这些都是要注意的很常见的问题。无比检查log获取更多信息。</p>
+<h2 id="遇到silounavailableexception" sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="13" sourceendlinenumber="13">遇到SiloUnavailableException</h2>
+<!--## Getting a SiloUnavailableException-->
+<!--First check to make sure that you are actually starting the silos before attempting to initialize the client. Sometimes the -->
+<!--silos take a long time to start so it can be beneficial to try to initialize the client multiple times. If it still throws an -->
+<!--exception, then there might be another issue with the silos.-->
+<p sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="19" sourceendlinenumber="19">首先检查确保你在初始化客户端之前一定启动了silo。有时silo会花很长时间启动所以有时候最好多试几次初始化客户端。如果还是出错，可能是silo有什么问题。</p>
+<!--Check the silo configuration and make sure that the silos are starting up properly.-->
+<p sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="22" sourceendlinenumber="22">检查silo的配置并且确保silo启动了。</p>
+<h2 id="常见的连接字串问题" sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="24" sourceendlinenumber="24">常见的连接字串问题</h2>
+<!--## Common Connection String Issues-->
+<!---    Using the local connection string when deploying to Azure – the website will fail to connect-->
+<!---    Using different connection strings for the silos and the front end (web and worker roles) – the website will fail to -->
+<!--initialize the client because it cannot connect to the silos-->
+<ul sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="29" sourceendlinenumber="30">
+<li sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="29" sourceendlinenumber="29">部署到Azure的时候使用本地的连接字串 - 网页会连接失败。</li>
+<li sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="30" sourceendlinenumber="30">silo服务端和前段（web和woker角色）使用了不同的连接字串 - 网页将会初始化失败因为无法连接到silo</li>
 </ul>
-<p sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="24" sourceendlinenumber="25">The connection string configuration can be checked in the Azure Portal. The logs may not display properly if the connection
-strings are not set up correctly.</p>
-<h2 id="modifying-the-configuration-files-improperly" sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="27" sourceendlinenumber="27">Modifying the Configuration Files Improperly</h2>
-<p sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="29" sourceendlinenumber="30">Make sure that the proper endpoints are configured in the ServiceDefinition.csdef file or else the deployment will not work.
-It will give errors saying that it cannot get the endpoint information.</p>
-<h2 id="missing-logs" sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="32" sourceendlinenumber="32">Missing Logs</h2>
-<p sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="33" sourceendlinenumber="33">Make sure that the connection strings are set up properly.</p>
-<p sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="35" sourceendlinenumber="36">It is likely that the Web.config file in the web role or the app.config file in the worker role were modified improperly.
-Incorrect versions in these files can cause issues with the deployment. Be careful when dealing with updates.</p>
-<h2 id="version-issues" sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="38" sourceendlinenumber="38">Version Issues</h2>
-<p sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="39" sourceendlinenumber="40">Make sure that the same version of Orleans is used in every project in the solution. Not doing this can lead to the worker
-role recycling. Check the logs for more information. Visual Studio provides some silo startup error messages in the deployment history.</p>
-<h2 id="role-keeps-recycling" sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="42" sourceendlinenumber="42">Role Keeps Recycling</h2>
-<ul sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="43" sourceendlinenumber="46">
-<li sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="43" sourceendlinenumber="43">Check that all the appropriate Orleans assemblies are in the solution and have Copy Local set to True.</li>
-<li sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="44" sourceendlinenumber="44">Check the logs to see if there is an unhandled exception while initializing.</li>
-<li sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="45" sourceendlinenumber="45">Make sure that the connection strings are correct.</li>
-<li sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="46" sourceendlinenumber="46">Check the Azure Cloud Services troubleshooting pages for more information.</li>
+<!--The connection string configuration can be checked in the Azure Portal. The logs may not display properly if the connection -->
+<!--strings are not set up correctly.-->
+<p sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="34" sourceendlinenumber="34">连接字串配置可以在Azure Portal检查。如果连接字串没有配置正确log文件可能不会显示。</p>
+<h2 id="不正确地修改配置文件" sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="36" sourceendlinenumber="36">不正确地修改配置文件</h2>
+<!--## Modifying the Configuration Files Improperly-->
+<!--Make sure that the proper endpoints are configured in the ServiceDefinition.csdef file or else the deployment will not work.-->
+<!--It will give errors saying that it cannot get the endpoint information.-->
+<p sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="41" sourceendlinenumber="41">确保ServiceDefinition.csdef文件中配置了正确的终结点，否则部署不能正确工作。会报出不能获取终结点信息的错误。</p>
+<h2 id="缺少log" sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="43" sourceendlinenumber="43">缺少log</h2>
+<!--## Missing Logs-->
+<!--Make sure that the connection strings are set up properly.-->
+<p sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="46" sourceendlinenumber="46">确保已经设置了连接字串。</p>
+<!--It is likely that the Web.config file in the web role or the app.config file in the worker role were modified improperly. -->
+<p sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="49" sourceendlinenumber="51">可能是Web.config文件中的web role或者app.config文件中的worker role没有正确配置。
+<!--Incorrect versions in these files can cause issues with the deployment. Be careful when dealing with updates.-->
+这些文件中的版本不正确可能导致部署问题。小心处理升级为你。</p>
+<h2 id="版本问题" sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="53" sourceendlinenumber="53">版本问题</h2>
+<!--## Version Issues-->
+<!--Make sure that the same version of Orleans is used in every project in the solution. Not doing this can lead to the worker-->
+<!--role recycling. Check the logs for more information. Visual Studio provides some silo startup error messages in the deployment history.-->
+<p sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="57" sourceendlinenumber="57">确保解决方案的每个工程中使用了相同版本的Orleans。不这样做会导致woker role回收。检查log获取更多信息。在部署历史中Visual Studio 提供一些silo启动的错误消息。</p>
+<h2 id="role-keeps-recycling" sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="59" sourceendlinenumber="59">Role Keeps Recycling</h2>
+<!--## Role Keeps Recycling-->
+<!--- Check that all the appropriate Orleans assemblies are in the solution and have Copy Local set to True.-->
+<!--- Check the logs to see if there is an unhandled exception while initializing.-->
+<!--- Make sure that the connection strings are correct.-->
+<!--- Check the Azure Cloud Services troubleshooting pages for more information.-->
+<ul sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="65" sourceendlinenumber="68">
+<li sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="65" sourceendlinenumber="65">检查确保所有恰当的Orleans程序集在解决方案中并且设置Copy Local为true。</li>
+<li sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="66" sourceendlinenumber="66">检查log看看是否有初始化过程中没有处理的异常。</li>
+<li sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="67" sourceendlinenumber="67">确保链接字串正确。</li>
+<li sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="68" sourceendlinenumber="68">检查 Azure Cloud Services 故障排除页面获取更多信息。</li>
 </ul>
-<h2 id="how-to-check-logs" sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="48" sourceendlinenumber="48">How to Check Logs</h2>
-<ul sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="49" sourceendlinenumber="50">
-<li sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="49" sourceendlinenumber="49">Use the cloud explorer in Visual Studio to navigate to the appropriate storage table or blob in the storage account. The WADLogsTable is a good starting point for looking at the logs.</li>
-<li sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="50" sourceendlinenumber="50">You might only be logging errors. If you want informational logs as well, you will need to modify the configuration to set the logging severity level.</li>
+<h2 id="如何检查log" sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="70" sourceendlinenumber="70">如何检查log</h2>
+<!--## How to Check Logs-->
+<!--- Use the cloud explorer in Visual Studio to navigate to the appropriate storage table or blob in the storage account. The WADLogsTable is a good starting point for looking at the logs.-->
+<!--- You might only be logging errors. If you want informational logs as well, you will need to modify the configuration to set the logging severity level. -->
+<ul sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="74" sourceendlinenumber="74">
+<li sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="74" sourceendlinenumber="74">使用Visual Studio中的cloud explorer定位到合适的存储表或者存储账户中的blob。从WADLogsTable开始寻找log不错。</li>
 </ul>
-<p sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="52" sourceendlinenumber="52">Programmatic configuration:</p>
-<ul sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="53" sourceendlinenumber="54">
-<li sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="53" sourceendlinenumber="53">When creating a <code>ClusterConfiguration</code> object, set <code>config.Defaults.DefaultTraceLevel = Severity.Info</code>.</li>
-<li sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="54" sourceendlinenumber="54">When creating a <code>ClientConfiguration</code> object, set <code>config.DefaultTraceLevel = Severity.Info</code>.</li>
+<!--Programmatic configuration:-->
+<p sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="77" sourceendlinenumber="79">可编程配置：
+<!--- When creating a `ClusterConfiguration` object, set `config.Defaults.DefaultTraceLevel = Severity.Info`.-->
+<!--- When creating a `ClientConfiguration` object, set `config.DefaultTraceLevel = Severity.Info`.--></p>
+<ul sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="80" sourceendlinenumber="81">
+<li sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="80" sourceendlinenumber="80">当创建一个<code>ClusterConfiguration</code>对象，设置<code>config.Defaults.DefaultTraceLevel = Severity.Info</code>.</li>
+<li sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="81" sourceendlinenumber="81">当创建一个<code>ClientConfiguration</code>对象，设置<code>config.DefaultTraceLevel = Severity.Info</code>.</li>
 </ul>
-<p sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="56" sourceendlinenumber="56">Declarative configuration:</p>
-<ul sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="57" sourceendlinenumber="57">
-<li sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="57" sourceendlinenumber="57">Add <code>&lt;Tracing DefaultTraceLevel=&quot;Info&quot; /&gt;</code> to the <code>OrleansConfiguration.xml</code> and/or the <code>ClientConfiguration.xml</code> files.</li>
-</ul>
-<p sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="59" sourceendlinenumber="59">In the <code>diagnostics.wadcfgx</code> file for the web and worker roles, make sure to set the <code>scheduledTransferLogLevelFilter</code> attribute in the <code>Logs</code> element to <code>Information</code>, as this is an additional layer of trace filtering that defines which traces are sent to the <code>WADLogsTable</code> in Azure Storage.</p>
-<p sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="61" sourceendlinenumber="61">You can find more information about this in the <a href="../Orleans-Configuration-Guide/index.html" sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="61" sourceendlinenumber="61">Orleans Configuration Guide</a>.</p>
+<!--Declarative configuration:-->
+<p sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="84" sourceendlinenumber="86">声明式配置：
+<!--- Add `<Tracing DefaultTraceLevel="Info" />` to the `OrleansConfiguration.xml` and/or the `ClientConfiguration.xml` files.-->
+添加<code>&lt;Tracing DefaultTraceLevel=&quot;Info&quot; /&gt;</code>到<code>OrleansConfiguration.xml</code>和/或<code>ClientConfiguration.xml</code>文件。</p>
+<!--In the `diagnostics.wadcfgx` file for the web and worker roles, make sure to set the `scheduledTransferLogLevelFilter` attribute in the `Logs` element to `Information`, as this is an additional layer of trace filtering that defines which traces are sent to the `WADLogsTable` in Azure Storage.-->
+<p sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="89" sourceendlinenumber="89">在web和worker role的<code>diagnostics.wadcfgx</code>文件中，确保<code>Logs</code>中的<code>scheduledTransferLogLevelFilter</code>属性设置成<code>Information</code>,这是一个用来定义哪些跟踪信息发送到Azure存储的<code>WADLogsTable</code>的跟踪过滤的额外层。</p>
+<!--You can find more information about this in the [Orleans Configuration Guide] (Orleans-Configuration-Guide/).-->
+<p sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="93" sourceendlinenumber="93">你可以在 <a href="../Orleans-Configuration-Guide/index.html" sourcefile="Documentation/Advanced-Concepts/Troubleshooting-Deployments.md" sourcestartlinenumber="93" sourceendlinenumber="93">Orleans配置向导</a> 中找到更多信息</p>
 
             </article>
           </div>

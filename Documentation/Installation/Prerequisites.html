@@ -8,7 +8,7 @@
     <title>Prerequisites | Microsoft Orleans Website </title>
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Prerequisites | Microsoft Orleans Website ">
-    <meta name="generator" content="docfx 2.5.3.0">
+    <meta name="generator" content="docfx 2.5.4.0">
     
     <link rel="shortcut icon" href="../../favicon.ico">
     <link rel="stylesheet" href="../../styles/docfx.vendor.css">
@@ -71,17 +71,26 @@
         <div class="article row grid-right">
           <div class="col-md-10">
             <article class="content wrap" id="_content" data-uid="">
-              <h1 id="prerequisites" sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="6" sourceendlinenumber="6">Prerequisites</h1>
+              <h1 id="必备条件" sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="6" sourceendlinenumber="6">必备条件</h1>
               
-<p sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="8" sourceendlinenumber="8">Orleans is a set of .NET libraries. In order to use Orleans, you need <a href="http://www.microsoft.com/net" sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="8" sourceendlinenumber="8">.NET Framework</a> 4.5.1 or higher and a copy of <a href="https://www.visualstudio.com" sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="8" sourceendlinenumber="8">Visual Studio</a> 2015 or higher. Note that the Express versions of Visual Studio do not support extension packages, but you can use Orleans by adding references to the NuGet packages directly.</p>
-<p sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="10" sourceendlinenumber="10">In production, Orleans requires persistent storage. The following technologies are supported (only need one of those):</p>
-<ul sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="12" sourceendlinenumber="17">
-<li sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="12" sourceendlinenumber="12"><a href="https://azure.microsoft.com/en-us/pricing" sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="12" sourceendlinenumber="12">Azure</a> - Tested with <a href="http://azure.microsoft.com/en-us/downloads" sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="12" sourceendlinenumber="12">Azure SDK</a> 2.4 - 2.8</li>
-<li sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="13" sourceendlinenumber="13"><a href="https://www.microsoft.com/en-us/server-cloud/products/sql-server" sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="13" sourceendlinenumber="13">SQL Server</a> 2008 or higher</li>
-<li sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="14" sourceendlinenumber="14"><a href="https://zookeeper.apache.org" sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="14" sourceendlinenumber="14">ZooKeeper</a> 3.4.0 or higher</li>
-<li sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="15" sourceendlinenumber="15"><a href="https://www.mysql.com" sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="15" sourceendlinenumber="15">MySQL</a> 5.0 or higher</li>
-<li sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="16" sourceendlinenumber="16"><a href="https://www.consul.io" sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="16" sourceendlinenumber="16">Consul</a> 0.6.0 or higher</li>
-<li sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="17" sourceendlinenumber="17"><a href="https://aws.amazon.com/dynamodb/" sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="17" sourceendlinenumber="17">DynamoDB</a> - Tested with <a href="https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.1.5.3" sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="17" sourceendlinenumber="17">AWSSDK - Amazon DynamoDB 3.1.5.3</a></li>
+<!-- # Prerequisites -->
+<!--Orleans is a set of .NET libraries. In order to use Orleans, you need [.NET Framework](http://www.microsoft.com/net) 4.5.1 or higher and a copy of [Visual Studio](https://www.visualstudio.com) 2015 or higher. Note that the Express versions of Visual Studio do not support extension packages, but you can use Orleans by adding references to the NuGet packages directly.-->
+<p sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="10" sourceendlinenumber="10">Orleans是一系列.NET库。为了使用Orleans，你需要 <a href="http://www.microsoft.com/net" sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="10" sourceendlinenumber="10">.NET Framework</a> 4.5.1或者更高的版本并且需要<a href="https://www.visualstudio.com" sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="10" sourceendlinenumber="10">Visual Studio</a> 2015或者更高的版本。注意Express版本的Visual Studio不支持扩展包，但是你还是可以通过将引用添加到NuGet包目录来使用Orleans。</p>
+<!--In production, Orleans requires persistent storage. The following technologies are supported (only need one of those):-->
+<p sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="13" sourceendlinenumber="13">在生产环境，Orleans需要持久存储。支持以下持久存储（只需要其中一个就行）:</p>
+<!--* [Azure](https://azure.microsoft.com/en-us/pricing) - Tested with [Azure SDK](http://azure.microsoft.com/en-us/downloads) 2.4 - 2.8-->
+<!--* [SQL Server](https://www.microsoft.com/en-us/server-cloud/products/sql-server) 2008 or higher-->
+<!--* [ZooKeeper](https://zookeeper.apache.org) 3.4.0 or higher-->
+<!--* [MySQL](https://www.mysql.com) 5.0 or higher-->
+<!--* [Consul](https://www.consul.io) 0.6.0 or higher-->
+<!--* [DynamoDB](https://aws.amazon.com/dynamodb/) - Tested with [AWSSDK - Amazon DynamoDB 3.1.5.3](https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.1.5.3)-->
+<ul sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="21" sourceendlinenumber="26">
+<li sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="21" sourceendlinenumber="21"><a href="https://azure.microsoft.com/en-us/pricing" sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="21" sourceendlinenumber="21">Azure</a> - 已经通过<a href="http://azure.microsoft.com/en-us/downloads" sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="21" sourceendlinenumber="21">Azure SDK</a> 2.4 - 2.8测试可用</li>
+<li sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="22" sourceendlinenumber="22"><a href="https://www.microsoft.com/en-us/server-cloud/products/sql-server" sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="22" sourceendlinenumber="22">SQL Server</a> 2008或者更高版本</li>
+<li sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="23" sourceendlinenumber="23"><a href="https://zookeeper.apache.org" sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="23" sourceendlinenumber="23">ZooKeeper</a> 3.4.0或者更高版本</li>
+<li sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="24" sourceendlinenumber="24"><a href="https://www.mysql.com" sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="24" sourceendlinenumber="24">MySQL</a> 5.0或者更高版本</li>
+<li sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="25" sourceendlinenumber="25"><a href="https://www.consul.io" sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="25" sourceendlinenumber="25">Consul</a> 0.6.0或者更高版本</li>
+<li sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="26" sourceendlinenumber="26"><a href="https://aws.amazon.com/dynamodb/" sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="26" sourceendlinenumber="26">DynamoDB</a> - 已经通过<a href="https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.1.5.3" sourcefile="Documentation/Installation/Prerequisites.md" sourcestartlinenumber="26" sourceendlinenumber="26">AWSSDK - Amazon DynamoDB 3.1.5.3</a>测试可用</li>
 </ul>
 
             </article>

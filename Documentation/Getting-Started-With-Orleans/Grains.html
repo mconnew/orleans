@@ -8,7 +8,7 @@
     <title>Grains | Microsoft Orleans Website </title>
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Grains | Microsoft Orleans Website ">
-    <meta name="generator" content="docfx 2.5.3.0">
+    <meta name="generator" content="docfx 2.5.4.0">
     
     <link rel="shortcut icon" href="../../favicon.ico">
     <link rel="stylesheet" href="../../styles/docfx.vendor.css">
@@ -71,31 +71,52 @@
         <div class="article row grid-right">
           <div class="col-md-10">
             <article class="content wrap" id="_content" data-uid="">
-              <h2 id="grains-actors-units-of-distribution" sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="7" sourceendlinenumber="7">Grains (Actors): Units of Distribution</h2>
+              <h2 id="grains-actors-分布式的基本单元" sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="7" sourceendlinenumber="7">Grains (Actors)： 分布式的基本单元</h2>
               
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="9" sourceendlinenumber="9">Distributed applications are inherently concurrent, which leads to complexity. One of the things that makes the actor model special and productive is that it helps reduce some of the complexities of having to grapple with concurrency.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="11" sourceendlinenumber="11">Actors accomplish this in two ways:</p>
-<ul sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="13" sourceendlinenumber="14">
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="13" sourceendlinenumber="13">By providing single-threaded access to the internal state of an actor instance.</li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="14" sourceendlinenumber="14">By not sharing data between actor instances except via message-passing.</li>
+<!--## Grains (Actors): Units of Distribution-->
+<!--Distributed applications are inherently concurrent, which leads to complexity. One of the things that makes the actor model special and productive is that it helps reduce some of the complexities of having to grapple with concurrency.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="11" sourceendlinenumber="11">分布式应用天生是并发的，这导致了它的复杂性。Actor模型减少了处理并发的复杂性，是使得Actor模型高效和具有生产品的原因之一。</p>
+<!--Actors accomplish this in two ways:-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="14" sourceendlinenumber="14">Actor使用两种方法来解决复杂性问题：</p>
+<!--* By providing single-threaded access to the internal state of an actor instance.-->
+<!--* By not sharing data between actor instances except via message-passing.-->
+<ul sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="18" sourceendlinenumber="19">
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="18" sourceendlinenumber="18">通过单线程来访问一个actor的内部状态</li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="19" sourceendlinenumber="19">除了通过消息传递以外actor间不共享数据</li>
 </ul>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="16" sourceendlinenumber="17">Grains are the building blocks of an Orleans application, they are atomic units of isolation, distribution, and persistence.
-A typical grain encapsulates state and behavior of a single entity (e.g. a specific user).</p>
-<h3 id="turns-units-of-execution" sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="19" sourceendlinenumber="19">Turns: Units of Execution</h3>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="21" sourceendlinenumber="21">The idea behind the single-threaded execution model for actors is that the invokers (remote) take turns &quot;calling&quot; its methods. Thus, a message coming to actor B from actor A will placed in a queue and the associated handler is invoked only when all prior messages have been serviced.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="23" sourceendlinenumber="23">This allows us to avoid all use of locks to protect actor state, as it is inherently protected against data races. However, it may also lead to problems when messages pass back and forth and the message graph forms cycles. If A sends a message to B from one of its methods and awaits its completion, and B sends a message to A, also awaiting its completion, the application will quickly lock up.</p>
-<h3 id="a-grain-activation---the-runtime-instance-of-a-grain" sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="25" sourceendlinenumber="25">A Grain Activation - The runtime instance of a Grain</h3>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="27" sourceendlinenumber="28">When there is work for a grain, Orleans ensures there is an instance of the grain on one of <a href="Silos.html" sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="27" sourceendlinenumber="27">Orleans Silos</a>. When there is no instance of the grain on any silo, the run-time creates one. This process is called Activation. In case a grain is using <a href="Grain-Persistence.html" sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="27" sourceendlinenumber="27">Grain Persistence</a>, the run-time automatically reads the state from the backing-store upon activation. 
-Orleans controls the process of activating and deactivating grains transparently. When coding a grain, a developer assumes all grains are always activated.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="30" sourceendlinenumber="30">A grain activation performs work in chunks and finishes each chunk before it moves on to the next. Chunks of work include method invocations in response to requests from other grains or external clients, and closures scheduled on completion of a previous chunk. The basic unit of execution corresponding to a chunk of work is known as a turn.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="32" sourceendlinenumber="32">While Orleans may execute many turns belonging to different activations in parallel, each activation will always execute its turns one at a time. This means that there is no need to use locks or other synchronization methods to guard against data races and other multi-threading hazards. As mentioned above, however, the unpredictable interleaving of turns for scheduled closures can cause the state of the grain to be different than when the closure was scheduled, so developers must still watch out for interleaving bugs.</p>
-<h3 id="activation-modes" sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="34" sourceendlinenumber="34">Activation modes</h3>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="36" sourceendlinenumber="38">Orleans supports two modes: single activation mode (default), in which only one simultaneous activation of every grain is created, and stateless worker mode, in which independent activations of a grain are created to increase the throughput.
-&quot;Independent&quot; implies that there is no state reconciliation between different activations of the same grain.
-So this mode is appropriate for grains that hold no local state, or grains whose local state is static, such as a grain that acts as a cache of persistent state</p>
-<h2 id="next" sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="40" sourceendlinenumber="40">Next</h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="41" sourceendlinenumber="41">Next we look at Silos, a unit for hosting grains.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="43" sourceendlinenumber="43"><a href="Silos.html" sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="43" sourceendlinenumber="43">Silos</a></p>
+<!--Grains are the building blocks of an Orleans application, they are atomic units of isolation, distribution, and persistence. -->
+<!--A typical grain encapsulates state and behavior of a single entity (e.g. a specific user).-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="23" sourceendlinenumber="24">Grain是Orleans应用的基石，是隔离、分布和持久化的最小单元。
+一个典型的grain封装了状态和单个实体的行为（例如，一个具体的用户）。</p>
+<h3 id="turns-执行的基本单元" sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="26" sourceendlinenumber="26">Turns： 执行的基本单元</h3>
+<!--### Turns: Units of Execution-->
+<!--The idea behind the single-threaded execution model for actors is that the invokers (remote) take turns "calling" its methods. Thus, a message coming to actor B from actor A will placed in a queue and the associated handler is invoked only when all prior messages have been serviced.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="30" sourceendlinenumber="30">Actor单线程调用的背后思想是，调用器（远程）轮流“调用”它的方法。因此，一个从actor A到actor B的消息将会放到一个队列里，并且只有当前面的消息处理完后相关的处理器才会被调用。</p>
+<!--This allows us to avoid all use of locks to protect actor state, as it is inherently protected against data races. However, it may also lead to problems when messages pass back and forth and the message graph forms cycles. If A sends a message to B from one of its methods and awaits its completion, and B sends a message to A, also awaiting its completion, the application will quickly lock up. -->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="33" sourceendlinenumber="33">这使得我们可以不是用任何锁来保护actor的状态，并且它天生避免了数据竞争问题。然而，这可能导致当消息来回传递的时候形成消息循环。如果A发送了一条消息给B等待B处理完成，并且B发送了一条消息给A，也等待A处理完成，这个应用会很快锁起来。</p>
+<h3 id="一个grain的激活---grain的运行时实例" sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="35" sourceendlinenumber="35">一个Grain的激活 - Grain的运行时实例</h3>
+<!--### A Grain Activation - The runtime instance of a Grain-->
+<!--When there is work for a grain, Orleans ensures there is an instance of the grain on one of [Orleans Silos](Silos). When there is no instance of the grain on any silo, the run-time creates one. This process is called Activation. In case a grain is using [Grain Persistence](Grain-Persistence), the run-time automatically reads the state from the backing-store upon activation. -->
+<!--Orleans controls the process of activating and deactivating grains transparently. When coding a grain, a developer assumes all grains are always activated.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="40" sourceendlinenumber="41">当有工作需要grain处理的时候，Orleans确保一个<a href="Silos.html" sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="40" sourceendlinenumber="40">Orleans Silos</a>上有一个grain的实例。当silo上没有grain实例时，运行时会创建一个。这个过程称作激活。当一个grain使用<a href="Grain-Persistence.html" sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="40" sourceendlinenumber="40">Grain持久化</a>，运行时在激活时从持久化存储中自动读取状态。
+Orleans透明地控制激活和注销的过程。当编写一个grain的时候，开发者只要假设所有的grain永远是被激活的。</p>
+<!--A grain activation performs work in chunks and finishes each chunk before it moves on to the next. Chunks of work include method invocations in response to requests from other grains or external clients, and closures scheduled on completion of a previous chunk. The basic unit of execution corresponding to a chunk of work is known as a turn.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="44" sourceendlinenumber="44">grain的激活工作是分块执行的，一块执行完成移动到下一块。每块工作包含响应其他actor或者外部客户端的请求的方法调用，并且下一个闭包在前一个分块完成后被调度。执行的基础相当于一块工作也被叫做一个turn。</p>
+<!--While Orleans may execute many turns belonging to different activations in parallel, each activation will always execute its turns one at a time. This means that there is no need to use locks or other synchronization methods to guard against data races and other multi-threading hazards. As mentioned above, however, the unpredictable interleaving of turns for scheduled closures can cause the state of the grain to be different than when the closure was scheduled, so developers must still watch out for interleaving bugs.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="47" sourceendlinenumber="47">然而Orleans可能同时并行执行属于不同激活的多个turn，每一个激活将永远同一时间只执行一个turn。这表示不需要使用锁或者其他同步机制来避免数据竞争或者其他的多线程带来的问题。正如之前提到的，预定的闭包的无法预知的turn交替会导致grain的状态与被预定的时候不同，所以开发者必须注意turn交替产生的bug。</p>
+<h3 id="激活模式" sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="49" sourceendlinenumber="49">激活模式</h3>
+<!--### Activation modes-->
+<!--Orleans supports two modes: single activation mode (default), in which only one simultaneous activation of every grain is created, and stateless worker mode, in which independent activations of a grain are created to increase the throughput. -->
+<!--"Independent" implies that there is no state reconciliation between different activations of the same grain. -->
+<!--So this mode is appropriate for grains that hold no local state, or grains whose local state is static, such as a grain that acts as a cache of persistent state-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="55" sourceendlinenumber="57">Orleans支持两种模式：单激活模式（默认），每个grain仅有一个激活。和无状态可做模式，一个grain有多个独立激活创建来提高吞吐。
+“独立”指的是同一个grain的不同激活之间没有状态协调。
+所以这个模式适合本地无状态的grain，或者本地状态是静态的grain，例如一个用作持久状态缓存的grain。</p>
+<h2 id="next" sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="59" sourceendlinenumber="59">Next</h2>
+<!--## Next-->
+<!--Next we look at Silos, a unit for hosting grains.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="62" sourceendlinenumber="62">下面我来看一下Silos，grain的宿主单元。</p>
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="64" sourceendlinenumber="64"><a href="Silos.html" sourcefile="Documentation/Getting-Started-With-Orleans/Grains.md" sourcestartlinenumber="64" sourceendlinenumber="64">Silos</a></p>
 
             </article>
           </div>

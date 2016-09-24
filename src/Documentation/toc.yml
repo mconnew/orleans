@@ -1,42 +1,42 @@
-- name: Introduction
+- name: 简介
   href: Introduction.md
   homepage: Introduction.md
   items:
-  - name: Benefits
+  - name: 优点
     href: Benefits.md
   - name: What's new in Orleans
     href: What's-new-in-Orleans.md
-  - name: Frequently Asked Questions
+  - name: 常见问题
     href: Frequently-Asked-Questions.md
-- name: Installation
+- name: 安装
   items:
-  - name: Prerequisites
+  - name: 必备条件
     href: Installation/prerequisites.md
   - name: NuGet Packages
     href: Installation/NuGets.md
-- name: Getting Started with Orleans
+- name: Orleans入门
   href: Getting-Started-With-Orleans/Grains.md
   homepage: Getting-Started-With-Orleans/Grains.md
   items:
   - name: Grains
     href: Getting-Started-With-Orleans/Grains.md
-  - name: Developing a Grain
+  - name: 开发一个Grain
     href: Getting-Started-With-Orleans/Developing-a-Grain.md
-  - name: Developing a Client
+  - name: 开发一个Client
     href: Getting-Started-With-Orleans/Developing-a-Client.md
-  - name: Grain Persistence
+  - name: Grain持久化
     href: Getting-Started-With-Orleans/Grain-Persistence.md
   - name: Observers
     href: Getting-Started-With-Orleans/Observers.md
-  - name: Running the Application
+  - name: 运行应用
     href: Getting-Started-With-Orleans/Running-the-Application.md
   - name: Silos
     href: Getting-Started-With-Orleans/Silos.md
   - name: Clients
     href: Getting-Started-With-Orleans/Clients.md
-  - name: Debugging
+  - name: 调试
     href: Getting-Started-With-Orleans/Debugging.md
-- name: Advanced Concepts
+- name: 高级概念
   items:
   - name: Interceptors
     href: Advanced-Concepts/Interceptors.md
@@ -50,7 +50,7 @@
     href: Advanced-Concepts/Serialization.md
   - name: Silo Error Code Monitoring
     href: Advanced-Concepts/Silo-Error-Code-Monitoring.md
-  - name: Timers and Reminders
+  - name: 定时器（Timers）和（Reminders）
     href: Advanced-Concepts/Timers-and-Reminders.md
   - name: Using Azure Web Apps
     href: Advanced-Concepts/Using-Azure-Web-Apps.md
@@ -58,7 +58,7 @@
     href: Advanced-Concepts/Using-Immutable-to-Optimize-Copying.md
   - name: Activation Garbage Collection
     href: Advanced-Concepts/Activation-Garbage-Collection.md
-  - name: Application Bootstrap within a Silo
+  - name: Silo中的应用引导
     href: Advanced-Concepts/Application-Bootstrap-within-a-Silo.md
   - name: Dependency Injection
     href: Advanced-Concepts/Dependency-Injection.md
@@ -72,7 +72,7 @@
     href: Advanced-Concepts/External-Tasks-and-Grains.md
   - name: Deployment and Versioning of Dependencies
     href: Advanced-Concepts/Deployment-and-Versioning-of-Dependencies.md
-  - name: Troubleshooting Deployments
+  - name: 部署故障排除
     href: Advanced-Concepts/Troubleshooting-Deployments.md
   - name: Powershell Client
     href: Advanced-Concepts/Powershell-Client.md   
@@ -91,11 +91,11 @@
     - name: Load Balancing
       href: Runtime-Implementation-Details/Load-Balancing.md
 
-- name: Streams
+- name: 流（Streams）
   href: Orleans-Streams/index.md
   homepage: Orleans-Streams/index.md
   items:
-    - name: Streams-Quick-Start
+    - name: 流快速入门
       href: Orleans-Streams/Streams-Quick-Start.md
     - name: Streams Why
       href: Orleans-Streams/Streams-Why.md

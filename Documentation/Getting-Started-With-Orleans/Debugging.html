@@ -8,7 +8,7 @@
     <title>Debugging and Symbols | Microsoft Orleans Website </title>
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Debugging and Symbols | Microsoft Orleans Website ">
-    <meta name="generator" content="docfx 2.5.3.0">
+    <meta name="generator" content="docfx 2.5.4.0">
     
     <link rel="shortcut icon" href="../../favicon.ico">
     <link rel="stylesheet" href="../../styles/docfx.vendor.css">
@@ -72,13 +72,18 @@
           <div class="col-md-10">
             <article class="content wrap" id="_content" data-uid="">
               
-              <p sourcefile="Documentation/Getting-Started-With-Orleans/Debugging.md" sourcestartlinenumber="7" sourceendlinenumber="9">An Orleans-based application can be easily debugged during development by simply attaching debugger to the silo host process, such as a host crteated with the Orleans Dev/Test Host project template, OrleansHost.exe, Azure Compute Emulator or any other host process.
-In production, it is rarely a good idea to stop a silo at a breakpoint because the frozen silo will soon get voted dead by the cluster membership protocol and will not be able to communicate with other silos in the cluster.
-Hence, in productions tracing is the primary &#39;debugging&#39; mechanism.</p>
-<h2 id="symbols" sourcefile="Documentation/Getting-Started-With-Orleans/Debugging.md" sourcestartlinenumber="12" sourceendlinenumber="12">Symbols</h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Debugging.md" sourcestartlinenumber="13" sourceendlinenumber="13">Symbols for Orleans binaries are published to <a href="https://nuget.smbsrc.net" sourcefile="Documentation/Getting-Started-With-Orleans/Debugging.md" sourcestartlinenumber="13" sourceendlinenumber="13"><a href="https://nuget.smbsrc.net" sourcefile="Documentation/Getting-Started-With-Orleans/Debugging.md" sourcestartlinenumber="13" sourceendlinenumber="13">https://nuget.smbsrc.net</a></a> symbols server. Add it to the list of symbols server in the Visual Studio options under Debugging/Symbols for debugging Orleans code. Make sure there is traling slash in the URL. Visual Studio 2015 has a bug with parsing it.</p>
-<h2 id="sources" sourcefile="Documentation/Getting-Started-With-Orleans/Debugging.md" sourcestartlinenumber="15" sourceendlinenumber="15">Sources</h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Debugging.md" sourcestartlinenumber="17" sourceendlinenumber="17">You can download zipped sources for specific releases of Orleans from the <a href="https://github.com/dotnet/orleans/releases" sourcefile="Documentation/Getting-Started-With-Orleans/Debugging.md" sourcestartlinenumber="17" sourceendlinenumber="17">Releases page</a>.</p>
+              <!--An Orleans-based application can be easily debugged during development by simply attaching debugger to the silo host process, such as a host crteated with the Orleans Dev/Test Host project template, OrleansHost.exe, Azure Compute Emulator or any other host process.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Debugging.md" sourcestartlinenumber="8" sourceendlinenumber="12">通过简单地给silo宿主进程附加调试器，可以很容易地在开发阶段调试基于Orleans的应用，例如一个使用Dev/Test宿主工程模板开发的宿主，OrleansHost.exe、Auzure Compute Emulator或者任何其他的宿主进程。
+<!--In production, it is rarely a good idea to stop a silo at a breakpoint because the frozen silo will soon get voted dead by the cluster membership protocol and will not be able to communicate with other silos in the cluster.-->
+在生产环境，使用断点调试silo不是个好想法，因为暂停住的silo很快会因为集群成员协议被投票判定为死亡并且不会再与集群中其他的silo进行通讯。
+<!--Hence, in productions tracing is the primary 'debugging' mechanism.-->
+因此，在生产环境追踪是主要的“调试”机制。</p>
+<h2 id="symbols" sourcefile="Documentation/Getting-Started-With-Orleans/Debugging.md" sourcestartlinenumber="15" sourceendlinenumber="15">Symbols</h2>
+<!--Symbols for Orleans binaries are published to [https://nuget.smbsrc.net](https://nuget.smbsrc.net) symbols server. Add it to the list of symbols server in the Visual Studio options under Debugging/Symbols for debugging Orleans code. Make sure there is traling slash in the URL. Visual Studio 2015 has a bug with parsing it.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Debugging.md" sourcestartlinenumber="17" sourceendlinenumber="17">Orleans二进制可执行程序的调试符文件发布在调试服务器 <a href="https://nuget.smbsrc.net" sourcefile="Documentation/Getting-Started-With-Orleans/Debugging.md" sourcestartlinenumber="17" sourceendlinenumber="17"><a href="https://nuget.smbsrc.net" sourcefile="Documentation/Getting-Started-With-Orleans/Debugging.md" sourcestartlinenumber="17" sourceendlinenumber="17">https://nuget.smbsrc.net</a></a> 。将这个调试符服务器添加到Visual Studio 调试符服务器列表配置中在 Debugging/Symbols。确保URL结尾有有斜杠。Visual Studio 2015在解析URL的时候有个BUG。</p>
+<h2 id="sources" sourcefile="Documentation/Getting-Started-With-Orleans/Debugging.md" sourcestartlinenumber="19" sourceendlinenumber="19">Sources</h2>
+<!--You can download zipped sources for specific releases of Orleans from the [Releases page](https://github.com/dotnet/orleans/releases).-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Debugging.md" sourcestartlinenumber="22" sourceendlinenumber="22">你可以从<a href="https://github.com/dotnet/orleans/releases" sourcefile="Documentation/Getting-Started-With-Orleans/Debugging.md" sourcestartlinenumber="22" sourceendlinenumber="22">Releases page</a>下载压缩了特定发布版本的Orleans源码。</p>
 
             </article>
           </div>

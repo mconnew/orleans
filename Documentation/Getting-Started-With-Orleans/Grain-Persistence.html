@@ -8,7 +8,7 @@
     <title>Grain Persistence | Microsoft Orleans Website </title>
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Grain Persistence | Microsoft Orleans Website ">
-    <meta name="generator" content="docfx 2.5.3.0">
+    <meta name="generator" content="docfx 2.5.4.0">
     
     <link rel="shortcut icon" href="../../favicon.ico">
     <link rel="stylesheet" href="../../styles/docfx.vendor.css">
@@ -71,33 +71,50 @@
         <div class="article row grid-right">
           <div class="col-md-10">
             <article class="content wrap" id="_content" data-uid="">
-              <h2 id="grain-persistence-goals" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="7" sourceendlinenumber="7">Grain Persistence Goals</h2>
               
-<ol sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="9" sourceendlinenumber="13">
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="9" sourceendlinenumber="9">Allow different grain types to use different types of storage providers (e.g., one uses Azure table, and one uses an ADO.NET one) or the same type of storage provider but with different configurations (e.g., both use Azure table, but one uses storage account #1 and one uses storage account #2)</li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="10" sourceendlinenumber="10">Allow configuration of a storage provider instance to be swapped (e.g., Dev-Test-Prod) with just config file changes, and no code changes required.</li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="11" sourceendlinenumber="11">Provide a framework to allow additional storage providers to be written later, either by the Orleans team or others.</li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="12" sourceendlinenumber="12">Provide a minimal set of production-grade storage providers</li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="13" sourceendlinenumber="13">Storage providers have complete control over how they store grain state data in persistent backing store. Corollary: Orleans is not providing a comprehensive ORM storage solution, but allows custom storage providers to support specific ORM requirements as and when required.</li>
+              <p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="5" sourceendlinenumber="5">{% include JB/setup %}</p>
+<h2 id="grain持久化的目标" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="7" sourceendlinenumber="7">grain持久化的目标</h2>
+<!--## Grain Persistence Goals-->
+<!--1. Allow different grain types to use different types of storage providers (e.g., one uses Azure table, and one uses an ADO.NET one) or the same type of storage provider but with different configurations (e.g., both use Azure table, but one uses storage account #1 and one uses storage account #2)-->
+<!--2. Allow configuration of a storage provider instance to be swapped (e.g., Dev-Test-Prod) with just config file changes, and no code changes required.-->
+<!--3. Provide a framework to allow additional storage providers to be written later, either by the Orleans team or others.-->
+<!--4. Provide a minimal set of production-grade storage providers-->
+<!--5. Storage providers have complete control over how they store grain state data in persistent backing store. Corollary: Orleans is not providing a comprehensive ORM storage solution, but allows custom storage providers to support specific ORM requirements as and when required.-->
+<ol sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="15" sourceendlinenumber="19">
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="15" sourceendlinenumber="15">允许不同的grain类型使用不同的存储（例如，一个使用Azure table，一个使用ADO.NET的 Azure）或者同样类型的存储但是使用不同的配置（例如，都使用Azure table但是一个使用存储帐号＃1，一个使用存储帐号＃2）</li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="16" sourceendlinenumber="16">允许仅仅改变配置文件而不改变代码来实现一个存储提供者的配置转换（例如，开发－测试－生产之间转换）。</li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="17" sourceendlinenumber="17">提供一个框架来允许添加之后编写的额外的存储提供者，不管是Orleans团队编写的还是其他人编写的。</li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="18" sourceendlinenumber="18">提供一小部分生产级别的存储提供者。</li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="19" sourceendlinenumber="19">存储提供者对于如何在持久化后段存储存储grain的状态有完全的控制权。结论是：Orleans不提供全面的ORM解决方案，但是当有需要 时允许定制存储提供者来支持特定的ORM需求。</li>
 </ol>
-<h2 id="grain-persistence-api" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="15" sourceendlinenumber="15">Grain Persistence API</h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="17" sourceendlinenumber="17">Grain types can be declared in one of two ways:</p>
-<ul sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="19" sourceendlinenumber="21">
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="19" sourceendlinenumber="19">Extend <code>Grain</code> if they do not have any persistent state, or if they will handle all persistent state themselves, or</li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="20" sourceendlinenumber="21">Extend <code>Grain&lt;T&gt;</code> if they have some persistent state that they want the Orleans runtime to handle.
-Stated another way, by extending <code>Grain&lt;T&gt;</code> a grain type is automatically opted-in to the Orleans system managed persistence framework.</li>
+<h2 id="grain持久化api" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="21" sourceendlinenumber="21">grain持久化API</h2>
+<!--## Grain Persistence API-->
+<!--Grain types can be declared in one of two ways:-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="25" sourceendlinenumber="25">grain类型可以用一下其中一种方式声明：</p>
+<!--* Extend `Grain` if they do not have any persistent state, or if they will handle all persistent state themselves, or-->
+<!--* Extend `Grain<T>` if they have some persistent state that they want the Orleans runtime to handle.-->
+<!--Stated another way, by extending `Grain<T>` a grain type is automatically opted-in to the Orleans system managed persistence framework.-->
+<ul sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="30" sourceendlinenumber="32">
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="30" sourceendlinenumber="30">扩展<code>Grain</code>，如果他们没有任何持久化的状态或者他们自己能够处理所有持久化的状态，或者</li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="31" sourceendlinenumber="32">扩展<code>Grain&lt;T&gt;</code>，如果他们有想要Orleans运行处理的持久化的状态。
+换句话说，使用扩展<code>Grain&lt;T&gt;</code>的方式声明grain类型就是自动选择了Orleans系统管理的持久化框架。</li>
 </ul>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="23" sourceendlinenumber="23">For the remainder of this section, we will only be considering Option #2 / <code>Grain&lt;T&gt;</code> because Option #1 grains will continue to run as now without any behavior changes.</p>
-<h2 id="grain-state-stores" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="25" sourceendlinenumber="25">Grain State Stores</h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="27" sourceendlinenumber="27">Grain classes that inherit from <code>Grain&lt;T&gt;</code> (where <code>T</code> is an application-specific state data type derived from <code>GrainState</code>) will have their state loaded automatically from a specified storage.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="29" sourceendlinenumber="29">Grains will be marked with a <code>[StorageProvider]</code> attribute that specifies a named instance of a storage provider to use for reading / writing the state data for this grain.</p>
-<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="31" sourceendlinenumber="37"><code class="lang-csharp">[StorageProvider(ProviderName=&quot;store1&quot;)]
+<!--For the remainder of this section, we will only be considering Option #2 / `Grain<T>` because Option #1 grains will continue to run as now without any behavior changes.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="35" sourceendlinenumber="35">这节其余的部分，我们只考虑第二种情况<code>Grain&lt;T&gt;</code>，因为第一种情况grain会继续运行不会有任何的行为变化。</p>
+<h2 id="grain状态存储" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="37" sourceendlinenumber="37">grain状态存储</h2>
+<!--## Grain State Stores-->
+<!--Grain classes that inherit from `Grain<T>` (where `T` is an application-specific state data type derived from `GrainState`) will have their state loaded automatically from a specified storage.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="41" sourceendlinenumber="41">继承自<code>Grain&lt;T&gt;</code>（T是一个派生自<code>GrainState</code>的应用相关的状态数据）的grain类将会村特定的存储中自动地加载他们的状态。</p>
+<!--Grains will be marked with a `[StorageProvider]` attribute that specifies a named instance of a storage provider to use for reading / writing the state data for this grain.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="44" sourceendlinenumber="44">grain将会被一个指定了存储提供者命名实例的<code>[StorageProvider]</code>特性所标记，用来为grain读取／写入状态数据。</p>
+<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="46" sourceendlinenumber="52"><code class="lang-csharp">[StorageProvider(ProviderName=&quot;store1&quot;)]
 public class MyGrain&lt;MyGrainState&gt; ...
 {
   ...
 }
-</code></pre><p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="39" sourceendlinenumber="39">The Orleans Provider Manager framework provides a mechanism to specify &amp; register different storage providers and storage options in the silo config file.</p>
-<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="41" sourceendlinenumber="51"><code class="lang-xml">&lt;OrleansConfiguration xmlns=&quot;urn:orleans&quot;&gt;
+</code></pre><!--The Orleans Provider Manager framework provides a mechanism to specify & register different storage providers and storage options in the silo config file.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="55" sourceendlinenumber="55">Orleans提供者管理框架提供了一个指定&amp;注册不同存储提供者的机制并且把选项存储silo的配置文件中。</p>
+<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="57" sourceendlinenumber="67"><code class="lang-xml">&lt;OrleansConfiguration xmlns=&quot;urn:orleans&quot;&gt;
     &lt;Globals&gt;
     &lt;StorageProviders&gt;
         &lt;Provider Type=&quot;Orleans.Storage.MemoryStorage&quot; Name=&quot;DevStore&quot; /&gt;
@@ -106,120 +123,180 @@ public class MyGrain&lt;MyGrainState&gt; ...
         &lt;Provider Type=&quot;Orleans.Storage.AzureBlobStorage&quot; Name=&quot;store2&quot;
             DataConnectionString=&quot;DefaultEndpointsProtocol=https;AccountName=data2;AccountKey=SOMETHING2&quot;  /&gt;
     &lt;/StorageProviders&gt;
-</code></pre><h2 id="configuring-storage-providers" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="53" sourceendlinenumber="53">Configuring Storage Providers</h2>
-<h3 id="azuretablestorage" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="55" sourceendlinenumber="55">AzureTableStorage</h3>
-<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="57" sourceendlinenumber="60"><code class="lang-xml">&lt;Provider Type=&quot;Orleans.Storage.AzureTableStorage&quot; Name=&quot;TableStore&quot;
+</code></pre><h2 id="配置存储提供者" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="69" sourceendlinenumber="69">配置存储提供者</h2>
+<!--## Configuring Storage Providers-->
+<h3 id="azuretablestorage" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="72" sourceendlinenumber="72">AzureTableStorage</h3>
+<!--### AzureTableStorage-->
+<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="75" sourceendlinenumber="78"><code class="lang-xml">&lt;Provider Type=&quot;Orleans.Storage.AzureTableStorage&quot; Name=&quot;TableStore&quot;
     DataConnectionString=&quot;UseDevelopmentStorage=true&quot; /&gt;
-</code></pre><p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="62" sourceendlinenumber="62">The following attributes can be added to the <code>&lt;Provider /&gt;</code> element to configure the provider:</p>
-<ul sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="64" sourceendlinenumber="69">
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="64" sourceendlinenumber="64"><strong><code>DataConnectionString=&quot;...&quot;</code></strong> (mandatory) - The Azure storage connection string to use</li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="65" sourceendlinenumber="65"><strong><code>TableName=&quot;OrleansGrainState&quot;</code></strong> (optional) - The table name to use in table storage, defaults to <code>OrleansGrainState</code></li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="66" sourceendlinenumber="66"><strong><code>DeleteStateOnClear=&quot;false&quot;</code></strong> (optional) - If true, the record will be deleted when grain state is cleared, otherwise an null record will be written, defaults to <code>false</code></li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="67" sourceendlinenumber="67"><strong><code>UseJsonFormat=&quot;false&quot;</code></strong> (optional) - If true, the json serializer will be used, otherwise the Orleans binary serializer will be used, defaults to <code>false</code></li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="68" sourceendlinenumber="68"><strong><code>UseFullAssemblyNames=&quot;false&quot;</code></strong> (optional) - (if <code>UseJsonFormat=&quot;true&quot;</code>) Serializes types with full assembly names (true) or simple (false), defaults to <code>false</code></li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="69" sourceendlinenumber="69"><strong><code>IndentJSON=&quot;false&quot;</code></strong> (optional) - (if <code>UseJsonFormat=&quot;true&quot;</code>) Indents the serialized json, defaults to <code>false</code></li>
+</code></pre><!--The following attributes can be added to the `<Provider />` element to configure the provider:-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="81" sourceendlinenumber="81">下面的特性可以被添加到<code>&lt;Provider /&gt;</code>元素中来配置提供者：</p>
+<!--* __`DataConnectionString="..."`__ (mandatory) - The Azure storage connection string to use-->
+<!--* __`TableName="OrleansGrainState"`__ (optional) - The table name to use in table storage, defaults to `OrleansGrainState`-->
+<!--* __`DeleteStateOnClear="false"`__ (optional) - If true, the record will be deleted when grain state is cleared, otherwise an null record will be written, defaults to `false`-->
+<!--* __`UseJsonFormat="false"`__ (optional) - If true, the json serializer will be used, otherwise the Orleans binary serializer will be used, defaults to `false`-->
+<!--* __`UseFullAssemblyNames="false"`__ (optional) - (if `UseJsonFormat="true"`) Serializes types with full assembly names (true) or simple (false), defaults to `false`-->
+<!--* __`IndentJSON="false"`__ (optional) - (if `UseJsonFormat="true"`) Indents the serialized json, defaults to `false`-->
+<ul sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="89" sourceendlinenumber="94">
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="89" sourceendlinenumber="89"><strong><code>DataConnectionString=&quot;...&quot;</code></strong> （必选） － Azure storage的连接字符串</li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="90" sourceendlinenumber="90"><strong><code>TableName=&quot;OrleansGrainState&quot;</code></strong> （可选） － 表存储用的表名，默认是<code>OrleansGrainState</code></li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="91" sourceendlinenumber="91"><strong><code>DeleteStateOnClear=&quot;false&quot;</code></strong> （可选） － 如果是true，在清除的时候记录会被删除，否则会写入一条null数据，默认是<code>false</code></li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="92" sourceendlinenumber="92"><strong><code>UseJsonFormat=&quot;false&quot;</code></strong> （可选） － 如果是true，将使用json序列化，否则将会使用Orleans二进制序列化，默人是<code>false</code></li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="93" sourceendlinenumber="93"><strong><code>UseFullAssemblyNames=&quot;false&quot;</code></strong> （可选） － （如果<code>UseJsonFormat=&quot;true&quot;</code>） 序列化的类型带有完整的程序集名字（true）或者简单的名字（false）, 默认是<code>false</code></li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="94" sourceendlinenumber="94"><strong><code>IndentJSON=&quot;false&quot;</code></strong> （可选） － （如果<code>UseJsonFormat=&quot;true&quot;</code>） 缩进序列化后的json，默人是<code>false</code></li>
 </ul>
-<blockquote sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="71" sourceendlinenumber="71"><p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="71" sourceendlinenumber="71"><strong>Note:</strong> state should not exceed 64KB, a limit imposed by Table Storage.</p>
+<!--> __Note:__ state should not exceed 64KB, a limit imposed by Table Storage.-->
+<blockquote sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="97" sourceendlinenumber="97"><p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="97" sourceendlinenumber="97"><strong>注意：</strong> 状态不要超出64KB，Azure Table Storage的强制限制。</p>
 </blockquote>
-<h3 id="azureblobstorage" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="73" sourceendlinenumber="73">AzureBlobStorage</h3>
-<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="75" sourceendlinenumber="78"><code class="lang-xml">&lt;Provider Type=&quot;Orleans.Storage.AzureTableStorage&quot; Name=&quot;BlobStore&quot;
+<h3 id="azureblobstorage" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="99" sourceendlinenumber="99">AzureBlobStorage</h3>
+<!--### AzureBlobStorage-->
+<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="102" sourceendlinenumber="105"><code class="lang-xml">&lt;Provider Type=&quot;Orleans.Storage.AzureTableStorage&quot; Name=&quot;BlobStore&quot;
     DataConnectionString=&quot;UseDevelopmentStorage=true&quot; /&gt;
-</code></pre><p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="80" sourceendlinenumber="80">The following attributes can be added to the <code>&lt;Provider /&gt;</code> element to configure the provider:</p>
-<ul sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="82" sourceendlinenumber="85">
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="82" sourceendlinenumber="82"><strong><code>DataConnectionString=&quot;...&quot;</code></strong> (mandatory) - The Azure storage connection string to use</li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="83" sourceendlinenumber="83"><strong><code>ContainerName=&quot;grainstate&quot;</code></strong> (optional) - The blob storage container to use, defaults to <code>grainstate</code></li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="84" sourceendlinenumber="84"><strong><code>UseFullAssemblyNames=&quot;false&quot;</code></strong> (optional) - Serializes types with full assembly names (true) or simple (false), defaults to <code>false</code></li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="85" sourceendlinenumber="85"><strong><code>IndentJSON=&quot;false&quot;</code></strong> (optional) - Indents the serialized json, defaults to <code>false</code></li>
+</code></pre><!--The following attributes can be added to the `<Provider />` element to configure the provider:-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="108" sourceendlinenumber="108">下面的特性可以被添加到<code>&lt;Provider /&gt;</code>元素中来配置提供者：</p>
+<!--* __`DataConnectionString="..."`__ (mandatory) - The Azure storage connection string to use-->
+<!--* __`ContainerName="grainstate"`__ (optional) - The blob storage container to use, defaults to `grainstate`-->
+<!--* __`UseFullAssemblyNames="false"`__ (optional) - Serializes types with full assembly names (true) or simple (false), defaults to `false`-->
+<!--* __`IndentJSON="false"`__ (optional) - Indents the serialized json, defaults to `false`-->
+<ul sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="114" sourceendlinenumber="117">
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="114" sourceendlinenumber="114"><strong><code>DataConnectionString=&quot;...&quot;</code></strong> (必选) - Azure storage的连接字符串</li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="115" sourceendlinenumber="115"><strong><code>ContainerName=&quot;grainstate&quot;</code></strong> (可选) - 使用的blob storage container，默认是<code>grainstate</code></li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="116" sourceendlinenumber="116"><strong><code>UseFullAssemblyNames=&quot;false&quot;</code></strong> (可选) - 序列化的类型带有完整的程序集名字（true）或者简单的名字（false）, 默认是<code>false</code></li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="117" sourceendlinenumber="117"><strong><code>IndentJSON=&quot;false&quot;</code></strong> (可选) - 序列化后的json包含缩进，默认是<code>false</code></li>
 </ul>
-<h3 id="dynamodbstorageprovider" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="87" sourceendlinenumber="87">DynamoDBStorageProvider</h3>
-<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="89" sourceendlinenumber="92"><code class="lang-xml">&lt;Provider Type=&quot;Orleans.Storage.DynamoDBStorageProvider&quot; Name=&quot;DDBStore&quot;
+<h3 id="dynamodbstorageprovider" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="119" sourceendlinenumber="119">DynamoDBStorageProvider</h3>
+<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="121" sourceendlinenumber="124"><code class="lang-xml">&lt;Provider Type=&quot;Orleans.Storage.DynamoDBStorageProvider&quot; Name=&quot;DDBStore&quot;
     DataConnectionString=&quot;Service=us-wes-1;AccessKey=MY_ACCESS_KEY;SecretKey=MY_SECRET_KEY;&quot; /&gt;
-</code></pre><ul sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="94" sourceendlinenumber="99">
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="94" sourceendlinenumber="94"><strong><code>DataConnectionString=&quot;...&quot;</code></strong> (mandatory) - The DynamoDB storage connection string to use. You can set <code>Service</code>,<code>AccessKey</code>, <code>SecretKey</code>, <code>ReadCapacityUnits</code> and <code>WriteCapacityUnits</code> in it.</li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="95" sourceendlinenumber="95"><strong><code>TableName=&quot;OrleansGrainState&quot;</code></strong> (optional) - The table name to use in table storage, defaults to <code>OrleansGrainState</code></li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="96" sourceendlinenumber="96"><strong><code>DeleteStateOnClear=&quot;false&quot;</code></strong> (optional) - If true, the record will be deleted when grain state is cleared, otherwise an null record will be written, defaults to <code>false</code></li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="97" sourceendlinenumber="97"><strong><code>UseJsonFormat=&quot;false&quot;</code></strong> (optional) - If true, the json serializer will be used, otherwise the Orleans binary serializer will be used, defaults to <code>false</code></li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="98" sourceendlinenumber="98"><strong><code>UseFullAssemblyNames=&quot;false&quot;</code></strong> (optional) - (if <code>UseJsonFormat=&quot;true&quot;</code>) Serializes types with full assembly names (true) or simple (false), defaults to <code>false</code></li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="99" sourceendlinenumber="99"><strong><code>IndentJSON=&quot;false&quot;</code></strong> (optional) - (if <code>UseJsonFormat=&quot;true&quot;</code>) Indents the serialized json, defaults to <code>false</code></li>
+</code></pre><ul sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="126" sourceendlinenumber="131">
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="126" sourceendlinenumber="126"><strong><code>DataConnectionString=&quot;...&quot;</code></strong> (必选) - DynamoDB使用的连接字符串。 你可以设置<code>Service</code>,<code>AccessKey</code>, <code>SecretKey</code>, <code>ReadCapacityUnits</code>和<code>WriteCapacityUnits</code>。</li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="127" sourceendlinenumber="127"><strong><code>TableName=&quot;OrleansGrainState&quot;</code></strong> (可选) - 表存储用的表名，默认是<code>OrleansGrainState</code></li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="128" sourceendlinenumber="128"><strong><code>DeleteStateOnClear=&quot;false&quot;</code></strong> (可选) - 如果是true，在清除的时候记录会被删除，否则会写入一条null数据，默认是<code>false</code></li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="129" sourceendlinenumber="129"><strong><code>UseJsonFormat=&quot;false&quot;</code></strong> (可选) - 如果是true，将使用json序列化，否则将会使用Orleans二进制序列化，默人是<code>false</code></li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="130" sourceendlinenumber="130"><strong><code>UseFullAssemblyNames=&quot;false&quot;</code></strong> (可选) - (如果 <code>UseJsonFormat=&quot;true&quot;</code>) 序列化的类型带有完整的程序集名字（true）或者简单的名字（false）, 默认是<code>false</code></li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="131" sourceendlinenumber="131"><strong><code>IndentJSON=&quot;false&quot;</code></strong> (可选) - (如果<code>UseJsonFormat=&quot;true&quot;</code>) 缩进序列化后的json，默人是<code>false</code></li>
 </ul>
-<h3 id="adonet-storage-provider-sql-storage-provider" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="102" sourceendlinenumber="102">ADO.NET Storage Provider (SQL Storage Provider)</h3>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="104" sourceendlinenumber="104">Note that to use the it is necessary to deploy the database script to the database. It can be found in the The scripts are located in the Nuget library, similar to <code>\packages\Microsoft.Orleans.OrleansSqlUtils.n.n.n\lib\net&lt;version&gt;\SQLServer\</code> depending on version and database vendor.</p>
-<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="106" sourceendlinenumber="108"><code class="lang-xml">&lt;Provider Type=&quot;Orleans.SqlUtils.StorageProvider.SqlStorageProvider&quot; Name=&quot;SqlStore&quot; DataConnectionString=&quot;Data Source = (localdb)\MSSQLLocalDB; Database = OrleansTestStorage; Integrated Security = True; Asynchronous Processing = True; Max Pool Size = 200;&quot; /&gt;
-</code></pre><ul sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="110" sourceendlinenumber="113">
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="110" sourceendlinenumber="110"><strong><code>DataConnectionString=&quot;...&quot;</code></strong> (mandatory) - The SQL connection string to use.</li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="111" sourceendlinenumber="111"><strong><code>UseJsonFormat=&quot;false&quot;</code></strong> (optional) - If true, the json serializer will be used, otherwise the Orleans binary serializer will be used, defaults to <code>false</code>.</li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="112" sourceendlinenumber="112"><strong><code>UseXmlFormat=&quot;false&quot;</code></strong> (optional) - If true, the .NET XML serializer will be used, otherwise the Orleans binary serializer will be used, defaults to <code>false</code>.</li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="113" sourceendlinenumber="113"><strong><code>UseBinaryFormat=&quot;false&quot;</code></strong> (the default) - If true, the Orleans binary data format will be used.</li>
+<!--
+* __`DataConnectionString="..."`__ (mandatory) - The DynamoDB storage connection string to use. You can set `Service`,`AccessKey`, `SecretKey`, `ReadCapacityUnits` and `WriteCapacityUnits` in it.
+* __`TableName="OrleansGrainState"`__ (optional) - The table name to use in table storage, defaults to `OrleansGrainState`
+* __`DeleteStateOnClear="false"`__ (optional) - If true, the record will be deleted when grain state is cleared, otherwise an null record will be written, defaults to `false`
+* __`UseJsonFormat="false"`__ (optional) - If true, the json serializer will be used, otherwise the Orleans binary serializer will be used, defaults to `false`
+* __`UseFullAssemblyNames="false"`__ (optional) - (if `UseJsonFormat="true"`) Serializes types with full assembly names (true) or simple (false), defaults to `false`
+* __`IndentJSON="false"`__ (optional) - (if `UseJsonFormat="true"`) Indents the serialized json, defaults to `false`
+-->
+<h3 id="adonet-storage-provider-sql-storage-provider" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="144" sourceendlinenumber="144">ADO.NET Storage Provider (SQL Storage Provider)</h3>
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="146" sourceendlinenumber="146">Note that to use the it is necessary to deploy the database script to the database. It can be found in the The scripts are located in the Nuget library, similar to <code>\packages\Microsoft.Orleans.OrleansSqlUtils.n.n.n\lib\net&lt;version&gt;\SQLServer\</code> depending on version and database vendor.</p>
+<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="150" sourceendlinenumber="154"><code class="lang-xml">&lt;Provider Type=&quot;Orleans.SqlUtils.StorageProvider.SqlStorageProvider&quot; Name=&quot;SqlStore&quot; DataConnectionString=&quot;Data Source = (localdb)\MSSQLLocalDB; Database = OrleansTestStorage; Integrated Security = True; Asynchronous Processing = True; Max Pool Size = 200;&quot; /&gt;
+</code></pre><ul sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="156" sourceendlinenumber="165">
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="156" sourceendlinenumber="156"><p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="156" sourceendlinenumber="156"><strong><code>DataConnectionString=&quot;...&quot;</code></strong> (mandatory) - The SQL connection string to use.</p>
+</li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="163" sourceendlinenumber="163"><p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="163" sourceendlinenumber="163"><strong><code>UseJsonFormat=&quot;false&quot;</code></strong> (optional) - If true, the json serializer will be used, otherwise the Orleans binary serializer will be used, defaults to <code>false</code>.</p>
+</li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="164" sourceendlinenumber="164"><strong><code>UseXmlFormat=&quot;false&quot;</code></strong> (optional) - If true, the .NET XML serializer will be used, otherwise the Orleans binary serializer will be used, defaults to <code>false</code>.</li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="165" sourceendlinenumber="165"><strong><code>UseBinaryFormat=&quot;false&quot;</code></strong> (the default) - If true, the Orleans binary data format will be used.</li>
 </ul>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="115" sourceendlinenumber="115">Note that pool size of 200 is quite a low figure.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="117" sourceendlinenumber="117">The following is an example of programmatic configuration.</p>
-<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="119" sourceendlinenumber="125"><code class="lang-csharp">//props[&quot;RootDirectory&quot;] = @&quot;.\Samples.FileStorage&quot;;
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="167" sourceendlinenumber="167">Note that pool size of 200 is quite a low figure.</p>
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="169" sourceendlinenumber="169">The following is an example of programmatic configuration.</p>
+<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="171" sourceendlinenumber="177"><code class="lang-csharp">//props[&quot;RootDirectory&quot;] = @&quot;.\Samples.FileStorage&quot;;
 //config.Globals.RegisterStorageProvider&lt;Samples.StorageProviders.OrleansFileStorage&gt;(&quot;TestStore&quot;, props);
 props[Orleans.Storage.AdoNetStorageProvider.DataConnectionStringPropertyName] = @&quot;Data Source = (localdb)\MSSQLLocalDB; Database = OrleansTestStorage; Integrated Security = True; Asynchronous Processing = True; Max Pool Size = 200;&quot;;
 props[Orleans.Storage.AdoNetStorageProvider.UseJsonFormatPropertyName] = &quot;true&quot;; //Binary, the default option, is more efficient. This is for illustrative purposes.
 config.Globals.RegisterStorageProvider&lt;Orleans.Storage.AdoNetStorageProvider&gt;(&quot;TestStore&quot;, props);
-</code></pre><p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="127" sourceendlinenumber="127">A quick way to test this is to (see in the aforementioned the few commented lines)</p>
-<ol sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="129" sourceendlinenumber="132">
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="129" sourceendlinenumber="129">Open <code>\Samples\StorageProviders</code>.</li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="130" sourceendlinenumber="130">On the package manager console, run: <code>Install-Package Microsoft.Orleans.OrleansSqlUtils -project Test.Client</code>.</li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="131" sourceendlinenumber="131">Update all the Orleans packages in the solution, run: <code>Get-Package | where Id -like &#39;Microsoft.Orleans.*&#39; | foreach { update-package $_.Id }</code> (this is a precaution to make sure the packages are on same version).</li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="132" sourceendlinenumber="132">Go to <code>OrleansHostWrapper.cs</code> and to the following</li>
+</code></pre><p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="179" sourceendlinenumber="179">A quick way to test this is to (see in the aforementioned the few commented lines)</p>
+<ol sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="181" sourceendlinenumber="184">
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="181" sourceendlinenumber="181">Open <code>\Samples\StorageProviders</code>.</li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="182" sourceendlinenumber="182">On the package manager console, run: <code>Install-Package Microsoft.Orleans.OrleansSqlUtils -project Test.Client</code>.</li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="183" sourceendlinenumber="183">Update all the Orleans packages in the solution, run: <code>Get-Package | where Id -like &#39;Microsoft.Orleans.*&#39; | foreach { update-package $_.Id }</code> (this is a precaution to make sure the packages are on same version).</li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="184" sourceendlinenumber="184">Go to <code>OrleansHostWrapper.cs</code> and to the following</li>
 </ol>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="134" sourceendlinenumber="135">The ADO.NET persistence has functionality to version data and define arbitrary (de)serializers with arbitrary application rules and streaming, but currently
-there is no method to expose them to application code. More information in <a href="#ADONETPersistenceRationale" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="135" sourceendlinenumber="135">ADO.NET Persistence Rationale</a>.</p>
-<h3 id="memorystorage" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="138" sourceendlinenumber="138">MemoryStorage</h3>
-<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="140" sourceendlinenumber="142"><code class="lang-xml">&lt;Provider Type=&quot;Orleans.Storage.MemoryStorage&quot; Name=&quot;MemoryStorage&quot;  /&gt;
-</code></pre><blockquote sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="143" sourceendlinenumber="143"><p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="143" sourceendlinenumber="143"><strong>Note:</strong> This provider persists state to volatile memory which is erased at silo shut down. Use only for testing.</p>
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="186" sourceendlinenumber="187">The ADO.NET persistence has functionality to version data and define arbitrary (de)serializers with arbitrary application rules and streaming, but currently
+there is no method to expose them to application code. More information in <a href="#ADONETPersistenceRationale" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="187" sourceendlinenumber="187">ADO.NET Persistence Rationale</a>.</p>
+<h3 id="memorystorage" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="190" sourceendlinenumber="190">MemoryStorage</h3>
+<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="192" sourceendlinenumber="194"><code class="lang-xml">&lt;Provider Type=&quot;Orleans.Storage.MemoryStorage&quot; Name=&quot;MemoryStorage&quot;  /&gt;
+</code></pre><!--> __Note:__ This provider persists state to volatile memory which is erased at silo shut down. Use only for testing.-->
+<blockquote sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="196" sourceendlinenumber="196"><p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="196" sourceendlinenumber="196"><strong>注意：</strong> 这个提供者将状态持久化到独立内存中，在silo关闭的时候将被清除。只用来测试用。</p>
 </blockquote>
-<ul sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="145" sourceendlinenumber="145">
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="145" sourceendlinenumber="145"><strong><code>NumStorageGrains=&quot;10&quot;</code></strong> (optional) - The number of grains to use to store the state, defaults to <code>10</code></li>
+<!--* __`NumStorageGrains="10"`__ (optional) - The number of grains to use to store the state, defaults to `10`-->
+<ul sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="199" sourceendlinenumber="199">
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="199" sourceendlinenumber="199"><strong><code>NumStorageGrains=&quot;10&quot;</code></strong> (可选) - 用来存储状态的grain的个数，默认是<code>10</code></li>
 </ul>
-<h3 id="shardedstorageprovider" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="148" sourceendlinenumber="148">ShardedStorageProvider</h3>
-<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="150" sourceendlinenumber="156"><code class="lang-xml">&lt;Provider Type=&quot;Orleans.Storage.ShardedStorageProvider&quot; Name=&quot;ShardedStorage&quot;&gt;
+<h3 id="shardedstorageprovider" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="201" sourceendlinenumber="201">ShardedStorageProvider</h3>
+<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="203" sourceendlinenumber="209"><code class="lang-xml">&lt;Provider Type=&quot;Orleans.Storage.ShardedStorageProvider&quot; Name=&quot;ShardedStorage&quot;&gt;
     &lt;Provider /&gt;
     &lt;Provider /&gt;
     &lt;Provider /&gt;
 &lt;/Provider&gt;
-</code></pre><p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="157" sourceendlinenumber="157">Simple storage provider for writing grain state data shared across a number of other storage providers.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="159" sourceendlinenumber="162">A consistent hash function (default is Jenkins Hash) is used to decide which
-shard (in the order they are defined in the config file) is responsible for storing
-state data for a specified grain, then the Read / Write / Clear request
-is bridged over to the appropriate underlying provider for execution.</p>
-<h2 id="notes-on-storage-providers" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="164" sourceendlinenumber="164">Notes on Storage Providers</h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="166" sourceendlinenumber="167">If there is no <code>[StorageProvider]</code> attribute specified for a <code>Grain&lt;T&gt;</code> grain class, then a provider named <code>Default</code> will be searched for instead.
-If not found then this is treated as a missing storage provider.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="169" sourceendlinenumber="169">If there is only one provider in the silo config file, it will be considered to be the <code>Default</code> provider for this silo.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="171" sourceendlinenumber="172">A grain that uses a storage provider which is not present and defined in the silo configuration when the silo loads will fail to load, but the rest of the grains in that silo can still load and run.
-Any later calls to that grain type will fail with an <code>Orleans.Storage.BadProviderConfigException</code> error specifying that the grain type is not loaded.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="174" sourceendlinenumber="174">The storage provider instance to use for a given grain type is determined by the combination of the storage provider name defined in the <code>[StorageProvider]</code> attribute on that grain type, plus the provider type and configuration options for that provider defined in the silo config.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="176" sourceendlinenumber="176">Different grain types can use different configured storage providers, even if both are the same type: for example, two different Azure table storage provider instances, connected to different Azure storage accounts (see config file example above).</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="178" sourceendlinenumber="180">All configuration details for storage providers is defined statically in the silo configuration that is read at silo startup.
-There are <em>no</em> mechanisms provided at this time to dynamically update or change the list of storage providers used by a silo.
-However, this is a prioritization / workload constraint rather than a fundamental design constraint.</p>
-<h2 id="state-storage-apis" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="182" sourceendlinenumber="182">State Storage APIs</h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="184" sourceendlinenumber="184">There are two main parts to the grain state / persistence APIs: Grain-to-Runtime and Runtime-to-Storage-Provider.</p>
-<h2 id="grain-state-storage-api" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="186" sourceendlinenumber="186">Grain State Storage API</h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="188" sourceendlinenumber="189">The grain state storage functionality in the Orleans Runtime will provide read and write operations to automatically populate / save the <code>GrainState</code> data object for that grain.
-Under the covers, these functions will be connected (within the code generated by Orleans client-gen tool) through to the appropriate persistence provider configured for that grain.</p>
-<h2 id="grain-state-read--write-functions" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="191" sourceendlinenumber="191">Grain State Read / Write Functions</h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="193" sourceendlinenumber="194">Grain state will automatically be read when the grain is activated, but grains are responsible for explicitly triggering the write for any changed grain state as and when necessary.
-See the <a href="#FailureModes" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="194" sourceendlinenumber="194">Failure Modes</a> section below for details of error handling mechanisms.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="196" sourceendlinenumber="197"><code>GrainState</code> will be read automatically (using the equivalent of <code>base.ReadStateAsync()</code>) <em>before</em> the <code>OnActivateAsync()</code> method is called for that activation.
-<code>GrainState</code> will not be refreshed before any method calls to that grain, unless the grain was activated for this call.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="199" sourceendlinenumber="202">During any grain method call, a grain can request the Orleans runtime to write the current grain state data for that activation to the designated storage provider by calling <code>base.WriteStateAsync()</code>.
-The grain is responsible for explicitly performing write operations when they make significant updates to their state data.
-Most commonly, the grain method will return the <code>base.WriteStateAsync()</code> <code>Task</code> as the final result <code>Task</code> returned from that grain method, but it is not required to follow this pattern.
-The runtime will not automatically update stored grain state after any grain methods.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="204" sourceendlinenumber="205">During any grain method or timer callback handler in the grain, the grain can request the Orleans runtime to re-read the current grain state data for that activation from the designated storage provider by calling <code>base.ReadStateAsync()</code>.
-This will completely overwrite any current state data currently stored in the grain state object with the latest values read from persistent store.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="207" sourceendlinenumber="208">An opaque provider-specific <code>Etag</code> value (<code>string</code>) <em>may</em> be set by a storage provider as part of the grain state metadata populated when state was read.
-Some providers may choose to leave this as <code>null</code> if they do not use <code>Etag</code>s.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="210" sourceendlinenumber="210">Conceptually, the Orleans Runtime will take a deep copy of the grain state data object for its own use during any write operations. Under the covers, the runtime <em>may</em> use optimization rules and heuristics to avoid performing some or all of the deep copy in some circumstances, provided that the expected logical isolation semantics are preserved.</p>
-<h2 id="sample-code-for-grain-state-read--write-operations" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="212" sourceendlinenumber="212">Sample Code for Grain State Read / Write Operations</h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="214" sourceendlinenumber="215">Grains must extend the <code>Grain&lt;T&gt;</code> class in order to participate in the Orleans grain state persistence mechanisms.
+</code></pre><!--Simple storage provider for writing grain state data shared across a number of other storage providers.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="211" sourceendlinenumber="216">一个简单的写入分片到若干存储提供者的数据的简单存储提供者。
+<!--A consistent hash function (default is Jenkins Hash) is used to decide which-->
+<!--shard (in the order they are defined in the config file) is responsible for storing-->
+<!--state data for a specified grain, then the Read / Write / Clear request-->
+<!--is bridged over to the appropriate underlying provider for execution.-->
+使用一个一致性哈希函数（默认是Jenkins Hash）来决定哪个分片对指定的grain的状态数据存储进行相应，然后读取/写入/清除请求路由到适当的潜在的提供者来执行。</p>
+<h2 id="关于存储提供者特别说明的" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="218" sourceendlinenumber="218">关于存储提供者特别说明的</h2>
+<!--## Notes on Storage Providers-->
+<!--If there is no `[StorageProvider]` attribute specified for a `Grain<T>` grain class, then a provider named `Default` will be searched for instead.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="222" sourceendlinenumber="224">如果没有给一个<code>Grain&lt;T&gt;</code>grain类指定<code>[StorageProvider]</code>特性，将会搜索使用名为<code>Default</code>的提供者。
+<!--If not found then this is treated as a missing storage provider.-->
+如果没有找到，就当作缺少存储提供者。</p>
+<!--If there is only one provider in the silo config file, it will be considered to be the `Default` provider for this silo.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="227" sourceendlinenumber="227">如果silo配置文件中只有一个提供者，它会被当作silo的<code>Default</code>提供者。</p>
+<!--A grain that uses a storage provider which is not present and defined in the silo configuration when the silo loads will fail to load, but the rest of the grains in that silo can still load and run.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="230" sourceendlinenumber="232">一个使用不存在或者没有在silo配置中定义的提供者的grain将会在加载的时候失败，但是其他的grain还是会加载并且运行。
+<!--Any later calls to that grain type will fail with an `Orleans.Storage.BadProviderConfigException` error specifying that the grain type is not loaded.-->
+之后任何对这个grain的调用都会失败得到一个表示那个grain类型没有被加载的<code>Orleans.Storage.BadProviderConfigException</code>错误。</p>
+<!--The storage provider instance to use for a given grain type is determined by the combination of the storage provider name defined in the `[StorageProvider]` attribute on that grain type, plus the provider type and configuration options for that provider defined in the silo config.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="235" sourceendlinenumber="235">一个grain类型最终使用的存储提供者是通过<code>[StorageProvider]</code>特性中的提供者名称加上提供者的类型和silo配置中定义的提供者配置选项决定。</p>
+<!--Different grain types can use different configured storage providers, even if both are the same type: for example, two different Azure table storage provider instances, connected to different Azure storage accounts (see config file example above).-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="238" sourceendlinenumber="238">不同的grain类型使用不同配置的存储提供者，即使是同一个类型：例如，两个不同的Azure table存储提供者实例，连接到不同的Azure storge account（参考上面的配置文件例子）。</p>
+<!--All configuration details for storage providers is defined statically in the silo configuration that is read at silo startup.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="241" sourceendlinenumber="245">所有的存储提供者的配置细节静态地卸载silo配置中在silo启动时读取。
+<!--There are _no_ mechanisms provided at this time to dynamically update or change the list of storage providers used by a silo.-->
+现在 <em>没有</em> 动态地更新或者改变silo的使用的存储提供者的机制。
+<!--However, this is a prioritization / workload constraint rather than a fundamental design constraint.-->
+然而，这是一个优先级/工作量限制，而不是一个基本的设计约束。</p>
+<h2 id="状态存储api" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="247" sourceendlinenumber="247">状态存储API</h2>
+<!--## State Storage APIs-->
+<!--There are two main parts to the grain state / persistence APIs: Grain-to-Runtime and Runtime-to-Storage-Provider.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="251" sourceendlinenumber="251">grain状态/持久化API有两个部分：Grain到与形时和运行时到存储提供者。</p>
+<h2 id="grain状态存储api" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="253" sourceendlinenumber="253">grain状态存储API</h2>
+<!--## Grain State Storage API-->
+<!--The grain state storage functionality in the Orleans Runtime will provide read and write operations to automatically populate / save the `GrainState` data object for that grain.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="257" sourceendlinenumber="259">Orleans运行时的状态存储功能提供读取和写入操作来自动的填充/保存grain的<code>GrainState</code>数据对象。
+<!--Under the covers, these functions will be connected (within the code generated by Orleans client-gen tool) through to the appropriate persistence provider configured for that grain.-->
+这些功能将会通过为grain配置的恰当的持久化提供者来默默地完成。</p>
+<h2 id="grain状态读写函数" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="261" sourceendlinenumber="261">grain状态读写函数</h2>
+<!--## Grain State Read / Write Functions-->
+<!--Grain state will automatically be read when the grain is activated, but grains are responsible for explicitly triggering the write for any changed grain state as and when necessary.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="265" sourceendlinenumber="267">当grain激活的时候grain状态会自动被读取，但是当需要的时候grain需要显示地触发任何grain状态的写操作。
+<!--See the [Failure Modes](#FailureModes) section below for details of error handling mechanisms.-->
+阅读<a href="#FailureModes" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="267" sourceendlinenumber="267">失败模式</a>一节，了解更多错误处理机制的细节。</p>
+<!--`GrainState` will be read automatically (using the equivalent of `base.ReadStateAsync()`) _before_ the `OnActivateAsync()` method is called for that activation.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="270" sourceendlinenumber="272">激活的时候，<code>GrainState</code>(等同于<code>base.ReadStateAsync()</code>)在<code>OnActivateAsync()</code>方法被调用之前会被调用。
+<!--`GrainState` will not be refreshed before any method calls to that grain, unless the grain was activated for this call.-->
+<code>GrainState</code>在grain的任何方法被调用之前不会更新，除非这次调用的时候这个grain已经激活了。</p>
+<!--During any grain method call, a grain can request the Orleans runtime to write the current grain state data for that activation to the designated storage provider by calling `base.WriteStateAsync()`.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="275" sourceendlinenumber="281">在grain的任何方法被调用的时候，一个grain可以要求Orleans运行时把那个激活的当前的状态数据通过调用<code>base.WriteStateAsync()</code>写入到指定的存储提供者中。
+<!--The grain is responsible for explicitly performing write operations when they make significant updates to their state data.-->
+当grain状态数据发生显著的更新的时候，grain负责显示地执行写入操作。
+<!--Most commonly, the grain method will return the `base.WriteStateAsync()` `Task` as the final result `Task` returned from that grain method, but it is not required to follow this pattern.-->
+大多说情况下，grain方法返回<code>base.WriteStateAsync()</code> <code>Task</code>作为最终结果<code>Task</code>返回，但是它并不要求遵循此模式。
+<!--The runtime will not automatically update stored grain state after any grain methods.-->
+运行时在任何grain方法后不会自动更新存储的grain。</p>
+<!--During any grain method or timer callback handler in the grain, the grain can request the Orleans runtime to re-read the current grain state data for that activation from the designated storage provider by calling `base.ReadStateAsync()`.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="284" sourceendlinenumber="286">在任何grain方法或者timer回掉函数中，grain可以要求Orleans运行时通过调用<code>base.ReadStateAsync()</code>从指定的存储提供者重读当前的grain激活的状态数据。
+<!--This will completely overwrite any current state data currently stored in the grain state object with the latest values read from persistent store.-->
+这将会使用从持久化存储中读出的最新值完全重写当前grain状态对象中存储的状态数据。</p>
+<!--An opaque provider-specific `Etag` value (`string`) _may_ be set by a storage provider as part of the grain state metadata populated when state was read.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="289" sourceendlinenumber="291">当状态读取时存储提供者 <em>可能</em> 将一个不透明的提供者指定的<code>Etag</code>值(<code>string</code>)作为grain状态数据的一部分填充进去。
+<!--Some providers may choose to leave this as `null` if they do not use `Etag`s.-->
+一些不适用<code>Etag</code>的提供者会选择将这个值留作<code>null</code>。</p>
+<!--Conceptually, the Orleans Runtime will take a deep copy of the grain state data object for its own use during any write operations. Under the covers, the runtime _may_ use optimization rules and heuristics to avoid performing some or all of the deep copy in some circumstances, provided that the expected logical isolation semantics are preserved.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="294" sourceendlinenumber="294">概念上，Orleans运行在任何写操作的时候时会对grain状态数据对象进行深拷贝为自己使用。表面之下，运行时在一些环境中 <em>可能</em> 使用优化策略和启发式方法来避免进行一些或者全部的深拷贝，通过这个能实现期望的逻辑隔离语义。</p>
+<h2 id="sample-code-for-grain-state-read--write-operations" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="296" sourceendlinenumber="296">Sample Code for Grain State Read / Write Operations</h2>
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="298" sourceendlinenumber="299">Grains must extend the <code>Grain&lt;T&gt;</code> class in order to participate in the Orleans grain state persistence mechanisms.
 The <code>T</code> in the above definition will be replaced by an application-specific grain state class for this grain; see the example below.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="217" sourceendlinenumber="217">The grain class should also be annotated with a <code>[StorageProvider]</code> attribute that tells the runtime which storage provider (instance) to use with grains of this type.</p>
-<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="219" sourceendlinenumber="231"><code class="lang-csharp">public interface MyGrainState : GrainState
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="301" sourceendlinenumber="301">The grain class should also be annotated with a <code>[StorageProvider]</code> attribute that tells the runtime which storage provider (instance) to use with grains of this type.</p>
+<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="303" sourceendlinenumber="315"><code class="lang-csharp">public interface MyGrainState : GrainState
 {
   public int Field1 { get; set; }
   public string Field2 { get; set; }
@@ -230,41 +307,65 @@ public class MyPersistenceGrain : Grain&lt;MyGrainState&gt;, IMyPersistenceGrain
 {
   ...
 }
-</code></pre><h2 id="grain-state-read" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="233" sourceendlinenumber="233">Grain State Read</h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="235" sourceendlinenumber="236">The initial read of the grain state will occur automatically by the Orleans runtime before the grain’s <code>OnActivateAsync()</code> method is called; no application code is required to make this happen.
-From that point forward, the grain’s state will be available through the <code>Grain&lt;T&gt;.State</code> property inside the grain class.</p>
-<h2 id="grain-state-write" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="238" sourceendlinenumber="238">Grain State Write</h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="240" sourceendlinenumber="241">After making any appropriate changes to the grain’s in-memory state, the grain should call the <code>base.WriteStateAsync()</code> method to write the changes to the persistent store via the defined storage provider for this grain type.
-This method is asynchronous and returns a <code>Task</code> that will typically be returned by the grain method as its own completion Task.</p>
-<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="244" sourceendlinenumber="250"><code class="lang-csharp">public Task DoWrite(int val)
+</code></pre><h2 id="grain状态读取" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="317" sourceendlinenumber="317">grain状态读取</h2>
+<!--## Grain State Read-->
+<!--The initial read of the grain state will occur automatically by the Orleans runtime before the grain’s `OnActivateAsync()` method is called; no application code is required to make this happen.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="321" sourceendlinenumber="323">最初的grain状态读取将会有Orleans运行在grain的<code>OnActivateAsync()</code>方法调用前自动发生；不需要使用应用代码来触发。
+<!--From that point forward, the grain’s state will be available through the `Grain<T>.State` property inside the grain class.-->
+此后，可以通过grain类中的<code>Grain&lt;T&gt;.State</code>属性来读取grain的状态。</p>
+<h2 id="grain状态写入" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="325" sourceendlinenumber="325">grain状态写入</h2>
+<!--## Grain State Write-->
+<!--After making any appropriate changes to the grain’s in-memory state, the grain should call the `base.WriteStateAsync()` method to write the changes to the persistent store via the defined storage provider for this grain type.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="329" sourceendlinenumber="331">在对grain的内存中的状态进行任何适当改动后，grain应该调用<code>base.WriteStateAsync()</code>方法通过已经grain类型已经定义的存储提供者将改变写入到持久化存储。
+<!--This method is asynchronous and returns a `Task` that will typically be returned by the grain method as its own completion Task.-->
+这个方法是异步的并且返回一个<code>Task</code>。这个<code>Task</code>通常作为grain方法它自己的完成Task返回。</p>
+<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="334" sourceendlinenumber="340"><code class="lang-csharp">public Task DoWrite(int val)
 {
   State.Field1 = val;
   return base.WriteStateAsync();
 }
-</code></pre><h2 id="grain-state-refresh" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="252" sourceendlinenumber="252">Grain State Refresh</h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="254" sourceendlinenumber="255">If a grain wishes to explicitly re-read the latest state for this grain from backing store, the grain should call the <code>base.ReadStateAsync()</code> method.
-This will reload the grain state from persistent store, via the defined storage provider for this grain type, and any previous in-memory copy of the grain state will be overwritten and replaced when the <code>ReadStateAsync()</code> <code>Task</code> completes.</p>
-<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="257" sourceendlinenumber="263"><code class="lang-csharp">public async Task&lt;int&gt; DoRead()
+</code></pre><h2 id="grain状态刷新" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="342" sourceendlinenumber="342">grain状态刷新</h2>
+<!--## Grain State Refresh-->
+<!--If a grain wishes to explicitly re-read the latest state for this grain from backing store, the grain should call the `base.ReadStateAsync()` method.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="346" sourceendlinenumber="348">如果一个grain希望显示地从后存储中重新读取这个grain的最新状态，这个grain应该调用<code>base.ReadStateAsync()</code>方法。
+<!--This will reload the grain state from persistent store, via the defined storage provider for this grain type, and any previous in-memory copy of the grain state will be overwritten and replaced when the `ReadStateAsync()` `Task` completes.-->
+这将通过已为这个grain定义的存储提供者从持久化存储中重新加载grain状态，并且当<code>ReadStateAsync()</code> <code>Task</code>完成时。任何之前内存中的grain状态的拷贝会被重写和替换，</p>
+<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="350" sourceendlinenumber="356"><code class="lang-csharp">public async Task&lt;int&gt; DoRead()
 {
   await base.ReadStateAsync();
   return State.Field1;
 }
-</code></pre><h2 id="failure-modes-for-grain-state-persistence-operations-a-namefailuremodesa" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="265" sourceendlinenumber="265">Failure Modes for Grain State Persistence Operations <a name="FailureModes"></a></h2>
-<h3 id="failure-modes-for-grain-state-read-operations" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="267" sourceendlinenumber="267">Failure Modes for Grain State Read Operations</h3>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="269" sourceendlinenumber="272">Failures returned by the storage provider during the initial read of state data for that particular grain will result in the activate operation for that grain to be failed; in this case, there will <em>not</em> be any call to that grain’s <code>OnActivateAsync()</code> life cycle callback method.
-The original request to that grain which caused the activation will be faulted back to the caller the same way as any other failure during grain activation.
-Failures encountered by the storage provider to read state data for a particular grain will result in the <code>ReadStateAsync()</code> <code>Task</code> to be faulted.
-The grain can choose to handle or ignore that faulted <code>Task</code>, just like any other <code>Task</code> in Orleans.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="274" sourceendlinenumber="274">Any attempt to send a message to a grain which failed to load at silo startup time due to a missing / bad storage provider config will return the permanent error <code>Orleans.BadProviderConfigException</code>.</p>
-<h3 id="failure-modes-for-grain-state-write-operations" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="276" sourceendlinenumber="276">Failure Modes for Grain State Write Operations</h3>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="278" sourceendlinenumber="280">Failures encountered by the storage provider to write state data for a particular grain will result in the <code>WriteStateAsync()</code> <code>Task</code> to be faulted.
-Usually, this will mean the grain call will be faulted back to the client caller provided the <code>WriteStateAsync()</code> <code>Task</code> is correctly chained in to the final return <code>Task</code> for this grain method.
-However, it will be possible for certain advanced scenarios to write grain code to specifically handle such write errors, just like they can handle any other faulted <code>Task</code>.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="282" sourceendlinenumber="282">Grains that execute error-handling / recovery code <em>must</em> catch exceptions / faulted <code>WriteStateAsync()</code> <code>Task</code>s and not re-throw to signify that they have successfully handled the write error.</p>
-<h2 id="storage-provider-framework" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="284" sourceendlinenumber="284">Storage Provider Framework</h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="286" sourceendlinenumber="286">There is a service provider API for writing additional persistence providers – <code>IStorageProvider</code>.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="288" sourceendlinenumber="288">The Persistence Provider API covers read and write operations for GrainState data.</p>
-<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="290" sourceendlinenumber="300"><code class="lang-csharp">public interface IStorageProvider
+</code></pre><h2 id="grain持久化操作的失败模式" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="358" sourceendlinenumber="358">grain持久化操作的失败模式</h2>
+<!--## Failure Modes for Grain State Persistence Operations <a name="FailureModes"></a>-->
+<h3 id="grain状态读取操作的失败模式" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="361" sourceendlinenumber="361">grain状态读取操作的失败模式</h3>
+<!--### Failure Modes for Grain State Read Operations-->
+<!--Failures returned by the storage provider during the initial read of state data for that particular grain will result in the activate operation for that grain to be failed; in this case, there will _not_ be any call to that grain’s `OnActivateAsync()` life cycle callback method.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="365" sourceendlinenumber="371">存储提供者返回的在初始化读取特定grain的状态数据时的失败将会导致那个grain的激活操作失败；这样的话，那个grain的<code>OnActivateAsync()</code>生命周期的回掉方法将 <em>不会</em> 被调用。
+<!--The original request to that grain which caused the activation will be faulted back to the caller the same way as any other failure during grain activation.-->
+引起那个grain激活的原始请求也会失败，想其他grain激活期间的失败一样返回给调用者。
+<!--Failures encountered by the storage provider to read state data for a particular grain will result in the `ReadStateAsync()` `Task` to be faulted.-->
+特定的grain的存储提供者读取状态数据遇到的失败将会导致<code>ReadStateAsync()</code> <code>Task</code>失败。
+<!--The grain can choose to handle or ignore that faulted `Task`, just like any other `Task` in Orleans.-->
+grain可以选择处理或者忽略这个失败<code>Task</code>，就像Orleans中其他的<code>Task</code>一样。</p>
+<!--Any attempt to send a message to a grain which failed to load at silo startup time due to a missing / bad storage provider config will return the permanent error `Orleans.BadProviderConfigException`.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="374" sourceendlinenumber="374">任何向silo启动时因缺少/错误的存贮提供者配置而不能加载的grain发送消息的尝试都将返回一个永久错误<code>Orleans.BadProviderConfigException</code>。</p>
+<h3 id="grain状态写入操作的失败模式" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="376" sourceendlinenumber="376">grain状态写入操作的失败模式</h3>
+<!--### Failure Modes for Grain State Write Operations-->
+<!--Failures encountered by the storage provider to write state data for a particular grain will result in the `WriteStateAsync()` `Task` to be faulted.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="380" sourceendlinenumber="384">特定的grain的存储提供者写入状态数据遇到的失败会导致<code>WriteStateAsync()</code> <code>Task</code>失败。
+<!--Usually, this will mean the grain call will be faulted back to the client caller provided the `WriteStateAsync()` `Task` is correctly chained in to the final return `Task` for this grain method.-->
+通常，这代表grain调用将会传递给提供了<code>WriteStateAsync()</code> <code>Task</code>的客户端调用者，并且作为grain方法最终返回的<code>Task</code>.
+<!--However, it will be possible for certain advanced scenarios to write grain code to specifically handle such write errors, just like they can handle any other faulted `Task`.-->
+然而，也可能在确定的高级场景中来编写grain代码特别处理这样的写入错误，就像能处理其他失败的<code>Task</code>一样。</p>
+<!--Grains that execute error-handling / recovery code _must_ catch exceptions / faulted `WriteStateAsync()` `Task`s and not re-throw to signify that they have successfully handled the write error.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="387" sourceendlinenumber="387">执行错误处理/回复的grain代码 <em>必须</em> 捕获<code>WriteStateAsync()</code> <code>Task</code>的异常/失败比去年给不重新抛出，表明已经成功处理了错误。</p>
+<h2 id="存储提供者框架" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="389" sourceendlinenumber="389">存储提供者框架</h2>
+<!--## Storage Provider Framework-->
+<!--There is a service provider API for writing additional persistence providers – `IStorageProvider`.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="393" sourceendlinenumber="393">有一个服务提供者API来写额外的持久化存储提供者 – <code>IStorageProvider</code>。</p>
+<!--The Persistence Provider API covers read and write operations for GrainState data.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="396" sourceendlinenumber="396">持久化提供者API包括对grain状态数据的读取和写入操作。</p>
+<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="398" sourceendlinenumber="408"><code class="lang-csharp">public interface IStorageProvider
 {
   Logger Log { get; }
   Task Init();
@@ -273,9 +374,11 @@ However, it will be possible for certain advanced scenarios to write grain code 
   Task ReadStateAsync(string grainType, GrainId grainId, GrainState grainState);
   Task WriteStateAsync(string grainType, GrainId grainId, GrainState grainState);
 }
-</code></pre><h2 id="storage-provider-semantics" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="302" sourceendlinenumber="302">Storage Provider Semantics</h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="304" sourceendlinenumber="304">Any attempt to perform a write operation when the storage provider detects an <code>Etag</code> constraint violation <em>should</em> cause the write <code>Task</code> to be faulted with transient error <code>Orleans.InconsistentStateException</code> and wrapping the underlying storage exception.</p>
-<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="306" sourceendlinenumber="329"><code class="lang-csharp">public class InconsistentStateException : AggregateException
+</code></pre><h2 id="存储提供者语义" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="410" sourceendlinenumber="410">存储提供者语义</h2>
+<!--## Storage Provider Semantics-->
+<!--Any attempt to perform a write operation when the storage provider detects an `Etag` constraint violation _should_ cause the write `Task` to be faulted with transient error `Orleans.InconsistentStateException` and wrapping the underlying storage exception.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="414" sourceendlinenumber="414">当进行任何写操作的时候存储提供者检测到<code>Etag</code>违反约束，就 <em>应该</em> 以一个瞬时错误 <code>Orleans.InconsistentStateException</code>引发写<code>Task</code>失败并且包装底层的存储异常。</p>
+<pre sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="416" sourceendlinenumber="439"><code class="lang-csharp">public class InconsistentStateException : AggregateException
 {
   /// &lt;summary&gt;The Etag value currently held in persistent storage.&lt;/summary&gt;
   public string StoredEtag { get; private set; }
@@ -297,34 +400,38 @@ However, it will be possible for certain advanced scenarios to write grain code 
     : this(storageException.Message, storedEtag, currentEtag, storageException)
   { }
 }
-</code></pre><p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="332" sourceendlinenumber="332">Any other failure conditions from a write operation <em>should</em> cause the write <code>Task</code> to be broken with an exception containing the underlying storage exception.</p>
-<h2 id="data-mapping" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="334" sourceendlinenumber="334">Data Mapping</h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="336" sourceendlinenumber="336">Individual storage providers should decide how best to store grain state – blob (various formats / serialized forms) or column-per-field are obvious choices.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="338" sourceendlinenumber="338">The basic storage provider for Azure Table encodes state data fields into a single table column using Orleans binary serialization.</p>
-<h2 id="adonet-persistence-rationale-a-nameadonetpersistencerationalea" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="341" sourceendlinenumber="341">ADO.NET Persistence Rationale <a name="ADONETPersistenceRationale"></a></h2>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="343" sourceendlinenumber="343">The principles for ADO.NET backed persistence storage are:</p>
-<ol sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="345" sourceendlinenumber="346">
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="345" sourceendlinenumber="345">Keep business critical data safe an accessible while data, the format of data and code evolve.</li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="346" sourceendlinenumber="346">Take advantenge of vendor and storage specific functionality.</li>
+</code></pre><!--Any other failure conditions from a write operation _should_ cause the write `Task` to be broken with an exception containing the underlying storage exception.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="443" sourceendlinenumber="443">来自写操作的任何其他错误情况 <em>应该</em> 引发写<code>Task</code>以一个包含了底层存储异常信息的异常来终止。</p>
+<h2 id="数据映射" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="445" sourceendlinenumber="445">数据映射</h2>
+<!--## Data Mapping-->
+<!--Individual storage providers should decide how best to store grain state – blob (various formats / serialized forms) or column-per-field are obvious choices.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="449" sourceendlinenumber="449">独立的存储提供者应该决定如何存储grain状态 - blob（多种格式/序列化的形式）或者每列一个字段是显而易见的选择。</p>
+<!--The basic storage provider for Azure Table encodes state data fields into a single table column using Orleans binary serialization.-->
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="452" sourceendlinenumber="452">基本的Azure Table存储提供者将状态数据字段通过Orleans二进制序列化编码成单个表列。</p>
+<h2 id="adonet-persistence-rationale-a-nameadonetpersistencerationalea" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="455" sourceendlinenumber="455">ADO.NET Persistence Rationale <a name="ADONETPersistenceRationale"></a></h2>
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="457" sourceendlinenumber="457">The principles for ADO.NET backed persistence storage are:</p>
+<ol sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="459" sourceendlinenumber="460">
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="459" sourceendlinenumber="459">Keep business critical data safe an accessible while data, the format of data and code evolve.</li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="460" sourceendlinenumber="460">Take advantenge of vendor and storage specific functionality.</li>
 </ol>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="348" sourceendlinenumber="349">In practice this means adhering to <a href="../Runtime-Implementation-Details/Relational-Storage.html" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="348" sourceendlinenumber="348">ADO.NET implementation goals</a>
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="462" sourceendlinenumber="463">In practice this means adhering to <a href="../Runtime-Implementation-Details/Relational-Storage.html" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="462" sourceendlinenumber="462">ADO.NET implementation goals</a>
 and some added implementation logic in ADO.NET specific storage provider that allow evolving the shape of the data in the storage.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="351" sourceendlinenumber="351">In addition to the usual storage provider capabilities, the ADO.NET provider has built-in capability to</p>
-<ol sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="353" sourceendlinenumber="355">
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="353" sourceendlinenumber="353">Change storage data format from one format to another format (e.g. from JSON to binary) when roundtripping state.</li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="354" sourceendlinenumber="354">Shape the type to be saved or read from the storage in arbitrary ways. This helps to evolve the version state.</li>
-<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="355" sourceendlinenumber="355">Stream data out of the database.</li>
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="465" sourceendlinenumber="465">In addition to the usual storage provider capabilities, the ADO.NET provider has built-in capability to</p>
+<ol sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="467" sourceendlinenumber="469">
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="467" sourceendlinenumber="467">Change storage data format from one format to another format (e.g. from JSON to binary) when roundtripping state.</li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="468" sourceendlinenumber="468">Shape the type to be saved or read from the storage in arbitrary ways. This helps to evolve the version state.</li>
+<li sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="469" sourceendlinenumber="469">Stream data out of the database.</li>
 </ol>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="357" sourceendlinenumber="357">Both <code>1.</code> and <code>2.</code> can be applied on arbitrary decision parameters, such as <em>grain ID</em>, <em>grain type</em>, <em>payload data</em>.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="359" sourceendlinenumber="362">This happen so that one chooses a format, e.g. <a href="https://github.com/real-logic/simple-binary-encoding" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="359" sourceendlinenumber="359">Simple Binary Encoding (SBE)</a> and implements
-(IStorageDeserializer)[<a href="https://github.com/dotnet/orleans/blob/master/src/OrleansSQLUtils/Storage/Provider/IStorageDeserializer.cs" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="360" sourceendlinenumber="360">https://github.com/dotnet/orleans/blob/master/src/OrleansSQLUtils/Storage/Provider/IStorageDeserializer.cs</a>] and <a href="https://github.com/dotnet/orleans/blob/master/src/OrleansSQLUtils/Storage/Provider/IStorageSerializer.cs" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="360" sourceendlinenumber="360">IStorageSerializer</a>.
-The built-in (de)serializers have been built using this method. The <a href="https://github.com/dotnet/orleans/tree/master/src/OrleansSQLUtils/Storage/Provider" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="361" sourceendlinenumber="361">OrleansStorageDefault<format>(De)Serializer</format></a> can be used as examples
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="471" sourceendlinenumber="471">Both <code>1.</code> and <code>2.</code> can be applied on arbitrary decision parameters, such as <em>grain ID</em>, <em>grain type</em>, <em>payload data</em>.</p>
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="473" sourceendlinenumber="476">This happen so that one chooses a format, e.g. <a href="https://github.com/real-logic/simple-binary-encoding" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="473" sourceendlinenumber="473">Simple Binary Encoding (SBE)</a> and implements
+(IStorageDeserializer)[<a href="https://github.com/dotnet/orleans/blob/master/src/OrleansSQLUtils/Storage/Provider/IStorageDeserializer.cs" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="474" sourceendlinenumber="474">https://github.com/dotnet/orleans/blob/master/src/OrleansSQLUtils/Storage/Provider/IStorageDeserializer.cs</a>] and <a href="https://github.com/dotnet/orleans/blob/master/src/OrleansSQLUtils/Storage/Provider/IStorageSerializer.cs" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="474" sourceendlinenumber="474">IStorageSerializer</a>.
+The built-in (de)serializers have been built using this method. The <a href="https://github.com/dotnet/orleans/tree/master/src/OrleansSQLUtils/Storage/Provider" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="475" sourceendlinenumber="475">OrleansStorageDefault<format>(De)Serializer</format></a> can be used as examples
 on how to implement other formats.</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="364" sourceendlinenumber="367">When the (de)serializers have been implemented, they need to ba added to the <code>StorageSerializationPicker</code> property in <a href="https://github.com/dotnet/orleans/blob/master/src/OrleansSQLUtils/Storage/Provider/AdoNetStorageProvider.cs" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="364" sourceendlinenumber="364">AdoNetStorageProvider</a>.
-This is an implementation of <a href="https://github.com/dotnet/orleans/blob/master/src/OrleansSQLUtils/Storage/Provider/IStorageSerializationPicker.cs" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="365" sourceendlinenumber="365">IStorageSerializationPicker</a>. By default
-<a href="https://github.com/dotnet/orleans/blob/master/src/OrleansSQLUtils/Storage/Provider/StorageSerializationPicker.cs" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="366" sourceendlinenumber="366">StorageSerializationPicker</a> will be used. And example of changing data storage format
-or using (de)serializers can be seen at [RelationalStorageTests]<a href="https://github.com/dotnet/orleans/blob/master/test/TesterInternal/StorageTests/Relational/RelationalStorageTests.cs" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="367" sourceendlinenumber="367">https://github.com/dotnet/orleans/blob/master/test/TesterInternal/StorageTests/Relational/RelationalStorageTests.cs</a>).</p>
-<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="369" sourceendlinenumber="369">Currently there is no method to expose this to Orleans application consumption as there is no method to access the framework created <a href="https://github.com/dotnet/orleans/blob/master/src/OrleansSQLUtils/Storage/Provider/AdoNetStorageProvider.cs" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="369" sourceendlinenumber="369">AdoNetStorageProvider</a> instance.</p>
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="478" sourceendlinenumber="481">When the (de)serializers have been implemented, they need to ba added to the <code>StorageSerializationPicker</code> property in <a href="https://github.com/dotnet/orleans/blob/master/src/OrleansSQLUtils/Storage/Provider/AdoNetStorageProvider.cs" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="478" sourceendlinenumber="478">AdoNetStorageProvider</a>.
+This is an implementation of <a href="https://github.com/dotnet/orleans/blob/master/src/OrleansSQLUtils/Storage/Provider/IStorageSerializationPicker.cs" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="479" sourceendlinenumber="479">IStorageSerializationPicker</a>. By default
+<a href="https://github.com/dotnet/orleans/blob/master/src/OrleansSQLUtils/Storage/Provider/StorageSerializationPicker.cs" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="480" sourceendlinenumber="480">StorageSerializationPicker</a> will be used. And example of changing data storage format
+or using (de)serializers can be seen at [RelationalStorageTests]<a href="https://github.com/dotnet/orleans/blob/master/test/TesterInternal/StorageTests/Relational/RelationalStorageTests.cs" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="481" sourceendlinenumber="481">https://github.com/dotnet/orleans/blob/master/test/TesterInternal/StorageTests/Relational/RelationalStorageTests.cs</a>).</p>
+<p sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="483" sourceendlinenumber="483">Currently there is no method to expose this to Orleans application consumption as there is no method to access the framework created <a href="https://github.com/dotnet/orleans/blob/master/src/OrleansSQLUtils/Storage/Provider/AdoNetStorageProvider.cs" sourcefile="Documentation/Getting-Started-With-Orleans/Grain-Persistence.md" sourcestartlinenumber="483" sourceendlinenumber="483">AdoNetStorageProvider</a> instance.</p>
 
             </article>
           </div>

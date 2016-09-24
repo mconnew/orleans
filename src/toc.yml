@@ -1,9 +1,19 @@
-- name: Documentation
+# - name: Documentation
+#   href: Documentation/Introduction.md
+#   homepage: Documentation/Introduction.md
+# - name: Tutorials
+#   href: Tutorials/index.md
+#   homepage: index.md
+# - name: Community
+#   href: Community/Contributing.md
+#   homepage: Community/Contributing.md
+- name: 文档
   href: Documentation/Introduction.md
   homepage: Documentation/Introduction.md
-- name: Tutorials
+- name: 教程
   href: Tutorials/index.md
   homepage: index.md
-- name: Community
+- name: 社区
   href: Community/Contributing.md
   homepage: Community/Contributing.md
+
