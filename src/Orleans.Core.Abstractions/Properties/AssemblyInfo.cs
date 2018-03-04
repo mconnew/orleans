@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Orleans.Runtime")]
 [assembly: InternalsVisibleTo("Orleans.TestingHost")]
 [assembly: InternalsVisibleTo("Orleans.TestingHost.AppDomain")]
+[assembly: InternalsVisibleTo("Orleans.MetadataStore")]
 
 [assembly: InternalsVisibleTo("DefaultCluster.Tests")]
 [assembly: InternalsVisibleTo("NonSilo.Tests")]
