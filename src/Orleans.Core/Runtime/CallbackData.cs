@@ -1,6 +1,5 @@
 using System;
 using System.Threading;
-using System.Threading.Tasks;
 using Orleans.Transactions;
 
 namespace Orleans.Runtime
@@ -8,13 +7,13 @@ namespace Orleans.Runtime
     internal class CallbackData
     {
         private readonly SharedCallbackData shared;
-        private readonly TaskCompletionSource<object> context;
+        private readonly object context;
         private int completed;
         private ValueStopwatch stopwatch;
 
         public CallbackData(
             SharedCallbackData shared,
-            TaskCompletionSource<object> ctx, 
+            object ctx, 
             Message msg)
         {
             this.shared = shared;

@@ -140,8 +140,23 @@ namespace Orleans.CodeGenerator
             foreach (var grainInterface in model.GrainInterfaces)
             {
                 var nsMembers = GetNamespace(namespaceGroupings, grainInterface.Type.ContainingNamespace);
+                if (grainInterface.HasGenerateMethodSerializersAttribute) // TODO: this isn't backwards compatible - we should always generate the invoker objects.
+                {
+                    foreach (var method in grainInterface.Methods)
+                    {
+                        var (invokable, generatedInvokerDescription) = InvokableGenerator.Generate(
+                            this.compilation,
+                            this.wellKnownTypes,
+                            grainInterface,
+                            method);
+                        grainInterface.Invokers[method] = generatedInvokerDescription;
+                        nsMembers.Add(invokable);
+                    }
+                }
+
                 nsMembers.Add(GrainMethodInvokerGenerator.GenerateClass(this.wellKnownTypes, grainInterface));
                 nsMembers.Add(GrainReferenceGenerator.GenerateClass(this.wellKnownTypes, grainInterface));
+                
             }
 
             var serializersToGenerate = model.Serializers.SerializerTypes
@@ -247,7 +262,8 @@ namespace Orleans.CodeGenerator
                     type,
                     this.wellKnownTypes.GetTypeId(type),
                     this.wellKnownTypes.GetVersion(type),
-                    methods));
+                    methods,
+                    this.wellKnownTypes));
             }
 
             // Returns a list of all methods in all interfaces on the provided type.

@@ -22,7 +22,7 @@ namespace Orleans.Runtime
     /// MUST lock this object for any concurrent access
     /// Consider: compartmentalize by usage, e.g., using separate interfaces for data for catalog, etc.
     /// </summary>
-    internal class ActivationData : IGrainActivationContext, IActivationData, IInvokable, IDisposable
+    internal class ActivationData : IGrainActivationContext, IActivationData, IInvokable, IDisposable, IGrainHolder
     {
         internal class GrainActivationContextFactory
         {
@@ -752,6 +752,10 @@ namespace Orleans.Runtime
             if (disposable != null) disposable.Dispose();
             this.serviceScope = null;
         }
+
+        public TTarget GetGrain<TTarget>() => (TTarget)(object)this.GrainInstance;
+
+        public TExtension GetExtension<TExtension>() => throw new NotImplementedException();
     }
 
     internal static class StreamResourceTestControl

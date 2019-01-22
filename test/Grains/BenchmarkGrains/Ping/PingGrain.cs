@@ -28,4 +28,14 @@ namespace BenchmarkGrains.Ping
 
         public Task<int> GetSiloPort() => Task.FromResult(((ILocalSiloDetails)this.ServiceProvider.GetService(typeof(ILocalSiloDetails))).SiloAddress.Endpoint.Port);
     }
+
+    public class EchoGrain : Grain, IEchoGrain
+    {
+        public ValueTask<int> Echo(int input) => new ValueTask<int>(input);
+    }
+
+    public class NewEchoGrain : Grain, INewEchoGrain
+    {
+        public ValueTask<int> Echo(int input) => new ValueTask<int>(input);
+    }
 }

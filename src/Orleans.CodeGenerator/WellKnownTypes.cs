@@ -94,6 +94,7 @@ namespace Orleans.CodeGenerator
                 UInt16 = compilation.GetSpecialType(SpecialType.System_UInt16),
                 UIntPtr = compilation.GetSpecialType(SpecialType.System_UIntPtr),
                 UnorderedAttribute = Type("Orleans.Concurrency.UnorderedAttribute"),
+                ValueTask = Type("System.Threading.Tasks.ValueTask"),
                 ValueTypeSetter_2 = Type("Orleans.Serialization.ValueTypeSetter`2"),
                 VersionAttribute = Type("Orleans.CodeGeneration.VersionAttribute"),
                 Void = compilation.GetSpecialType(SpecialType.System_Void),
@@ -107,6 +108,12 @@ namespace Orleans.CodeGenerator
                     Type("System.Collections.Generic.EqualityComparer`1"),
                     Type("System.Collections.Generic.Comparer`1")
                 }
+                InvalidOperationException = Type("System.InvalidOperationException"),
+                IGrainHolder = Type("Orleans.CodeGeneration.IGrainHolder"),
+                Invokable = Type("Orleans.CodeGeneration.Invokable"),
+                Invokable_1 = Type("Orleans.CodeGeneration.Invokable`1"),
+                IInvokable = Type("Orleans.CodeGeneration.IInvokable"),
+                GenerateMethodSerializersAttribute = Type("Orleans.CodeGeneration.GenerateMethodSerializersAttribute"),
             };
 
             INamedTypeSymbol Type(string type)
@@ -133,8 +140,7 @@ namespace Orleans.CodeGenerator
                 {
                     foreach (var reference in compilation.References)
                     {
-                        var asm = compilation.GetAssemblyOrModuleSymbol(reference) as IAssemblySymbol;
-                        if (asm == null) continue;
+                        if (!(compilation.GetAssemblyOrModuleSymbol(reference) is IAssemblySymbol asm)) continue;
                         result = asm.GetTypeByMetadataName(type);
                         if (result != null) break;
                     }
@@ -143,6 +149,17 @@ namespace Orleans.CodeGenerator
                 return result;
             }
         }
+
+        public INamedTypeSymbol GenerateMethodSerializersAttribute { get; set; }
+
+        public INamedTypeSymbol Invokable { get; private set; }
+        public INamedTypeSymbol Invokable_1 { get; private set; }
+        public INamedTypeSymbol IInvokable { get; private set; }
+
+        public INamedTypeSymbol InvalidOperationException { get; private set; }
+        public INamedTypeSymbol IGrainHolder { get; private set; }
+
+        public INamedTypeSymbol ValueTask { get; private set; }
 
         public List<INamedTypeSymbol> SupportedRefAsmBaseTypes { get; } = new List<INamedTypeSymbol>();
         public IAssemblySymbol AbstractionsAssembly { get; private set; }

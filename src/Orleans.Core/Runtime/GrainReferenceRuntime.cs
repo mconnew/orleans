@@ -87,6 +87,12 @@ namespace Orleans.Runtime
             return resultTask.ToTypedTask<T>();
         }
 
+        public void InvokeAsync<TInvokable>(GrainReference reference, TInvokable invokable) where TInvokable : IInvokable
+        {
+            //invokable = (TInvokable)this.serializationManager.DeepCopy(invokable);
+            this.RuntimeClient.SendRequest(reference, invokable, reference.GenericArguments);
+        }
+
         public TGrainInterface Convert<TGrainInterface>(IAddressable grain)
             => this.internalGrainFactory.Cast<TGrainInterface>(grain);
 

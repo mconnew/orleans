@@ -34,6 +34,8 @@ namespace Orleans.Runtime
         /// <returns>A reference to <paramref name="grain"/> which implements <typeparamref name="TGrainInterface"/>.</returns>
         TGrainInterface Convert<TGrainInterface>(IAddressable grain);
 
+        void InvokeAsync<TInvokable>(GrainReference reference, TInvokable invokable) where TInvokable : IInvokable;
+
         /// <summary>
         /// Converts the provided <paramref name="grain"/> to the provided <paramref name="interfaceType"/>.
         /// </summary>
