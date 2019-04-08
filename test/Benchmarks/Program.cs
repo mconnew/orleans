@@ -117,6 +117,10 @@ namespace Benchmarks
             {
                 BenchmarkRunner.Run<KestrelSequentialPingBenchmark>();
             },
+            ["ConcurrentPing"] = () =>
+            {
+                new SequentialPingBenchmark().PingConcurrent().GetAwaiter().GetResult();
+            },
             ["PingForever"] = () =>
             {
                 new KestrelSequentialPingBenchmark().PingForever().GetAwaiter().GetResult();
