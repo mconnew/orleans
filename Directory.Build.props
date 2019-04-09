@@ -50,9 +50,9 @@
     <SystemNetHttpVersion>4.3.3</SystemNetHttpVersion>
     <SystemReflectionMetadataVersion>1.5.0</SystemReflectionMetadataVersion>
     <SystemReflectionTypeExtensionsVersion>4.4.0</SystemReflectionTypeExtensionsVersion>
-    <SystemValueTupleVersion>4.4.0</SystemValueTupleVersion>
-    <SystemThreadingTasksExtensionsVersion>4.4.0</SystemThreadingTasksExtensionsVersion>
-    <SystemMemoryVersion>4.5.1</SystemMemoryVersion>
+    <SystemValueTupleVersion>4.5.0</SystemValueTupleVersion>
+    <SystemThreadingTasksExtensionsVersion>4.5.2</SystemThreadingTasksExtensionsVersion>
+    <SystemMemoryVersion>4.5.3</SystemMemoryVersion>
 
     <!-- Microsoft packages -->
     <MicrosoftBuildVersion>15.7.179</MicrosoftBuildVersion>
@@ -80,6 +80,8 @@
     <FSharpCoreVersion>4.5.2</FSharpCoreVersion>
 
     <SystemManagementAutomationdllVersion>10.0.10586</SystemManagementAutomationdllVersion>
+
+    <HagarVersion>0.2.3-dev-20190602160926</HagarVersion>
 
     <!-- 3rd party packages -->
     <AWSSDKDynamoDBv2Version>3.3.4.17</AWSSDKDynamoDBv2Version>

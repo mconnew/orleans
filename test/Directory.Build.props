@@ -31,6 +31,14 @@
   <ItemGroup>
     <PackageReference Include="System.Net.Http" Version="$(SystemNetHttpVersion)" />
   </ItemGroup>
+  
+  <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.csproj'">
+    <PackageReference Include="Hagar" Version="0.2.3-dev-20190602160926" />
+    <PackageReference Include="Hagar.CodeGenerator.MSBuild" Version="0.2.3-dev-20190602160926">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
 
   <ItemGroup Condition=" '$(BuildingInsideVisualStudio)' == 'true' and '$(TargetFramework)' == '$(TestProjectTargetFramework)' ">
     <PackageReference Include="xunit.runner.visualstudio" Version="$(xUnitVersion)" />

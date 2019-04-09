@@ -48,6 +48,11 @@
     <PackageReference Include="System.ValueTuple" Version="$(SystemValueTupleVersion)" />
     <PackageReference Include="System.Xml.XmlDocument" Version="$(SystemRuntimeVersion)" />
     <PackageReference Include="System.Xml.XPath.XmlDocument" Version="$(SystemRuntimeVersion)" />
+    <PackageReference Include="Hagar" Version="$(HagarVersion)" />
+    <PackageReference Include="Hagar.CodeGenerator.MSBuild" Version="$(HagarVersion)">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>

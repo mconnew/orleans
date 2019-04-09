@@ -110,4 +110,12 @@
     <Folder Include="Storage\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Update="Hagar" Version="$(HagarVersion)" />
+    <PackageReference Update="Hagar.CodeGenerator.MSBuild" Version="$(HagarVersion)">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
 </Project>
