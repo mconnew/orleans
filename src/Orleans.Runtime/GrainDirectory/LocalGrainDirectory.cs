@@ -281,6 +281,7 @@ namespace Orleans.Runtime.GrainDirectory
 
         protected void AddServer(SiloAddress silo)
         {
+            if (log.IsEnabled(LogLevel.Information)) log.LogInformation("Silo {LocalSilo} adding silo {RemoteSilo}", MyAddress, silo);
             DirectoryMembershipSnapshot existing;
             DirectoryMembershipSnapshot updated;
             do
@@ -306,11 +307,12 @@ namespace Orleans.Runtime.GrainDirectory
 
             HandoffManager.ProcessSiloAddEvent(updated, silo);
 
-            if (log.IsEnabled(LogLevel.Debug)) log.Debug("Silo {0} added silo {1}", MyAddress, silo);
+            if (log.IsEnabled(LogLevel.Information)) log.LogInformation("Silo {LocalSilo} added silo {RemoteSilo}", MyAddress, silo);
         }
 
         protected void RemoveServer(SiloAddress silo, SiloStatus status)
         {
+            if (log.IsEnabled(LogLevel.Information)) log.LogInformation("Silo {LocalSilo} removing silo {RemoteSilo}", MyAddress, silo);
             DirectoryMembershipSnapshot existing;
             DirectoryMembershipSnapshot updated;
             Dictionary<GrainId, IGrainInfo> directoryPartitionCopy;
@@ -347,7 +349,7 @@ namespace Orleans.Runtime.GrainDirectory
             AdjustLocalDirectory(directoryPartitionCopy, silo);
             AdjustLocalCache(updated, directoryCache, silo);
 
-            if (log.IsEnabled(LogLevel.Debug)) log.Debug("Silo {0} removed silo {1}", MyAddress, silo);
+            if (log.IsEnabled(LogLevel.Information)) log.LogInformation("Silo {LocalSilo} removed silo {RemoteSilo}", MyAddress, silo);
         }
 
         /// <summary>
