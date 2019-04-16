@@ -137,7 +137,7 @@ namespace Orleans.CodeGenerator.Generators
             return (classDeclaration, ParseTypeName(type.GetParsableReplacementName(className)));
         }
 
-        private static MemberDeclarationSyntax GenerateConstructor(WellKnownTypes wellKnownTypes, string className, List<FieldInfoMember> fields)
+        private static MemberDeclarationSyntax GenerateConstructor(WellKnownTypes wellKnownTypes, string className, List<SerializableMember> fields)
         {
             var body = new List<StatementSyntax>();
 
@@ -222,7 +222,7 @@ namespace Orleans.CodeGenerator.Generators
         /// <summary>
         /// Returns syntax for the deserializer method.
         /// </summary>
-        private static MemberDeclarationSyntax GenerateDeserializerMethod(WellKnownTypes wellKnownTypes, INamedTypeSymbol type, List<FieldInfoMember> fields, SemanticModel model)
+        private static MemberDeclarationSyntax GenerateDeserializerMethod(WellKnownTypes wellKnownTypes, INamedTypeSymbol type, List<SerializableMember> fields, SemanticModel model)
         {
             var contextParameter = IdentifierName("context");
 
@@ -284,7 +284,7 @@ namespace Orleans.CodeGenerator.Generators
                             .AddAttributes(Attribute(wellKnownTypes.DeserializerMethodAttribute.ToNameSyntax())));
         }
 
-        private static MemberDeclarationSyntax GenerateSerializerMethod(WellKnownTypes wellKnownTypes, INamedTypeSymbol type, List<FieldInfoMember> fields, SemanticModel model)
+        private static MemberDeclarationSyntax GenerateSerializerMethod(WellKnownTypes wellKnownTypes, INamedTypeSymbol type, List<SerializableMember> fields, SemanticModel model)
         {
             var contextParameter = IdentifierName("context");
 
@@ -328,7 +328,7 @@ namespace Orleans.CodeGenerator.Generators
         /// <summary>
         /// Returns syntax for the deep copy method.
         /// </summary>
-        private static MemberDeclarationSyntax GenerateDeepCopierMethod(WellKnownTypes wellKnownTypes, INamedTypeSymbol type, List<FieldInfoMember> fields, SemanticModel model)
+        private static MemberDeclarationSyntax GenerateDeepCopierMethod(WellKnownTypes wellKnownTypes, INamedTypeSymbol type, List<SerializableMember> fields, SemanticModel model)
         {
             var originalVariable = IdentifierName("original");
             var inputVariable = IdentifierName("input");
@@ -390,7 +390,7 @@ namespace Orleans.CodeGenerator.Generators
         /// <summary>
         /// Returns syntax for the static fields of the serializer class.
         /// </summary>
-        private static MemberDeclarationSyntax[] GenerateFields(WellKnownTypes wellKnownTypes, List<FieldInfoMember> fields)
+        private static MemberDeclarationSyntax[] GenerateFields(WellKnownTypes wellKnownTypes, List<SerializableMember> fields)
         {
             var result = new List<MemberDeclarationSyntax>();
 
@@ -484,14 +484,14 @@ namespace Orleans.CodeGenerator.Generators
         /// <summary>
         /// Returns a sorted list of the fields of the provided type.
         /// </summary>
-        private static List<FieldInfoMember> GetFields(WellKnownTypes wellKnownTypes, SemanticModel model, INamedTypeSymbol type, ILogger logger)
+        private static List<SerializableMember> GetFields(WellKnownTypes wellKnownTypes, SemanticModel model, INamedTypeSymbol type, ILogger logger)
         {
-            var result = new List<FieldInfoMember>();
+            var result = new List<SerializableMember>();
             foreach (var field in type.GetDeclaredMembers<IFieldSymbol>())
             {
                 if (ShouldSerializeField(wellKnownTypes, field))
                 {
-                    result.Add(new FieldInfoMember(wellKnownTypes, model, type, field, result.Count));
+                    result.Add(new SerializableMember(wellKnownTypes, model, type, field, result.Count));
                 }
             }
 
@@ -512,7 +512,7 @@ namespace Orleans.CodeGenerator.Generators
                     if (hasReferenceAssemblyBase) referenceAssemblyHasFields = true;
                     if (ShouldSerializeField(wellKnownTypes, field))
                     {
-                        result.Add(new FieldInfoMember(wellKnownTypes, model, type, field, result.Count));
+                        result.Add(new SerializableMember(wellKnownTypes, model, type, field, result.Count));
                     }
                 }
 
@@ -537,7 +537,7 @@ namespace Orleans.CodeGenerator.Generators
                     $"{fileLocation}Warning: Type {type} has a base type which belongs to a reference assembly. Serializer generation for this type may not include important base type fields.");
             }
 
-            result.Sort(FieldInfoMember.Comparer.Instance);
+            result.Sort(SerializableMember.Comparer.Instance);
             return result;
         }
 
@@ -651,7 +651,7 @@ namespace Orleans.CodeGenerator.Generators
         /// <summary>
         /// Represents a field.
         /// </summary>
-        private class FieldInfoMember
+        private class SerializableMember
         {
             private readonly SemanticModel model;
             private readonly WellKnownTypes wellKnownTypes;
@@ -663,7 +663,7 @@ namespace Orleans.CodeGenerator.Generators
             /// </summary>
             private readonly int ordinal;
 
-            public FieldInfoMember(WellKnownTypes wellKnownTypes, SemanticModel model, INamedTypeSymbol targetType, IFieldSymbol field, int ordinal)
+            public SerializableMember(WellKnownTypes wellKnownTypes, SemanticModel model, INamedTypeSymbol targetType, IFieldSymbol field, int ordinal)
             {
                 this.wellKnownTypes = wellKnownTypes;
                 this.model = model;
@@ -864,16 +864,16 @@ namespace Orleans.CodeGenerator.Generators
             }
 
             /// <summary>
-            /// A comparer for <see cref="FieldInfoMember"/> which compares by name.
+            /// A comparer for <see cref="SerializableMember"/> which compares by name.
             /// </summary>
-            public class Comparer : IComparer<FieldInfoMember>
+            public class Comparer : IComparer<SerializableMember>
             {
                 /// <summary>
                 /// Gets the singleton instance of this class.
                 /// </summary>
                 public static Comparer Instance { get; } = new Comparer();
 
-                public int Compare(FieldInfoMember x, FieldInfoMember y)
+                public int Compare(SerializableMember x, SerializableMember y)
                 {
                     return string.Compare(x?.Field.Name, y?.Field.Name, StringComparison.Ordinal);
                 }
