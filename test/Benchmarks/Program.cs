@@ -100,42 +100,60 @@ namespace Benchmarks
                 benchmark => benchmark.RunAsync().GetAwaiter().GetResult(),
                 benchmark => benchmark.Teardown());
             },
-            ["Ping"] = () =>
-            {
-                RunBenchmark(
-                    "Running Ping benchmark",
-                    () =>
-                    {
-                        var benchmark = new PingBenchmark();
-                        benchmark.Setup();
-                        return benchmark;
-                    },
-                    benchmark => benchmark.RunAsync().GetAwaiter().GetResult(),
-                    benchmark => benchmark.Teardown());
-            },
             ["SequentialPing"] = () =>
             {
-                BenchmarkRunner.Run<KestrelSequentialPingBenchmark>();
+                BenchmarkRunner.Run<PingBenchmark>();
             },
             ["ConcurrentPing"] = () =>
             {
-                new SequentialPingBenchmark().PingConcurrent().GetAwaiter().GetResult();
+                {
+                    Console.WriteLine("## 1 Silo ##");
+                    var test = new PingBenchmark(numSilos: 1, startClient: true);
+                    test.PingConcurrent().GetAwaiter().GetResult();
+                    test.Shutdown().GetAwaiter().GetResult();
+                }
+                GC.Collect();
+                {
+                    Console.WriteLine("## 2 Silos ##");
+                    var test = new PingBenchmark(numSilos: 2, startClient: true);
+                    test.PingConcurrent().GetAwaiter().GetResult();
+                    test.Shutdown().GetAwaiter().GetResult();
+                }
+                GC.Collect();
+                {
+                    Console.WriteLine("## 1 Silo (Hosted Client) ##");
+                    var test = new PingBenchmark(numSilos: 1, startClient: false);
+                    test.PingConcurrentHostedClient().GetAwaiter().GetResult();
+                    test.Shutdown().GetAwaiter().GetResult();
+                }
+                GC.Collect();
+                {
+                    // All calls are cross-silo because the calling silo doesn't have any grain classes.
+                    Console.WriteLine("## 2 Silos, 100% cross-silo communication ##");
+                    var test = new PingBenchmark(numSilos: 2, startClient: false, grainsOnSecondariesOnly: true);
+                    test.PingConcurrentHostedClient().GetAwaiter().GetResult();
+                    test.Shutdown().GetAwaiter().GetResult();
+                }
+            },
+            ["ConcurrentPingOneSilo"] = () =>
+            {
+                new PingBenchmark(numSilos: 1, startClient: true).PingConcurrent().GetAwaiter().GetResult();
+            },
+            ["ConcurrentPingTwoSilos"] = () =>
+            {
+                new PingBenchmark(numSilos: 2, startClient: true).PingConcurrent().GetAwaiter().GetResult();
+            },
+            ["ConcurrentPingHostedClient"] = () =>
+            {
+                new PingBenchmark(numSilos: 1, startClient: false).PingConcurrentHostedClient().GetAwaiter().GetResult();
             },
             ["PingForever"] = () =>
             {
-                new KestrelSequentialPingBenchmark().PingForever().GetAwaiter().GetResult();
-            },
-            ["PingForeverSaturate"] = () =>
-            {
-                new KestrelSequentialPingBenchmark().PingForeverSaturate().GetAwaiter().GetResult();
+                new PingBenchmark().PingForever().GetAwaiter().GetResult();
             },
             ["PingPongForever"] = () =>
             {
-                new KestrelSequentialPingBenchmark().PingPongForever().GetAwaiter().GetResult();
-            },
-            ["PingPongForeverSaturate"] = () =>
-            {
-                new KestrelSequentialPingBenchmark().PingPongForeverSaturate().GetAwaiter().GetResult();
+                new PingBenchmark().PingPongForever().GetAwaiter().GetResult();
             },
             ["GrainStorage.Memory"] = () =>
             {
