@@ -19,6 +19,7 @@ namespace Orleans.Runtime.MembershipService
         private Dictionary<SiloAddress, int> probedSilos;  // map from currently probed silos to the number of failed probes
         private readonly ILogger logger;
         private readonly ClusterMembershipOptions clusterMembershipOptions;
+        private readonly ChangeFeedSource<ClusterMembershipUpdate> membershipUpdates = new ChangeFeedSource<ClusterMembershipUpdate>();
         private SiloAddress MyAddress { get { return membershipOracleData.MyAddress; } }
         private GrainTimer timerGetTableUpdates;
         private GrainTimer timerProbeOtherSilos;
@@ -34,11 +35,15 @@ namespace Orleans.Runtime.MembershipService
         private readonly TimeSpan EXP_BACKOFF_CONTENTION_MAX; // set based on config
         private static readonly TimeSpan EXP_BACKOFF_STEP = TimeSpan.FromMilliseconds(1000);
         private readonly ILogger timerLogger;
+        private ClusterMembershipSnapshot currentSnapshot;
         public SiloStatus CurrentStatus { get { return membershipOracleData.CurrentStatus; } } // current status of this silo.
 
         public string SiloName { get { return membershipOracleData.SiloName; } }
         public SiloAddress SiloAddress { get { return membershipOracleData.MyAddress; } }
         private TimeSpan AllowedIAmAliveMissPeriod { get { return this.clusterMembershipOptions.IAmAliveTablePublishTimeout.Multiply(this.clusterMembershipOptions.NumMissedTableIAmAliveLimit); } }
+
+        public ClusterMembershipSnapshot CurrentSnapshot => this.currentSnapshot;
+
         private readonly ILoggerFactory loggerFactory;
 
         public MembershipOracle(
@@ -63,6 +68,8 @@ namespace Orleans.Runtime.MembershipService
             EXP_BACKOFF_ERROR_MAX = backOffMax;
             timerLogger = this.loggerFactory.CreateLogger<GrainTimer>();
         }
+
+        public ChangeFeedEntry<ClusterMembershipUpdate> MembershipUpdates => this.membershipUpdates.Current;
 
         public async Task Start()
         {
@@ -562,10 +569,12 @@ namespace Orleans.Runtime.MembershipService
                         return true;
                     }));
             }
+
             try
             {
                 await Task.WhenAll(pingPromises);
-            } catch (Exception)
+            }
+            catch (Exception)
             {
                 logger.Error(ErrorCode.MembershipJoiningPreconditionFailure, 
                     String.Format("-Failed to get ping responses from all {0} silos that are currently listed as Active in the Membership table. " + 
@@ -587,10 +596,41 @@ namespace Orleans.Runtime.MembershipService
                 await CleanupTableEntries(table);
             }
             // ReSharper disable once EmptyGeneralCatchClause
-            catch (Exception)
+            catch
             {
                 // just eat the exception.
             }
+
+            // First we need to consistently update the membership snapshot
+            ClusterMembershipSnapshot previous;
+            var updated = ClusterMembershipSnapshot.FromTableData(table);
+
+            do
+            {
+                previous = this.currentSnapshot;
+                if (previous.Version >= updated.Version)
+                {
+                    // This snapshot has been superseded by a later snapshot.
+                    // Changes included in this snapshot will be included in the superseding snapshot.
+                    return;
+                }
+
+            } while (!ReferenceEquals(Interlocked.CompareExchange(ref this.currentSnapshot, updated, previous), previous));
+
+            // Now that the snapshot has been updated, we need to issue a notification which includes all changes
+            // which occurred since the previous notification was issued.
+            ClusterMembershipUpdate notification;
+            do
+            {
+                var previousNotification = this.membershipUpdates.Current;
+                if (previousNotification.HasValue && previousNotification.Value.Snapshot.Version > updated.Version)
+                {
+                    // This update has been superseded by a later update which includes these changes.
+                    break;
+                }
+
+                notification = updated.CreateUpdateNotification(previousNotification.Value.Snapshot);
+            } while (!this.membershipUpdates.TryPublish(notification));
 
             bool localViewChanged = false;
             CheckMissedIAmAlives(table);
@@ -616,7 +656,7 @@ namespace Orleans.Runtime.MembershipService
 
             if (localViewChanged) logger.Info(ErrorCode.MembershipReadAll_2,
                 "-ReadAll (called from {0}, after local view changed, with removed duplicate deads) Membership table: {1}",
-                caller, table.SupressDuplicateDeads().ToString());
+                caller, table.WithoutDuplicateDeads().ToString());
         }
 
         private void CheckMissedIAmAlives(MembershipTableData table)
@@ -1220,6 +1260,16 @@ namespace Orleans.Runtime.MembershipService
         private IMembershipService GetOracleReference(SiloAddress silo)
         {
             return this.grainFactory.GetSystemTarget<IMembershipService>(Constants.MembershipOracleId, silo);
+        }
+
+        public void Subscribe(IClusterMembershipObserver observer)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Unsubscribe(IClusterMembershipObserver observer)
+        {
+            throw new NotImplementedException();
         }
     }
 }

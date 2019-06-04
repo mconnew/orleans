@@ -323,7 +323,6 @@ namespace Orleans.Runtime
             healthCheckParticipants.Add(membershipOracle);
 
             catalog.SiloStatusOracle = this.membershipOracle;
-            this.membershipOracle.SubscribeToSiloStatusEvents(localGrainDirectory);
             messageCenter.SiloDeadOracle = this.membershipOracle.IsDeadSilo;
 
             // consistentRingProvider is not a system target per say, but it behaves like the localGrainDirectory, so it is here

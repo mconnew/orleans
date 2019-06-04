@@ -15,21 +15,41 @@ namespace Orleans.Runtime.GrainDirectory
     {
         private readonly ILogger log;
         private readonly SiloAddress seed;
+        private static readonly Comparison<SiloAddress> RingComparer = CompareSiloAddressesForRing;
 
         public DirectoryMembershipSnapshot(
             ILogger log,
             SiloAddress myAddress,
             SiloAddress seed,
             bool isLocalDirectoryRunning,
-            ImmutableArray<SiloAddress> ring,
-            ImmutableHashSet<SiloAddress> members)
+            ClusterMembershipSnapshot clusterMembership)
         {
             this.log = log ?? throw new ArgumentNullException(nameof(log));
             this.MyAddress = myAddress ?? throw new ArgumentNullException(nameof(myAddress));
+            this.ClusterMembership = clusterMembership ?? throw new ArgumentNullException(nameof(clusterMembership));
             this.seed = seed;
             this.IsLocalDirectoryRunning = isLocalDirectoryRunning;
-            this.Ring = ring;
-            this.Members = members ?? ImmutableHashSet<SiloAddress>.Empty;
+
+            var activeMembers = ImmutableArray.CreateBuilder<SiloAddress>();
+            foreach (var member in clusterMembership.Members)
+            {
+                if (member.Status == SiloStatus.Active)
+                {
+                    var silo = member.SiloAddress;
+                    activeMembers.Add(silo);
+                }
+            }
+
+            activeMembers.Sort(RingComparer);
+            this.Members = ImmutableHashSet.CreateRange(activeMembers);
+            this.Ring = activeMembers.ToImmutable();
+        }
+
+        private static int CompareSiloAddressesForRing(SiloAddress left, SiloAddress right)
+        {
+            var leftHash = left.GetConsistentHashCode();
+            var rightHash = right.GetConsistentHashCode();
+            return leftHash.CompareTo(rightHash);
         }
 
         /// <summary>
@@ -56,11 +76,16 @@ namespace Orleans.Runtime.GrainDirectory
         public SiloAddress MyAddress { get; }
 
         /// <summary>
+        /// The monotonically increasing membership version associated with this snapshot.
+        /// </summary>
+        public ClusterMembershipSnapshot ClusterMembership { get; }
+
+        /// <summary>
         /// Returns an updated copy of this instance.
         /// </summary>
         [Pure]
-        public DirectoryMembershipSnapshot WithUpdate(bool isLocalDirectoryRunning, ImmutableArray<SiloAddress> ring, ImmutableHashSet<SiloAddress> members)
-            => new DirectoryMembershipSnapshot(this.log, this.MyAddress, this.seed, isLocalDirectoryRunning, ring, members);
+        public DirectoryMembershipSnapshot WithUpdate(bool isLocalDirectoryRunning, ClusterMembershipSnapshot clusterMembership)
+            => new DirectoryMembershipSnapshot(this.log, this.MyAddress, this.seed, isLocalDirectoryRunning, clusterMembership);
 
         /// <summary>
         /// Returns the <see cref="SiloAddress"/> which owns the directory partition of the provided grain.
