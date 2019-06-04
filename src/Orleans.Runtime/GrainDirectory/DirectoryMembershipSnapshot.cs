@@ -33,9 +33,9 @@ namespace Orleans.Runtime.GrainDirectory
             var activeMembers = ImmutableArray.CreateBuilder<SiloAddress>();
             foreach (var member in clusterMembership.Members)
             {
-                if (member.Status == SiloStatus.Active)
+                if (member.Value.Status == SiloStatus.Active)
                 {
-                    var silo = member.SiloAddress;
+                    var silo = member.Value.SiloAddress;
                     activeMembers.Add(silo);
                 }
             }

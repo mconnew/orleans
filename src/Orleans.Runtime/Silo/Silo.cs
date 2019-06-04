@@ -405,7 +405,7 @@ namespace Orleans.Runtime
                 incomingAgent.Start();
             } 
 
-            StartTaskWithPerfAnalysis("Start local grain directory", LocalGrainDirectory.Start,stopWatch);
+            StartTaskWithPerfAnalysis("Start local grain directory", LocalGrainDirectory.Start, stopWatch);
 
             StartTaskWithPerfAnalysis("Init implicit stream subscribe table", InitImplicitStreamSubscribeTable, stopWatch);
             void InitImplicitStreamSubscribeTable()
@@ -449,6 +449,8 @@ namespace Orleans.Runtime
                     .WithTimeout(initTimeout, $"Starting MembershipOracle failed due to timeout {initTimeout}");
                 logger.Debug("Local silo status oracle created successfully.");
             }
+
+            StartTaskWithPerfAnalysis("Start local grain directory maintenance", LocalGrainDirectory.OnRuntimeServicesStart, stopWatch);
 
             var versionStore = Services.GetService<IVersionStore>();
             await StartAsyncTaskWithPerfAnalysis("Init type manager", () => scheduler

@@ -20,6 +20,8 @@ namespace Orleans.Runtime.GrainDirectory
         /// </summary>
         void Start();
 
+        void OnRuntimeServicesStart();
+
         /// <summary>
         /// Stops the local portion of the directory service.
         /// </summary>

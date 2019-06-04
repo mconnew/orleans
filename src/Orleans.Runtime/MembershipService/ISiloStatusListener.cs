@@ -53,7 +53,7 @@ namespace Orleans.Runtime
             {
                 get
                 {
-                    if (this.HasValue) ThrowInvalidInstance();
+                    if (!this.HasValue) ThrowInvalidInstance();
                     if (this.value is T typedValue) return typedValue;
                     return default;
                 }
@@ -66,7 +66,7 @@ namespace Orleans.Runtime
             private static T ThrowInvalidInstance() => throw new InvalidOperationException("This instance does not have a value set.");
 
             private static TaskCompletionSource<ChangeFeedEntry<T>> CreateCompletion()
-                => new TaskCompletionSource<ChangeFeedEntry<T>>(TaskCreationOptions.DenyChildAttach | TaskCreationOptions.RunContinuationsAsynchronously);
+                => new TaskCompletionSource<ChangeFeedEntry<T>>(TaskCreationOptions.RunContinuationsAsynchronously);
         }
     }
 
@@ -75,7 +75,7 @@ namespace Orleans.Runtime
         internal static readonly object InvalidValue = new object();
     }
 
-    internal abstract class ChangeFeedEntry<T>
+    public abstract class ChangeFeedEntry<T>
     {
         public abstract bool HasValue { get; }
 
@@ -167,13 +167,15 @@ namespace Orleans.Runtime
     [Serializable]
     public sealed class ClusterMembershipSnapshot
     {
-        public ClusterMembershipSnapshot(ImmutableDictionary<SiloAddress, ClusterMember> members, MembershipVersion version)
+        private SiloAddress localSiloAddress;
+        public ClusterMembershipSnapshot(SiloAddress localSiloAddress, ImmutableDictionary<SiloAddress, ClusterMember> members, MembershipVersion version)
         {
+            this.localSiloAddress = localSiloAddress;
             this.Members = members;
             this.Version = version;
         }
 
-        public static ClusterMembershipSnapshot FromTableData(MembershipTableData data)
+        public static ClusterMembershipSnapshot FromTableData(SiloAddress siloAddress, MembershipTableData data)
         {
             var memberBuilder = ImmutableDictionary.CreateBuilder<SiloAddress, ClusterMember>();
             foreach (var member in data.Members)
@@ -182,14 +184,16 @@ namespace Orleans.Runtime
                 memberBuilder[entry.SiloAddress] = new ClusterMember(entry.SiloAddress, entry.Status, entry.SiloName);
             }
 
-            return new ClusterMembershipSnapshot(memberBuilder.ToImmutable(), new MembershipVersion(data.Version.Version));
+            return new ClusterMembershipSnapshot(siloAddress, memberBuilder.ToImmutable(), new MembershipVersion(data.Version.Version));
         }
 
-        public SiloAddress LocalSilo { get; }
+        public ClusterMember LocalSilo => this.Members[this.localSiloAddress];
 
         public ImmutableDictionary<SiloAddress, ClusterMember> Members { get; }
 
         public MembershipVersion Version { get; }
+
+        public ClusterMembershipUpdate CreateInitialUpdateNotification() => new ClusterMembershipUpdate(this, this.Members.Values.ToImmutableArray());
 
         public ClusterMembershipUpdate CreateUpdateNotification(ClusterMembershipSnapshot previous)
         {
@@ -225,10 +229,5 @@ namespace Orleans.Runtime
 
             return new ClusterMembershipUpdate(this, changes.ToImmutableArray());
         }
-    }
-
-    public interface IClusterMembershipObserver
-    {
-        Task OnClusterMembershipChange(ClusterMembershipUpdate notification);
     }
 }

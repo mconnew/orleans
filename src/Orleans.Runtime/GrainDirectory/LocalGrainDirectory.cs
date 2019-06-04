@@ -15,7 +15,7 @@ namespace Orleans.Runtime.GrainDirectory
 {
     internal class LocalGrainDirectory :
         MarshalByRefObject,
-        ILocalGrainDirectory, IClusterMembershipObserver
+        ILocalGrainDirectory
     {
         private DirectoryMembershipSnapshot membershipSnapshot;
 
@@ -212,7 +212,6 @@ namespace Orleans.Runtime.GrainDirectory
             StringValueStatistic.FindOrCreate(StatisticNames.DIRECTORY_RING_SUCCESSORS, () => Utils.EnumerableToString(this.membershipSnapshot.FindSuccessors(this.MyAddress, 1), siloAddressPrint));
 
             this.registrarManager = registrarManager;
-            siloStatusOracle.Subscribe(this);
         }
 
         public void Start()
@@ -227,6 +226,109 @@ namespace Orleans.Runtime.GrainDirectory
             if (GsiActivationMaintainer != null)
             {
                 GsiActivationMaintainer.Start();
+            }
+        }
+
+        public void OnRuntimeServicesStart()
+        {
+            this.Scheduler.QueueTask(this.ProcessMembershipChanges, this.CacheValidator.SchedulingContext);
+        }
+
+        private async Task ProcessMembershipChanges()
+        {
+            var notification = this.siloStatusOracle.MembershipUpdates;
+            while (this.Running)
+            {
+                try
+                {
+                    notification = await notification.NextAsync();
+                    if (!notification.HasValue)
+                    {
+                        continue;
+                    }
+
+                    // Update the membership snapshot
+                    var update = notification.Value;
+                    DirectoryMembershipSnapshot existing;
+                    DirectoryMembershipSnapshot updated;
+                    Dictionary<GrainId, IGrainInfo> directoryPartitionCopy;
+                    IReadOnlyList<Tuple<GrainId, IReadOnlyList<Tuple<SiloAddress, ActivationId>>, int>> directoryCache;
+                    do
+                    {
+                        existing = this.membershipSnapshot;
+
+                        if (existing.ClusterMembership.Version >= update.Snapshot.Version)
+                        {
+                            // we have already removed this silo
+                            return;
+                        }
+
+                        updated = existing.WithUpdate(existing.IsLocalDirectoryRunning, update.Snapshot);
+                        directoryPartitionCopy = this.DirectoryPartition.GetItems();
+                        directoryCache = this.DirectoryCache.KeyValues;
+                    } while (Interlocked.CompareExchange(ref this.membershipSnapshot, updated, existing) != existing);
+
+                    // Process the individual changes
+                    foreach (var change in update.Changes)
+                    {
+                        // Ignore changes for the local silo
+                        if (change.SiloAddress.Equals(this.MyAddress)) continue;
+
+                        var status = change.Status;
+                        if (status.IsTerminating())
+                        {
+                            RemoveSilo(existing, updated, change, directoryPartitionCopy, directoryCache);
+                        }
+                        else if (status == SiloStatus.Active)
+                        {
+                            AddSilo(updated, change);
+                        }
+
+                        if (log.IsEnabled(LogLevel.Information)) this.log.LogInformation("Silo {LocalSilo} removed silo {RemoteSilo}", this.MyAddress, change.SiloAddress);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    this.Logger.LogWarning("Exception while processing membership updates: {Exception}", exception);
+                }
+            }
+
+            void AddSilo(DirectoryMembershipSnapshot updated, ClusterMember added)
+            {
+                if (log.IsEnabled(LogLevel.Information)) log.LogInformation("Silo {LocalSilo} adding silo {RemoteSilo}", MyAddress, added.SiloAddress);
+                HandoffManager.ProcessSiloAddEvent(updated, added.SiloAddress);
+            }
+
+            void RemoveSilo(
+                DirectoryMembershipSnapshot existing,
+                DirectoryMembershipSnapshot updated,
+                ClusterMember removed,
+                Dictionary<GrainId, IGrainInfo> directoryPartitionCopy,
+                IReadOnlyList<Tuple<GrainId, IReadOnlyList<Tuple<SiloAddress, ActivationId>>, int>> directoryCache)
+            {
+
+                if (log.IsEnabled(LogLevel.Information))
+                {
+                    this.log.LogInformation("Silo {LocalSilo} removing silo {RemoteSilo}", this.MyAddress, removed.SiloAddress);
+                }
+
+                try
+                {
+                    // Only notify the catalog once.
+                    // The catalog is intentionally called using the previous membership snapshot so that calculations about directory partitions
+                    // are consistent.
+                    this.catalogOnSiloRemoved?.Invoke(existing, removed.SiloAddress, removed.Status);
+                }
+                catch (Exception exc)
+                {
+                    this.log.Error(
+                        ErrorCode.Directory_SiloStatusChangeNotification_Exception,
+                        string.Format("CatalogSiloStatusListener.RemoveServer has thrown an exception when notified about removed silo {0}.", removed.SiloAddress.ToStringWithHashCode()), exc);
+                }
+
+                this.HandoffManager.ProcessSiloRemoveEvent(updated, removed.SiloAddress);
+                this.AdjustLocalDirectory(directoryPartitionCopy, removed.SiloAddress);
+                this.AdjustLocalCache(updated, directoryCache, removed.SiloAddress);
             }
         }
 
@@ -276,71 +378,6 @@ namespace Orleans.Runtime.GrainDirectory
             this.catalogOnSiloRemoved = callback ?? throw new ArgumentNullException(nameof(callback));
         }
 
-        protected void AddServer(ClusterMembershipUpdate notification)
-        {
-            if (log.IsEnabled(LogLevel.Information)) log.LogInformation("Silo {LocalSilo} adding silo {RemoteSilo}", MyAddress, notification.Silo);
-            DirectoryMembershipSnapshot existing;
-            DirectoryMembershipSnapshot updated;
-            do
-            {
-                existing = this.membershipSnapshot;
-
-                if (existing.ClusterMembership.Version >= notification.ClusterMembership.Version)
-                {
-                    // we have already cached this silo
-                    return;
-                }
-
-                updated = existing.WithUpdate(existing.IsLocalDirectoryRunning, notification.ClusterMembership);
-            } while (Interlocked.CompareExchange(ref this.membershipSnapshot, updated, existing) != existing);
-
-            HandoffManager.ProcessSiloAddEvent(updated, notification.Silo);
-
-            if (log.IsEnabled(LogLevel.Information)) log.LogInformation("Silo {LocalSilo} added silo {RemoteSilo}", MyAddress, notification.Silo);
-        }
-
-        protected void RemoveServer(ClusterMembershipUpdate notification)
-        {
-            if (log.IsEnabled(LogLevel.Information)) this.log.LogInformation("Silo {LocalSilo} removing silo {RemoteSilo}", this.MyAddress, notification.Silo);
-            DirectoryMembershipSnapshot existing;
-            DirectoryMembershipSnapshot updated;
-            Dictionary<GrainId, IGrainInfo> directoryPartitionCopy;
-            IReadOnlyList<Tuple<GrainId, IReadOnlyList<Tuple<SiloAddress, ActivationId>>, int>> directoryCache;
-            do
-            {
-                existing = this.membershipSnapshot;
-
-                if (existing.ClusterMembership.Version >= notification.ClusterMembership.Version)
-                {
-                    // we have already removed this silo
-                    return;
-                }
-
-                updated = existing.WithUpdate(existing.IsLocalDirectoryRunning, notification.ClusterMembership);
-                directoryPartitionCopy = this.DirectoryPartition.GetItems();
-                directoryCache = this.DirectoryCache.KeyValues;
-            } while (Interlocked.CompareExchange(ref this.membershipSnapshot, updated, existing) != existing);
-
-            try
-            {
-                // Only notify the catalog once.
-                // The catalog is intentionally called using the previous membership snapshot so that calculations about directory partitions
-                // are consistent.
-                this.catalogOnSiloRemoved?.Invoke(existing, notification.Silo, notification.Status);
-            }
-            catch (Exception exc)
-            {
-                this.log.Error(ErrorCode.Directory_SiloStatusChangeNotification_Exception,
-                    string.Format("CatalogSiloStatusListener.RemoveServer has thrown an exception when notified about removed silo {0}.", notification.Silo.ToStringWithHashCode()), exc);
-            }
-
-            this.HandoffManager.ProcessSiloRemoveEvent(updated, notification.Silo);
-            this.AdjustLocalDirectory(directoryPartitionCopy, notification.Silo);
-            this.AdjustLocalCache(updated, directoryCache, notification.Silo);
-
-            if (log.IsEnabled(LogLevel.Information)) this.log.LogInformation("Silo {LocalSilo} removed silo {RemoteSilo}", this.MyAddress, notification.Silo);
-        }
-
         /// <summary>
         /// Adjust local directory following the removal of a silo by dropping all activations located on the removed silo
         /// </summary>
@@ -377,27 +414,6 @@ namespace Orleans.Runtime.GrainDirectory
 
                 // 1) remove entries that point to activations located on the removed silo
                 RemoveActivations(DirectoryCache, tuple.Item1, tuple.Item2, tuple.Item3, t => t.Item1.Equals(removedSilo));
-            }
-        }
-
-        public async Task OnClusterMembershipChange(ClusterMembershipUpdate notification)
-        {
-            var updatedSilo = notification.Silo;
-            var status = notification.Status;
-
-            // This silo's status has changed
-            if (!Equals(updatedSilo, MyAddress)) // Status change for some other silo
-            {
-                if (status.IsTerminating())
-                {
-                    // QueueAction up the "Remove" to run on a system turn
-                    await Scheduler.QueueAction(() => RemoveServer(notification), CacheValidator.SchedulingContext);
-                }
-                else if (status == SiloStatus.Active)      // do not do anything with SiloStatus.Starting -- wait until it actually becomes active
-                {
-                    // QueueAction up the "Remove" to run on a system turn
-                    await Scheduler.QueueAction(() => AddServer(notification), CacheValidator.SchedulingContext);
-                }
             }
         }
 
