@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -143,7 +143,7 @@ namespace Orleans.MetadataStore
                 var newStamp = this.proposer.Ballot.Successor();
                 var quorum = newNodes.Length / 2 + 1;
                 var committedVersion = committedValue?.Version ?? 0;
-                var config = new ReplicaSetConfiguration(newStamp, committedVersion + 1, newNodes, quorum, quorum);
+                var config = new ReplicaSetConfiguration(newStamp, committedVersion + 1, newNodes, quorum, quorum, ranges: default);
                 this.ProposedConfiguration = ExpandedReplicaSetConfiguration.Create(config, this.options, this.referenceFactory);
 
                 // Attempt to commit the new configuration.

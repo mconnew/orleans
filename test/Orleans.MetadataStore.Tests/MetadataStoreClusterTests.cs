@@ -97,7 +97,8 @@ namespace Orleans.MetadataStore.Tests
                         1,
                         new[] {this.localSiloDetails.SiloAddress},
                         1,
-                        1));
+                        1,
+                        ranges: default));
                 }
 
                 this.updateProcessor = new ActionBlock<(SiloAddress, SiloStatus)>(
