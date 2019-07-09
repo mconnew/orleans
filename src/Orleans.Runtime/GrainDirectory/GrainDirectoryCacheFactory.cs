@@ -24,16 +24,23 @@ namespace Orleans.Runtime.GrainDirectory
         }
 
         internal static DedicatedAsynchAgent CreateGrainDirectoryCacheMaintainer(
-            LocalGrainDirectory router,
+            ILocalSiloDetails localSiloDetails,
             IGrainDirectoryCache cache,
+            LocalGrainDirectory localGrainDirectory,
             IInternalGrainFactory grainFactory,
             ExecutorService executorService,
             ILoggerFactory loggerFactory)
         {
             var adaptiveCache = cache as AdaptiveGrainDirectoryCache;
-            return adaptiveCache != null
-                ? new AdaptiveDirectoryCacheMaintainer(router, adaptiveCache, grainFactory, executorService, loggerFactory)
-                : null;
+            if (adaptiveCache is null) return null;
+            return new AdaptiveDirectoryCacheMaintainer(
+                    localSiloDetails,
+                    localGrainDirectory,
+                    adaptiveCache,
+                    updateFunc,
+                    grainFactory,
+                    executorService,
+                    loggerFactory);
         }
     }
 
