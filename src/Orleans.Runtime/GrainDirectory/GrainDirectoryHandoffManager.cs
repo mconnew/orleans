@@ -20,7 +20,7 @@ namespace Orleans.Runtime.GrainDirectory
         private readonly LocalGrainDirectory localDirectory;
         private readonly IClusterMembershipService clusterMembership;
         private readonly IInternalGrainFactory grainFactory;
-        private readonly Dictionary<SiloAddress, GrainDirectoryPartition> ongoingHandoffs;
+        private readonly HashSet<SiloAddress> receivingHandoffs = new HashSet<SiloAddress>();
         private readonly ILogger logger;
         private readonly Factory<GrainDirectoryPartition> createPartion;
         private readonly Queue<(string name, Func<Task> action)> pendingOperations = new Queue<(string name, Func<Task> action)>();
@@ -50,7 +50,6 @@ namespace Orleans.Runtime.GrainDirectory
             this.clusterMembership = clusterMembership;
             this.grainFactory = grainFactory;
             this.createPartion = createPartion;
-            ongoingHandoffs = new Dictionary<SiloAddress, GrainDirectoryPartition>();
         }
 
         private async Task HandoffMyPartitionUponStop(Dictionary<GrainId, IGrainInfo> batchUpdate, SiloAddress destination, bool isFullCopy)
@@ -97,46 +96,14 @@ namespace Orleans.Runtime.GrainDirectory
             }
         }
 
-        internal void ProcessSiloRemoveEvent(DirectoryMembershipSnapshot updated, SiloAddress removedSilo)
+        internal void ProcessSiloRemoveEvent(SiloAddress removedSilo)
         {
-            Dictionary<SiloAddress, List<ActivationAddress>> duplicates;
             lock (this)
             {
-                if (logger.IsEnabled(LogLevel.Debug)) logger.Debug("Processing silo remove event for " + removedSilo);
-                
-                // check if this is our successor (i.e., if I hold this silo's copy)
-                // (if yes, adjust local and/or handoffed directory partitions)
-                if (!ongoingHandoffs.TryGetValue(removedSilo, out var removedPartition)) return;
-
-                var predecessor = updated.FindPredecessor(removedSilo);
-                if (predecessor is null) return;
-
-                if (this.localSiloDetails.SiloAddress.Equals(predecessor))
-                {
-                    if (logger.IsEnabled(LogLevel.Debug)) logger.Debug("Merging my partition with the copy of silo " + removedSilo);
-
-                    // Now I am responsible for this directory partition.
-                    duplicates = localDirectory.DirectoryPartition.Merge(removedPartition);
-                }
-                else if (ongoingHandoffs.TryGetValue(predecessor, out var predecessorPartition))
-                {
-                    if (logger.IsEnabled(LogLevel.Debug)) logger.Debug("Merging partition of " + predecessor + " with the copy of silo " + removedSilo);
-
-                    // Adjust copy for the predecessor of the failed silo
-                    duplicates = predecessorPartition.Merge(removedPartition);
-                }
-                else
-                {
-                    // This silo does not have a copy of the predecessor's partition
-                    duplicates = null;
-                }
-
-                localDirectory.GsiActivationMaintainer.TrackDoubtfulGrains(removedPartition.GetItems());
-                if (logger.IsEnabled(LogLevel.Debug)) logger.Debug("Removed copied partition of silo " + removedSilo);
-                ongoingHandoffs.Remove(removedSilo);
+                if (!receivingHandoffs.Remove(removedSilo)) return;
             }
 
-            this.DestroyDuplicateActivations(duplicates);
+            if (logger.IsEnabled(LogLevel.Debug)) logger.Debug("Processed silo remove event for " + removedSilo);
         }
 
         internal async Task ProcessSiloStoppingEvent(DirectoryMembershipSnapshot membershipSnapshot)
@@ -331,34 +298,13 @@ namespace Orleans.Runtime.GrainDirectory
 
                 var thisChunk = this.createPartion();
                 thisChunk.Set(partition);
-                if (!ongoingHandoffs.TryGetValue(source, out var targetPartition))
-                {
-                    if (!isFullCopy)
-                    {
-                        var membershipSnapshot = this.clusterMembership.CurrentSnapshot;
-                        logger.Warn(ErrorCode.DirectoryUnexpectedDelta,
-                            string.Format("Got delta of the directory partition from silo {0} (Membership status {1}) while not holding a full copy. Membership active cluster size is {2}",
-                                source, membershipSnapshot.GetSiloStatus(source),
-                                membershipSnapshot.Members.Values.Count(m => m.Status == SiloStatus.Active)));
-                    }
 
-                    ongoingHandoffs[source] = targetPartition = thisChunk;
-                }
-
-                if (isFullCopy)
-                {
-                    targetPartition.Set(partition);
-                }
-                else
-                {
-                    targetPartition.Update(partition);
-                }
+                this.receivingHandoffs.Add(source);
 
                 // Immediately merge the remote partition with the local directory partition so that we can serve requests
-                // using the handoff data.
+                // using the data.
                 var duplicates = this.localDirectory.DirectoryPartition.Merge(thisChunk);
                 this.DestroyDuplicateActivations(duplicates);
-
                 localDirectory.GsiActivationMaintainer.TrackDoubtfulGrains(partition);
             }
         }
@@ -369,7 +315,7 @@ namespace Orleans.Runtime.GrainDirectory
 
             lock (this)
             {
-                return ongoingHandoffs.ContainsKey(source);
+                return receivingHandoffs.Contains(source);
             }
         }
 

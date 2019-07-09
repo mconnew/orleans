@@ -351,7 +351,7 @@ namespace Orleans.Runtime.GrainDirectory
 
                 try
                 {
-                    this.HandoffManager.ProcessSiloRemoveEvent(updated, removed.SiloAddress);
+                    this.HandoffManager.ProcessSiloRemoveEvent(removed.SiloAddress);
                     this.AdjustLocalDirectory(directoryPartitionCopy, removed.SiloAddress, dead: true);
                     this.AdjustLocalCache(updated, directoryCache, removed.SiloAddress, dead: true);
 
