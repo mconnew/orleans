@@ -286,18 +286,18 @@ namespace Orleans.Runtime.MembershipService
             }
 
             {
-                async Task AfterRuntimeGrainServicesStart(CancellationToken ct)
+                async Task OnBecomeJoiningStart(CancellationToken ct)
                 {
                     await Task.Run(() => this.BecomeJoining());
                 }
 
-                Task AfterRuntimeGrainServicesStop(CancellationToken ct) => Task.CompletedTask;
+                Task OnBecomeJoiningStop(CancellationToken ct) => Task.CompletedTask;
 
                 lifecycle.Subscribe(
                     nameof(MembershipAgent),
-                    ServiceLifecycleStage.AfterRuntimeGrainServices,
-                    AfterRuntimeGrainServicesStart,
-                    AfterRuntimeGrainServicesStop);
+                    ServiceLifecycleStage.BecomeJoining,
+                    OnBecomeJoiningStart,
+                    OnBecomeJoiningStop);
             }
 
             {

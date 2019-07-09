@@ -211,7 +211,7 @@ namespace Orleans.Runtime
 
         void ILifecycleParticipant<ISiloLifecycle>.Participate(ISiloLifecycle lifecycle)
         {
-            lifecycle.Subscribe("HostedClient", ServiceLifecycleStage.RuntimeGrainServices, OnStart, OnStop);
+            lifecycle.Subscribe("HostedClient", ServiceLifecycleStage.RuntimeServices, OnStart, OnStop);
 
             Task OnStart(CancellationToken cancellation)
             {
