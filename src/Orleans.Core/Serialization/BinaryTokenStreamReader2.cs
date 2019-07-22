@@ -1,4 +1,5 @@
 //#define TRACE_SERIALIZATION
+//#define SERIALIZER_SESSIONAWARE
 using System;
 using System.Buffers;
 using System.Buffers.Binary;
@@ -32,6 +33,23 @@ namespace Orleans.Serialization
         {
             this.PartialReset(input);
         }
+
+#if SERIALIZER_SESSIONAWARE
+        private ReferencedTypeCollection referencedTypes;
+        internal void RecordType(Type type)
+        {
+            var types = this.referencedTypes ?? (this.referencedTypes = new ReferencedTypeCollection());
+            types.RecordTypeWhileDeserializing(type);
+        }
+
+        internal Type GetReferencedType(uint id)
+        {
+            if (this.referencedTypes == null || !this.referencedTypes.TryGetReferencedType(id, out var result)) return ThrowNull(id);
+            return result;
+
+            Type ThrowNull(uint i) => throw new InvalidOperationException($"No referenced types for id {i}");
+        }
+#endif
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void PartialReset(ReadOnlySequence<byte> input)
