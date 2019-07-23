@@ -2,6 +2,7 @@
   <PropertyGroup>
     <RootNamespace>Tester.ZooKeeperUtils</RootNamespace>
     <AssemblyName>Tester.ZooKeeperUtils</AssemblyName>
+    <TargetFrameworks>netcoreapp2.2;net472</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>

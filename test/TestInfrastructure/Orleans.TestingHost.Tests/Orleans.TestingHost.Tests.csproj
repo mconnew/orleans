@@ -4,6 +4,7 @@
     <RootNamespace>Orleans.TestingHost.Tests</RootNamespace>
     <AssemblyName>Orleans.TestingHost.Tests</AssemblyName>
     <OrleansBuildTimeCodeGen>true</OrleansBuildTimeCodeGen>
+    <TargetFrameworks>netcoreapp2.2;net472</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>

@@ -2,6 +2,7 @@
   <PropertyGroup>
     <RootNamespace>Consul.Tests</RootNamespace>
     <AssemblyName>Consul.Tests</AssemblyName>
+    <TargetFrameworks>netcoreapp2.2;net472</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>

@@ -3,6 +3,7 @@
     <RootNamespace>DependencyInjection.Tests</RootNamespace>
     <AssemblyName>DependencyInjection.Tests</AssemblyName>
     <OrleansBuildTimeCodeGen>true</OrleansBuildTimeCodeGen>
+    <TargetFrameworks>netcoreapp2.2;net472</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>

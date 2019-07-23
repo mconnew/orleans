@@ -2,6 +2,7 @@
   <PropertyGroup>
     <RootNamespace>BondUtils.Tests</RootNamespace>
     <AssemblyName>BondUtils.Tests</AssemblyName>
+    <TargetFrameworks>netcoreapp2.2;net472</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>

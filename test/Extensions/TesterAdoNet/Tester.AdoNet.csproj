@@ -3,6 +3,7 @@
     <RootNamespace>Tester.AdoNet</RootNamespace>
     <AssemblyName>Tester.AdoNet</AssemblyName>
     <DefineConstants>$(DefineConstants);TESTER_SQLUTILS</DefineConstants>
+    <TargetFrameworks>netcoreapp2.2;net472</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>

@@ -3,6 +3,7 @@
     <RootNamespace>AWSUtils.Tests</RootNamespace>
     <AssemblyName>AWSUtils.Tests</AssemblyName>
     <DefineConstants>$(DefineConstants);AWSUTILS_TESTS</DefineConstants>
+    <TargetFrameworks>netcoreapp2.2;net472</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(SourceRoot)src\AWS\Shared\AWSUtils.cs" Link="AWSUtils.cs" />

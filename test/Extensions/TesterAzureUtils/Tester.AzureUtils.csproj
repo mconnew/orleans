@@ -3,6 +3,7 @@
     <RootNamespace>Tester.AzureUtils</RootNamespace>
     <AssemblyName>Tester.AzureUtils</AssemblyName>
     <DefineConstants>$(DefineConstants);TESTER_AZUREUTILS</DefineConstants>
+    <TargetFrameworks>netcoreapp2.2;net472</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>

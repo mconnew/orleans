@@ -2,6 +2,7 @@
   <PropertyGroup>
     <RootNamespace>ProtoBuf.Serialization.Tests</RootNamespace>
     <AssemblyName>ProtoBuf.Serialization.Tests</AssemblyName>
+    <TargetFrameworks>netcoreapp2.2;net472</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>

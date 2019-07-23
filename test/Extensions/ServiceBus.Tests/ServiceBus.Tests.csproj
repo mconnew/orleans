@@ -2,6 +2,7 @@
   <PropertyGroup>
     <RootNamespace>ServiceBus.Tests</RootNamespace>
     <AssemblyName>ServiceBus.Tests</AssemblyName>
+    <TargetFrameworks>netcoreapp2.2;net472</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>

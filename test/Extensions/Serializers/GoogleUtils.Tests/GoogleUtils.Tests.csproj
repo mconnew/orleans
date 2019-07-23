@@ -2,6 +2,7 @@
   <PropertyGroup>
     <RootNamespace>GoogleUtils.Tests</RootNamespace>
     <AssemblyName>GoogleUtils.Tests</AssemblyName>
+    <TargetFrameworks>netcoreapp2.2;net472</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
