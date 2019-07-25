@@ -151,10 +151,12 @@ namespace Orleans.Runtime.MembershipService
                 var random = new SafeRandom();
                 TimeSpan? onceOffDelay = random.NextTimeSpan(this.clusterMembershipOptions.ProbeTimeout);
 
+                var pingCancellation = new CancellationTokenSource(this.clusterMembershipOptions.ProbeTimeout).Token;
+
                 while (await this.monitorClusterHealthTimer.NextTick(onceOffDelay))
                 {
                     if (onceOffDelay != default) onceOffDelay = default;
-                    _ = this.ProbeMonitoredSilos(CancellationToken.None);
+                    _ = this.ProbeMonitoredSilos(pingCancellation);
                 }
             }
             catch (Exception exception) when (this.fatalErrorHandler.IsUnexpected(exception))
