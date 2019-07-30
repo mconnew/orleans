@@ -1,5 +1,8 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Text;
 
 namespace Orleans.Runtime
@@ -11,60 +14,30 @@ namespace Orleans.Runtime
             ImmutableDictionary<SiloAddress, MembershipEntry> entries)
         {
             this.Version = version;
-            this.Entries = entries;
+            this.Entries = entries ?? throw new ArgumentNullException(nameof(entries));
         }
 
-        public static MembershipTableSnapshot Create(MembershipEntry localSiloEntry, MembershipTableData table)
+        public static MembershipTableSnapshot Create(MembershipTableData table)
         {
             if (table is null) throw new ArgumentNullException(nameof(table));
 
-            var entries = ImmutableDictionary.CreateBuilder<SiloAddress, MembershipEntry>();
-            if (table.Members != null)
-            {
-                foreach (var item in table.Members)
-                {
-                    var entry = item.Item1;
-                    entries.Add(entry.SiloAddress, entry);
-                }
-            }
-
-            if (entries.TryGetValue(localSiloEntry.SiloAddress, out var existing))
-            {
-                entries[localSiloEntry.SiloAddress] = existing.WithStatus(localSiloEntry.Status);
-            }
-            else
-            {
-                entries[localSiloEntry.SiloAddress] = localSiloEntry;
-            }
-
             var version = new MembershipVersion(table.Version.Version);
-            return new MembershipTableSnapshot(version, entries.ToImmutable());
+            return Create(version, table.Members.Select(m => m.Item1));
         }
 
-        public static MembershipTableSnapshot Create(MembershipEntry localSiloEntry, MembershipTableSnapshot snapshot)
+        private static MembershipTableSnapshot Create(MembershipVersion version, IEnumerable<MembershipEntry> allEntries)
         {
-            if (snapshot is null) throw new ArgumentNullException(nameof(snapshot));
-
             var entries = ImmutableDictionary.CreateBuilder<SiloAddress, MembershipEntry>();
-            if (snapshot.Entries != null)
+
+            if (allEntries != null)
             {
-                foreach (var item in snapshot.Entries)
+                foreach (var entry in allEntries)
                 {
-                    var entry = item.Value;
-                    entries.Add(entry.SiloAddress, entry);
+                    entries[entry.SiloAddress] = entry;
                 }
             }
 
-            if (entries.TryGetValue(localSiloEntry.SiloAddress, out var existing))
-            {
-                entries[localSiloEntry.SiloAddress] = existing.WithStatus(localSiloEntry.Status);
-            }
-            else
-            {
-                entries[localSiloEntry.SiloAddress] = localSiloEntry;
-            }
-
-            return new MembershipTableSnapshot(snapshot.Version, entries.ToImmutable());
+            return new MembershipTableSnapshot(version, entries.ToImmutable());
         }
 
         public MembershipVersion Version { get; }

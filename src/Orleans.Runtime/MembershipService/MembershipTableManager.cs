@@ -94,15 +94,8 @@ namespace Orleans.Runtime.MembershipService
             await pending;
         }
 
-        public async Task RefreshFromSnapshot(MembershipTableSnapshot snapshot)
+        public Task RefreshFromSnapshot(MembershipTableSnapshot snapshot)
         {
-            // Check if a refresh is underway
-            var pending = this.pendingRefresh;
-            if (pending != null && !pending.IsCompleted)
-            {
-                await pending;
-            }
-
             this.log.LogInformation("Received cluster membership snapshot via gossip: {Snapshot}", snapshot);
 
             if (snapshot.Entries.TryGetValue(this.myAddress, out var localSiloEntry))
@@ -113,16 +106,12 @@ namespace Orleans.Runtime.MembershipService
                     this.log.Warn(ErrorCode.MembershipFoundMyselfDead1, msg);
                     this.KillMyselfLocally(msg);
                 }
-
-                snapshot = MembershipTableSnapshot.Create(localSiloEntry.WithStatus(this.CurrentStatus), snapshot);
-            }
-            else
-            {
-                snapshot = MembershipTableSnapshot.Create(this.CreateLocalSiloEntry(this.CurrentStatus), snapshot);
             }
 
             // If we are behind, let's take directly the snapshot in param
             this.updates.TryPublish(snapshot);
+
+            return Task.CompletedTask;
         }
 
         private async Task<bool> RefreshInternal(bool requireCleanup)
@@ -456,9 +445,7 @@ namespace Orleans.Runtime.MembershipService
             if (this.log.IsEnabled(LogLevel.Debug)) this.log.LogDebug(nameof(ProcessTableUpdate) + " (called from {Caller}) membership table {Table}", caller, table.ToString());
 
             // Update the current membership snapshot.
-            var (localSiloEntry, _) = this.GetOrCreateLocalSiloEntry(table, this.CurrentStatus);
-            var updated = MembershipTableSnapshot.Create(localSiloEntry, table);
-
+            var updated = MembershipTableSnapshot.Create(table);
             if (this.updates.TryPublish(updated))
             {
                 this.LogMissedIAmAlives(table);

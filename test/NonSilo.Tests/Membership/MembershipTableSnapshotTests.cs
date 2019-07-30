@@ -16,9 +16,7 @@ namespace NonSilo.Tests.Membership
 
             // The table is empty
             var localSiloEntry = Entry(silo, SiloStatus.Joining);
-            var snapshot = MembershipTableSnapshot.Create(
-                localSiloEntry,
-                Table());
+            var snapshot = MembershipTableSnapshot.Create(Table(localSiloEntry));
 
             Assert.Equal(localSiloEntry.Status, snapshot.GetSiloStatus(silo));
             Assert.Equal(silo, snapshot.Entries[silo].SiloAddress);
@@ -31,19 +29,15 @@ namespace NonSilo.Tests.Membership
         {
             var silo = Silo("127.0.0.1:100@1");
 
-            // Check that the Silo status in the entry directly provided to the
-            // constructor overrides the value in the table.
-            var localSiloEntry = Entry(silo, SiloStatus.Stopping);
             var snapshot = MembershipTableSnapshot.Create(
-                localSiloEntry,
                 Table(
-                    Entry(silo, SiloStatus.Active),
+                    Entry(silo, SiloStatus.Stopping),
                     Entry(Silo("127.0.0.1:200@1"), SiloStatus.Active)));
             
-            Assert.Equal(localSiloEntry.Status, snapshot.GetSiloStatus(silo));
+            Assert.Equal(SiloStatus.Stopping, snapshot.GetSiloStatus(silo));
             Assert.Equal(silo, snapshot.Entries[silo].SiloAddress);
-            Assert.Equal(localSiloEntry.Status, snapshot.Entries[silo].Status);
-            Assert.Contains(snapshot.Entries, e => e.Key.Equals(silo) && e.Value.Status == localSiloEntry.Status);
+            Assert.Equal(SiloStatus.Stopping, snapshot.Entries[silo].Status);
+            Assert.Contains(snapshot.Entries, e => e.Key.Equals(silo) && e.Value.Status == SiloStatus.Stopping);
         }
 
         [Fact]
@@ -54,7 +48,6 @@ namespace NonSilo.Tests.Membership
 
             var knownSiloEntry = Entry(knownSilo, SiloStatus.Active);
             var snapshot = MembershipTableSnapshot.Create(
-                knownSiloEntry,
                 Table(knownSiloEntry));
 
             Assert.Equal(SiloStatus.None, snapshot.GetSiloStatus(unknownSilo));
@@ -68,7 +61,6 @@ namespace NonSilo.Tests.Membership
 
             var knownSiloEntry = Entry(knownSuccessor, SiloStatus.Active);
             var snapshot = MembershipTableSnapshot.Create(
-                knownSiloEntry,
                 Table(knownSiloEntry));
 
             Assert.Equal(SiloStatus.Dead, snapshot.GetSiloStatus(unknownSilo));
