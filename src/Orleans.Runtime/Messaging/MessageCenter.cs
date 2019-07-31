@@ -16,8 +16,8 @@ namespace Orleans.Runtime.Messaging
         private IHostedClient hostedClient;
         private Action<Message> sniffIncomingMessageHandler;
 
-        internal OutboundMessageQueue OutboundQueue { get; set; }
-        private InboundMessageQueue inboundQueue;
+        private readonly OutboundMessageQueue outboundQueue;
+        private readonly InboundMessageQueue inboundQueue;
         private readonly MessageFactory messageFactory;
         private readonly ILoggerFactory loggerFactory;
         private readonly ConnectionManager senderManager;
@@ -59,7 +59,7 @@ namespace Orleans.Runtime.Messaging
             if (log.IsEnabled(LogLevel.Trace)) log.Trace("Starting initialization.");
 
             inboundQueue = new InboundMessageQueue(this.loggerFactory.CreateLogger<InboundMessageQueue>(), statisticsOptions);
-            OutboundQueue = new OutboundMessageQueue(this, this.loggerFactory.CreateLogger<OutboundMessageQueue>(), this.senderManager, siloStatusOracle);
+            outboundQueue = new OutboundMessageQueue(this, this.loggerFactory.CreateLogger<OutboundMessageQueue>(), this.senderManager, siloStatusOracle);
 
             if (log.IsEnabled(LogLevel.Trace)) log.Trace("Completed initialization.");
 
@@ -74,7 +74,7 @@ namespace Orleans.Runtime.Messaging
         public void Start()
         {
             IsBlockingApplicationMessages = false;
-            OutboundQueue.Start();
+            outboundQueue.Start();
         }
 
         public void StartGateway(ClientObserverRegistrar clientRegistrar)
@@ -88,7 +88,7 @@ namespace Orleans.Runtime.Messaging
             DateTime maxWaitTime = DateTime.UtcNow + this.messagingOptions.ShutdownRerouteTimeout;
             while (DateTime.UtcNow < maxWaitTime)
             {
-                var applicationMessageQueueLength = this.OutboundQueue.GetApplicationMessageCount();
+                var applicationMessageQueueLength = this.outboundQueue.GetApplicationMessageCount();
                 if (applicationMessageQueueLength == 0)
                     break;
                 Thread.Sleep(100);
@@ -105,7 +105,7 @@ namespace Orleans.Runtime.Messaging
             try
             {
                 WaitToRerouteAllQueuedMessages();
-                OutboundQueue.Stop();
+                outboundQueue.Stop();
             }
             catch (Exception exc)
             {
@@ -182,7 +182,7 @@ namespace Orleans.Runtime.Messaging
             {
                 if (msg.SendingSilo == null)
                     msg.SendingSilo = MyAddress;
-                OutboundQueue.SendMessage(msg);
+                outboundQueue.SendMessage(msg);
             }
         }
 
@@ -219,12 +219,12 @@ namespace Orleans.Runtime.Messaging
         public void Dispose()
         {
             inboundQueue?.Dispose();
-            OutboundQueue?.Dispose();
+            outboundQueue?.Dispose();
 
             GC.SuppressFinalize(this);
         }
 
-        public int SendQueueLength { get { return OutboundQueue.GetCount(); } }
+        public int SendQueueLength { get { return outboundQueue.GetCount(); } }
 
         public int ReceiveQueueLength { get { return inboundQueue.Count; } }
 

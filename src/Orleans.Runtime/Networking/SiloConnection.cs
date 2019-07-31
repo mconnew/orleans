@@ -61,7 +61,7 @@ namespace Orleans.Runtime.Messaging
                     Message rejection = this.messageFactory.CreateRejectionResponse(msg, Message.RejectionTypes.Unrecoverable,
                         $"The target silo is no longer active: target was {msg.TargetSilo.ToLongString()}, but this silo is {messageCenter.MyAddress.ToLongString()}. " +
                         $"The rejected ping message is {msg}.");
-                    messageCenter.OutboundQueue.SendMessage(rejection);
+                    messageCenter.SendMessage(rejection);
                 }
                 else
                 {
@@ -111,7 +111,7 @@ namespace Orleans.Runtime.Messaging
             {
                 // If the message is for some other silo altogether, then we need to forward it.
                 if (this.Log.IsEnabled(LogLevel.Trace)) this.Log.Trace("Forwarding message {0} from {1} to silo {2}", msg.Id, msg.SendingSilo, msg.TargetSilo);
-                messageCenter.OutboundQueue.SendMessage(msg);
+                messageCenter.SendMessage(msg);
                 return;
             }
 
@@ -127,7 +127,7 @@ namespace Orleans.Runtime.Messaging
                 // Invalidate the remote caller's activation cache entry.
                 if (msg.TargetAddress != null) rejection.AddToCacheInvalidationHeader(msg.TargetAddress);
 
-                messageCenter.OutboundQueue.SendMessage(rejection);
+                messageCenter.SendMessage(rejection);
                 if (this.Log.IsEnabled(LogLevel.Debug)) this.Log.Debug("Rejecting an obsolete request; target was {0}, but this silo is {1}. The rejected message is {2}.",
                     msg.TargetSilo.ToLongString(), messageCenter.MyAddress.ToLongString(), msg);
             }
