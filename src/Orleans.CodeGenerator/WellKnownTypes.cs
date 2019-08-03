@@ -107,7 +107,7 @@ namespace Orleans.CodeGenerator
                 {
                     Type("System.Collections.Generic.EqualityComparer`1"),
                     Type("System.Collections.Generic.Comparer`1")
-                }
+                },
                 InvalidOperationException = Type("System.InvalidOperationException"),
                 IGrainHolder = Type("Orleans.CodeGeneration.IGrainHolder"),
                 Invokable = Type("Orleans.CodeGeneration.Invokable"),
