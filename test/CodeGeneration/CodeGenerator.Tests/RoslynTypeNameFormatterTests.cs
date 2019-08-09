@@ -76,7 +76,7 @@ namespace CodeGenerator.Tests
             this.output = output;
 
             // Read the source code of this file and parse that with Roslyn.
-            var testCode = GetSource();
+            var testCode = GetAssemblyAttributes() + GetSource();
 
             var metas = new[]
             {
@@ -112,10 +112,19 @@ namespace CodeGenerator.Tests
         {
             var type = typeof(RoslynTypeNameFormatterTests);
             using (var stream = type.Assembly.GetManifestResourceStream($"{type.Namespace}.{type.Name}.cs"))
-            using (StreamReader reader = new StreamReader(stream))
+            using (var reader = new StreamReader(stream))
             {
                 return reader.ReadToEnd();
             }
+        }
+
+        private string GetAssemblyAttributes()
+        {
+            var version = typeof(RoslynTypeNameFormatterTests).Assembly.GetName().Version.ToString();
+            var result = "\r\n[assembly: System.Reflection.AssemblyCompanyAttribute(\"Microsoft\")]\r\n"
+                + $"\r\n[assembly: System.Reflection.AssemblyFileVersionAttribute(\"{version}\")]\r\n"
+                + $"\r\n[assembly: System.Reflection.AssemblyVersionAttribute(\"{version}\")]\r\n";
+            return result;
         }
 
         /// <summary>
@@ -126,6 +135,8 @@ namespace CodeGenerator.Tests
         {
             foreach (var (type, symbol) in GetTypeSymbolPairs(nameof(Types)))
             {
+                Assert.False(typeof(IErrorTypeSymbol).IsAssignableFrom(symbol.GetType()));
+
                 this.output.WriteLine($"Type: {RuntimeTypeNameFormatter.Format(type)}");
                 var expected = type.FullName;
                 var actual = RoslynTypeNameFormatter.Format(symbol, RoslynTypeNameFormatter.Style.FullName);
