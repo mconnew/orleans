@@ -21,12 +21,20 @@ namespace Orleans.Runtime
         [NonSerialized]
         private int _retryCount;
 
+        public Message() : this(new HeadersContainer())
+        {
+        }
+
+        public Message(HeadersContainer headers)
+        {
+            this.Headers = headers;
+        }
+
         public string TargetHistory
         {
             get { return _targetHistory; }
             set { _targetHistory = value; }
         }
-
         
         public DateTime? QueuedTime
         {
@@ -44,10 +52,6 @@ namespace Orleans.Runtime
         private ActivationAddress targetAddress;
         private ActivationAddress sendingAddress;
         
-        static Message()
-        {
-        }
-
         public enum Categories
         {
             Ping,
@@ -79,7 +83,7 @@ namespace Orleans.Runtime
             CacheInvalidation
         }
 
-        internal HeadersContainer Headers { get; set; } = new HeadersContainer();
+        internal HeadersContainer Headers { get; }
 
         public Categories Category
         {

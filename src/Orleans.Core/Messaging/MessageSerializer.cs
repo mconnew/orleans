@@ -61,10 +61,7 @@ namespace Orleans.Runtime.Messaging
             try
             {
                 this.headersSerializer.Deserialize(header, out var headersContainer);
-                message = new Message
-                {
-                    Headers = headersContainer
-                };
+                message = new Message(headersContainer);
 
                 // Body deserialization is more likely to fail than header deserialization.
                 // Separating the two allows for these kinds of errors to be propagated back to the caller.
