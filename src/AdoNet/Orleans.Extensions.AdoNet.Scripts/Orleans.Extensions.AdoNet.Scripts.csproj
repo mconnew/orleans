@@ -1,0 +1,97 @@
+﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="Current">
+  <PropertyGroup>
+    <PackageId>Microsoft.Orleans.Extensions.AdoNet.Scripts</PackageId>
+    <Title>Microsoft Orleans ADO.NET scripts</Title>
+    <Description>Database initialization scripts for Microsoft Orleans providers for ADO.NET</Description>
+    <PackageTags>$(PackageTags) ADO.NET SQL MySQL PostgreSQL Oracle</PackageTags>
+    <ProjectGuid>{E867A657-CCB0-42B4-AF81-003BAB9515B4}</ProjectGuid>
+  </PropertyGroup>
+  
+  <!-- ItemGroup>
+    <PackageReference Include="System.Data.Common" Version="$(SystemDataCommonVersion)" />
+  </ItemGroup -->
+
+  <ItemGroup>
+    <None Include="Main\MySQL-Main.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>lib\$(TargetFramework)\MySQL\</PackagePath>
+    </None>
+    <None Include="Main\Oracle-Main.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>lib\$(TargetFramework)\Oracle\</PackagePath>
+    </None>
+    <None Include="Main\PostgreSQL-Main.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>lib\$(TargetFramework)\PostgreSQL\</PackagePath>
+    </None>
+    <None Include="Main\SQLServer-Main.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>lib\$(TargetFramework)\SQLServer\</PackagePath>
+    </None>
+    
+    <None Include="Clustering\MySQL-Clustering.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>lib\$(TargetFramework)\MySQL\</PackagePath>
+    </None>
+    <None Include="Clustering\Oracle-Clustering.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>lib\$(TargetFramework)\Oracle\</PackagePath>
+    </None>
+    <None Include="Clustering\PostgreSQL-Clustering.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>lib\$(TargetFramework)\PostgreSQL\</PackagePath>
+    </None>
+    <None Include="Clustering\SQLServer-Clustering.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>lib\$(TargetFramework)\SQLServer\</PackagePath>
+    </None>
+    <None Include="Persistence\MySQL-Persistence.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>lib\$(TargetFramework)\MySQL\</PackagePath>
+    </None>
+    <None Include="Persistence\Oracle-Persistence.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>lib\$(TargetFramework)\Oracle\</PackagePath>
+    </None>
+    <None Include="Persistence\PostgreSQL-Persistence.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>lib\$(TargetFramework)\PostgreSQL\</PackagePath>
+    </None>
+    <None Include="Persistence\SQLServer-Persistence.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>lib\$(TargetFramework)\SQLServer\</PackagePath>
+    </None>
+    <None Include="Reminders\MySQL-Reminders.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>lib\$(TargetFramework)\MySQL\</PackagePath>
+    </None>
+    <None Include="Reminders\Oracle-Reminders.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>lib\$(TargetFramework)\Oracle\</PackagePath>
+    </None>
+    <None Include="Reminders\PostgreSQL-Reminders.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>lib\$(TargetFramework)\PostgreSQL\</PackagePath>
+    </None>
+    <None Include="Reminders\SQLServer-Reminders.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>lib\$(TargetFramework)\SQLServer\</PackagePath>
+    </None>
+  </ItemGroup>
+</Project>
