@@ -318,7 +318,7 @@ namespace Orleans.Hosting
             services.TryAddFromExisting<IInternalClusterClient, InternalClusterClient>();
             services.TryAddFromExisting<IClusterClient, InternalClusterClient>();
 
-            // Enable collection specific Age limits
+            // Enable grain specific activation collection age limits
             services.AddOptions<GrainCollectionOptions>()
                 .Configure<IApplicationPartManager>((options, parts) =>
                 {
