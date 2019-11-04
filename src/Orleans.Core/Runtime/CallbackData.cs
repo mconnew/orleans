@@ -40,7 +40,7 @@ namespace Orleans.Runtime
             if (this.IsCompleted)
                 return;
 
-            EventSourceUtils.EmitEvent(this.Message, OrleansCallBackDataEvent.OnTimeoutAction);
+            OrleansCallBackDataEvent.Log.OnTimeout(this.Message);
                
             var msg = this.Message; // Local working copy
 
@@ -49,14 +49,15 @@ namespace Orleans.Runtime
             this.shared.Logger.Warn(ErrorCode.Runtime_Error_100157, "{0} About to break its promise.", errorMsg);
 
             var error = Message.CreatePromptExceptionResponse(msg, new TimeoutException(errorMsg));
-            OnFail(msg, error, isOnTimeout: true);
+            OnFail(error, isOnTimeout: true);
         }
 
         public void OnTargetSiloFail()
         {
             if (this.IsCompleted)
                 return;
-            EventSourceUtils.EmitEvent(this.Message, OrleansCallBackDataEvent.OnTargetSiloFailAction);
+            OrleansCallBackDataEvent.Log.OnTargetSiloFail(this.Message);
+
             var msg = this.Message;
             var messageHistory = msg.GetTargetHistory();
             string errorMsg = 
@@ -64,7 +65,7 @@ namespace Orleans.Runtime
             this.shared.Logger.Warn(ErrorCode.Runtime_Error_100157, "{0} About to break its promise.", errorMsg);
 
             var error = Message.CreatePromptExceptionResponse(msg, new SiloUnavailableException(errorMsg));
-            OnFail(msg, error, isOnTimeout: false);
+            OnFail(error, isOnTimeout: false);
         }
 
         public void DoCallback(Message response)
@@ -72,7 +73,7 @@ namespace Orleans.Runtime
             if (this.IsCompleted)
                 return;
 
-            EventSourceUtils.EmitEvent(this.Message, OrleansCallBackDataEvent.DoCallbackAction);
+            OrleansCallBackDataEvent.Log.DoCallback(this.Message);
 
             if (Interlocked.CompareExchange(ref this.completed, 1, 0) == 0)
             {
@@ -92,7 +93,7 @@ namespace Orleans.Runtime
             }
         }
 
-        private void OnFail(Message msg, Message error, bool isOnTimeout = false)
+        private void OnFail(Message error, bool isOnTimeout = false)
         {
             if (Interlocked.CompareExchange(ref this.completed, 1, 0) == 0)
             {

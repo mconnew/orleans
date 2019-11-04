@@ -1,63 +1,114 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.Tracing;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace Orleans.Runtime
 {
     [EventSource(Name = "Microsoft-Orleans-CallBackData")]
     internal sealed class OrleansCallBackDataEvent : EventSource
     {
-        private static readonly OrleansCallBackDataEvent Log = new OrleansCallBackDataEvent();
-        public static readonly Action OnTimeoutAction = Log.OnTimeout;
-        public static readonly Action OnTargetSiloFailAction = Log.OnTargetSiloFail;
-        public static readonly Action DoCallbackAction = Log.DoCallback;
-        public void OnTimeout()
+        public static readonly OrleansCallBackDataEvent Log = new OrleansCallBackDataEvent();
+
+        [NonEvent]
+        public void OnTimeout(Message message)
         {
-            WriteEvent(1);
+            if (IsEnabled() && message.TraceContext is TraceContext traceContext)
+            {
+                OnTimeout(traceContext.ActivityId);
+            }
         }
 
-        public void OnTargetSiloFail()
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [Event(1, Level = EventLevel.Warning)]
+        private void OnTimeout(Guid relatedActivityId)
         {
-            WriteEvent(2);
+            WriteEventWithRelatedActivityId(1, relatedActivityId);
+        }
+        
+        [NonEvent]
+        public void OnTargetSiloFail(Message message)
+        {
+            if (IsEnabled() && message.TraceContext is TraceContext traceContext)
+            {
+                OnTargetSiloFail(traceContext.ActivityId);
+            }
         }
 
-        public void DoCallback()
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [Event(2, Level = EventLevel.Warning)]
+        private void OnTargetSiloFail(Guid relatedActivityId)
         {
-            WriteEvent(3);
+            WriteEventWithRelatedActivityId(2, relatedActivityId);
+        }
+
+        [NonEvent]
+        public void DoCallback(Message message)
+        {
+            if (IsEnabled() && message.TraceContext is TraceContext traceContext)
+            {
+                DoCallback(traceContext.ActivityId);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [Event(3)]
+        private void DoCallback(Guid relatedActivityId)
+        {
+            WriteEventWithRelatedActivityId(3, relatedActivityId);
         }
     }
 
     [EventSource(Name = "Microsoft-Orleans-OutsideRuntimeClient")]
     internal sealed class OrleansOutsideRuntimeClientEvent : EventSource
     {
-        private static readonly OrleansOutsideRuntimeClientEvent Log = new OrleansOutsideRuntimeClientEvent();
-        public static readonly Action SendRequestAction = Log.SendRequest;
-        public static readonly Action ReceiveResponseAction = Log.ReceiveResponse;
-        public static readonly Action SendResponseAction = Log.SendResponse;
-        public void SendRequest()
+        public static readonly OrleansOutsideRuntimeClientEvent Log = new OrleansOutsideRuntimeClientEvent();
+        
+        [NonEvent]
+        public void SendRequest(Message message)
         {
-            WriteEvent(1);
-        }
-        public void ReceiveResponse()
-        {
-            WriteEvent(2);
+            if (IsEnabled() && message.TraceContext is TraceContext traceContext)
+            {
+                SendRequest(traceContext.ActivityId);
+            }
         }
 
-        public void SendResponse()
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [Event(1)]
+        private void SendRequest(Guid relatedActivityId)
         {
-            WriteEvent(3);
+            WriteEventWithRelatedActivityId(1, relatedActivityId);
         }
-    }
 
-    internal static class EventSourceUtils
-    {
-        public static void EmitEvent(Message message, Action emitAction)
+        [NonEvent]
+        public void ReceiveResponse(Message message)
         {
-            EventSource.SetCurrentThreadActivityId(message.TraceContext?.ActivityId??Guid.Empty, out var previousId);
-            emitAction();
-            EventSource.SetCurrentThreadActivityId(previousId);
+            if (IsEnabled() && message.TraceContext is TraceContext traceContext)
+            {
+                ReceiveResponse(traceContext.ActivityId);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [Event(2)]
+        private void ReceiveResponse(Guid relatedActivityId)
+        {
+            WriteEventWithRelatedActivityId(2, relatedActivityId);
+        }
+
+        [NonEvent]
+        public void SendResponse(Message message)
+        {
+            if (IsEnabled() && message.TraceContext is TraceContext traceContext)
+            {
+                SendResponse(traceContext.ActivityId);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [Event(3)]
+        private void SendResponse(Guid relatedActivityId)
+        {
+            WriteEventWithRelatedActivityId(3, relatedActivityId);
         }
     }
 }

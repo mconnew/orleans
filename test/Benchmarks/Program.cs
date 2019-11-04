@@ -11,6 +11,8 @@ using Benchmarks.GrainStorage;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Toolchains.CsProj;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Benchmarks
 {
@@ -106,34 +108,14 @@ namespace Benchmarks
             },
             ["ConcurrentPing"] = () =>
             {
-                {
-                    Console.WriteLine("## Client to Silo ##");
-                    var test = new PingBenchmark(numSilos: 1, startClient: true);
-                    test.PingConcurrent().GetAwaiter().GetResult();
-                    test.Shutdown().GetAwaiter().GetResult();
-                }
-                GC.Collect();
-                {
-                    Console.WriteLine("## Client to 2 Silos ##");
-                    var test = new PingBenchmark(numSilos: 2, startClient: true);
-                    test.PingConcurrent().GetAwaiter().GetResult();
-                    test.Shutdown().GetAwaiter().GetResult();
-                }
-                GC.Collect();
-                {
-                    Console.WriteLine("## Hosted Client ##");
-                    var test = new PingBenchmark(numSilos: 1, startClient: false);
-                    test.PingConcurrentHostedClient().GetAwaiter().GetResult();
-                    test.Shutdown().GetAwaiter().GetResult();
-                }
-                GC.Collect();
-                {
-                    // All calls are cross-silo because the calling silo doesn't have any grain classes.
-                    Console.WriteLine("## Silo to Silo ##");
-                    var test = new PingBenchmark(numSilos: 2, startClient: false, grainsOnSecondariesOnly: true);
-                    test.PingConcurrentHostedClient().GetAwaiter().GetResult();
-                    test.Shutdown().GetAwaiter().GetResult();
-                }
+                ConcurrentPingComparisonBenchmark(false);
+                ConcurrentPingComparisonBenchmark(true);
+                ConcurrentPingComparisonBenchmark(false);
+                ConcurrentPingComparisonBenchmark(true);
+                ConcurrentPingComparisonBenchmark(false);
+                ConcurrentPingComparisonBenchmark(true);
+                ConcurrentPingComparisonBenchmark(false);
+                ConcurrentPingComparisonBenchmark(true);
             },
             ["ConcurrentPing_OneSilo"] = () =>
             {
@@ -157,7 +139,23 @@ namespace Benchmarks
             },
             ["PingPongForever"] = () =>
             {
-                new PingBenchmark().PingPongForever().GetAwaiter().GetResult();
+                var cancellation = new CancellationTokenSource();
+                Console.CancelKeyPress += (_, args) =>
+                {
+                    cancellation.Cancel();
+                    args.Cancel = true;
+                };
+
+                var traceSession = Task.CompletedTask;// OrleansEventTraceListener.Run(cancellation.Token);
+                var ping = new PingBenchmark().PingPongForever(cancellation.Token);
+
+                // Handle failures promptly.
+                var tasks = new Task[] { ping, traceSession };
+                var finished = Task.WaitAny(tasks);
+                if (tasks[finished].IsFaulted) tasks[finished].GetAwaiter().GetResult();
+
+                Task.WaitAll(ping, traceSession);
+                Console.WriteLine("Exiting");
             },
             ["GrainStorage.Memory"] = () =>
             {
@@ -199,6 +197,40 @@ namespace Benchmarks
                 benchmark => benchmark.Teardown());
             },
         };
+
+        private static void ConcurrentPingComparisonBenchmark(bool dotnetThreadPool)
+        {
+            Console.WriteLine($"### Using .NET ThreadPool: {dotnetThreadPool} ###");
+
+            {
+                Console.WriteLine("## Client to Silo ##");
+                var test = new PingBenchmark(numSilos: 1, startClient: true, dotnetThreadPool: dotnetThreadPool);
+                test.PingConcurrent().GetAwaiter().GetResult();
+                test.Shutdown().GetAwaiter().GetResult();
+            }
+            GC.Collect();
+            {
+                Console.WriteLine("## Client to 2 Silos ##");
+                var test = new PingBenchmark(numSilos: 2, startClient: true, dotnetThreadPool: dotnetThreadPool);
+                test.PingConcurrent().GetAwaiter().GetResult();
+                test.Shutdown().GetAwaiter().GetResult();
+            }
+            GC.Collect();
+            {
+                Console.WriteLine("## Hosted Client ##");
+                var test = new PingBenchmark(numSilos: 1, startClient: false, dotnetThreadPool: dotnetThreadPool);
+                test.PingConcurrentHostedClient().GetAwaiter().GetResult();
+                test.Shutdown().GetAwaiter().GetResult();
+            }
+            GC.Collect();
+            {
+                // All calls are cross-silo because the calling silo doesn't have any grain classes.
+                Console.WriteLine("## Silo to Silo ##");
+                var test = new PingBenchmark(numSilos: 2, startClient: false, grainsOnSecondariesOnly: true, dotnetThreadPool: dotnetThreadPool);
+                test.PingConcurrentHostedClient().GetAwaiter().GetResult();
+                test.Shutdown().GetAwaiter().GetResult();
+            }
+        }
 
         // requires benchmark name or 'All' word as first parameter
         static void Main(string[] args)

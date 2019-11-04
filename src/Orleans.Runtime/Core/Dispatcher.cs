@@ -72,7 +72,8 @@ namespace Orleans.Runtime
         /// <param name="message"></param>
         public void ReceiveMessage(Message message)
         {
-            EventSourceUtils.EmitEvent(message, OrleansDispatcherEvent.ReceiveMessageAction);
+            OrleansDispatcherEvent.Log.ReceiveMessage(message);
+
             MessagingProcessingStatisticsGroup.OnDispatcherMessageReceive(message);
             // Don't process messages that have already timed out
             if (message.IsExpired)

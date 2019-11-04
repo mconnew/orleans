@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Tracing;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Orleans.Runtime
@@ -8,61 +9,142 @@ namespace Orleans.Runtime
     [EventSource(Name = "Microsoft-Orleans-Dispatcher")]
     internal sealed class OrleansDispatcherEvent : EventSource
     {
-        private static readonly OrleansDispatcherEvent Log = new OrleansDispatcherEvent();
-        public static readonly Action ReceiveMessageAction = Log.ReceiveMessage;
-        public void ReceiveMessage() => WriteEvent(1);
+        public static readonly OrleansDispatcherEvent Log = new OrleansDispatcherEvent();
+
+        [NonEvent]
+        public void ReceiveMessage(Message message)
+        {
+            if (IsEnabled() && message.TraceContext is TraceContext traceContext)
+            {
+                ReceiveMessage(traceContext.ActivityId);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [Event(1)]
+        private void ReceiveMessage(Guid relatedActivityId)
+        {
+            WriteEventWithRelatedActivityId(1, relatedActivityId);
+        }
     }
 
     [EventSource(Name = "Microsoft-Orleans-InsideRuntimeClient")]
     internal sealed class OrleansInsideRuntimeClientEvent : EventSource
     {
-        private static readonly OrleansInsideRuntimeClientEvent Log = new OrleansInsideRuntimeClientEvent();
-        public static readonly Action SendRequestAction = Log.SendRequest;
-        public static readonly Action ReceiveResponseAction = Log.ReceiveResponse;
-        public static readonly Action SendResponseAction = Log.SendResponse;
-        public void SendRequest()
+        public static readonly OrleansInsideRuntimeClientEvent Log = new OrleansInsideRuntimeClientEvent();
+
+        [NonEvent]
+        public void SendRequest(Message message)
         {
-            WriteEvent(1);
+            if (IsEnabled() && message.TraceContext is TraceContext traceContext)
+            {
+                SendRequest(traceContext.ActivityId);
+            }
         }
-        public void ReceiveResponse()
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [Event(1)]
+        private void SendRequest(Guid relatedActivityId)
         {
-            WriteEvent(2);
+            WriteEventWithRelatedActivityId(1, relatedActivityId);
         }
-        public void SendResponse()
+
+        [NonEvent]
+        public void ReceiveResponse(Message message)
         {
-            WriteEvent(3);
+            if (IsEnabled() && message.TraceContext is TraceContext traceContext)
+            {
+                ReceiveResponse(traceContext.ActivityId);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [Event(2)]
+        private void ReceiveResponse(Guid relatedActivityId)
+        {
+            WriteEventWithRelatedActivityId(2, relatedActivityId);
+        }
+
+        [NonEvent]
+        public void SendResponse(Message message)
+        {
+            if (IsEnabled() && message.TraceContext is TraceContext traceContext)
+            {
+                SendResponse(traceContext.ActivityId);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [Event(3)]
+        private void SendResponse(Guid relatedActivityId)
+        {
+            WriteEventWithRelatedActivityId(3, relatedActivityId);
         }
     }
 
     [EventSource(Name = "Microsoft-Orleans-GatewayAcceptor")]
     internal sealed class OrleansGatewayAcceptorEvent : EventSource
     {
-        private static readonly OrleansGatewayAcceptorEvent Log = new OrleansGatewayAcceptorEvent();
-        public static readonly Action HandleMessageAction = Log.HandleMessage;
+        public static readonly OrleansGatewayAcceptorEvent Log = new OrleansGatewayAcceptorEvent();
 
-        public void HandleMessage()
+        [NonEvent]
+        public void HandleMessage(Message message)
         {
-            WriteEvent(1);
+            if (IsEnabled() && message.TraceContext is TraceContext traceContext)
+            {
+                HandleMessage(traceContext.ActivityId);
+            }
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [Event(1)]
+        private void HandleMessage(Guid relatedActivityId)
+        {
+            WriteEventWithRelatedActivityId(1, relatedActivityId);
+        }
     }
 
     [EventSource(Name = "Microsoft-Orleans-IncomingMessageAcceptor")]
     internal sealed class OrleansIncomingMessageAcceptorEvent : EventSource
     {
-        private static readonly OrleansIncomingMessageAcceptorEvent Log = new OrleansIncomingMessageAcceptorEvent();
-        public static readonly Action HandleMessageAction = Log.HandleMessage;
-        public void HandleMessage()
+        public static readonly OrleansIncomingMessageAcceptorEvent Log = new OrleansIncomingMessageAcceptorEvent();
+
+        [NonEvent]
+        public void HandleMessage(Message message)
         {
-            WriteEvent(1);
+            if (IsEnabled() && message.TraceContext is TraceContext traceContext)
+            {
+                HandleMessage(traceContext.ActivityId);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [Event(1)]
+        private void HandleMessage(Guid relatedActivityId)
+        {
+            WriteEventWithRelatedActivityId(1, relatedActivityId);
         }
     }
 
     [EventSource(Name = "Microsoft-Orleans-IncomingMessageAgent")]
     internal sealed class OrleansIncomingMessageAgentEvent : EventSource
     {
-        private static readonly OrleansIncomingMessageAgentEvent Log = new OrleansIncomingMessageAgentEvent();
-        public static readonly Action ReceiverMessageAction = Log.ReceiverMessage;
-        public void ReceiverMessage() => WriteEvent(1);
+        public static readonly OrleansIncomingMessageAgentEvent Log = new OrleansIncomingMessageAgentEvent();
+
+        [NonEvent]
+        public void ReceiveMessage(Message message)
+        {
+            if (IsEnabled() && message.TraceContext is TraceContext traceContext)
+            {
+                ReceiveMessage(traceContext.ActivityId);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [Event(1)]
+        private void ReceiveMessage(Guid relatedActivityId)
+        {
+            WriteEventWithRelatedActivityId(1, relatedActivityId);
+        }
     }
 }

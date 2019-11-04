@@ -1,18 +1,35 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.Tracing;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using BenchmarkGrainInterfaces.Ping;
 using BenchmarkGrains.Ping;
+using Microsoft.Diagnostics.Tracing;
+using Microsoft.Diagnostics.Tracing.Session;
+using Microsoft.Extensions.DependencyInjection;
 using Orleans;
 using Orleans.Configuration;
 using Orleans.Hosting;
+using Orleans.Threading;
 
 namespace Benchmarks.Ping
 {
+#if NETCOREAPP
+    internal sealed class NetCoreThreadPoolExecutor : IExecutor
+    {
+        public void QueueWorkItem(Action<object> callback, object state = null)
+        {
+            ThreadPool.UnsafeQueueUserWorkItem(callback, state, preferLocal: true);
+        }
+    }
+#endif
+
     [MemoryDiagnoser]
     public class PingBenchmark : IDisposable 
     {
@@ -22,13 +39,23 @@ namespace Benchmarks.Ping
 
         public PingBenchmark() : this(1, true) { }
 
-        public PingBenchmark(int numSilos, bool startClient, bool grainsOnSecondariesOnly = false)
+        public PingBenchmark(int numSilos, bool startClient, bool grainsOnSecondariesOnly = false, bool dotnetThreadPool = false)
         {
             for (var i = 0; i < numSilos; ++i)
             {
                 var primary = i == 0 ? null : new IPEndPoint(IPAddress.Loopback, 11111);
                 var siloBuilder = new SiloHostBuilder()
                     .ConfigureDefaults()
+                    .ConfigureServices((ctx, services) =>
+                    {
+                        if (dotnetThreadPool)
+                        {
+                            services.AddSingleton<IExecutor, NetCoreThreadPoolExecutor>();
+                        }
+                    })
+                    .AddIncomingGrainCallFilter<RequestResponseGrainFilter>()
+                    .AddOutgoingGrainCallFilter<RequestResponseGrainFilter>()
+                    .Configure<SiloMessagingOptions>(o => o.PropagateActivityId = true)
                     .UseLocalhostClustering(
                         siloPort: 11111 + i,
                         gatewayPort: 30000 + i,
@@ -61,7 +88,9 @@ namespace Benchmarks.Ping
             {
                 var clientBuilder = new ClientBuilder()
                     .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(IPingGrain).Assembly))
-                    .Configure<ClusterOptions>(options => options.ClusterId = options.ServiceId = "dev");
+                    .Configure<ClusterOptions>(options => options.ClusterId = options.ServiceId = "dev")
+                    .Configure<ClientMessagingOptions>(o => o.PropagateActivityId = true)
+                    .AddOutgoingGrainCallFilter<RequestResponseGrainFilter>();
 
                 if (numSilos == 1)
                 {
@@ -115,12 +144,14 @@ namespace Benchmarks.Ping
             while (runs-- > 0) await loadGenerator.Run();
         }
 
-        public async Task PingPongForever()
+        public async Task PingPongForever(CancellationToken cancellation)
         {
             var other = this.client.GetGrain<IPingGrain>(Guid.NewGuid().GetHashCode());
-            while (true)
+            while (!cancellation.IsCancellationRequested)
             {
+                Trace.CorrelationManager.StartLogicalOperation();
                 await grain.PingPongInterleave(other, 100);
+                Trace.CorrelationManager.StopLogicalOperation();
             }
         }
 
@@ -145,6 +176,86 @@ namespace Benchmarks.Ping
         {
             (this.client as IDisposable)?.Dispose(); 
             this.hosts.ForEach(h => h.Dispose());
+        }
+    }
+
+    public class RequestResponseGrainFilter : IIncomingGrainCallFilter, IOutgoingGrainCallFilter
+    {
+        public async Task Invoke(IOutgoingGrainCallContext context)
+        {
+            Console.WriteLine(EventSource.CurrentThreadActivityId);
+            RequestResponseEventSource.Log.RequestStart();
+            await context.Invoke();
+            RequestResponseEventSource.Log.RequestStop();
+        }
+
+        public async Task Invoke(IIncomingGrainCallContext context)
+        {
+            RequestResponseEventSource.Log.InvokeStart();
+            await context.Invoke();
+            RequestResponseEventSource.Log.InvokeStop();
+        }
+    }
+
+    [EventSource(Name = "Microsoft-Orleans-RPC")]
+    public class RequestResponseEventSource : EventSource
+    {
+        public static readonly RequestResponseEventSource Log = new RequestResponseEventSource();
+
+        [Event(1)]
+        public void RequestStart() => this.WriteEvent(1);
+
+        [Event(2)]
+        public void RequestStop() => this.WriteEvent(2);
+
+        [Event(3)]
+        public void InvokeStart() => this.WriteEvent(3);
+
+        [Event(4)]
+        public void InvokeStop() => this.WriteEvent(4);
+    }
+
+    internal class OrleansEventTraceListener
+    {
+        public static async Task Run(CancellationToken cancellation)
+        {
+            Console.WriteLine("Starting trace session");
+            if (!(TraceEventSession.IsElevated() is true)) throw new AccessViolationException("Must be run elevated in order to capture EventSource events");
+
+            var pid = Process.GetCurrentProcess().Id;
+            var fileName = $"{Assembly.GetExecutingAssembly().GetName().Name}_{DateTime.Now:yyyyMMdd_HHmmss_FFF}.etl";
+            using var session = new TraceEventSession("OrleansDiagnostics", fileName);
+
+            session.EnableProvider("Microsoft-Orleans-Dispatcher", TraceEventLevel.Always);
+            session.EnableProvider("Microsoft-Orleans-InsideRuntimeClient", TraceEventLevel.Always);
+            session.EnableProvider("Microsoft-Orleans-GatewayAcceptor", TraceEventLevel.Always);
+            session.EnableProvider("Microsoft-Orleans-IncomingMessageAcceptor", TraceEventLevel.Always);
+            session.EnableProvider("Microsoft-Orleans-IncomingMessageAgent", TraceEventLevel.Always);
+            session.EnableProvider("Microsoft-Orleans-CallBackData", TraceEventLevel.Always);
+            session.EnableProvider("Microsoft-Orleans-OutsideRuntimeClient", TraceEventLevel.Always);
+            
+            await cancellation.WhenCancelled();
+            Console.WriteLine("Stopping trace session");
+        }
+    }
+
+    public static class TaskExtensions
+    {
+        public static Task WhenCancelled(this CancellationToken token)
+        {
+            if (token.IsCancellationRequested)
+            {
+                return Task.CompletedTask;
+            }
+
+            var waitForCancellation = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
+            token.Register(obj =>
+            {
+                var tcs = (TaskCompletionSource<object>)obj;
+                tcs.TrySetResult(null);
+            }, waitForCancellation);
+
+            return waitForCancellation.Task;
         }
     }
 }
