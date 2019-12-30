@@ -1,6 +1,7 @@
 using System;
 using System.Buffers;
 using System.Buffers.Binary;
+using System.Runtime.CompilerServices;
 using Orleans.Configuration;
 using Orleans.Networking.Shared;
 using Orleans.Serialization;
@@ -91,32 +92,49 @@ namespace Orleans.Runtime.Messaging
             }
 
             buffer.Reset(writer);
-            Span<byte> lengthFields = stackalloc byte[FramingLength];
-
             this.headersSerializer.Serialize(buffer, message.Headers);
-            var headerLength = buffer.CommittedBytes;
+            var headerLength = buffer.Length;
 
             this.objectSerializer.Serialize(buffer, message.BodyObject);
 
             // Write length prefixes, first header length then body length.
-            BinaryPrimitives.WriteInt32LittleEndian(lengthFields, headerLength);
+            var prefixSpan = buffer.Prefix.Span;
+            BinaryPrimitives.WriteInt32LittleEndian(prefixSpan, (int)headerLength);
 
-            var bodyLength = buffer.CommittedBytes - headerLength;
-            BinaryPrimitives.WriteInt32LittleEndian(lengthFields.Slice(4), bodyLength);
+            var bodyLength = buffer.Length - headerLength;
+            BinaryPrimitives.WriteInt32LittleEndian(prefixSpan.Slice(4), (int)bodyLength);
+            buffer.Commit();
 
             // Before completing, check lengths
             ThrowIfLengthsInvalid(headerLength, bodyLength);
 
-            buffer.Complete(lengthFields);
-            return (headerLength, bodyLength);
+            return ((int)headerLength, (int)bodyLength);
         }
 
-        private void ThrowIfLengthsInvalid(int headerLength, int bodyLength)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ThrowIfLengthsInvalid(long headerLength, long bodyLength)
         {
             if (headerLength <= 0 || headerLength > this.maxHeaderLength)
-                throw new OrleansException($"Invalid header size: {headerLength} (max configured value is {this.maxHeaderLength}, see {nameof(MessagingOptions.MaxMessageHeaderSize)})");
+            {
+                ThrowInvalidHeaderLength(headerLength);
+            }
+
             if (bodyLength < 0 || bodyLength > this.maxBodyLength)
-                throw new OrleansException($"Invalid body size: {bodyLength} (max configured value is {this.maxBodyLength}, see {nameof(MessagingOptions.MaxMessageBodySize)})");
+            {
+                ThrowInvalidBodyLength(bodyLength);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void ThrowInvalidBodyLength(long bodyLength)
+        {
+            throw new OrleansException($"Invalid body size: {bodyLength} (max configured value is {this.maxBodyLength}, see {nameof(MessagingOptions.MaxMessageBodySize)})");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void ThrowInvalidHeaderLength(long headerLength)
+        {
+            throw new OrleansException($"Invalid header size: {headerLength} (max configured value is {this.maxHeaderLength}, see {nameof(MessagingOptions.MaxMessageHeaderSize)})");
         }
 
         private sealed class OrleansSerializer<T>

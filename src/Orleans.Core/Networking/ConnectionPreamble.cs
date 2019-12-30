@@ -34,14 +34,15 @@ namespace Orleans.Runtime.Messaging
 
             writer.Commit();
 
-            var length = outputWriter.CommittedBytes;
+            var length = outputWriter.Length;
 
             if (length > MaxPreambleLength)
             {
                 throw new InvalidOperationException($"Created preamble of length {length}, which is greater than maximum allowed size of {MaxPreambleLength}.");
             }
 
-            WriteLength(outputWriter, length);
+            BinaryPrimitives.WriteInt32LittleEndian(outputWriter.Prefix.Span, (int)length);
+            outputWriter.Commit();
 
             var flushResult = await output.FlushAsync();
             if (flushResult.IsCanceled)
@@ -50,13 +51,6 @@ namespace Orleans.Runtime.Messaging
             }
 
             return;
-        }
-
-        private static void WriteLength(PrefixingBufferWriter<byte, PipeWriter> outputWriter, int length)
-        {
-            Span<byte> lengthSpan = stackalloc byte[4];
-            BinaryPrimitives.WriteInt32LittleEndian(lengthSpan, length);
-            outputWriter.Complete(lengthSpan);
         }
 
         internal static async ValueTask<(GrainId, NetworkProtocolVersion, SiloAddress)> Read(ConnectionContext connection)

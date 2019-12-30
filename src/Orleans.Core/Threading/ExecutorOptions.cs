@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -42,7 +42,6 @@ namespace Orleans.Threading
             ILoggerFactory loggerFactory,
             int degreeOfParallelism = 1,
             bool drainAfterCancel = false,
-            bool preserveOrder = true,
             TimeSpan? workItemExecutionTimeTreshold = null,
             TimeSpan? delayWarningThreshold = null,
             WorkItem.StatusProvider workItemStatusProvider = null,
@@ -52,7 +51,6 @@ namespace Orleans.Threading
         {
             DegreeOfParallelism = degreeOfParallelism;
             DrainAfterCancel = drainAfterCancel;
-            PreserveOrder = preserveOrder;
             WorkItemStatusProvider = workItemStatusProvider;
             WorkItemExecutionTimeTreshold = workItemExecutionTimeTreshold ?? TimeSpan.MaxValue;
             DelayWarningThreshold = delayWarningThreshold ?? TimeSpan.MaxValue;
@@ -67,8 +65,6 @@ namespace Orleans.Threading
         public int DegreeOfParallelism { get; private set; }
 
         public bool DrainAfterCancel { get; private set; }
-
-        public bool PreserveOrder { get; private set; }
 
         public TimeSpan WorkItemExecutionTimeTreshold { get; private set; }
 
@@ -98,12 +94,6 @@ namespace Orleans.Threading
             public Builder WithDrainAfterCancel(bool drainAfterCancel)
             {
                 Options.DrainAfterCancel = drainAfterCancel;
-                return this;
-            }
-
-            public Builder WithPreserveOrder(bool preserveOrder)
-            {
-                Options.PreserveOrder = preserveOrder;
                 return this;
             }
 

@@ -149,10 +149,7 @@ namespace Orleans.Serialization
                 var a = this.TypeName;
                 var b = other.TypeName;
                 if (ReferenceEquals(a, b)) return true;
-                if (a.Length != b.Length) return false;
-                var length = a.Length;
-                for (var i = 0; i < length; i++) if (a[i] != b[i]) return false;
-                return true;
+                return new ReadOnlySpan<byte>(a).SequenceEqual(b);
             }
 
             public override bool Equals(object obj)

@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,7 +13,6 @@ using Orleans.Configuration;
 
 namespace Orleans.Runtime.Scheduler
 {
-    [DebuggerDisplay("OrleansTaskScheduler RunQueueLength={" + nameof(RunQueueLength) + "}")]
     internal class OrleansTaskScheduler : TaskScheduler, ITaskScheduler, IHealthCheckParticipant
     {
         private readonly ILogger logger;
@@ -26,7 +26,9 @@ namespace Orleans.Runtime.Scheduler
         private readonly CancellationTokenSource cancellationTokenSource;
 
         private readonly OrleansSchedulerAsynchAgent systemAgent;
+#if !NETCOREAPP
         private readonly OrleansSchedulerAsynchAgent mainAgent;
+#endif
 
         private readonly int maximumConcurrencyLevel;
 
@@ -35,8 +37,12 @@ namespace Orleans.Runtime.Scheduler
         // This is the maximum number of pending work items for a single activation before we write a warning log.
         internal int MaxPendingItemsSoftLimit { get; private set; }
 
+#if NETCOREAPP
+        public int RunQueueLength => systemAgent.Count;
+#else
         public int RunQueueLength => systemAgent.Count + mainAgent.Count;
-        
+#endif
+
         public OrleansTaskScheduler(
             IOptions<SchedulingOptions> options,
             ExecutorService executorService,
@@ -72,11 +78,15 @@ namespace Orleans.Runtime.Scheduler
                     loggerFactory);
             }
 
-            mainAgent = CreateSchedulerAsynchAgent("Scheduler.LevelOne.MainQueue", false, maxActiveThreads);
             systemAgent = CreateSchedulerAsynchAgent("Scheduler.LevelOne.SystemQueue", true, maxSystemThreads);
+#if !NETCOREAPP
+            mainAgent = CreateSchedulerAsynchAgent("Scheduler.LevelOne.MainQueue", false, maxActiveThreads);
+            logger.LogInformation("Starting OrleansTaskScheduler with {MaxApplicationThreads} dedicated application threads {MaxSystemThreads} dedicated system threads.", maxActiveThreads, maxSystemThreads);
+#else
+            logger.LogInformation("Starting OrleansTaskScheduler with .NET ThreadPool for application tasks and {MaxSystemThreads} dedicated system threads.", maxSystemThreads);
+#endif
 
             this.taskWorkItemLogger = loggerFactory.CreateLogger<TaskWorkItem>();
-            logger.Info("Starting OrleansTaskScheduler with {0} Max Active application Threads and 2 system thread.", maxActiveThreads);
             IntValueStatistic.FindOrCreate(StatisticNames.SCHEDULER_WORKITEMGROUP_COUNT, () => WorkItemGroupCount);
             IntValueStatistic.FindOrCreate(new StatisticName(StatisticNames.QUEUES_QUEUE_SIZE_INSTANTANEOUS_PER_QUEUE, "Scheduler.LevelOne"), () => RunQueueLength);
 
@@ -171,13 +181,17 @@ namespace Orleans.Runtime.Scheduler
         public void Start()
         {
             systemAgent.Start();
+#if !NETCOREAPP
             mainAgent.Start();
+#endif
         }
 
         public void Stop()
         {
             cancellationTokenSource.Cancel();
+#if !NETCOREAPP
             mainAgent.Stop();
+#endif
             systemAgent.Stop();
         }
 
@@ -224,7 +238,11 @@ namespace Orleans.Runtime.Scheduler
             }
             else
             {
+#if NETCOREAPP
+                ThreadPool.UnsafeQueueUserWorkItem(workItem, preferLocal: true);
+#else
                 mainAgent.QueueRequest(workItem);
+#endif
             }
         }
 
@@ -236,11 +254,7 @@ namespace Orleans.Runtime.Scheduler
 #endif
             if (workItem is TaskWorkItem)
             {
-                var error = String.Format("QueueWorkItem was called on OrleansTaskScheduler for TaskWorkItem {0} on Context {1}."
-                    + " Should only call OrleansTaskScheduler.QueueWorkItem on WorkItems that are NOT TaskWorkItem. Tasks should be queued to the scheduler via QueueTask call.",
-                    workItem.ToString(), context);
-                logger.Error(ErrorCode.SchedulerQueueWorkItemWrongCall, error);
-                throw new InvalidOperationException(error);
+                this.ThrowNotAllowedTaskWorkItem(workItem, context);
             }
 
             var workItemGroup = GetWorkItemGroup(context);
@@ -266,6 +280,16 @@ namespace Orleans.Runtime.Scheduler
             {
                 t.Start(workItemGroup.TaskScheduler);
             }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void ThrowNotAllowedTaskWorkItem(IWorkItem workItem, ISchedulingContext context)
+        {
+            var error = String.Format("QueueWorkItem was called on OrleansTaskScheduler for TaskWorkItem {0} on Context {1}."
+                + " Should only call OrleansTaskScheduler.QueueWorkItem on WorkItems that are NOT TaskWorkItem. Tasks should be queued to the scheduler via QueueTask call.",
+                workItem.ToString(), context);
+            logger.Error(ErrorCode.SchedulerQueueWorkItemWrongCall, error);
+            throw new InvalidOperationException(error);
         }
 
         // Only required if you have work groups flagged by a context that is not a WorkGroupingContext
@@ -390,7 +414,12 @@ namespace Orleans.Runtime.Scheduler
         // Returns true if healthy, false if not
         public bool CheckHealth(DateTime lastCheckTime)
         {
-            return mainAgent.CheckHealth(lastCheckTime) && systemAgent.CheckHealth(lastCheckTime);
+            bool health = systemAgent.CheckHealth(lastCheckTime);
+
+#if !NETCOREAPP
+            health &= mainAgent.CheckHealth(lastCheckTime);
+#endif
+            return health;
         }
 
         internal void PrintStatistics()

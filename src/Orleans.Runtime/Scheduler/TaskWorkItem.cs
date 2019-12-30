@@ -38,16 +38,24 @@ namespace Orleans.Runtime.Scheduler
 
         public override void Execute()
         {
+            RuntimeContext.SetExecutionContext(this.SchedulingContext);
+            try
+            {
 #if DEBUG
-            if (logger.IsEnabled(LogLevel.Trace)) logger.Trace("Executing TaskWorkItem for Task Id={0},Name={1},Status={2} on Scheduler={3}", task.Id, Name, task.Status, this.scheduler);
+                if (logger.IsEnabled(LogLevel.Trace)) logger.Trace("Executing TaskWorkItem for Task Id={0},Name={1},Status={2} on Scheduler={3}", task.Id, Name, task.Status, this.scheduler);
 #endif
 
-            scheduler.RunTask(task);
+                scheduler.RunTask(task);
 
 #if DEBUG
-            if (logger.IsEnabled(LogLevel.Trace)) logger.Trace("Completed Task Id={0},Name={1} with Status={2} {3}",
-                    task.Id, Name, task.Status, task.Status == TaskStatus.Faulted ? "FAULTED: " + task.Exception : "");
+                if (logger.IsEnabled(LogLevel.Trace)) logger.Trace("Completed Task Id={0},Name={1} with Status={2} {3}",
+                        task.Id, Name, task.Status, task.Status == TaskStatus.Faulted ? "FAULTED: " + task.Exception : "");
 #endif
+            }
+            finally
+            {
+                RuntimeContext.ResetExecutionContext();
+            }
         }
 
         internal static bool IsTaskRunning(Task t)

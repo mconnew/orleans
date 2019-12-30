@@ -22,7 +22,16 @@ namespace Orleans.Runtime.Scheduler
 
         public override void Execute()
         {
-            target.HandleResponse(response);
+            try
+            {
+                RuntimeContext.SetExecutionContext(this.SchedulingContext);
+                target.HandleResponse(response);
+            }
+            finally
+            {
+
+                RuntimeContext.ResetExecutionContext();
+            }
         }
 
         public override string ToString()

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Orleans.Runtime.Messaging
 {
@@ -18,17 +19,15 @@ namespace Orleans.Runtime.Messaging
     /// </remarks>
     public class PrefixingBufferWriter<T, TBufferWriter> : IBufferWriter<T> where TBufferWriter : IBufferWriter<T>
     {
-        private readonly MemoryPool<T> memoryPool;
-
         /// <summary>
-        /// The length of the header.
+        /// The value to use in place of <see cref="payloadSizeHint"/> when it is 0.
         /// </summary>
-        private readonly int expectedPrefixSize;
-
-        /// <summary>
-        /// A hint from our owner at the size of the payload that follows the header.
-        /// </summary>
-        private readonly int payloadSizeHint;
+        /// <remarks>
+        /// We choose ~4K, since 4K is the default size for buffers in a lot of corefx libraries.
+        /// We choose 4K - 4 specifically because length prefixing is so often for an <see cref="int"/> value,
+        /// and if we ask for 1 byte more than 4K, memory pools tend to give us 8K.
+        /// </remarks>
+        private const int PayloadSizeGuess = 4092;
 
         /// <summary>
         /// The underlying buffer writer.
@@ -36,189 +35,210 @@ namespace Orleans.Runtime.Messaging
         private TBufferWriter innerWriter;
 
         /// <summary>
-        /// The memory reserved for the header from the <see cref="innerWriter"/>.
-        /// This memory is not reserved until the first call from this writer to acquire memory.
+        /// The length of the prefix to reserve space for.
+        /// </summary>
+        private readonly int expectedPrefixSize;
+
+        /// <summary>
+        /// The minimum space to reserve for the payload when first asked for a buffer.
+        /// </summary>
+        /// <remarks>
+        /// This, added to <see cref="expectedPrefixSize"/>, makes up the minimum size to request from <see cref="innerWriter"/>
+        /// to minimize the chance that we'll need to copy buffers from <see cref="excessSequence"/> to <see cref="innerWriter"/>.
+        /// </remarks>
+        private readonly int payloadSizeHint;
+
+        /// <summary>
+        /// The pool to use when initializing <see cref="excessSequence"/>.
+        /// </summary>
+        private readonly MemoryPool<T> memoryPool;
+
+        /// <summary>
+        /// The buffer writer to use for all buffers after the original one obtained from <see cref="innerWriter"/>.
+        /// </summary>
+        private Sequence excessSequence;
+
+        /// <summary>
+        /// The buffer from <see cref="innerWriter"/> reserved for the fixed-length prefix.
         /// </summary>
         private Memory<T> prefixMemory;
 
         /// <summary>
-        /// The memory acquired from <see cref="innerWriter"/>.
-        /// This memory is not reserved until the first call from this writer to acquire memory.
+        /// The memory being actively written to, which may have come from <see cref="innerWriter"/> or <see cref="excessSequence"/>.
         /// </summary>
         private Memory<T> realMemory;
 
         /// <summary>
-        /// The number of elements written to a buffer belonging to <see cref="innerWriter"/>.
+        /// The number of elements written to the original buffer obtained from <see cref="innerWriter"/>.
         /// </summary>
         private int advanced;
 
         /// <summary>
-        /// The fallback writer to use when the caller writes more than we allowed for given the <see cref="payloadSizeHint"/>
-        /// in anything but the initial call to <see cref="GetSpan(int)"/>.
+        /// A value indicating whether we're using <see cref="excessSequence"/> in the current state.
         /// </summary>
-        private Sequence privateWriter;
+        private bool usingExcessMemory;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PrefixingBufferWriter{T, TBufferWriter}"/> class.
         /// </summary>
         /// <param name="prefixSize">The length of the header to reserve space for. Must be a positive number.</param>
         /// <param name="payloadSizeHint">A hint at the expected max size of the payload. The real size may be more or less than this, but additional copying is avoided if it does not exceed this amount. If 0, a reasonable guess is made.</param>
-        /// <param name="memoryPool"></param>
-        public PrefixingBufferWriter(int prefixSize, int payloadSizeHint, MemoryPool<T> memoryPool)
+        /// <param name="memoryPool">The memory pool to use for allocating additional memory when the payload exceeds <paramref name="payloadSizeHint"/>.</param>
+        public PrefixingBufferWriter(int prefixSize, int payloadSizeHint = 0, MemoryPool<T> memoryPool = null)
         {
             if (prefixSize <= 0)
             {
-                ThrowPrefixSize();
+                throw new ArgumentOutOfRangeException(nameof(prefixSize));
             }
 
             this.expectedPrefixSize = prefixSize;
             this.payloadSizeHint = payloadSizeHint;
-            this.memoryPool = memoryPool;
-            void ThrowPrefixSize() => throw new ArgumentOutOfRangeException(nameof(prefixSize));
+            this.memoryPool = memoryPool ?? MemoryPool<T>.Shared;
         }
 
-        public int CommittedBytes { get; private set; }
+        public void Reset(TBufferWriter writer)
+        {
+            this.usingExcessMemory = false;
+            this.prefixMemory = default;
+            this.realMemory = default;
+            this.advanced = 0;
+            this.innerWriter = writer;
+        }
+
+        /// <summary>
+        /// Gets the sum of all values passed to <see cref="Advance(int)"/> since
+        /// the last call to <see cref="Commit"/>.
+        /// </summary>
+        public long Length => (this.excessSequence?.Length ?? 0) + this.advanced;
+
+        /// <summary>
+        /// Gets the memory reserved for the prefix.
+        /// </summary>
+        public Memory<T> Prefix
+        {
+            get
+            {
+                this.EnsureInitialized(0);
+                return this.prefixMemory;
+            }
+        }
 
         /// <inheritdoc />
         public void Advance(int count)
         {
-            if (this.privateWriter != null)
+            if (this.usingExcessMemory)
             {
-                this.privateWriter.Advance(count);
+                this.excessSequence!.Advance(count);
+                this.realMemory = default;
             }
             else
             {
+                this.realMemory = this.realMemory.Slice(count);
                 this.advanced += count;
             }
-
-            this.CommittedBytes += count;
         }
 
         /// <inheritdoc />
         public Memory<T> GetMemory(int sizeHint = 0)
         {
             this.EnsureInitialized(sizeHint);
-
-            if (this.privateWriter != null || sizeHint > this.realMemory.Length - this.advanced)
-            {
-                if (this.privateWriter == null)
-                {
-                    this.privateWriter = new Sequence(this.memoryPool);
-                }
-
-                return this.privateWriter.GetMemory(sizeHint);
-            }
-            else
-            {
-                return this.realMemory.Slice(this.advanced);
-            }
+            return this.realMemory;
         }
 
         /// <inheritdoc />
         public Span<T> GetSpan(int sizeHint = 0)
         {
             this.EnsureInitialized(sizeHint);
-
-            if (this.privateWriter != null || sizeHint > this.realMemory.Length - this.advanced)
-            {
-                if (this.privateWriter == null)
-                {
-                    this.privateWriter = new Sequence(this.memoryPool);
-                }
-
-                return this.privateWriter.GetSpan(sizeHint);
-            }
-            else
-            {
-                return this.realMemory.Span.Slice(this.advanced);
-            }
+            return this.realMemory.Span;
         }
 
         /// <summary>
-        /// Inserts the prefix and commits the payload to the underlying <see cref="IBufferWriter{T}"/>.
+        /// Commits all the elements written and the prefix to the underlying writer
+        /// and advances the underlying writer past the prefix and payload.
         /// </summary>
-        /// <param name="prefix">The prefix to write in. The length must match the one given in the constructor.</param>
-        public void Complete(ReadOnlySpan<T> prefix)
+        /// <remarks>
+        /// This instance is safe to reuse after this call.
+        /// </remarks>
+        public void Commit()
         {
-            if (prefix.Length != this.expectedPrefixSize)
-            {
-                ThrowPrefixLength();
-                void ThrowPrefixLength() => throw new ArgumentOutOfRangeException(nameof(prefix), "Prefix was not expected length.");
-            }
-
             if (this.prefixMemory.Length == 0)
             {
                 // No payload was actually written, and we never requested memory, so just write it out.
-                this.innerWriter.Write(prefix);
+                this.innerWriter.Write(this.Prefix.Span);
             }
             else
             {
-                // Payload has been written, so write in the prefix then commit the payload.
-                prefix.CopyTo(this.prefixMemory.Span);
-                this.innerWriter.Advance(prefix.Length + this.advanced);
-                if (this.privateWriter != null)
+                // Payload has been written. Write in the prefix and commit the first buffer.
+                this.innerWriter.Advance(this.prefixMemory.Length + this.advanced);
+
+                // Now copy any excess buffer.
+                if (this.usingExcessMemory)
                 {
-                    // Try to minimize segments in the target writer by hinting at the total size.
-                    this.innerWriter.GetSpan((int)this.privateWriter.Length);
-                    foreach (var segment in this.privateWriter.AsReadOnlySequence)
+                    var span = this.innerWriter.GetSpan((int)this.excessSequence!.Length);
+                    foreach (var segment in this.excessSequence.AsReadOnlySequence)
                     {
-                        this.innerWriter.Write(segment.Span);
+                        segment.Span.CopyTo(span);
+                        span = span.Slice(segment.Length);
                     }
+
+                    this.innerWriter.Advance((int)this.excessSequence.Length);
+                    this.excessSequence.Reset(); // return backing arrays to memory pools
                 }
             }
-        }
 
-        /// <summary>
-        /// Resets this instance to a reusable state.
-        /// </summary>
-        /// <param name="writer">The underlying writer that should ultimately receive the prefix and payload.</param>
-        public void Reset(TBufferWriter writer)
-        {
-            this.advanced = 0;
-            this.CommittedBytes = 0;
-            this.privateWriter?.Dispose();
-            this.privateWriter = null;
+            // Reset for the next write.
+            this.usingExcessMemory = false;
             this.prefixMemory = default;
             this.realMemory = default;
-
-            if (writer.Equals(default(TBufferWriter))) ThrowInnerWriter();
-            void ThrowInnerWriter() => throw new ArgumentNullException(nameof(writer));
-            this.innerWriter = writer;
+            this.advanced = 0;
         }
 
-        /// <summary>
-        /// Makes the initial call to acquire memory from the underlying writer if it has not been done already.
-        /// </summary>
-        /// <param name="sizeHint">The size requested by the caller to either <see cref="GetMemory(int)"/> or <see cref="GetSpan(int)"/>.</param>
         private void EnsureInitialized(int sizeHint)
         {
             if (this.prefixMemory.Length == 0)
             {
-                int sizeToRequest = this.expectedPrefixSize + Math.Max(sizeHint, this.payloadSizeHint);
+                int sizeToRequest = this.expectedPrefixSize + Math.Max(sizeHint, this.payloadSizeHint == 0 ? PayloadSizeGuess : this.payloadSizeHint);
                 var memory = this.innerWriter.GetMemory(sizeToRequest);
                 this.prefixMemory = memory.Slice(0, this.expectedPrefixSize);
                 this.realMemory = memory.Slice(this.expectedPrefixSize);
             }
+            else if (this.realMemory.Length == 0 || this.realMemory.Length - this.advanced < sizeHint)
+            {
+                if (this.excessSequence == null)
+                {
+                    this.excessSequence = new Sequence(this.memoryPool);
+                }
+
+                this.usingExcessMemory = true;
+                this.realMemory = this.excessSequence.GetMemory(sizeHint);
+            }
         }
 
-        /// <summary>
-        /// Manages a sequence of elements, readily castable as a <see cref="ReadOnlySequence{T}"/>.
-        /// </summary>
-        /// <remarks>
-        /// Instance members are not thread-safe.
-        /// </remarks>
         [DebuggerDisplay("{" + nameof(DebuggerDisplay) + ",nq}")]
         public class Sequence : IBufferWriter<T>, IDisposable
         {
-            private const int DefaultBufferSize = 4 * 1024;
+            private static readonly int DefaultLengthFromArrayPool = 1 + (4095 / Marshal.SizeOf<T>());
+
+            private static readonly ReadOnlySequence<T> Empty = new ReadOnlySequence<T>(SequenceSegment.Empty, 0, SequenceSegment.Empty, 0);
 
             private readonly Stack<SequenceSegment> segmentPool = new Stack<SequenceSegment>();
 
             private readonly MemoryPool<T> memoryPool;
 
+            private readonly ArrayPool<T> arrayPool;
+
             private SequenceSegment first;
 
             private SequenceSegment last;
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="Sequence"/> class
+            /// that uses a private <see cref="ArrayPool{T}"/> for recycling arrays.
+            /// </summary>
+            public Sequence()
+                : this(ArrayPool<T>.Create())
+            {
+            }
 
             /// <summary>
             /// Initializes a new instance of the <see cref="Sequence"/> class.
@@ -226,10 +246,39 @@ namespace Orleans.Runtime.Messaging
             /// <param name="memoryPool">The pool to use for recycling backing arrays.</param>
             public Sequence(MemoryPool<T> memoryPool)
             {
-                this.memoryPool = memoryPool ?? ThrowNull();
-
-                MemoryPool<T> ThrowNull() => throw new ArgumentNullException(nameof(memoryPool));
+                this.memoryPool = memoryPool;
             }
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="Sequence"/> class.
+            /// </summary>
+            /// <param name="arrayPool">The pool to use for recycling backing arrays.</param>
+            public Sequence(ArrayPool<T> arrayPool)
+            {
+                this.arrayPool = arrayPool;
+            }
+
+            /// <summary>
+            /// Gets or sets the minimum length for any array allocated as a segment in the sequence.
+            /// Any non-positive value allows the pool to determine the length of the array.
+            /// </summary>
+            /// <value>The default value is 0.</value>
+            /// <remarks>
+            /// <para>
+            /// Each time <see cref="GetSpan(int)"/> or <see cref="GetMemory(int)"/> is called,
+            /// previously allocated memory is used if it is large enough to satisfy the length demand.
+            /// If new memory must be allocated, the argument to one of these methods typically dictate
+            /// the length of array to allocate. When the caller uses very small values (just enough for its immediate need)
+            /// but the high level scenario can predict that a large amount of memory will be ultimately required,
+            /// it can be advisable to set this property to a value such that just a few larger arrays are allocated
+            /// instead of many small ones.
+            /// </para>
+            /// <para>
+            /// The <see cref="MemoryPool{T}"/> in use may itself have a minimum array length as well,
+            /// in which case the higher of the two minimums dictate the minimum array size that will be allocated.
+            /// </para>
+            /// </remarks>
+            public int MinimumSpanLength { get; set; } = 0;
 
             /// <summary>
             /// Gets this sequence expressed as a <see cref="ReadOnlySequence{T}"/>.
@@ -245,7 +294,7 @@ namespace Orleans.Runtime.Messaging
             /// <summary>
             /// Gets the value to display in a debugger datatip.
             /// </summary>
-            private string DebuggerDisplay => $"Length: {AsReadOnlySequence.Length}";
+            private string DebuggerDisplay => $"Length: {this.AsReadOnlySequence.Length}";
 
             /// <summary>
             /// Expresses this sequence as a <see cref="ReadOnlySequence{T}"/>.
@@ -254,8 +303,8 @@ namespace Orleans.Runtime.Messaging
             public static implicit operator ReadOnlySequence<T>(Sequence sequence)
             {
                 return sequence.first != null
-                    ? new ReadOnlySequence<T>(sequence.first, sequence.first.Start, sequence.last, sequence.last.End)
-                    : ReadOnlySequence<T>.Empty;
+                    ? new ReadOnlySequence<T>(sequence.first, sequence.first.Start, sequence.last, sequence.last!.End)
+                    : Empty;
             }
 
             /// <summary>
@@ -269,6 +318,18 @@ namespace Orleans.Runtime.Messaging
             public void AdvanceTo(SequencePosition position)
             {
                 var firstSegment = (SequenceSegment)position.GetObject();
+                if (firstSegment == null)
+                {
+                    // Emulate PipeReader behavior which is to just return for default(SequencePosition)
+                    return;
+                }
+
+                if (ReferenceEquals(firstSegment, SequenceSegment.Empty) && this.Length == 0)
+                {
+                    // We were called with our own empty buffer segment.
+                    return;
+                }
+
                 int firstIndex = position.GetInteger();
 
                 // Before making any mutations, confirm that the block specified belongs to this sequence.
@@ -278,30 +339,16 @@ namespace Orleans.Runtime.Messaging
                     current = current.Next;
                 }
 
-                if (current == null) ThrowCurrentNull();
-                void ThrowCurrentNull() => throw new ArgumentException("Position does not represent a valid position in this sequence.", nameof(position));
-
-                // Also confirm that the position is not a prior position in the block.
-                if (firstIndex < current.Start) ThrowEarlierPosition();
-                void ThrowEarlierPosition() => throw new ArgumentException("Position must not be earlier than current position.", nameof(position));
-
                 // Now repeat the loop, performing the mutations.
                 current = this.first;
                 while (current != firstSegment)
                 {
-                    var next = current.Next;
-                    current.ResetMemory();
-                    current = next;
+                    current = this.RecycleAndGetNext(current!);
                 }
 
                 firstSegment.AdvanceTo(firstIndex);
 
-                if (firstSegment.Length == 0)
-                {
-                    firstSegment = this.RecycleAndGetNext(firstSegment);
-                }
-
-                this.first = firstSegment;
+                this.first = firstSegment.Length == 0 ? this.RecycleAndGetNext(firstSegment) : firstSegment;
 
                 if (this.first == null)
                 {
@@ -316,12 +363,8 @@ namespace Orleans.Runtime.Messaging
             /// <param name="count">The number of elements written into memory.</param>
             public void Advance(int count)
             {
-                if (count < 0) ThrowNegative();
-                this.last.End += count;
-
-                void ThrowNegative() => throw new ArgumentOutOfRangeException(
-                    nameof(count),
-                    "Value must be greater than or equal to 0");
+                SequenceSegment last = this.last;
+                last.Advance(count);
             }
 
             /// <summary>
@@ -329,40 +372,32 @@ namespace Orleans.Runtime.Messaging
             /// </summary>
             /// <param name="sizeHint">The size of the memory required, or 0 to just get a convenient (non-empty) buffer.</param>
             /// <returns>The requested memory.</returns>
-            public Memory<T> GetMemory(int sizeHint)
+            public Memory<T> GetMemory(int sizeHint) => this.GetSegment(sizeHint).RemainingMemory;
+
+            /// <summary>
+            /// Gets writable memory that can be initialized and added to the sequence via a subsequent call to <see cref="Advance(int)"/>.
+            /// </summary>
+            /// <param name="sizeHint">The size of the memory required, or 0 to just get a convenient (non-empty) buffer.</param>
+            /// <returns>The requested memory.</returns>
+            public Span<T> GetSpan(int sizeHint) => this.GetSegment(sizeHint).RemainingSpan;
+
+            /// <summary>
+            /// Adds an existing memory location to this sequence without copying.
+            /// </summary>
+            /// <param name="memory">The memory to add.</param>
+            /// <remarks>
+            /// This *may* leave significant slack space in a previously allocated block if calls to <see cref="Append(ReadOnlyMemory{T})"/>
+            /// follow calls to <see cref="GetMemory(int)"/> or <see cref="GetSpan(int)"/>.
+            /// </remarks>
+            public void Append(ReadOnlyMemory<T> memory)
             {
-                if (sizeHint < 0) ThrowNegative();
-
-                if (sizeHint == 0)
+                if (memory.Length > 0)
                 {
-                    if (this.last?.WritableBytes > 0)
-                    {
-                        sizeHint = this.last.WritableBytes;
-                    }
-                    else
-                    {
-                        sizeHint = DefaultBufferSize;
-                    }
+                    var segment = this.segmentPool.Count > 0 ? this.segmentPool.Pop() : new SequenceSegment();
+                    segment.AssignForeign(memory);
+                    this.Append(segment);
                 }
-
-                if (this.last == null || this.last.WritableBytes < sizeHint)
-                {
-                    this.Append(this.memoryPool.Rent(Math.Min(sizeHint, this.memoryPool.MaxBufferSize)));
-                }
-
-                return this.last.TrailingSlack;
-
-                void ThrowNegative() => throw new ArgumentOutOfRangeException(
-                   nameof(sizeHint),
-                   "Value for must be greater than or equal to 0");
             }
-
-            /// <summary>
-            /// Gets writable memory that can be initialized and added to the sequence via a subsequent call to <see cref="Advance(int)"/>.
-            /// </summary>
-            /// <param name="sizeHint">The size of the memory required, or 0 to just get a convenient (non-empty) buffer.</param>
-            /// <returns>The requested memory.</returns>
-            public Span<T> GetSpan(int sizeHint) => this.GetMemory(sizeHint).Span;
 
             /// <summary>
             /// Clears the entire sequence, recycles associated memory into pools,
@@ -387,13 +422,46 @@ namespace Orleans.Runtime.Messaging
                 this.first = this.last = null;
             }
 
-            private void Append(IMemoryOwner<T> array)
+            private SequenceSegment GetSegment(int sizeHint)
             {
-                if (array == null) ThrowNull();
+                int? minBufferSize = null;
+                if (sizeHint == 0)
+                {
+                    if (this.last == null || this.last.WritableBytes == 0)
+                    {
+                        // We're going to need more memory. Take whatever size the pool wants to give us.
+                        minBufferSize = -1;
+                    }
+                }
+                else
+                {
+                    sizeHint = Math.Max(this.MinimumSpanLength, sizeHint);
+                    if (this.last == null || this.last.WritableBytes < sizeHint)
+                    {
+                        minBufferSize = sizeHint;
+                    }
+                }
 
-                var segment = this.segmentPool.Count > 0 ? this.segmentPool.Pop() : new SequenceSegment();
-                segment.SetMemory(array, 0, 0);
+                if (minBufferSize.HasValue)
+                {
+                    var segment = this.segmentPool.Count > 0 ? this.segmentPool.Pop() : new SequenceSegment();
+                    if (this.arrayPool != null)
+                    {
+                        segment.Assign(this.arrayPool.Rent(minBufferSize.Value == -1 ? DefaultLengthFromArrayPool : minBufferSize.Value));
+                    }
+                    else
+                    {
+                        segment.Assign(this.memoryPool!.Rent(minBufferSize.Value));
+                    }
 
+                    this.Append(segment);
+                }
+
+                return this.last!;
+            }
+
+            private void Append(SequenceSegment segment)
+            {
                 if (this.last == null)
                 {
                     this.first = this.last = segment;
@@ -411,7 +479,7 @@ namespace Orleans.Runtime.Messaging
                         var current = this.first;
                         if (this.first != this.last)
                         {
-                            while (current.Next != this.last)
+                            while (current!.Next != this.last)
                             {
                                 current = current.Next;
                             }
@@ -421,137 +489,195 @@ namespace Orleans.Runtime.Messaging
                             this.first = segment;
                         }
 
-                        current.SetNext(segment);
+                        current!.SetNext(segment);
                         this.RecycleAndGetNext(this.last);
                     }
 
                     this.last = segment;
                 }
-
-                void ThrowNull() => throw new ArgumentNullException(nameof(array));
             }
 
             private SequenceSegment RecycleAndGetNext(SequenceSegment segment)
             {
                 var recycledSegment = segment;
-                segment = segment.Next;
-                recycledSegment.ResetMemory();
+                var nextSegment = segment.Next;
+                recycledSegment.ResetMemory(this.arrayPool);
                 this.segmentPool.Push(recycledSegment);
-                return segment;
+                return nextSegment;
             }
 
             private class SequenceSegment : ReadOnlySequenceSegment<T>
             {
-                /// <summary>
-                /// Backing field for the <see cref="End"/> property.
-                /// </summary>
-                private int end;
+                internal static readonly SequenceSegment Empty = new SequenceSegment();
 
                 /// <summary>
-                /// Gets the index of the first element in <see cref="AvailableMemory"/> to consider part of the sequence.
+                /// A value indicating whether the element is a value type.
                 /// </summary>
-                /// <remarks>
-                /// The <see cref="Start"/> represents the offset into <see cref="AvailableMemory"/> where the range of "active" bytes begins. At the point when the block is leased
-                /// the <see cref="Start"/> is guaranteed to be equal to 0. The value of <see cref="Start"/> may be assigned anywhere between 0 and
-                /// <see cref="AvailableMemory"/>.Length, and must be equal to or less than <see cref="End"/>.
-                /// </remarks>
+                private static readonly bool IsValueTypeElement = typeof(T).IsValueType;
+
+#pragma warning disable SA1011 // Closing square brackets should be spaced correctly
+                /// <summary>
+                /// Gets the backing array, when using an <see cref="ArrayPool{T}"/> instead of a <see cref="MemoryPool{T}"/>.
+                /// </summary>
+                private T[] array;
+#pragma warning restore SA1011 // Closing square brackets should be spaced correctly
+
+                /// <summary>
+                /// Gets the position within <see cref="ReadOnlySequenceSegment{T}.Memory"/> where the data starts.
+                /// </summary>
+                /// <remarks>This may be nonzero as a result of calling <see cref="Sequence.AdvanceTo(SequencePosition)"/>.</remarks>
                 internal int Start { get; private set; }
 
                 /// <summary>
-                /// Gets or sets the index of the element just beyond the end in <see cref="AvailableMemory"/> to consider part of the sequence.
+                /// Gets the position within <see cref="ReadOnlySequenceSegment{T}.Memory"/> where the data ends.
                 /// </summary>
-                /// <remarks>
-                /// The <see cref="End"/> represents the offset into <see cref="AvailableMemory"/> where the range of "active" bytes ends. At the point when the block is leased
-                /// the <see cref="End"/> is guaranteed to be equal to <see cref="Start"/>. The value of <see cref="Start"/> may be assigned anywhere between 0 and
-                /// <see cref="AvailableMemory"/>.Length, and must be equal to or less than <see cref="End"/>.
-                /// </remarks>
-                internal int End
-                {
-                    get => this.end;
-                    set
-                    {
-                        if (value > this.AvailableMemory.Length) ThrowOutOfRange();
+                internal int End { get; private set; }
 
-                        this.end = value;
+                /// <summary>
+                /// Gets the tail of memory that has not yet been committed.
+                /// </summary>
+                internal Memory<T> RemainingMemory => this.AvailableMemory.Slice(this.End);
 
-                        // If we ever support creating these instances on existing arrays, such that
-                        // this.Start isn't 0 at the beginning, we'll have to "pin" this.Start and remove
-                        // Advance, forcing Sequence<T> itself to track it, the way Pipe does it internally.
-                        this.Memory = this.AvailableMemory.Slice(0, value);
+                /// <summary>
+                /// Gets the tail of memory that has not yet been committed.
+                /// </summary>
+                internal Span<T> RemainingSpan => this.AvailableMemory.Span.Slice(this.End);
 
-                        void ThrowOutOfRange() =>
-                            throw new ArgumentOutOfRangeException(nameof(value), "Value must be less than or equal to AvailableMemory.Length");
-                    }
-                }
-
-                internal Memory<T> TrailingSlack => this.AvailableMemory.Slice(this.End);
-
+                /// <summary>
+                /// Gets the tracker for the underlying array for this segment, which can be used to recycle the array when we're disposed of.
+                /// Will be <c>null</c> if using an array pool, in which case the memory is held by <see cref="array"/>.
+                /// </summary>
                 internal IMemoryOwner<T> MemoryOwner { get; private set; }
 
-                internal Memory<T> AvailableMemory { get; private set; }
+                /// <summary>
+                /// Gets the full memory owned by the <see cref="MemoryOwner"/>.
+                /// </summary>
+                internal Memory<T> AvailableMemory => this.array ?? this.MemoryOwner?.Memory ?? default;
 
+                /// <summary>
+                /// Gets the number of elements that are committed in this segment.
+                /// </summary>
                 internal int Length => this.End - this.Start;
 
                 /// <summary>
                 /// Gets the amount of writable bytes in this segment.
                 /// It is the amount of bytes between <see cref="Length"/> and <see cref="End"/>.
                 /// </summary>
-                internal int WritableBytes
-                {
-                    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                    get => this.AvailableMemory.Length - this.End;
-                }
+                internal int WritableBytes => this.AvailableMemory.Length - this.End;
 
+                /// <summary>
+                /// Gets or sets the next segment in the singly linked list of segments.
+                /// </summary>
                 internal new SequenceSegment Next
                 {
                     get => (SequenceSegment)base.Next;
                     set => base.Next = value;
                 }
 
-                internal void SetMemory(IMemoryOwner<T> memoryOwner)
-                {
-                    this.SetMemory(memoryOwner, 0, memoryOwner.Memory.Length);
-                }
+                /// <summary>
+                /// Gets a value indicating whether this segment refers to memory that came from outside and that we cannot write to nor recycle.
+                /// </summary>
+                internal bool IsForeignMemory => this.array == null && this.MemoryOwner == null;
 
-                internal void SetMemory(IMemoryOwner<T> memoryOwner, int start, int end)
+                /// <summary>
+                /// Assigns this (recyclable) segment a new area in memory.
+                /// </summary>
+                /// <param name="memoryOwner">The memory and a means to recycle it.</param>
+                internal void Assign(IMemoryOwner<T> memoryOwner)
                 {
                     this.MemoryOwner = memoryOwner;
-
-                    this.AvailableMemory = this.MemoryOwner.Memory;
-
-                    this.RunningIndex = 0;
-                    this.Start = start;
-                    this.End = end;
-                    this.Next = null;
+                    this.Memory = memoryOwner.Memory;
                 }
 
-                internal void ResetMemory()
+                /// <summary>
+                /// Assigns this (recyclable) segment a new area in memory.
+                /// </summary>
+                /// <param name="array">An array drawn from an <see cref="ArrayPool{T}"/>.</param>
+                internal void Assign(T[] array)
                 {
-                    this.MemoryOwner.Dispose();
-                    this.MemoryOwner = null;
-                    this.AvailableMemory = default;
+                    this.array = array;
+                    this.Memory = array;
+                }
 
+                /// <summary>
+                /// Assigns this (recyclable) segment a new area in memory.
+                /// </summary>
+                /// <param name="memory">A memory block obtained from outside, that we do not own and should not recycle.</param>
+                internal void AssignForeign(ReadOnlyMemory<T> memory)
+                {
+                    this.Memory = memory;
+                    this.End = memory.Length;
+                }
+
+                /// <summary>
+                /// Clears all fields in preparation to recycle this instance.
+                /// </summary>
+                internal void ResetMemory(ArrayPool<T> arrayPool)
+                {
+                    this.ClearReferences(this.Start, this.End);
                     this.Memory = default;
                     this.Next = null;
+                    this.RunningIndex = 0;
                     this.Start = 0;
-                    this.end = 0;
+                    this.End = 0;
+                    if (this.array != null)
+                    {
+                        arrayPool!.Return(this.array);
+                        this.array = null;
+                    }
+                    else
+                    {
+                        this.MemoryOwner?.Dispose();
+                        this.MemoryOwner = null;
+                    }
                 }
 
+                /// <summary>
+                /// Adds a new segment after this one.
+                /// </summary>
+                /// <param name="segment">The next segment in the linked list.</param>
                 internal void SetNext(SequenceSegment segment)
                 {
-                    if (segment == null) ThrowNull();
-
                     this.Next = segment;
-                    segment.RunningIndex = this.RunningIndex + this.End;
+                    segment.RunningIndex = this.RunningIndex + this.Start + this.Length;
 
-                    SequenceSegment ThrowNull() => throw new ArgumentNullException(nameof(segment));
+                    // Trim any slack on this segment.
+                    if (!this.IsForeignMemory)
+                    {
+                        // When setting Memory, we start with index 0 instead of this.Start because
+                        // the first segment has an explicit index set anyway,
+                        // and we don't want to double-count it here.
+                        this.Memory = this.AvailableMemory.Slice(0, this.Start + this.Length);
+                    }
                 }
 
+                /// <summary>
+                /// Commits more elements as written in this segment.
+                /// </summary>
+                /// <param name="count">The number of elements written.</param>
+                internal void Advance(int count)
+                {
+                    this.End += count;
+                }
+
+                /// <summary>
+                /// Removes some elements from the start of this segment.
+                /// </summary>
+                /// <param name="offset">The number of elements to ignore from the start of the underlying array.</param>
                 internal void AdvanceTo(int offset)
                 {
-                    if (offset > this.End) ThrowOutOfRange();
+                    Debug.Assert(offset >= this.Start, "Trying to rewind.");
+                    this.ClearReferences(this.Start, offset - this.Start);
                     this.Start = offset;
-                    void ThrowOutOfRange() => throw new ArgumentOutOfRangeException(nameof(offset));
+                }
+
+                private void ClearReferences(int startIndex, int length)
+                {
+                    // If we store references, clear them to allow the objects to be GC'd.
+                    if (!IsValueTypeElement)
+                    {
+                        this.AvailableMemory.Span.Slice(startIndex, length).Fill(default!);
+                    }
                 }
             }
         }

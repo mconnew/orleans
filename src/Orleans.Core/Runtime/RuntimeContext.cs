@@ -9,15 +9,9 @@ namespace Orleans.Runtime
 
         [ThreadStatic]
         private static RuntimeContext context;
-        public static RuntimeContext Current 
-        { 
-            get { return context; } 
-        }
+        public static RuntimeContext Current => context ??= new RuntimeContext();
 
-        internal static ISchedulingContext CurrentActivationContext
-        {
-            get { return RuntimeContext.Current != null ? RuntimeContext.Current.ActivationContext : null; }
-        }
+        internal static ISchedulingContext CurrentActivationContext => Current.ActivationContext;
 
         internal static void InitializeThread()
         {
@@ -37,13 +31,12 @@ namespace Orleans.Runtime
 
         internal static void SetExecutionContext(ISchedulingContext shedContext)
         {
-            if (context == null) throw new InvalidOperationException("SetExecutionContext called on unexpected non-WorkerPool thread");
-            context.ActivationContext = shedContext;
+            Current.ActivationContext = shedContext;
         }
 
         internal static void ResetExecutionContext()
         {
-            context.ActivationContext = null;
+            Current.ActivationContext = null;
         }
 
         public override string ToString()

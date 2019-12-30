@@ -24,7 +24,7 @@ namespace Orleans.Networking.Shared
             }
 
 #if NETCOREAPP
-            if (!_awaitableEventArgs.Equals(Memory<byte>.Empty))
+            if (!_awaitableEventArgs.MemoryBuffer.Equals(Memory<byte>.Empty))
             {
                 _awaitableEventArgs.SetBuffer(null, 0, 0);
             }

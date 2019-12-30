@@ -42,6 +42,7 @@ namespace Orleans.Runtime.Scheduler
         {
             try
             {
+                RuntimeContext.SetExecutionContext(this.SchedulingContext);
                 var grain = activation.GrainInstance;
                 var runtimeClient = this.dispatcher.RuntimeClient;
                 Task task = runtimeClient.Invoke(grain, this.activation, this.message);
@@ -58,9 +59,14 @@ namespace Orleans.Runtime.Scheduler
             }
             catch (Exception exc)
             {
-                logger.Warn(ErrorCode.InvokeWorkItem_UnhandledExceptionInInvoke, 
+                logger.Warn(ErrorCode.InvokeWorkItem_UnhandledExceptionInInvoke,
                     String.Format("Exception trying to invoke request {0} on activation {1}.", message, activation), exc);
                 OnComplete();
+            }
+            finally
+            {
+
+                RuntimeContext.ResetExecutionContext();
             }
         }
 

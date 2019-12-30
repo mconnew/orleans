@@ -309,6 +309,8 @@ namespace Orleans.Runtime.Scheduler
         {
             try
             {
+                RuntimeContext.SetExecutionContext(this.SchedulingContext);
+
                 // Process multiple items -- drain the applicationMessageQueue (up to max items) for this physical activation
                 int count = 0;
                 var stopwatch = ValueStopwatch.StartNew();
@@ -416,6 +418,8 @@ namespace Orleans.Runtime.Scheduler
                         state = WorkGroupStatus.Waiting;
                     }
                 }
+
+                RuntimeContext.ResetExecutionContext();
             }
         }
 

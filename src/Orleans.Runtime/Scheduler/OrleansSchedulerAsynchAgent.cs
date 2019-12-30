@@ -23,11 +23,9 @@ namespace Orleans.Runtime.Scheduler
             configureExecutorOptionsBuilder = builder => builder
                 .WithDegreeOfParallelism(maxDegreeOfParalelism)
                 .WithDrainAfterCancel(drainAfterCancel)
-                .WithPreserveOrder(false)
                 .WithWorkItemExecutionTimeTreshold(turnWarningLengthThreshold)
                 .WithDelayWarningThreshold(delayWarningThreshold)
                 .WithWorkItemStatusProvider(GetWorkItemStatus)
-                .WithActionFilters(new SchedulerStatisticsTracker(this))
                 .WithExceptionFilters(
                     new OuterExceptionHandler(Log),
                     new InnerExceptionHandler(Log));
@@ -51,8 +49,8 @@ namespace Orleans.Runtime.Scheduler
 
         private string GetWorkItemStatus(object item, bool detailed)
         {
-            if (!detailed || !(item is IWorkItem workItem)) return string.Empty;
-            return workItem is WorkItemGroup group ? string.Format("WorkItemGroup Details: {0}", group.DumpStatus()) : string.Empty;
+            if (!detailed) return string.Empty;
+            return item is WorkItemGroup group ? string.Format("WorkItemGroup Details: {0}", group.DumpStatus()) : string.Empty;
         }
 
         private sealed class OuterExceptionHandler : ExecutionExceptionFilter
@@ -112,16 +110,6 @@ namespace Orleans.Runtime.Scheduler
                 }
 
                 return true;
-            }
-        }
-
-        private sealed class SchedulerStatisticsTracker : ExecutionActionFilter
-        {
-            private readonly OrleansSchedulerAsynchAgent agent;
-
-            public SchedulerStatisticsTracker(OrleansSchedulerAsynchAgent agent)
-            {
-                this.agent = agent;
             }
         }
     }

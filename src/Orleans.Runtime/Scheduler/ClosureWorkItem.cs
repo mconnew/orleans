@@ -24,7 +24,15 @@ namespace Orleans.Runtime.Scheduler
 
         public override void Execute()
         {
-            continuation();
+            RuntimeContext.SetExecutionContext(this.SchedulingContext);
+            try
+            {
+                continuation();
+            }
+            finally
+            {
+                RuntimeContext.ResetExecutionContext();
+            }
         }
 
         public override WorkItemType ItemType => WorkItemType.Closure;
@@ -58,12 +66,14 @@ namespace Orleans.Runtime.Scheduler
         {
             try
             {
+                RuntimeContext.SetExecutionContext(this.SchedulingContext);
                 RequestContext.Clear();
                 await this.continuation();
                 this.completion.TrySetResult(true);
             }
             catch (Exception exception)
             {
+                RuntimeContext.ResetExecutionContext();
                 this.completion.TrySetException(exception);
             }
         }
@@ -90,12 +100,14 @@ namespace Orleans.Runtime.Scheduler
         {
             try
             {
+                RuntimeContext.SetExecutionContext(this.SchedulingContext);
                 RequestContext.Clear();
                 var result = await this.continuation();
                 this.completion.TrySetResult(result);
             }
             catch (Exception exception)
             {
+                RuntimeContext.ResetExecutionContext();
                 this.completion.TrySetException(exception);
             }
         }
