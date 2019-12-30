@@ -143,7 +143,7 @@ namespace Orleans.Serialization
                     result = @this.ReadChar();
                     break;
                 case SerializationTokenType.Guid:
-#if NETSTANDARD2_1
+#if NETCOREAPP
                     if (@this is BinaryTokenStreamReader2 reader)
                     {
                         Span<byte> bytes = stackalloc byte[16];

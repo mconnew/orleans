@@ -1,6 +1,7 @@
 using System;
 using System.Buffers;
 using System.Buffers.Binary;
+using System.Buffers.Text;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -143,9 +144,25 @@ namespace Orleans.Serialization
             }
             else
             {
+#if NETCOREAPP
+                var count = Encoding.UTF8.GetByteCount(s);
+                this.Write(count);
+                var span = this.TryGetContiguous(count);
+                if (span.Length > count)
+                {
+                    Encoding.UTF8.GetBytes(s, span);
+                    this.currentOffset += count;
+                }
+                else
+                {
+                    var bytes = Encoding.UTF8.GetBytes(s);
+                    this.WriteMultiSegment(bytes);
+                }
+#else
                 var bytes = Encoding.UTF8.GetBytes(s);
                 this.Write(bytes.Length);
                 this.Write(bytes);
+#endif
             }
         }
         
@@ -309,6 +326,19 @@ namespace Orleans.Serialization
 
             void ThrowTooLarge(int l) => throw new InvalidOperationException($"Requested buffer length {l} cannot be satisfied by the writer.");
 #endif
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Span<byte> TryGetContiguous(int length)
+        {
+            // The current buffer is adequate.
+            if (this.currentOffset + length > this.currentBuffer.Length)
+            {
+                // The current buffer is inadequate, allocate another.
+                this.Allocate(length);
+            }
+
+            return this.WritableSpan;
         }
 
         public void Allocate(int length)
