@@ -366,7 +366,8 @@ namespace Orleans.Hosting
                 sp.GetRequiredService<IOptions<SiloMessagingOptions>>().Value.MaxMessageHeaderSize,
                 sp.GetRequiredService<IOptions<SiloMessagingOptions>>().Value.MaxMessageBodySize));
             services.TryAddSingleton<ConnectionFactory, SiloConnectionFactory>();
-            services.TryAddSingleton<INetworkingTrace, NetworkingTrace>();
+            services.AddSingleton<NetworkingTrace>();
+            services.AddSingleton<MessagingTrace>();
 
             // Use Orleans server.
             services.AddSingleton<ILifecycleParticipant<ISiloLifecycle>, SiloConnectionListener>();

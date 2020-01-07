@@ -136,7 +136,7 @@ namespace Orleans.Runtime
             string genericArguments = null)
         {
             var message = this.messageFactory.CreateMessage(request, options);
-            EventSourceUtils.EmitEvent(message, OrleansInsideRuntimeClientEvent.SendRequestAction);
+            OrleansInsideRuntimeClientEvent.Log.SendRequest(message);
             SendRequestMessage(target, message, context, debugContext, options, genericArguments);
         }
 
@@ -245,7 +245,8 @@ namespace Orleans.Runtime
 
         public void SendResponse(Message request, Response response)
         {
-            EventSourceUtils.EmitEvent(request, OrleansInsideRuntimeClientEvent.SendResponseAction);
+            OrleansInsideRuntimeClientEvent.Log.SendResponse(request);
+
             // Don't process messages that have already timed out
             if (request.IsExpired)
             {
@@ -618,7 +619,7 @@ namespace Orleans.Runtime
 
         public void ReceiveResponse(Message message)
         {
-            EventSourceUtils.EmitEvent(message, OrleansInsideRuntimeClientEvent.ReceiveResponseAction);
+            OrleansInsideRuntimeClientEvent.Log.ReceiveResponse(message);
             if (message.Result == Message.ResponseTypes.Rejection)
             {
                 if (!message.TargetSilo.Matches(this.MySilo))
