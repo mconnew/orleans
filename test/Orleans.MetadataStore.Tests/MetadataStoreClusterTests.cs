@@ -1,15 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Orleans.Concurrency;
 using Orleans.Hosting;
 using Orleans.Runtime;
 using Orleans.TestingHost;
@@ -69,22 +64,23 @@ namespace Orleans.MetadataStore.Tests
             }
         }
 
-        internal class BootstrapCluster : IStartupTask, ISiloStatusListener
+        internal class BootstrapCluster : IStartupTask
         {
             private readonly ILocalSiloDetails localSiloDetails;
             private readonly ConfigurationManager configurationManager;
-            private readonly IMembershipOracle membershipOracle;
+            private readonly IClusterMembershipService membershipService;
             private readonly ILogger<BootstrapCluster> log;
+            private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
 
             public BootstrapCluster(
                 ILocalSiloDetails localSiloDetails,
                 ConfigurationManager configurationManager,
-                IMembershipOracle membershipOracle,
+                IClusterMembershipService membershipService,
                 ILogger<BootstrapCluster> log)
             {
                 this.localSiloDetails = localSiloDetails;
                 this.configurationManager = configurationManager;
-                this.membershipOracle = membershipOracle;
+                this.membershipService = membershipService;
                 this.log = log;
             }
 
@@ -101,21 +97,35 @@ namespace Orleans.MetadataStore.Tests
                         ranges: default));
                 }
 
-                this.updateProcessor = new ActionBlock<(SiloAddress, SiloStatus)>(
-                    this.ProcessUpdate,
-                    new ExecutionDataflowBlockOptions
-                    {
-                        TaskScheduler = TaskScheduler.Current, MaxDegreeOfParallelism = 1
-                    });
                 await this.configurationManager.TryAddServer(this.localSiloDetails.SiloAddress);
-                this.membershipOracle.SubscribeToSiloStatusEvents(this);
+                _ = Task.Run(RunAsync);
             }
 
-            private async Task ProcessUpdate((SiloAddress, SiloStatus) update)
+            private async Task RunAsync()
+            {
+                try
+                {
+                    var previous = default(ClusterMembershipSnapshot);
+                    await foreach (var snapshot in this.membershipService.MembershipUpdates.WithCancellation(this.cancellation.Token))
+                    {
+                        var update = previous is null ? snapshot.AsUpdate() : snapshot.CreateUpdate(previous);
+                        foreach (var change in update.Changes)
+                        {
+                            await ProcessUpdate(change);
+                        }
+                    }
+                }
+                catch
+                {
+
+                }
+            }
+
+            private async Task ProcessUpdate(ClusterMember update)
             {
                 while (true)
                 {
-                    var (silo, status) = update;
+                    var (silo, status) = (update.SiloAddress, update.Status);
                     try
                     {
                         log.LogInformation($"Got silo update: {silo} -> {status}");
@@ -145,13 +155,6 @@ namespace Orleans.MetadataStore.Tests
                         log.LogError($"Exception processing update ({silo}, {status}): {exception}");
                     }
                 }
-            }
-
-            private ActionBlock<(SiloAddress, SiloStatus)> updateProcessor;
-
-            public void SiloStatusChangeNotification(SiloAddress updatedSilo, SiloStatus status)
-            {
-                this.updateProcessor.Post((updatedSilo, status));
             }
         }
 

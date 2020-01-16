@@ -163,7 +163,7 @@ namespace Orleans.MetadataStore
             var (success, allKeys) = await GetAllKeys();
             if (success)
             {
-                this.log.LogError($"Failed to successfully read keys froma quorum of nodes.");
+                this.log.LogError($"Failed to successfully read keys from a quorum of nodes.");
                 return false;
             }
 

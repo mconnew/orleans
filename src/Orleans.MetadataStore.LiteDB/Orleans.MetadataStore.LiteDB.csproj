@@ -1,9 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
   <PropertyGroup>
     <PackageId>Microsoft.Orleans.MetadataStore.LiteDB</PackageId>
     <Title>Microsoft Orleans Metadata Store LiteDB Storage</Title>
     <Description>High availability, strong consistency metadata store for Microsoft Orleans clusters.</Description>
     <PackageTags>$(PackageTags)</PackageTags>
+    <TargetFrameworks>$(StandardTargetFrameworks)</TargetFrameworks>
   </PropertyGroup>
   <PropertyGroup>
     <AssemblyName>Orleans.MetadataStore.LiteDB</AssemblyName>

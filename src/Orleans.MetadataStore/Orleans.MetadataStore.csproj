@@ -1,15 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    
     <PackageId>Microsoft.Orleans.MetadataStore</PackageId>
     <Title>Microsoft Orleans Metadata Store</Title>
     <Description>High availability, strong consistency metadata store for Microsoft Orleans clusters.</Description>
     <PackageTags>$(PackageTags)</PackageTags>
+    <TargetFrameworks>$(StandardTargetFrameworks)</TargetFrameworks>
   </PropertyGroup>
+  
   <PropertyGroup>
     <AssemblyName>Orleans.MetadataStore</AssemblyName>
     <RootNamespace>Orleans.MetadataStore</RootNamespace>
     <OrleansBuildTimeCodeGen>true</OrleansBuildTimeCodeGen>
   </PropertyGroup>
+  
   <ItemGroup>
     <ProjectReference Include="..\Orleans.Core.Abstractions\Orleans.Core.Abstractions.csproj" />
     <ProjectReference Include="..\Orleans.Core\Orleans.Core.csproj" />
