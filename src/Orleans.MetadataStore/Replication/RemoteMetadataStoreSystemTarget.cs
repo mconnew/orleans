@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Orleans.MetadataStore.Storage;
@@ -29,6 +29,6 @@ namespace Orleans.MetadataStore
 
         public Task<AcceptResponse> Accept(string key, Ballot proposerConfigBallot, Ballot ballot, object value) => this.manager.Accept(key, proposerConfigBallot, ballot, value);
 
-        public Task<List<string>> GetKeys() => this.store.GetKeys(int.MaxValue);
+        public Task<List<string>> GetKeys() => this.store.GetKeys(int.MaxValue).AsTask();
     }
 }

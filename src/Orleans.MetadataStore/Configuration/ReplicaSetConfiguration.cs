@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
+using System.Collections.Immutable;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using Orleans.Concurrency;
 using Orleans.Runtime;
 
@@ -11,7 +10,14 @@ namespace Orleans.MetadataStore
     [Serializable]
     public class ReplicaSetConfiguration : IVersioned
     {
-        public ReplicaSetConfiguration(Ballot stamp, long version, SiloAddress[] nodes, int acceptQuorum, int prepareQuorum, RangeMap ranges)
+        public ReplicaSetConfiguration(
+            Ballot stamp,
+            long version,
+            SiloAddress[] nodes,
+            int acceptQuorum,
+            int prepareQuorum,
+            RangeMap ranges,
+            ImmutableDictionary<string, string> values)
         {
             this.Stamp = stamp;
             this.Version = version;
@@ -19,6 +25,7 @@ namespace Orleans.MetadataStore
             this.AcceptQuorum = acceptQuorum;
             this.PrepareQuorum = prepareQuorum;
             this.Ranges = ranges;
+            this.Values = values ?? ImmutableDictionary<string, string>.Empty;
         }
 
         /// <summary>
@@ -51,11 +58,17 @@ namespace Orleans.MetadataStore
         /// </summary>
         public RangeMap Ranges { get; }
 
+        /// <summary>
+        /// Additional data stored with this configuration.
+        /// </summary>
+        public ImmutableDictionary<string, string> Values { get; }
+
         /// <inheritdoc />
         public override string ToString()
         {
             var nodes = this.Nodes == null ? "[]" : $"[{string.Join(", ", this.Nodes.Select(_ => _.ToString()))}]";
-            return $"{nameof(Stamp)}: {Stamp}, {nameof(Version)}: {Version}, {nameof(Nodes)}: {nodes}, {nameof(AcceptQuorum)}: {AcceptQuorum}, {nameof(PrepareQuorum)}: {PrepareQuorum}";
+            var values = this.Values.Count == 0 ? "[]" : $"[{string.Join(", ", this.Values.Select(_ => $"\"{_.Key}\"=\"{_.Value}\""))}]";
+            return $"{nameof(Stamp)}: {Stamp}, {nameof(Version)}: {Version}, {nameof(Nodes)}: {nodes}, {nameof(AcceptQuorum)}: {AcceptQuorum}, {nameof(PrepareQuorum)}: {PrepareQuorum}, {nameof(Values)}: {values}";
         }
     }
 }

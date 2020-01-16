@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Orleans.Hosting;
 using Orleans.Runtime;
@@ -14,7 +15,7 @@ using Xunit.Abstractions;
 namespace Orleans.MetadataStore.Tests
 {
     [Trait("Category", "MetadataStore")]
-    public class MetadataStoreTests : IClassFixture<MetadataStoreTests.Fixture>
+    public class MetadataStoreClusteringTests : IClassFixture<MetadataStoreClusteringTests.Fixture>
     {
         private readonly ITestOutputHelper output;
         private readonly Fixture fixture;
@@ -48,17 +49,12 @@ namespace Orleans.MetadataStore.Tests
             {
                 builder
                     //.ConfigureLogging(logging => logging.AddDebug())
-                    .UseAzureStorageClustering(options => options.ConnectionString = "UseDevelopmentStorage=true")
+                    .ConfigureServices(services =>
+                    {
+                        services.AddSingleton<IMembershipTable, MetadataStoreMembershipTable>();
+                    })
                     .AddMetadataStore()
                     .UseMemoryLocalStore()
-                    /*.UseSimpleFileSystemStore(ob => ob.Configure(
-                        (SimpleFileSystemStoreOptions options, ITypeResolver typeResolver, IGrainFactory grainFactory) =>
-                        {
-                            options.JsonSettings = OrleansJsonSerializer.GetDefaultSerializerSettings(typeResolver, grainFactory);
-                            options.JsonSettings.Formatting = Formatting.Indented;
-                            options.Directory = $@"c:\tmp\db\{Guid.NewGuid().GetHashCode():X}";
-                        }))*/
-                    //.UseLiteDBLocalStore(options => options.ConnectionString = $@"c:\tmp\db\{Guid.NewGuid().GetHashCode():X}.db")
                     .AddStartupTask<BootstrapCluster>()
                     .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(IMetadataStoreGrain).Assembly));
             }
@@ -94,65 +90,34 @@ namespace Orleans.MetadataStore.Tests
                         new[] {this.localSiloDetails.SiloAddress},
                         1,
                         1,
-                        ranges: default));
+                        ranges: default,
+                        values: default));
                 }
 
-                await this.configurationManager.TryAddServer(this.localSiloDetails.SiloAddress);
+                //await this.configurationManager.TryAddServer(this.localSiloDetails.SiloAddress);
                 _ = Task.Run(RunAsync);
             }
 
             private async Task RunAsync()
             {
-                try
+                while (!this.cancellation.IsCancellationRequested)
                 {
-                    var previous = default(ClusterMembershipSnapshot);
-                    await foreach (var snapshot in this.membershipService.MembershipUpdates.WithCancellation(this.cancellation.Token))
-                    {
-                        var update = previous is null ? snapshot.AsUpdate() : snapshot.CreateUpdate(previous);
-                        foreach (var change in update.Changes)
-                        {
-                            await ProcessUpdate(change);
-                        }
-                    }
-                }
-                catch
-                {
-
-                }
-            }
-
-            private async Task ProcessUpdate(ClusterMember update)
-            {
-                while (true)
-                {
-                    var (silo, status) = (update.SiloAddress, update.Status);
                     try
                     {
-                        log.LogInformation($"Got silo update: {silo} -> {status}");
-                        var reference = silo;
-                        UpdateResult<ReplicaSetConfiguration> result;
-                        switch (status)
+                        var previous = default(ClusterMembershipSnapshot);
+                        await foreach (var snapshot in this.membershipService.MembershipUpdates.WithCancellation(this.cancellation.Token))
                         {
-                            case SiloStatus.Active:
-                                result = await this.configurationManager.TryAddServer(reference);
-                                break;
-                            case SiloStatus.Dead:
-                                result = await this.configurationManager.TryRemoveServer(reference);
-                                break;
-                            default:
-                                result = default(UpdateResult<ReplicaSetConfiguration>);
-                                break;
+                            var update = previous is null ? snapshot.AsUpdate() : snapshot.CreateUpdate(previous);
+                            foreach (var change in update.Changes)
+                            {
+                                var (silo, status) = (change.SiloAddress, change.Status);
+                                log.LogInformation($"Got silo update: {silo} -> {status}");
+                            }
                         }
-
-                        log.LogInformation($"Update result: {result}");
-
-                        // Continue until a successful result is obtained.
-                        if (result.Success) return;
-                        await Task.Delay(TimeSpan.FromMilliseconds(500));
                     }
                     catch (Exception exception)
                     {
-                        log.LogError($"Exception processing update ({silo}, {status}): {exception}");
+                        this.log.LogError(exception, "Exception in RunAsync. Continuing.");
                     }
                 }
             }
@@ -166,14 +131,14 @@ namespace Orleans.MetadataStore.Tests
             }
         }
 
-        public MetadataStoreTests(ITestOutputHelper output, Fixture fixture)
+        public MetadataStoreClusteringTests(ITestOutputHelper output, Fixture fixture)
         {
             this.output = output;
             this.fixture = fixture;
         }
 
         [Fact, Trait("Category", "BVT")]
-        public async Task TryUpdate_SingleProposer()
+        public async Task MetadataStore_Membership_Basic()
         {
             var log = new XunitLogger(this.output, $"Client-{1}");
             var grain = this.fixture.Client.GetGrain<IMetadataStoreGrain>(Guid.NewGuid());
@@ -196,53 +161,6 @@ namespace Orleans.MetadataStore.Tests
                 //log.LogInformation($"Wrote data and got answer: {JsonConvert.SerializeObject(result, Formatting.Indented)}");
                 data = result.Value;
             }
-        }
-
-        [Fact, Trait("Category", "BVT")]
-        public async Task TryUpdate_MultiKey()
-        {
-            await Task.Delay(15000);
-            var log = new XunitLogger(this.output, $"Client-{1}");
-
-            const int outerLoopIterations = 100;
-            const int innerLoopIterations = 1000;
-
-            var grains = new List<IMetadataStoreGrain>(innerLoopIterations);
-            var keys = new List<string>(innerLoopIterations);
-            var tasks = new List<Task>(innerLoopIterations);
-            for (var i = 0; i < innerLoopIterations; i++)
-            {
-                var grain = this.fixture.Client.GetGrain<IMetadataStoreGrain>(Guid.NewGuid());
-                var key = i.ToString();
-                grains.Add(grain);
-                keys.Add(key);
-                tasks.Add(grain.Get<MyVersionedData>(key));
-
-                await Task.WhenAll(tasks);
-                tasks.Clear();
-            }
-
-            var stopwatch = Stopwatch.StartNew();
-            for (var j = 0; j < outerLoopIterations; j++)
-            {
-                var data = new MyVersionedData
-                {
-                    Version = j + 1,
-                    Value = "Cheetos"
-                };
-
-                for (var i = 0; i < innerLoopIterations; i++)
-                {
-                    tasks.Add(grains[i].TryUpdate(keys[i], data));
-                }
-
-                await Task.WhenAll(tasks);
-                tasks.Clear();
-            }
-
-            stopwatch.Stop();
-            log.LogInformation($"{outerLoopIterations * innerLoopIterations} writes in {stopwatch.Elapsed.TotalSeconds} seconds");
-            log.LogInformation($"{outerLoopIterations * innerLoopIterations / stopwatch.Elapsed.TotalSeconds} tps");
         }
     }
 }

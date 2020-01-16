@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -25,21 +25,21 @@ namespace Orleans.MetadataStore
             this.options = options.Value;
         }
 
-        public Task<TValue> Read<TValue>(string key)
+        public ValueTask<TValue> Read<TValue>(string key)
         {
             var document = this.collection.FindOne(doc => doc.Id == key);
             var value = document?.Value;
-            if (value == null) return Task.FromResult(default(TValue));
-            return Task.FromResult((TValue)value);
+            if (value == null) return new ValueTask<TValue>(default(TValue));
+            return new ValueTask<TValue>((TValue)value);
         }
 
-        public Task Write<TValue>(string key, TValue value)
+        public ValueTask Write<TValue>(string key, TValue value)
         {
             this.collection.Upsert(new KeyValueDocument { Id = key, Value = value });
-            return Task.CompletedTask;
+            return default;
         }
 
-        public Task<List<string>> GetKeys(int maxResults = 100, string afterKey = null)
+        public ValueTask<List<string>> GetKeys(int maxResults = 100, string afterKey = null)
         {
             var keys = this.collection
                 .FindAll()
@@ -47,7 +47,7 @@ namespace Orleans.MetadataStore
                 .Where(key => afterKey == null || string.CompareOrdinal(key, afterKey) > 0)
                 .Take(maxResults)
                 .ToList();
-            return Task.FromResult(keys);
+            return new ValueTask<List<string>>(keys);
         }
 
         public void Participate(ISiloLifecycle lifecycle)

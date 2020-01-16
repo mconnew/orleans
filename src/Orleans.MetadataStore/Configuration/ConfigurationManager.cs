@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,6 +12,22 @@ using AsyncEx = Nito.AsyncEx;
 
 namespace Orleans.MetadataStore
 {
+    public struct ReplicaSetConfigurationUpdate
+    {
+        public ReplicaSetConfigurationUpdate(SiloAddress[] nodes, RangeMap? ranges, ImmutableDictionary<string, string> values)
+        {
+            this.Nodes = nodes;
+            this.Ranges = ranges ?? default;
+            this.Values = values ?? ImmutableDictionary<string, string>.Empty;
+        }
+
+        public SiloAddress[] Nodes { get; }
+        public RangeMap Ranges { get; }
+        public ImmutableDictionary<string, string> Values { get; }
+    }
+
+    public delegate (bool ShouldUpdate, ReplicaSetConfigurationUpdate Update) ConfigurationUpdater<T>(ReplicaSetConfiguration existingConfiguration, T input);
+
     /// <summary>
     /// The Configuration Manager is responsible for coordinating configuration (cluster membership) changes
     /// across the cluster.
@@ -31,8 +48,8 @@ namespace Orleans.MetadataStore
 
         private readonly ChangeFunction<ReplicaSetConfiguration, IVersioned> updateFunction =
             (current, updated) => (current?.Version ?? 0) == updated.Version - 1 ? updated : current;
-        private readonly ChangeFunction<SiloAddress, SiloAddress[]> addFunction;
-        private readonly ChangeFunction<SiloAddress, SiloAddress[]> removeFunction;
+        private readonly ConfigurationUpdater<SiloAddress> addFunction;
+        private readonly ConfigurationUpdater<SiloAddress> removeFunction;
         private readonly ChangeFunction<object, IVersioned> readFunction = (current, updated) => current;
         private readonly AsyncEx.AsyncLock updateLock = new AsyncEx.AsyncLock();
         private readonly Proposer<IVersioned> proposer;
@@ -107,7 +124,15 @@ namespace Orleans.MetadataStore
 
         public Task<UpdateResult<ReplicaSetConfiguration>> TryRemoveServer(SiloAddress address) => this.ModifyConfiguration(this.removeFunction, address);
 
-        private async Task<UpdateResult<ReplicaSetConfiguration>> ModifyConfiguration(ChangeFunction<SiloAddress, SiloAddress[]> changeFunc, SiloAddress address)
+        public Task<UpdateResult<ReplicaSetConfiguration>> TryUpdate<T>(ConfigurationUpdater<T> func, T state) => this.ModifyConfiguration(func, state);
+
+        public async Task<ReadResult<ReplicaSetConfiguration>> TryRead(CancellationToken cancellationToken = default)
+        {
+            var result = await this.proposer.TryUpdate(null, this.readFunction, cancellationToken);
+            return new ReadResult<ReplicaSetConfiguration>(result.Item1 == ReplicationStatus.Success, result.Item2 as ReplicaSetConfiguration);
+        }
+
+        private async Task<UpdateResult<ReplicaSetConfiguration>> ModifyConfiguration<T>(ConfigurationUpdater<T> changeFunc, T input)
         {
             // Update the configuration using two consensus rounds, first reading/committing the existing configuration,
             // then modifying it to add or remove a single server and committing the new value.
@@ -130,31 +155,47 @@ namespace Orleans.MetadataStore
                 }
 
                 // Modify the replica set.
-                var newNodes = changeFunc(committedConfig?.Nodes, address);
-                if (newNodes == committedConfig?.Nodes)
+                var (shouldUpdate, update) = changeFunc(committedConfig, input);
+                if (!shouldUpdate)
                 {
                     // The new address was already in the committed configuration, so no additional work needs to be done.
-                    return new UpdateResult<ReplicaSetConfiguration>(true, committedConfig);
+                    return new UpdateResult<ReplicaSetConfiguration>(false, committedConfig);
                 }
 
                 // Assemble the new configuration.
                 var committedStamp = committedConfig?.Stamp ?? default(Ballot);
                 this.proposer.Ballot = this.proposer.Ballot.AdvanceTo(committedStamp);
                 var newStamp = this.proposer.Ballot.Successor();
-                var quorum = newNodes.Length / 2 + 1;
-                var committedVersion = committedValue?.Version ?? 0;
-                var config = new ReplicaSetConfiguration(newStamp, committedVersion + 1, newNodes, quorum, quorum, ranges: default);
-                this.ProposedConfiguration = ExpandedReplicaSetConfiguration.Create(config, this.options, this.referenceFactory);
 
-                // Attempt to commit the new configuration.
-                (status, committedValue) = await this.proposer.TryUpdate(config, this.updateFunction, cancellation);
-                var success = status == ReplicationStatus.Success;
+                var quorum = update.Nodes.Length / 2 + 1;
+                var updatedConfig = new ReplicaSetConfiguration(
+                    stamp: newStamp,
+                    version: (committedValue?.Version ?? 0) + 1,
+                    nodes: update.Nodes,
+                    acceptQuorum: quorum,
+                    prepareQuorum: quorum,
+                    ranges: update.Ranges,
+                    values: update.Values);
+                var previouslyProposedConfiguration = this.ProposedConfiguration;
+                var success = false;
 
-                // Ensure that a quorum of acceptors have the latest value for all keys.
-                // This replicates all values to the 
-                if (success) success = await this.CatchupAllAcceptors();
+                try
+                {
+                    this.ProposedConfiguration = ExpandedReplicaSetConfiguration.Create(updatedConfig, this.options, this.referenceFactory);
 
-                return new UpdateResult<ReplicaSetConfiguration>(success, (ReplicaSetConfiguration) committedValue);
+                    // Attempt to commit the new configuration.
+                    (status, committedValue) = await this.proposer.TryUpdate(updatedConfig, this.updateFunction, cancellation);
+                    success = status == ReplicationStatus.Success;
+
+                    // Ensure that a quorum of acceptors have the latest value for all keys.
+                    if (success) success = await this.CatchupAllAcceptors();
+
+                    return new UpdateResult<ReplicaSetConfiguration>(success, (ReplicaSetConfiguration)committedValue);
+                }
+                finally
+                {
+                    if (!success) this.ProposedConfiguration = previouslyProposedConfiguration;
+                }
             }
         }
 
@@ -196,7 +237,11 @@ namespace Orleans.MetadataStore
                 {
                     var storeKeys = await remoteMetadataStore.GetKeys();
 
-                    foreach (var key in storeKeys) allKeys.Add(key);
+                    foreach (var key in storeKeys)
+                    {
+                        allKeys.Add(key);
+                    }
+
                     --remainingConfirmations;
 
                     if (remainingConfirmations == 0) break;
@@ -211,8 +256,10 @@ namespace Orleans.MetadataStore
             return (success, allKeys);
         }
 
-        private SiloAddress[] AddServer(SiloAddress[] existingNodes, SiloAddress nodeToAdd)
+        private (bool ShouldUpdate, ReplicaSetConfigurationUpdate Update) AddServer(ReplicaSetConfiguration existingConfiguration, SiloAddress nodeToAdd)
         {
+            var existingNodes = existingConfiguration?.Nodes;
+
             // Add the new node to the list of nodes, being sure not to add a duplicate.
             var newNodes = new SiloAddress[(existingNodes?.Length ?? 0) + 1];
             if (existingNodes != null)
@@ -222,7 +269,7 @@ namespace Orleans.MetadataStore
                     // If the configuration already contains the specified node, return the already-confirmed configuration.
                     if (existingNodes[i].Equals(nodeToAdd))
                     {
-                        return existingNodes;
+                        return (false, default);
                     }
 
                     newNodes[i] = existingNodes[i];
@@ -231,13 +278,13 @@ namespace Orleans.MetadataStore
 
             // Add the new node at the end.
             newNodes[newNodes.Length - 1] = nodeToAdd;
-
-            return newNodes;
+            return (true, new ReplicaSetConfigurationUpdate(newNodes, existingConfiguration?.Ranges, existingConfiguration?.Values));
         }
 
-        private SiloAddress[] RemoveServer(SiloAddress[] existingNodes, SiloAddress nodeToRemove)
+        private (bool ShouldUpdate, ReplicaSetConfigurationUpdate Update) RemoveServer(ReplicaSetConfiguration existingConfiguration, SiloAddress nodeToRemove)
         {
-            if (existingNodes == null || existingNodes.Length == 0) return existingNodes;
+            var existingNodes = existingConfiguration?.Nodes;
+            if (existingNodes == null || existingNodes.Length == 0) return (false, default);
 
             // Remove the node from the list of nodes.
             var newNodes = new SiloAddress[existingNodes.Length - 1];
@@ -255,15 +302,18 @@ namespace Orleans.MetadataStore
 
                 // If the array bound has been hit, then either the last element is the target
                 // or the target is not present.
-                if (i == newNodes.Length) break;
+                if (i == newNodes.Length)
+                {
+                    return (false, default);
+                }
 
                 newNodes[i] = current;
             }
 
             // If no nodes changed, return a reference to the original configuration.
-            if (skipped == 0) return existingNodes;
+            if (skipped == 0) return (false, default);
 
-            return newNodes;
+            return (true, new ReplicaSetConfigurationUpdate(newNodes, existingConfiguration?.Ranges, existingConfiguration?.Values));
         }
 
         Task<(ReplicationStatus, IVersioned)> IProposer<IVersioned>.TryUpdate<TArg>(

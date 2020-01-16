@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Orleans.MetadataStore
 {
@@ -14,6 +14,12 @@ namespace Orleans.MetadataStore
         public TValue Value { get; set; }
 
         public bool Success { get; set; }
+
+        public void Deconstruct(out bool success, out TValue value)
+        {
+            success = this.Success;
+            value = this.Value;
+        }
 
         public override string ToString()
         {

@@ -1,100 +1,249 @@
-/*
 using System;
-using System.Linq;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using TestExtensions;
+using Orleans.Hosting;
+using Orleans.Runtime;
+using Orleans.TestingHost;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Orleans.MetadataStore.Tests
 {
-    [TestCategory("MetadataStore")]
-    public class MetadataStoreTests //: HostedTestClusterEnsureDefaultStarted
+    [Trait("Category", "MetadataStore")]
+    public class MetadataStoreTests : IClassFixture<MetadataStoreTests.Fixture>
     {
         private readonly ITestOutputHelper output;
-
-        public MetadataStoreTests(ITestOutputHelper output)//, DefaultClusterFixture fixture) : base(fixture)
+        private readonly Fixture fixture;
+        public class Fixture
         {
-            this.output = output;
+            public Fixture()
+            {
+                var builder = new TestClusterBuilder();
+                builder.Options.InitialSilosCount = 3;
+                builder.AddSiloBuilderConfigurator<SiloConfigurator>();
+                builder.AddClientBuilderConfigurator<ClientConfigurator>();
+                var testCluster = builder.Build();
+                if (testCluster?.Primary == null)
+                {
+                    testCluster?.Deploy();
+                }
+
+                this.HostedCluster = testCluster;
+            }
+
+            public TestCluster HostedCluster { get; }
+
+            public IClusterClient Client => this.HostedCluster?.Client;
+
+            public virtual void Dispose() => this.HostedCluster?.StopAllSilos();
         }
 
-        [Fact, TestCategory("BVT")]
+        public class SiloConfigurator : ISiloBuilderConfigurator
+        {
+            public void Configure(ISiloHostBuilder builder)
+            {
+                builder
+                    //.ConfigureLogging(logging => logging.AddDebug())
+                    .UseAzureStorageClustering(options => options.ConnectionString = "UseDevelopmentStorage=true")
+                    .AddMetadataStore()
+                    .UseMemoryLocalStore()
+                    /*.UseSimpleFileSystemStore(ob => ob.Configure(
+                        (SimpleFileSystemStoreOptions options, ITypeResolver typeResolver, IGrainFactory grainFactory) =>
+                        {
+                            options.JsonSettings = OrleansJsonSerializer.GetDefaultSerializerSettings(typeResolver, grainFactory);
+                            options.JsonSettings.Formatting = Formatting.Indented;
+                            options.Directory = $@"c:\tmp\db\{Guid.NewGuid().GetHashCode():X}";
+                        }))*/
+                    //.UseLiteDBLocalStore(options => options.ConnectionString = $@"c:\tmp\db\{Guid.NewGuid().GetHashCode():X}.db")
+                    .AddStartupTask<BootstrapCluster>()
+                    .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(IMetadataStoreGrain).Assembly));
+            }
+        }
+
+        internal class BootstrapCluster : IStartupTask
+        {
+            private readonly ILocalSiloDetails localSiloDetails;
+            private readonly ConfigurationManager configurationManager;
+            private readonly IClusterMembershipService membershipService;
+            private readonly ILogger<BootstrapCluster> log;
+            private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
+
+            public BootstrapCluster(
+                ILocalSiloDetails localSiloDetails,
+                ConfigurationManager configurationManager,
+                IClusterMembershipService membershipService,
+                ILogger<BootstrapCluster> log)
+            {
+                this.localSiloDetails = localSiloDetails;
+                this.configurationManager = configurationManager;
+                this.membershipService = membershipService;
+                this.log = log;
+            }
+
+            public async Task Execute(CancellationToken cancellationToken)
+            {
+                if (this.configurationManager.AcceptedConfiguration?.Configuration == null)
+                {
+                    await this.configurationManager.ForceLocalConfiguration(
+                        new ReplicaSetConfiguration(new Ballot(1, this.configurationManager.NodeId),
+                        1,
+                        new[] {this.localSiloDetails.SiloAddress},
+                        1,
+                        1,
+                        ranges: default,
+                        values: default));
+                }
+
+                await this.configurationManager.TryAddServer(this.localSiloDetails.SiloAddress);
+                _ = Task.Run(RunAsync);
+            }
+
+            private async Task RunAsync()
+            {
+                try
+                {
+                    var previous = default(ClusterMembershipSnapshot);
+                    await foreach (var snapshot in this.membershipService.MembershipUpdates.WithCancellation(this.cancellation.Token))
+                    {
+                        var update = previous is null ? snapshot.AsUpdate() : snapshot.CreateUpdate(previous);
+                        foreach (var change in update.Changes)
+                        {
+                            await ProcessUpdate(change);
+                        }
+                    }
+                }
+                catch
+                {
+
+                }
+            }
+
+            private async Task ProcessUpdate(ClusterMember update)
+            {
+                while (true)
+                {
+                    var (silo, status) = (update.SiloAddress, update.Status);
+                    try
+                    {
+                        log.LogInformation($"Got silo update: {silo} -> {status}");
+                        var reference = silo;
+                        UpdateResult<ReplicaSetConfiguration> result;
+                        switch (status)
+                        {
+                            case SiloStatus.Active:
+                                result = await this.configurationManager.TryAddServer(reference);
+                                break;
+                            case SiloStatus.Dead:
+                                result = await this.configurationManager.TryRemoveServer(reference);
+                                break;
+                            default:
+                                result = default(UpdateResult<ReplicaSetConfiguration>);
+                                break;
+                        }
+
+                        log.LogInformation($"Update result: {result}");
+
+                        // Continue until a successful result is obtained.
+                        if (result.Success) return;
+                        await Task.Delay(TimeSpan.FromMilliseconds(500));
+                    }
+                    catch (Exception exception)
+                    {
+                        log.LogError($"Exception processing update ({silo}, {status}): {exception}");
+                    }
+                }
+            }
+        }
+
+        public class ClientConfigurator : IClientBuilderConfigurator
+        {
+            public void Configure(IConfiguration configuration, IClientBuilder builder)
+            {
+                //builder.ConfigureLogging(logging => logging.AddDebug());
+            }
+        }
+
+        public MetadataStoreTests(ITestOutputHelper output, Fixture fixture)
+        {
+            this.output = output;
+            this.fixture = fixture;
+        }
+
+        [Fact, Trait("Category", "BVT")]
         public async Task TryUpdate_SingleProposer()
         {
             var log = new XunitLogger(this.output, $"Client-{1}");
+            var grain = this.fixture.Client.GetGrain<IMetadataStoreGrain>(Guid.NewGuid());
+            var result = await grain.TryUpdate("testKey", new MyVersionedData {Value = "initial", Version = 1});
+            log.LogInformation($"Wrote data and got answer: {result}");
 
-            var memoryStore = new MemoryLocalStore();
-            var acceptors = Enumerable.Range(1, 3)
-                .Select(i => (IAcceptor<int>)new Acceptor<int>(i.ToString(), memoryStore, new XunitLogger(this.output, $"Acceptor-{i}")));
-            var proposer = new Proposer<int>(1.ToString(), new Ballot(0, 1), null, new XunitLogger(this.output, $"Proposer-{1}"));
-            var config = new ReplicaSetConfiguration<int>(acceptors.ToArray(), new IProposer<int>[] { proposer }, 2, 2);
-            await proposer.InstallConfiguration(config, CancellationToken.None);
+            await Task.Delay(5000);
+            var configResult = await grain.Get<ReplicaSetConfiguration>("MDS.Config");
+            log.LogInformation($"Read config and got answer: {configResult}");
 
-            var (status, val) = await proposer.TryUpdate(1, (value, newValue) => value == newValue - 1 ? newValue : value, CancellationToken.None);
+            var readResult = await grain.Get<MyVersionedData>("testKey");
+            log.LogInformation($"Read data and got answer: {readResult}");
 
-            Assert.Equal(OperationStatus.Success, status);
-            Assert.Equal(1, val);
-            log.LogInformation($"Updated value to {val}: {status}");
-
-            (status, val) = await proposer.TryUpdate(0, (value, newValue) => value, CancellationToken.None);
-
-            Assert.Equal(OperationStatus.Success, status);
-            Assert.Equal(1, val);
-            log.LogInformation($"Read value {val}: {status}");
-
-            (status, val) = await proposer.TryUpdate(2, (value, newValue) => value == newValue - 1 ? newValue : value, CancellationToken.None);
-
-            Assert.Equal(OperationStatus.Success, status);
-            Assert.Equal(2, val);
-            log.LogInformation($"Updated value to {val}: {status}");
-
-            (status, val) = await proposer.TryUpdate(2, (value, newValue) => value == newValue - 1 ? newValue : value, CancellationToken.None);
-
-            Assert.Equal(OperationStatus.Success, status);
-            Assert.Equal(2, val);
-            log.LogInformation("Failed to update value.");
+            var data = readResult.Value;
+            for (var i = 0; i < 1000; i++)
+            {
+                data.Version++;
+                //data.Value = data.Value + ", " + i;
+                result = await grain.TryUpdate("testKey", data);
+                //log.LogInformation($"Wrote data and got answer: {JsonConvert.SerializeObject(result, Formatting.Indented)}");
+                data = result.Value;
+            }
         }
 
-        [Fact, TestCategory("BVT")]
-        public async Task TryUpdate_CompetingProposer_NonOverlapping()
+        [Fact, Trait("Category", "BVT")]
+        public async Task TryUpdate_MultiKey()
         {
+            await Task.Delay(15000);
             var log = new XunitLogger(this.output, $"Client-{1}");
 
-            var memoryStore = new MemoryLocalStore();
-            var acceptors = Enumerable.Range(1, 3)
-                .Select(i => (IAcceptor<int>)new Acceptor<int>(BitConverter.GetBytes(i), memoryStore, new XunitLogger(this.output, $"Acceptor-{i}")));
-            var proposer1 = new Proposer<int>(new Ballot(0, 1), null, new XunitLogger(this.output, $"Proposer-{1}"));
-            var proposer2 = new Proposer<int>(new Ballot(0, 2), null, new XunitLogger(this.output, $"Proposer-{2}"));
-            var config = new ReplicaSetConfiguration<int>(acceptors.ToArray(), new IProposer<int>[] { proposer1, proposer2 }, 2, 2);
-            await proposer1.InstallConfiguration(config, CancellationToken.None);
-            await proposer2.InstallConfiguration(config, CancellationToken.None);
+            const int outerLoopIterations = 100;
+            const int innerLoopIterations = 1000;
 
-            var (status, val) = await proposer1.TryUpdate(1, (value, newValue) => value == newValue - 1 ? newValue : value, CancellationToken.None);
+            var grains = new List<IMetadataStoreGrain>(innerLoopIterations);
+            var keys = new List<string>(innerLoopIterations);
+            var tasks = new List<Task>(innerLoopIterations);
+            for (var i = 0; i < innerLoopIterations; i++)
+            {
+                var grain = this.fixture.Client.GetGrain<IMetadataStoreGrain>(Guid.NewGuid());
+                var key = i.ToString();
+                grains.Add(grain);
+                keys.Add(key);
+                tasks.Add(grain.Get<MyVersionedData>(key));
 
-            Assert.Equal(OperationStatus.Success, status);
-            Assert.Equal(1, val);
-            log.LogInformation($"Updated value to {val}: {status}");
+                await Task.WhenAll(tasks);
+                tasks.Clear();
+            }
 
-            (status, val) = await proposer1.TryUpdate(0, (value, newValue) => value, CancellationToken.None);
+            var stopwatch = Stopwatch.StartNew();
+            for (var j = 0; j < outerLoopIterations; j++)
+            {
+                var data = new MyVersionedData
+                {
+                    Version = j + 1,
+                    Value = "Cheetos"
+                };
 
-            Assert.Equal(OperationStatus.Success, status);
-            Assert.Equal(1, val);
-            log.LogInformation($"Read value {val}: {status}");
+                for (var i = 0; i < innerLoopIterations; i++)
+                {
+                    tasks.Add(grains[i].TryUpdate(keys[i], data));
+                }
 
-            (status, val) = await proposer2.TryUpdate(2, (value, newValue) => value == newValue - 1 ? newValue : value, CancellationToken.None);
+                await Task.WhenAll(tasks);
+                tasks.Clear();
+            }
 
-            Assert.Equal(OperationStatus.Success, status);
-            Assert.Equal(2, val);
-            log.LogInformation($"Updated value to {val}: {status}");
-
-            (status, val) = await proposer1.TryUpdate(3, (value, newValue) => value == newValue - 1 ? newValue : value, CancellationToken.None);
-
-            Assert.Equal(OperationStatus.Success, status);
-            Assert.Equal(3, val);
-            log.LogInformation($"Updated value to {val}: {status}");
+            stopwatch.Stop();
+            log.LogInformation($"{outerLoopIterations * innerLoopIterations} writes in {stopwatch.Elapsed.TotalSeconds} seconds");
+            log.LogInformation($"{outerLoopIterations * innerLoopIterations / stopwatch.Elapsed.TotalSeconds} tps");
         }
     }
 }
-*/

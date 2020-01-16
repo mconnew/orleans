@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -28,7 +28,7 @@ namespace Orleans.MetadataStore.Storage
             if (!Directory.Exists(this.bakDirectory)) Directory.CreateDirectory(this.bakDirectory);
         }
 
-        public async Task<TValue> Read<TValue>(string key)
+        public async ValueTask<TValue> Read<TValue>(string key)
         {
             var path = Path.Combine(this.directory, key + ".json");
             if (!File.Exists(path)) return default(TValue);
@@ -36,7 +36,7 @@ namespace Orleans.MetadataStore.Storage
             return JsonConvert.DeserializeObject<TValue>(fileText, this.options.JsonSettings);
         }
 
-        public async Task Write<TValue>(string key, TValue value)
+        public async ValueTask Write<TValue>(string key, TValue value)
         {
             var fileText = JsonConvert.SerializeObject(value, this.options.JsonSettings);
             var fileName = key + ".json";
@@ -48,10 +48,10 @@ namespace Orleans.MetadataStore.Storage
             else File.Move(tmpFile, targetFile);*/
         }
 
-        public Task<List<string>> GetKeys(int maxResults = 100, string afterKey = null)
+        public ValueTask<List<string>> GetKeys(int maxResults = 100, string afterKey = null)
         {
             var keys = Directory.EnumerateFiles(this.directory, "*.json").Select(f => f.Remove(f.Length - 5));
-            return Task.FromResult(keys.ToList());
+            return new ValueTask<List<string>>(keys.ToList());
         }
 
         private static async Task WriteFileAsync(string path, string contents)

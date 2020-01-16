@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -16,23 +16,23 @@ namespace Orleans.MetadataStore.Storage
             this.serializationManager = serializationManager;
         }
 
-        public Task<TValue> Read<TValue>(string key)
+        public ValueTask<TValue> Read<TValue>(string key)
         {
             if (this.lookup.TryGetValue(key, out var value))
             {
-                return Task.FromResult((TValue)value);
+                return new ValueTask<TValue>((TValue)value);
             }
 
-            return Task.FromResult(default(TValue));
+            return new ValueTask<TValue>(default(TValue));
         }
 
-        public Task Write<TValue>(string key, TValue value)
+        public ValueTask Write<TValue>(string key, TValue value)
         {
             this.lookup[key] = this.serializationManager.DeepCopy(value);
-            return Task.CompletedTask;
+            return default;
         }
 
-        public Task<List<string>> GetKeys(int maxResults = 100, string afterKey = null)
+        public ValueTask<List<string>> GetKeys(int maxResults = 100, string afterKey = null)
         {
             var include = afterKey == null;
             var results = new List<string>();
@@ -47,7 +47,7 @@ namespace Orleans.MetadataStore.Storage
                 if (results.Count >= maxResults) break;
             }
 
-            return Task.FromResult(results);
+            return new ValueTask<List<string>>(results);
         }
     }
 }
