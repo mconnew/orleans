@@ -107,11 +107,12 @@ namespace Orleans.MetadataStore
 
         public async Task Initialize()
         {
-            this.NodeId = await this.store.Read<int>(NodeIdKey);
+            // TODO: Implement some persistence for NodeId?
+            //this.NodeId = await this.store.Read<int>(NodeIdKey);
             if (this.NodeId == 0)
             {
                 this.NodeId = Math.Abs(Guid.NewGuid().GetHashCode());
-                await this.store.Write(NodeIdKey, this.NodeId);
+                //await this.store.Write(NodeIdKey, this.NodeId);
             }
 
             this.proposer.Ballot = new Ballot(0, this.NodeId);

@@ -146,6 +146,11 @@ namespace Orleans
 
         public TableVersion Version { get; private set; }
 
+        /// <summary>
+        /// Constructor for serialization
+        /// </summary>
+        public MembershipTableData() { }
+
         public MembershipTableData(List<Tuple<MembershipEntry, string>> list, TableVersion version)
         {
             // put deads at the end, just for logging.

@@ -14,7 +14,7 @@ namespace Orleans.MetadataStore.Tests
         public SiloAddress[] SeedNodes { get; set; }
     }
 
-    public class MetadataStoreMembershipTable : IMembershipTable
+    public class MetadataStoreMembershipTable : IMembershipTable, ILifecycleParticipant<ISiloLifecycle>
     {
         private const string MembershipKey = "membership";
         private readonly ILocalSiloDetails localSiloDetails;
@@ -83,10 +83,12 @@ namespace Orleans.MetadataStore.Tests
             var (success, result) = await this.configurationManager.TryRead();
             if (!success)
             {
-                return null; // TODO: double-check semantics here.
+                return Zero();
             }
 
-            return this.TryGetValue(result);
+            return this.TryGetValue(result) ?? Zero();
+
+            static MembershipTableData Zero() => new MembershipTableData(new List<Tuple<MembershipEntry, string>>(), new TableVersion(0, "zero"));
         }
 
         public Task<MembershipTableData> ReadRow(SiloAddress key) => ReadAll();
@@ -161,7 +163,7 @@ namespace Orleans.MetadataStore.Tests
 
         private ValueTask<MembershipTableData> RefreshCommitted(TableVersion expectedVersion)
         {
-            var result = GetAcceptedValue();
+            var result = TryGetAcceptedValue();
             if (result is object && (expectedVersion == null || result.Version.Version >= expectedVersion.Version))
             {
                 return new ValueTask<MembershipTableData>(result);
@@ -170,7 +172,7 @@ namespace Orleans.MetadataStore.Tests
             return new ValueTask<MembershipTableData>(this.ReadAll());
         }
 
-        private MembershipTableData GetAcceptedValue()
+        private MembershipTableData TryGetAcceptedValue()
         {
             var accepted = this.configurationManager.AcceptedConfiguration?.Configuration;
             return TryGetValue(accepted);
@@ -195,7 +197,7 @@ namespace Orleans.MetadataStore.Tests
                 var updatedValues = existing.Values.SetItem(MembershipKey, serialized);
 
                 var existingNodes = existing.Nodes;
-                var proposedNodes = value.GetSiloStatuses(filter: s => s == SiloStatus.Active, includeMyself: true, this.localSiloDetails.SiloAddress).Keys.ToArray();
+                var proposedNodes = value.GetSiloStatuses(filter: s => !s.IsUnavailable(), includeMyself: true, this.localSiloDetails.SiloAddress).Keys.ToArray();
                 var updatedNodes = GetUpdatedNodes(existingNodes, proposedNodes);
 
                 return (true, new ReplicaSetConfigurationUpdate(nodes: updatedNodes, ranges: existing.Ranges, updatedValues));
@@ -304,6 +306,25 @@ namespace Orleans.MetadataStore.Tests
 
                 return newNodes;
             }
+        }
+
+        public void Participate(ISiloLifecycle lifecycle)
+        {
+            lifecycle.Subscribe(
+                nameof(MetadataStoreMembershipTable),
+                ServiceLifecycleStage.RuntimeInitialize,
+                async cancellation =>
+                {
+                    await this.configurationManager.ForceLocalConfiguration(
+                        new ReplicaSetConfiguration(
+                            stamp: new Ballot(1, this.configurationManager.NodeId),
+                            version: 1,
+                            nodes: this.options.CurrentValue.SeedNodes,
+                            acceptQuorum: 1,
+                            prepareQuorum: 1,
+                            ranges: default,
+                            values: default));
+                });
         }
     }
 }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Orleans.Configuration.Internal;
 using Orleans.Hosting;
 using Orleans.Runtime;
 using Orleans.TestingHost;
@@ -51,8 +52,16 @@ namespace Orleans.MetadataStore.Tests
                     //.ConfigureLogging(logging => logging.AddDebug())
                     .ConfigureServices(services =>
                     {
-                        services.AddSingleton<IMembershipTable, MetadataStoreMembershipTable>();
+                        services.AddSingleton<MetadataStoreMembershipTable>();
+                        services.AddFromExisting<ILifecycleParticipant<ISiloLifecycle>, MetadataStoreMembershipTable>();
+                        services.AddFromExisting<IMembershipTable, MetadataStoreMembershipTable>();
+                        services.AddOptions<MetadataStoreClusteringOptions>()
+                            .Configure((MetadataStoreClusteringOptions options, ILocalSiloDetails localSiloDetails) =>
+                            {
+                                options.SeedNodes = new[] { localSiloDetails.SiloAddress };
+                            });
                     })
+                    .ConfigureLogging(l => l.AddDebug())
                     .AddMetadataStore()
                     .UseMemoryLocalStore()
                     .AddStartupTask<BootstrapCluster>()
@@ -85,13 +94,14 @@ namespace Orleans.MetadataStore.Tests
                 if (this.configurationManager.AcceptedConfiguration?.Configuration == null)
                 {
                     await this.configurationManager.ForceLocalConfiguration(
-                        new ReplicaSetConfiguration(new Ballot(1, this.configurationManager.NodeId),
-                        1,
-                        new[] {this.localSiloDetails.SiloAddress},
-                        1,
-                        1,
-                        ranges: default,
-                        values: default));
+                        new ReplicaSetConfiguration(
+                            stamp: new Ballot(1, this.configurationManager.NodeId),
+                            version: 1,
+                            nodes: new[] {this.localSiloDetails.SiloAddress},
+                            acceptQuorum: 1,
+                            prepareQuorum: 1,
+                            ranges: default,
+                            values: default));
                 }
 
                 //await this.configurationManager.TryAddServer(this.localSiloDetails.SiloAddress);
