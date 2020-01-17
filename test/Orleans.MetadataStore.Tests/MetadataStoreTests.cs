@@ -49,7 +49,7 @@ namespace Orleans.MetadataStore.Tests
                 builder
                     //.ConfigureLogging(logging => logging.AddDebug())
                     .UseAzureStorageClustering(options => options.ConnectionString = "UseDevelopmentStorage=true")
-                    .AddMetadataStore()
+                    .UseMetadataStore()
                     .UseMemoryLocalStore()
                     /*.UseSimpleFileSystemStore(ob => ob.Configure(
                         (SimpleFileSystemStoreOptions options, ITypeResolver typeResolver, IGrainFactory grainFactory) =>

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -20,20 +21,19 @@ namespace Orleans.MetadataStore.Tests
         private readonly ILocalSiloDetails localSiloDetails;
         private readonly ConfigurationManager configurationManager;
         private readonly IOptionsMonitor<MetadataStoreClusteringOptions> options;
-        private readonly JsonSerializerSettings serializerSettings;
+        private readonly SerializationManager serializationManager;
         private readonly ConfigurationUpdater<MembershipTableData> updateFunc;
 
         public MetadataStoreMembershipTable(
                 ILocalSiloDetails localSiloDetails,
                 ConfigurationManager configurationManager,
-                ITypeResolver typeResolver,
-                IGrainFactory grainFactory,
-                IOptionsMonitor<MetadataStoreClusteringOptions> options)
+                IOptionsMonitor<MetadataStoreClusteringOptions> options,
+                SerializationManager serializationManager)
         {
             this.localSiloDetails = localSiloDetails;
             this.configurationManager = configurationManager;
             this.options = options;
-            this.serializerSettings = OrleansJsonSerializer.GetDefaultSerializerSettings(typeResolver, grainFactory);
+            this.serializationManager = serializationManager;
             this.updateFunc = this.UpdateConfiguration;
         }
 
@@ -180,12 +180,13 @@ namespace Orleans.MetadataStore.Tests
 
         private MembershipTableData TryGetValue(ReplicaSetConfiguration configuration)
         {
-            if (configuration == null || !configuration.Values.TryGetValue(MembershipKey, out var serialized))
+            string serialized = null;
+            if (configuration?.Values?.TryGetValue(MembershipKey, out serialized) != true || string.IsNullOrWhiteSpace(serialized))
             {
                 return null;
             }
 
-            return JsonConvert.DeserializeObject<MembershipTableData>(serialized);
+            return this.serializationManager.DeserializeFromByteArray<MembershipTableData>(Convert.FromBase64String(serialized));
         }
 
         private (bool ShouldUpdate, ReplicaSetConfigurationUpdate Update) UpdateConfiguration(ReplicaSetConfiguration existing, MembershipTableData value)
@@ -193,7 +194,7 @@ namespace Orleans.MetadataStore.Tests
             var current = TryGetValue(existing);
             if (current is null || (string.Equals(current.Version.VersionEtag, value.Version.VersionEtag) && current.Version.Version < value.Version.Version))
             {
-                var serialized = JsonConvert.SerializeObject(value, typeof(MembershipTableData), Formatting.None, this.serializerSettings);
+                var serialized = Convert.ToBase64String(this.serializationManager.SerializeToByteArray(value));
                 var updatedValues = existing.Values.SetItem(MembershipKey, serialized);
 
                 var existingNodes = existing.Nodes;

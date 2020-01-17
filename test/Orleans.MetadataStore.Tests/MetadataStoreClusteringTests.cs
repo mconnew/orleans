@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Orleans.Configuration.Internal;
 using Orleans.Hosting;
@@ -20,10 +21,11 @@ namespace Orleans.MetadataStore.Tests
     {
         private readonly ITestOutputHelper output;
         private readonly Fixture fixture;
-        public class Fixture
+        public class Fixture : IAsyncLifetime
         {
             public Fixture()
             {
+                var primarySilo = Host.CreateDefaultBuilder();
                 var builder = new TestClusterBuilder();
                 builder.Options.InitialSilosCount = 3;
                 builder.AddSiloBuilderConfigurator<SiloConfigurator>();
@@ -42,6 +44,18 @@ namespace Orleans.MetadataStore.Tests
             public IClusterClient Client => this.HostedCluster?.Client;
 
             public virtual void Dispose() => this.HostedCluster?.StopAllSilos();
+
+            public async Task InitializeAsync()
+            {
+                this.PrimarySilo = await Host.CreateDefaultBuilder()
+                    .UseOrleans(siloBuilder =>
+                    siloBuilder.AddMe).StartAsync();
+            }
+
+            Task IAsyncLifetime.DisposeAsync()
+            {
+                throw new NotImplementedException();
+            }
         }
 
         public class SiloConfigurator : ISiloBuilderConfigurator
@@ -62,7 +76,7 @@ namespace Orleans.MetadataStore.Tests
                             });
                     })
                     .ConfigureLogging(l => l.AddDebug())
-                    .AddMetadataStore()
+                    .UseMetadataStore()
                     .UseMemoryLocalStore()
                     .AddStartupTask<BootstrapCluster>()
                     .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(IMetadataStoreGrain).Assembly));
