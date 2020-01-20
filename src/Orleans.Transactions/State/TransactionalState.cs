@@ -10,6 +10,7 @@ using Orleans.Transactions.Abstractions;
 using Orleans.Transactions.State;
 using Orleans.Configuration;
 using Orleans.Timers.Internal;
+using Orleans.Transactions.DeadlockDetection;
 
 namespace Orleans.Transactions
 {
@@ -34,7 +35,7 @@ namespace Orleans.Transactions
         private bool detectReentrancy;
 
         public TransactionalState(
-            TransactionalStateConfiguration transactionalStateConfiguration, 
+            TransactionalStateConfiguration transactionalStateConfiguration,
             IGrainContextAccessor contextAccessor, 
             ITransactionDataCopier<TState> copier,
             IGrainRuntime grainRuntime,
@@ -91,7 +92,7 @@ namespace Orleans.Transactions
                      // record this read in the transaction info data structure
                      info.RecordRead(this.participantId, record.Timestamp);
 
-                     // perform the read 
+                     // perform the read
                      TResult result = default(TResult);
                      try
                      {
@@ -210,7 +211,9 @@ namespace Orleans.Transactions
             var options = this.context.ActivationServices.GetRequiredService<IOptions<TransactionalStateOptions>>();
             var clock = this.context.ActivationServices.GetRequiredService<IClock>();
             var timerManager = this.context.ActivationServices.GetRequiredService<ITimerManager>();
-            this.queue = new TransactionQueue<TState>(options, this.participantId, deactivate, storage, clock, logger, timerManager, this.activationLifetime);
+            var lockObserver = this.context.ActivationServices.GetService<ITransactionalLockObserver>();
+            this.queue = new TransactionQueue<TState>(options, this.participantId, deactivate, storage, clock, logger, timerManager,
+                this.activationLifetime, lockObserver);
 
             setupResourceFactory(this.context, this.config.StateName, queue);
 
