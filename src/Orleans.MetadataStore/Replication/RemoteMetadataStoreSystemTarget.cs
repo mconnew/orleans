@@ -25,10 +25,12 @@ namespace Orleans.MetadataStore
             this.store = store;
         }
 
-        public Task<PrepareResponse> Prepare(string key, Ballot proposerConfigBallot, Ballot ballot) => this.manager.Prepare(key, proposerConfigBallot, ballot);
+        public ValueTask<PrepareResponse> Prepare(string key, Ballot proposerParentBallot, Ballot ballot) => this.manager.Prepare(key, proposerParentBallot, ballot);
 
-        public Task<AcceptResponse> Accept(string key, Ballot proposerConfigBallot, Ballot ballot, object value) => this.manager.Accept(key, proposerConfigBallot, ballot, value);
+        public ValueTask<AcceptResponse> Accept(string key, Ballot proposerParentBallot, Ballot ballot, object value) => this.manager.Accept(key, proposerParentBallot, ballot, value);
 
-        public Task<List<string>> GetKeys() => this.store.GetKeys(int.MaxValue).AsTask();
+        public ValueTask<List<string>> GetKeys() => this.store.GetKeys(int.MaxValue);
+
+        public ValueTask<(Ballot, IVersioned)> GetAcceptedValue(string key) => this.manager.GetAcceptedValue(key);
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Orleans.MetadataStore.Storage;
@@ -10,7 +10,7 @@ namespace Orleans.MetadataStore
     {
         private readonly AsyncEx.AsyncLock lockObj;
         private readonly ILocalStore store;
-        private readonly Func<Ballot> getConfigurationBallot;
+        private readonly Func<Ballot> getParentBallot;
         private readonly Action<RegisterState<TValue>> onUpdateState;
         private readonly string key;
         private readonly ILogger log;
@@ -19,19 +19,19 @@ namespace Orleans.MetadataStore
         public Acceptor(
             string key,
             ILocalStore store,
-            Func<Ballot> getConfigurationBallot,
+            Func<Ballot> getParentBallot,
             Action<RegisterState<TValue>> onUpdateState,
             ILogger log)
         {
             this.lockObj = new AsyncEx.AsyncLock();
             this.key = key;
             this.store = store;
-            this.getConfigurationBallot = getConfigurationBallot;
+            this.getParentBallot = getParentBallot;
             this.onUpdateState = onUpdateState;
             this.log = log;
         }
         
-        public async Task<PrepareResponse> Prepare(Ballot proposerConfigBallot, Ballot ballot)
+        public async ValueTask<PrepareResponse> Prepare(Ballot proposerParentBallot, Ballot ballot)
         {
             using (await this.lockObj.LockAsync())
             {
@@ -39,12 +39,12 @@ namespace Orleans.MetadataStore
                 await EnsureStateLoadedNoLock();
 
                 PrepareResponse result;
-                var configBallot = this.getConfigurationBallot();
-                if (configBallot > proposerConfigBallot)
+                var parentBallot = this.getParentBallot();
+                if (parentBallot > proposerParentBallot)
                 {
                     // If the proposer is using a cluster configuration version which is lower than the highest
                     // cluster configuration version observed by this node, then the Prepare is rejected.
-                    result = PrepareResponse.ConfigConflict(configBallot);
+                    result = PrepareResponse.ConfigConflict(parentBallot);
                 }
                 else
                 {
@@ -69,12 +69,12 @@ namespace Orleans.MetadataStore
                     }
                 }
 
-                LogPrepare(proposerConfigBallot, ballot, result);
+                LogPrepare(proposerParentBallot, ballot, result);
                 return result;
             }
         }
 
-        public async Task<AcceptResponse> Accept(Ballot proposerConfigBallot, Ballot ballot, TValue value)
+        public async ValueTask<AcceptResponse> Accept(Ballot proposerParentBallot, Ballot ballot, TValue value)
         {
             using (await this.lockObj.LockAsync())
             {
@@ -82,12 +82,12 @@ namespace Orleans.MetadataStore
                 await this.EnsureStateLoadedNoLock();
 
                 AcceptResponse result;
-                var configBallot = this.getConfigurationBallot();
-                if (configBallot > proposerConfigBallot)
+                var parentBallot = this.getParentBallot();
+                if (parentBallot > proposerParentBallot)
                 {
                     // If the proposer is using a cluster configuration version which is lower than the highest
                     // cluster configuration version observed by this node, then the Accept is rejected.
-                    result = AcceptResponse.ConfigConflict(configBallot);
+                    result = AcceptResponse.ConfigConflict(parentBallot);
                 }
                 else
                 {
@@ -116,8 +116,6 @@ namespace Orleans.MetadataStore
                 return result;
             }
         }
-
-        internal RegisterState<TValue> State => this.state;
 
         internal async Task ForceState(TValue newState)
         {
@@ -155,6 +153,14 @@ namespace Orleans.MetadataStore
                 this.onUpdateState?.Invoke(this.state);
 
                 this.log.LogInformation($"Initialized with register state {this.state}");
+            }
+        }
+
+        public async ValueTask<(Ballot, TValue)> GetAcceptedValue()
+        {
+            using (await this.lockObj.LockAsync())
+            {
+                return (this.state.Accepted, this.state.Value);
             }
         }
     }

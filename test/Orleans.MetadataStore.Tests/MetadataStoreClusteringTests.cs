@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -14,6 +15,7 @@ using Microsoft.Extensions.Primitives;
 using Orleans.Configuration;
 using Orleans.Configuration.Internal;
 using Orleans.Hosting;
+using Orleans.Messaging;
 using Orleans.Runtime;
 using Orleans.TestingHost;
 using Xunit;
@@ -21,36 +23,135 @@ using Xunit.Abstractions;
 
 namespace Orleans.MetadataStore.Tests
 {
-
-
     [Trait("Category", "MetadataStore")]
     public class MetadataStoreClusteringTests : IClassFixture<MetadataStoreClusteringTests.Fixture>
     {
         private readonly ITestOutputHelper output;
         private readonly Fixture fixture;
-        private SiloAddress[] seedNodes = new SiloAddress[0];
 
-        public class Fixture
+        public class Fixture : IAsyncLifetime
         {
-            public Fixture()
+            private const int NumSilos = 3;
+            private readonly CancellationTokenSource shutdownToken = new CancellationTokenSource();
+            private readonly object lockObj = new object();
+            private ImmutableList<InProcessSiloHandle> siloHandles = ImmutableList<InProcessSiloHandle>.Empty;
+
+            public TestCluster HostedCluster { get; private set; }
+
+            public IClusterClient Client => this.HostedCluster?.Client;
+
+            public async Task DisposeAsync()
             {
-                var builder = new TestClusterBuilder(1);
+                await this.HostedCluster?.StopAllSilosAsync();
+                shutdownToken.Cancel();
+            }
+
+            public async Task InitializeAsync()
+            {
+                var builder = new TestClusterBuilder(0)
+                {
+                    Options =
+                    {
+                        UseTestClusterMembership = false,
+                        InitializeClientOnDeploy = false
+                    },
+                    CreateSiloAsync = CreateSiloAsync
+                };
                 builder.AddSiloBuilderConfigurator<SiloConfigurator>();
                 builder.AddClientBuilderConfigurator<ClientConfigurator>();
                 var testCluster = builder.Build();
-                if (testCluster?.Primary == null)
+
+                // Ensure silos see their values from config.
+                _ = Task.Run(() => UpdateSiloNodes());
+
+                // Start the new silos.
+                await testCluster.StartAdditionalSilosAsync(NumSilos);
+
+                testCluster.CreateMainClient();
+                UpdateClientGateways(testCluster);
+
+                _ = Task.Run(async () =>
                 {
-                    testCluster?.Deploy();
-                }
+                    while (!shutdownToken.IsCancellationRequested)
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(5));
+                        UpdateClientGateways(testCluster);
+                    }
+                });
+
+                await testCluster.StartClientAsync(async exception =>
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(1)); return true;
+                });
 
                 this.HostedCluster = testCluster;
             }
 
-            public TestCluster HostedCluster { get; }
+            private async Task<SiloHandle> CreateSiloAsync(string siloName, IList<IConfigurationSource> configurationSources)
+            {
+                var silo = TestClusterHostFactory.CreateSiloHost(siloName, configurationSources);
+                var siloDetails = silo.Services.GetRequiredService<ILocalSiloDetails>();
+                var handle = new InProcessSiloHandle
+                {
+                    Name = siloName,
+                    SiloHost = silo,
+                    SiloAddress = siloDetails.SiloAddress,
+                    GatewayAddress = siloDetails.GatewayAddress,
+                };
 
-            public IClusterClient Client => this.HostedCluster?.Client;
+                lock (lockObj)
+                {
+                    siloHandles = siloHandles.Add(handle);
+                }
 
-            public virtual void Dispose() => this.HostedCluster?.StopAllSilos();
+                await silo.StartAsync().ConfigureAwait(false);
+                return handle;
+            }
+
+            private async Task UpdateSiloNodes()
+            {
+                var didReload = false;
+                while (!shutdownToken.IsCancellationRequested)
+                {
+                    if (didReload) await Task.Delay(TimeSpan.FromSeconds(2));
+                    else await Task.Delay(TimeSpan.FromSeconds(15));
+
+                    var seedNodes = siloHandles.Select(s => s.SiloAddress).ToArray();
+                    didReload = false;
+                    foreach (var siloHandle in siloHandles)
+                    {
+                        var services = siloHandle.SiloHost.Services;
+                        var options = services.GetRequiredService<IOptionsMonitor<MetadataStoreClusteringOptions>>();
+                        var updater = services.GetOptionsUpdater<MetadataStoreClusteringOptions>();
+                        updater.ConfigureOptions = o =>
+                        {
+                            o.MinimumNodes = NumSilos / 2 + 1;
+                            o.SeedNodes = seedNodes;
+                        };
+
+                        if (options.CurrentValue.SeedNodes is null || !seedNodes.SequenceEqual(options.CurrentValue.SeedNodes))
+                        {
+                            didReload = true;
+                            updater.Reload();
+                        }
+                    }
+                }
+            }
+
+            private void UpdateClientGateways(TestCluster testCluster)
+            {
+                var services = testCluster.Client.ServiceProvider;
+                var options = services.GetRequiredService<IOptionsMonitor<StaticGatewayListProviderOptions>>();
+                var updater = services.GetOptionsUpdater<StaticGatewayListProviderOptions>();
+
+                var allGateways = testCluster.GetActiveSilos().Select(s => s.GatewayAddress.ToGatewayUri()).ToList();
+                updater.ConfigureOptions = o => o.Gateways = allGateways;
+
+                if (options.CurrentValue.Gateways is null || !allGateways.SequenceEqual(options.CurrentValue.Gateways))
+                {
+                    updater.Reload();
+                }
+            }
         }
 
         public class SiloConfigurator : ISiloConfigurator
@@ -58,21 +159,14 @@ namespace Orleans.MetadataStore.Tests
             public void Configure(ISiloBuilder builder)
             {
                 builder
-                    .ConfigureLogging(logging => logging.AddDebug())
+                    //.ConfigureLogging(logging => logging.AddDebug())
                     .ConfigureServices(services =>
                     {
                         services.AddSingleton<MetadataStoreMembershipTable>();
                         services.AddFromExisting<ILifecycleParticipant<ISiloLifecycle>, MetadataStoreMembershipTable>();
                         services.AddFromExisting<IMembershipTable, MetadataStoreMembershipTable>();
-                        services.AddOptions<MetadataStoreClusteringOptions>().Configure((MetadataStoreClusteringOptions options, ILocalSiloDetails localSilo) =>
-                        {
-                            if (localSilo.SiloAddress.Endpoint.Port == builder.GetTestClusterOptions().BaseSiloPort)
-                            {
-                                options.MinimumNodes = 1;
-                            }
 
-                            options.SeedNodes = new[] { localSilo.SiloAddress };
-                        });
+                        // Use dynamically refreshed options to contain the seed nodes.
                         services.AddDynamicOptions<MetadataStoreClusteringOptions>();
                     })
                     .UseMetadataStore()
@@ -86,7 +180,11 @@ namespace Orleans.MetadataStore.Tests
             public void Configure(IConfiguration configuration, IClientBuilder builder)
             {
                 builder.ConfigureLogging(logging => logging.AddDebug());
-                builder.ConfigureServices(services => services.AddDynamicOptions<StaticGatewayListProviderOptions>());
+                builder.ConfigureServices(services =>
+                {
+                    services.AddSingleton<IGatewayListProvider, StaticGatewayListProvider>();
+                    services.AddDynamicOptions<StaticGatewayListProviderOptions>();
+                });
             }
         }
 
@@ -120,6 +218,11 @@ namespace Orleans.MetadataStore.Tests
                 //log.LogInformation($"Wrote data and got answer: {JsonConvert.SerializeObject(result, Formatting.Indented)}");
                 data = result.Value;
             }
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            throw new NotImplementedException();
         }
     }
 }

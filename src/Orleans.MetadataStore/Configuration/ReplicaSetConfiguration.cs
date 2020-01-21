@@ -61,13 +61,13 @@ namespace Orleans.MetadataStore
         /// <summary>
         /// Additional data stored with this configuration.
         /// </summary>
-        public ImmutableDictionary<string, string> Values { get; }
+        public ImmutableDictionary<string, string> Values { get; } = ImmutableDictionary<string, string>.Empty;
 
         /// <inheritdoc />
         public override string ToString()
         {
             var nodes = this.Nodes == null ? "[]" : $"[{string.Join(", ", this.Nodes.Select(_ => _.ToString()))}]";
-            var values = this.Values.Count == 0 ? "[]" : $"[{string.Join(", ", this.Values.Select(_ => $"\"{_.Key}\"=\"{_.Value}\""))}]";
+            var values = (this.Values is null || this.Values.Count == 0) ? "[]" : $"[{string.Join(", ", this.Values.Select(_ => $"\"{_.Key}\"=\"{_.Value}\""))}]";
             return $"{nameof(Stamp)}: {Stamp}, {nameof(Version)}: {Version}, {nameof(Nodes)}: {nodes}, {nameof(AcceptQuorum)}: {AcceptQuorum}, {nameof(PrepareQuorum)}: {PrepareQuorum}, {nameof(Values)}: {values}";
         }
     }

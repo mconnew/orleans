@@ -33,7 +33,7 @@ namespace Orleans.TestingHost
         /// Initializes a new instance of <see cref="TestClusterBuilder"/> overriding the initial silos count.
         /// </summary>
         /// <param name="initialSilosCount">The number of initial silos to deploy.</param>
-        public TestClusterBuilder(short initialSilosCount)
+        public TestClusterBuilder(int initialSilosCount)
         {
             this.Options = new TestClusterOptions
             {

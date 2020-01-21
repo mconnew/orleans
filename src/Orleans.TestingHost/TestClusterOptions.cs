@@ -12,7 +12,7 @@ namespace Orleans.TestingHost
         public int BaseGatewayPort { get; set; }
         public bool UseTestClusterMembership { get; set; }
         public bool InitializeClientOnDeploy { get; set; }
-        public short InitialSilosCount { get; set; }
+        public int InitialSilosCount { get; set; }
         public string ApplicationBaseDirectory { get; set; }
         public bool ConfigureFileLogging { get; set; } = true;
         public bool AssumeHomogenousSilosForTesting { get; set; }

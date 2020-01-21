@@ -18,7 +18,7 @@ namespace Orleans.MetadataStore.Tests
         public int MinimumNodes { get; set; }
         public SiloAddress[] SeedNodes { get; set; }
 
-        public override string ToString() => $"[SeedNodes: [{string.Join(",", this.SeedNodes?.Select(s => s.ToString()) ?? Array.Empty<string>())}]]";
+        public override string ToString() => $"[{nameof(MinimumNodes)}: {this.MinimumNodes}, {nameof(SeedNodes)}: [{string.Join(",", this.SeedNodes?.Select(s => s.ToString()) ?? Array.Empty<string>())}]]";
     }
 
     public class MetadataStoreMembershipTable : IMembershipTable, ILifecycleParticipant<ISiloLifecycle>
@@ -61,7 +61,7 @@ namespace Orleans.MetadataStore.Tests
             var random = new Random();
 
             var waitSignal = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
-            this.waitForClusterStability = waitSignal.Task;
+            //this.waitForClusterStability = waitSignal.Task;
 
             while (!this.shutdownTokenSource.IsCancellationRequested)
             {
@@ -91,13 +91,13 @@ namespace Orleans.MetadataStore.Tests
                     }
 
                     // Either pause or resume membership table operations.
-                    if (acceptedSeedNodes.Count < 2)
+                    if (acceptedSeedNodes.Count < Math.Max(1, snapshot.MinimumNodes))
                     {
                         if (waitSignal.Task.IsCompleted)
                         {
                             this.log.LogInformation("Pausing cluster membership operations while waiting for more nodes.");
-                            waitSignal = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
-                            this.waitForClusterStability = waitSignal.Task;
+                            //waitSignal = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+                            //this.waitForClusterStability = waitSignal.Task;
                         }
                     }
                     else if (!waitSignal.Task.IsCompleted)
@@ -111,31 +111,40 @@ namespace Orleans.MetadataStore.Tests
                     {
                         this.log.LogInformation("Converging with configuration snapshot {Configuration}", snapshot);
 
-                        if (acceptedSeedNodes.Count == 0)
+                        if (snapshotSeedNodes.Length >= snapshot.MinimumNodes)
                         {
-                            await this.configurationManager.ForceLocalConfiguration(
-                                new ReplicaSetConfiguration(
-                                    stamp: Ballot.Zero,
-                                    version: 0,
-                                    nodes: snapshotSeedNodes,
-                                    acceptQuorum: 1,
-                                    prepareQuorum: 1,
-                                    ranges: default,
-                                    values: default));
-                        }
+                            if (accepted?.Nodes is null || accepted.Nodes.Length < snapshot.MinimumNodes)
+                            {
+                                var quorumSize = Math.Max(snapshotSeedNodes.Length / 2 + 1, snapshot.MinimumNodes);
+                                await this.configurationManager.ForceLocalConfiguration(
+                                    new ReplicaSetConfiguration(
+                                        stamp: Ballot.Zero,
+                                        version: 0,
+                                        nodes: snapshotSeedNodes,
+                                        acceptQuorum: quorumSize,
+                                        prepareQuorum: quorumSize,
+                                        ranges: default,
+                                        values: default));
+                            }
 
-                        // TODO: we must enforce changes to be at most one node at a time to maintain linearizability.
-                        // The order should be: remove dead nodes, add new live nodes. This process should repeat until convergence.
-                        var result = await this.configurationManager.TryUpdate(UpdateSeedConfiguration, snapshot);
+                            // TODO: we must enforce changes to be at most one node at a time to maintain linearizability.
+                            // The order should be: remove dead nodes, add new live nodes. This process should repeat until convergence.
+                            var result = await this.configurationManager.TryUpdate(UpdateSeedConfiguration, snapshot);
 
-                        if (result.Success)
-                        {
-                            this.log.LogInformation("Successfully converged with configuration snapshot. Replica Set Configuration: {ReplicaSetConfiguration}", result.Value);
-                            converged = true;
+                            if (result.Success)
+                            {
+                                this.log.LogInformation("Successfully converged with configuration snapshot. Replica Set Configuration: {ReplicaSetConfiguration}", result.Value);
+                                converged = true;
+                            }
                         }
                         else
                         {
-                            this.log.LogInformation("Unable to converged with configuration snapshot. Replica Set Configuration: {ReplicaSetConfiguration}", result.Value);
+                            this.log.LogInformation("Insufficient seed nodes in configuration: {Configuration}", snapshot);
+                        }
+
+                        if (!converged)
+                        {
+                            this.log.LogInformation("Unable to converge with configuration snapshot");
 
                             // Wait a pseudorandom amount of time to reduce the chance of repeated races.
                             await Task.Delay(random.Next(500, 5_000));
@@ -161,26 +170,6 @@ namespace Orleans.MetadataStore.Tests
             static (bool ShouldUpdate, ReplicaSetConfigurationUpdate Update) UpdateSeedConfiguration(ReplicaSetConfiguration existing, MetadataStoreClusteringOptions snapshot)
             {
                 var seedNodes = snapshot.SeedNodes ?? Array.Empty<SiloAddress>();
-                var existingNodes = existing.Nodes?.ToSet() ?? new HashSet<SiloAddress>();
-
-                var different = existingNodes.Count == seedNodes.Length;
-                if (!different)
-                {
-                    foreach (var node in seedNodes)
-                    {
-                        if (!existingNodes.Contains(node))
-                        {
-                            different = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (!different)
-                {
-                    return (false, default);
-                }
-
                 return (true, new ReplicaSetConfigurationUpdate(nodes: seedNodes, ranges: existing.Ranges, values: existing.Values));
             }
         }
@@ -434,30 +423,23 @@ namespace Orleans.MetadataStore.Tests
 
                 // Remove the node from the list of nodes.
                 var newNodes = new SiloAddress[existingNodes.Length - 1];
-                var skipped = 0;
+                var removed = false;
                 for (var i = 0; i < existingNodes.Length; i++)
                 {
-                    var current = existingNodes[i + skipped];
+                    var current = existingNodes[i];
 
                     // If the node is encountered, skip it.
                     if (current.Equals(nodeToRemove))
                     {
-                        skipped = 1;
+                        removed = true;
                         continue;
                     }
 
-                    // If the array bound has been hit, then either the last element is the target
-                    // or the target is not present.
-                    if (i == newNodes.Length)
-                    {
-                        return existingNodes;
-                    }
-
-                    newNodes[i] = current;
+                    newNodes[i - (removed ? 1 : 0)] = current;
                 }
 
                 // If no nodes changed, return a reference to the original configuration.
-                if (skipped == 0) return existingNodes;
+                if (!removed) return existingNodes;
 
                 return newNodes;
             }

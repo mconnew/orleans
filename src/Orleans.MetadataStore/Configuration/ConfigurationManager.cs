@@ -41,6 +41,8 @@ namespace Orleans.MetadataStore
     {
         public const string ClusterConfigurationKey = "MDS.Config";
         private const string NodeIdKey = "MDS.NodeId";
+
+        private static readonly Func<Ballot> getAcceptorParentBallot = () => Ballot.Zero;
         private readonly ILocalStore store;
         private readonly IStoreReferenceFactory referenceFactory;
         private readonly IServiceProvider serviceProvider;
@@ -72,19 +74,19 @@ namespace Orleans.MetadataStore
             this.removeFunction = this.RemoveServer;
 
             this.acceptor = new Acceptor<IVersioned>(
-                ClusterConfigurationKey,
-                store,
-                () => this.AcceptedConfiguration?.Configuration?.Stamp ?? Ballot.Zero,
-                this.OnUpdateConfiguration,
-                loggerFactory.CreateLogger("MetadataStore.ConfigAcceptor")
+                key: ClusterConfigurationKey,
+                store: store,
+                getParentBallot: getAcceptorParentBallot,
+                onUpdateState: this.OnUpdateConfiguration,
+                log: loggerFactory.CreateLogger("MetadataStore.ConfigAcceptor")
             );
 
             // The config proposer always uses the configuration which it's proposing.
             this.proposer = new Proposer<IVersioned>(
-                ClusterConfigurationKey,
-                Ballot.Zero,
-                () => this.ProposedConfiguration ?? this.AcceptedConfiguration,
-                loggerFactory.CreateLogger("MetadataStore.ConfigProposer")
+                key: ClusterConfigurationKey,
+                initialBallot: Ballot.Zero,
+                getConfiguration: () => this.ProposedConfiguration ?? this.AcceptedConfiguration,
+                log: loggerFactory.CreateLogger("MetadataStore.ConfigProposer")
             );
         }
 
@@ -289,30 +291,23 @@ namespace Orleans.MetadataStore
 
             // Remove the node from the list of nodes.
             var newNodes = new SiloAddress[existingNodes.Length - 1];
-            var skipped = 0;
+            var removed = false;
             for (var i = 0; i < existingNodes.Length; i++)
             {
-                var current = existingNodes[i + skipped];
+                var current = existingNodes[i];
 
                 // If the node is encountered, skip it.
                 if (current.Equals(nodeToRemove))
                 {
-                    skipped = 1;
+                    removed = true;
                     continue;
                 }
 
-                // If the array bound has been hit, then either the last element is the target
-                // or the target is not present.
-                if (i == newNodes.Length)
-                {
-                    return (false, default);
-                }
-
-                newNodes[i] = current;
+                newNodes[i - (removed ? 1 : 0)] = current;
             }
 
             // If no nodes changed, return a reference to the original configuration.
-            if (skipped == 0) return (false, default);
+            if (!removed) return (false, default);
 
             return (true, new ReplicaSetConfigurationUpdate(newNodes, existingConfiguration?.Ranges, existingConfiguration?.Values));
         }
@@ -323,10 +318,12 @@ namespace Orleans.MetadataStore
             CancellationToken cancellationToken) =>
             this.proposer.TryUpdate(value, changeFunction, cancellationToken);
 
-        Task<PrepareResponse> IAcceptor<IVersioned>.Prepare(Ballot proposerConfigBallot, Ballot ballot) =>
-            this.acceptor.Prepare(proposerConfigBallot, ballot);
+        ValueTask<PrepareResponse> IAcceptor<IVersioned>.Prepare(Ballot proposerParentBallot, Ballot ballot) =>
+            this.acceptor.Prepare(proposerParentBallot, ballot);
 
-        Task<AcceptResponse> IAcceptor<IVersioned>.Accept(Ballot proposerConfigBallot, Ballot ballot, IVersioned value) =>
-            this.acceptor.Accept(proposerConfigBallot, ballot, value);
+        ValueTask<AcceptResponse> IAcceptor<IVersioned>.Accept(Ballot proposerParentBallot, Ballot ballot, IVersioned value) =>
+            this.acceptor.Accept(proposerParentBallot, ballot, value);
+
+        ValueTask<(Ballot, IVersioned)> IAcceptor<IVersioned>.GetAcceptedValue() => this.acceptor.GetAcceptedValue();
     }
 }

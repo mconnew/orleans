@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
@@ -78,16 +78,22 @@ namespace Orleans.MetadataStore
             return new UpdateResult<TValue>(status == ReplicationStatus.Success, (TValue)value);
         }
 
-        public Task<PrepareResponse> Prepare(string key, Ballot proposerConfigBallot, Ballot ballot)
+        public ValueTask<PrepareResponse> Prepare(string key, Ballot proposerParentBallot, Ballot ballot)
         {
             var acceptor = this.acceptors.GetOrAdd(key, this.acceptorFactory);
-            return acceptor.Prepare(proposerConfigBallot, ballot);
+            return acceptor.Prepare(proposerParentBallot, ballot);
         }
 
-        public Task<AcceptResponse> Accept(string key, Ballot proposerConfigBallot, Ballot ballot, object value)
+        public ValueTask<AcceptResponse> Accept(string key, Ballot proposerParentBallot, Ballot ballot, object value)
         {
             var acceptor = this.acceptors.GetOrAdd(key, this.acceptorFactory);
-            return acceptor.Accept(proposerConfigBallot, ballot, (IVersioned)value);
+            return acceptor.Accept(proposerParentBallot, ballot, (IVersioned)value);
+        }
+
+        public ValueTask<(Ballot, IVersioned)> GetAcceptedValue(string key)
+        {
+            var acceptor = this.acceptors.GetOrAdd(key, this.acceptorFactory);
+            return acceptor.GetAcceptedValue();
         }
 
         void ILifecycleParticipant<ISiloLifecycle>.Participate(ISiloLifecycle lifecycle)

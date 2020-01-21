@@ -1,11 +1,12 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 
 namespace Orleans.MetadataStore
 {
     // ReSharper disable once TypeParameterCanBeVariant
     public interface IAcceptor<TValue>
     {
-        Task<PrepareResponse> Prepare(Ballot proposerConfigBallot, Ballot ballot);
-        Task<AcceptResponse> Accept(Ballot proposerConfigBallot, Ballot ballot, TValue value);
+        ValueTask<(Ballot, TValue)> GetAcceptedValue();
+        ValueTask<PrepareResponse> Prepare(Ballot proposerParentBallot, Ballot ballot);
+        ValueTask<AcceptResponse> Accept(Ballot proposerParentBallot, Ballot ballot, TValue value);
     }
 }

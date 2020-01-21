@@ -303,7 +303,7 @@ namespace Orleans.Runtime
 
             logger.Debug("Creating {0} System Target", "ClientObserverRegistrar + TypeManager");
 
-            this.RegisterSystemTarget(this.Services.GetRequiredService<ClientObserverRegistrar>());
+            this.Services.GetRequiredService<ClientObserverRegistrar>();
             var implicitStreamSubscriberTable = Services.GetRequiredService<ImplicitStreamSubscriberTable>();
             var versionDirectorManager = this.Services.GetRequiredService<CachedVersionSelectorManager>();
             var grainTypeManager = this.Services.GetRequiredService<GrainTypeManager>();

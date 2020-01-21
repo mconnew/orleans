@@ -528,18 +528,30 @@ namespace Orleans.TestingHost
         /// </summary>
         public void InitializeClient()
         {
-            WriteLog("Initializing Cluster Client");
+            Task.Run(() => this.StartClientAsync(null)).GetAwaiter().GetResult();
+        }
 
-            this.InternalClient = (IInternalClusterClient)TestClusterHostFactory.CreateClusterClient("MainClient", this.ConfigurationSources);
-            this.InternalClient.Connect().GetAwaiter().GetResult();
-            this.SerializationManager = this.ServiceProvider.GetRequiredService<SerializationManager>();
+        public void CreateMainClient()
+        {
+            this.InternalClient ??= (IInternalClusterClient)TestClusterHostFactory.CreateClusterClient("MainClient", this.ConfigurationSources);
+            this.SerializationManager ??= this.ServiceProvider.GetRequiredService<SerializationManager>();
+        }
+
+        /// <summary>
+        /// Initialize the grain client. This should be already done by <see cref="Deploy()"/> or <see cref="DeployAsync"/>
+        /// </summary>
+        public async Task StartClientAsync(Func<Exception, Task<bool>> retryFilter = null)
+        {
+            WriteLog("Initializing Cluster Client");
+            CreateMainClient();
+            await this.InternalClient.Connect(retryFilter).ConfigureAwait(false);
         }
 
         public IReadOnlyList<IConfigurationSource> ConfigurationSources { get; }
 
         private async Task InitializeAsync()
         {
-            short silosToStart = this.options.InitialSilosCount;
+            var silosToStart = this.options.InitialSilosCount;
 
             if (this.options.UseTestClusterMembership)
             {
@@ -556,7 +568,7 @@ namespace Orleans.TestingHost
 
             if (this.options.InitializeClientOnDeploy)
             {
-                InitializeClient();
+                await this.StartClientAsync();
             }
         }
         

@@ -123,7 +123,7 @@ namespace Orleans.MetadataStore
             foreach (var acceptors in config.StoreReferences)
             {
                 var acceptor = SelectInstance(acceptors);
-                prepareTasks.Add(acceptor.Prepare(this.key, config.Configuration.Stamp, prepareBallot));
+                prepareTasks.Add(acceptor.Prepare(this.key, config.Configuration.Stamp, prepareBallot).AsTask());
             }
 
             // Run a Prepare round in order to learn the current value of the register and secure a promise that a quorum
@@ -192,7 +192,7 @@ namespace Orleans.MetadataStore
             foreach (var acceptors in config.StoreReferences)
             {
                 var acceptor = SelectInstance(acceptors);
-                acceptTasks.Add(acceptor.Accept(this.key, config.Configuration.Stamp, thisBallot, newValue));
+                acceptTasks.Add(acceptor.Accept(this.key, config.Configuration.Stamp, thisBallot, newValue).AsTask());
             }
 
             var requiredConfirmations = config.Configuration.AcceptQuorum;

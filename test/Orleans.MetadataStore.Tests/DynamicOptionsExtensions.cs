@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -12,21 +13,27 @@ namespace Orleans.MetadataStore.Tests
         {
             services.AddOptions();
 
-            var configureOptions = new DynamicConfigureOptions<T>(name);
+            var configureOptions = new OptionsRefresher<T>(name);
             services.AddSingleton(configureOptions);
             services.AddSingleton<IOptionsChangeTokenSource<T>>(configureOptions);
             services.AddSingleton<IConfigureOptions<T>>(configureOptions);
         }
 
-        public class DynamicConfigureOptions<T> : IConfigureNamedOptions<T>, IOptionsChangeTokenSource<T> where T : class
+        public static OptionsRefresher<T> GetOptionsUpdater<T>(this IServiceProvider serviceProvider, string name = "") where T : class
         {
-            private readonly string matchName;
+            return serviceProvider.GetServices<OptionsRefresher<T>>().Single(o => string.Equals(o.Name, name));
+        }
+
+        public class OptionsRefresher<T> : IConfigureNamedOptions<T>, IOptionsChangeTokenSource<T> where T : class
+        {
             private CancellationTokenSource reloadToken = new CancellationTokenSource();
 
-            internal DynamicConfigureOptions(string name)
+            internal OptionsRefresher(string name)
             {
-                this.matchName = name;
+                this.Name = name;
             }
+
+            public string Name { get; private set; }
 
             public Action<T> ConfigureOptions { get; set; }
 
@@ -40,11 +47,9 @@ namespace Orleans.MetadataStore.Tests
 
             IChangeToken IOptionsChangeTokenSource<T>.GetChangeToken() => new CancellationChangeToken(reloadToken.Token);
 
-            string IOptionsChangeTokenSource<T>.Name { get; }
-
             void IConfigureNamedOptions<T>.Configure(string name, T options)
             {
-                if (string.Equals(this.matchName, name))
+                if (string.Equals(this.Name, name))
                 {
                     this.ConfigureOptions?.Invoke(options);
                 }

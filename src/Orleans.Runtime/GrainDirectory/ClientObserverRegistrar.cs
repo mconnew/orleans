@@ -7,6 +7,7 @@ using Orleans.Configuration;
 using Orleans.Internal;
 using Orleans.Runtime.GrainDirectory;
 using Orleans.Runtime.Messaging;
+using Orleans.Runtime.Providers;
 using Orleans.Runtime.Scheduler;
 
 namespace Orleans.Runtime
@@ -31,7 +32,8 @@ namespace Orleans.Runtime
             ILocalGrainDirectory dir,
             OrleansTaskScheduler scheduler,
             IOptions<SiloMessagingOptions> messagingOptions,
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory,
+            SiloProviderRuntime providerRuntime)
             : base(Constants.ClientObserverRegistrarId, siloDetails.SiloAddress, loggerFactory)
         {
             grainDirectory = dir;
@@ -39,6 +41,7 @@ namespace Orleans.Runtime
             this.scheduler = scheduler;
             this.messagingOptions = messagingOptions.Value;
             logger = loggerFactory.CreateLogger<ClientObserverRegistrar>();
+            providerRuntime.RegisterSystemTarget(this);
         }
 
         internal void SetHostedClient(IHostedClient client)
