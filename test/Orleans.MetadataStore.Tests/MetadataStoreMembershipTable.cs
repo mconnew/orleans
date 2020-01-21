@@ -15,6 +15,7 @@ namespace Orleans.MetadataStore.Tests
 {
     public class MetadataStoreClusteringOptions
     {
+        public int MinimumNodes { get; set; }
         public SiloAddress[] SeedNodes { get; set; }
 
         public override string ToString() => $"[SeedNodes: [{string.Join(",", this.SeedNodes?.Select(s => s.ToString()) ?? Array.Empty<string>())}]]";
@@ -59,7 +60,9 @@ namespace Orleans.MetadataStore.Tests
             var converged = false;
             var random = new Random();
 
-            TaskCompletionSource<int> waitSignal = default;
+            var waitSignal = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+            this.waitForClusterStability = waitSignal.Task;
+
             while (!this.shutdownTokenSource.IsCancellationRequested)
             {
                 try
@@ -88,13 +91,16 @@ namespace Orleans.MetadataStore.Tests
                     }
 
                     // Either pause or resume membership table operations.
-                    if (acceptedSeedNodes.Count < 2 && (waitSignal is null || waitSignal.Task.IsCompleted))
+                    if (acceptedSeedNodes.Count < 2)
                     {
-                        this.log.LogInformation("Pausing cluster membership operations while waiting for more nodes.");
-                        waitSignal = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
-                        this.waitForClusterStability = waitSignal.Task;
+                        if (waitSignal.Task.IsCompleted)
+                        {
+                            this.log.LogInformation("Pausing cluster membership operations while waiting for more nodes.");
+                            waitSignal = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+                            this.waitForClusterStability = waitSignal.Task;
+                        }
                     }
-                    else if (waitSignal is object && !waitSignal.Task.IsCompleted)
+                    else if (!waitSignal.Task.IsCompleted)
                     {
                         this.log.LogInformation("Resuming cluster membership operations");
                         waitSignal.TrySetResult(0);
@@ -104,6 +110,19 @@ namespace Orleans.MetadataStore.Tests
                     if (!converged)
                     {
                         this.log.LogInformation("Converging with configuration snapshot {Configuration}", snapshot);
+
+                        if (acceptedSeedNodes.Count == 0)
+                        {
+                            await this.configurationManager.ForceLocalConfiguration(
+                                new ReplicaSetConfiguration(
+                                    stamp: Ballot.Zero,
+                                    version: 0,
+                                    nodes: snapshotSeedNodes,
+                                    acceptQuorum: 1,
+                                    prepareQuorum: 1,
+                                    ranges: default,
+                                    values: default));
+                        }
 
                         // TODO: we must enforce changes to be at most one node at a time to maintain linearizability.
                         // The order should be: remove dead nodes, add new live nodes. This process should repeat until convergence.
@@ -128,7 +147,7 @@ namespace Orleans.MetadataStore.Tests
                     }
                     else
                     {
-                        this.log.LogInformation("Updated  with configuration snapshot {Configuration}", snapshot);
+                        this.log.LogInformation("Converged with configuration snapshot {Configuration}", snapshot);
                     }
                 }
                 catch (OperationCanceledException) { }
@@ -166,22 +185,25 @@ namespace Orleans.MetadataStore.Tests
             }
         }
 
-        public Task CleanupDefunctSiloEntries(DateTimeOffset beforeDate)
+        public async Task CleanupDefunctSiloEntries(DateTimeOffset beforeDate)
         {
+            await waitForClusterStability;
             // TODO: impl
             throw new NotImplementedException();
         }
 
-        public Task DeleteMembershipTableEntries(string clusterId)
+        public async Task DeleteMembershipTableEntries(string clusterId)
         {
+            await waitForClusterStability;
             // TODO: impl
             throw new NotImplementedException();
         }
 
-        public Task InitializeMembershipTable(bool tryInitTableVersion) => Task.CompletedTask;
+        public Task InitializeMembershipTable(bool tryInitTableVersion) => this.waitForClusterStability;
 
         public async Task<bool> InsertRow(MembershipEntry entry, TableVersion tableVersion)
         {
+            await waitForClusterStability;
             var existing = await RefreshCommitted(tableVersion);
             if (existing is null || existing.Version.Version >= tableVersion.Version)
             {
@@ -209,6 +231,7 @@ namespace Orleans.MetadataStore.Tests
 
         public async Task<MembershipTableData> ReadAll()
         {
+            await waitForClusterStability;
             var (success, result) = await this.configurationManager.TryRead();
             if (!success)
             {
@@ -224,6 +247,7 @@ namespace Orleans.MetadataStore.Tests
 
         public async Task UpdateIAmAlive(MembershipEntry entry)
         {
+            await waitForClusterStability;
             var existing = await ReadAll();
             if (existing is null)
             {
@@ -261,6 +285,7 @@ namespace Orleans.MetadataStore.Tests
 
         public async Task<bool> UpdateRow(MembershipEntry entry, string etag, TableVersion tableVersion)
         {
+            await waitForClusterStability;
             var existing = await RefreshCommitted(tableVersion);
             if (existing is null || existing.Version.Version >= tableVersion.Version)
             {

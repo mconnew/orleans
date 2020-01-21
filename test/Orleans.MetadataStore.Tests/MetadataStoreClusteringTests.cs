@@ -34,8 +34,7 @@ namespace Orleans.MetadataStore.Tests
         {
             public Fixture()
             {
-                var builder = new TestClusterBuilder();
-                builder.Options.InitialSilosCount = 3;
+                var builder = new TestClusterBuilder(1);
                 builder.AddSiloBuilderConfigurator<SiloConfigurator>();
                 builder.AddClientBuilderConfigurator<ClientConfigurator>();
                 var testCluster = builder.Build();
@@ -54,7 +53,6 @@ namespace Orleans.MetadataStore.Tests
             public virtual void Dispose() => this.HostedCluster?.StopAllSilos();
         }
 
-
         public class SiloConfigurator : ISiloConfigurator
         {
             public void Configure(ISiloBuilder builder)
@@ -66,6 +64,15 @@ namespace Orleans.MetadataStore.Tests
                         services.AddSingleton<MetadataStoreMembershipTable>();
                         services.AddFromExisting<ILifecycleParticipant<ISiloLifecycle>, MetadataStoreMembershipTable>();
                         services.AddFromExisting<IMembershipTable, MetadataStoreMembershipTable>();
+                        services.AddOptions<MetadataStoreClusteringOptions>().Configure((MetadataStoreClusteringOptions options, ILocalSiloDetails localSilo) =>
+                        {
+                            if (localSilo.SiloAddress.Endpoint.Port == builder.GetTestClusterOptions().BaseSiloPort)
+                            {
+                                options.MinimumNodes = 1;
+                            }
+
+                            options.SeedNodes = new[] { localSilo.SiloAddress };
+                        });
                         services.AddDynamicOptions<MetadataStoreClusteringOptions>();
                     })
                     .UseMetadataStore()
@@ -82,33 +89,6 @@ namespace Orleans.MetadataStore.Tests
                 builder.ConfigureServices(services => services.AddDynamicOptions<StaticGatewayListProviderOptions>());
             }
         }
-
-
-
-
-
-        // dynamic options
-
-        // dynamic options
-
-        // dynamic options
-
-        // dynamic options
-
-        // dynamic options
-
-        // dynamic options
-
-        // dynamic options
-
-        // dynamic options
-
-        // dynamic options
-
-
-
-
-
 
         public MetadataStoreClusteringTests(ITestOutputHelper output, Fixture fixture)
         {

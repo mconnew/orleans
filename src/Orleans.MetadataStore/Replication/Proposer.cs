@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -114,6 +114,11 @@ namespace Orleans.MetadataStore
 
         private async Task<(bool, TValue)> TryPrepare(Ballot prepareBallot, ExpandedReplicaSetConfiguration config, CancellationToken cancellationToken)
         {
+            if (config.StoreReferences is null)
+            {
+                return (false, default);
+            }
+
             var prepareTasks = new List<Task<PrepareResponse>>(config.StoreReferences.Length);
             foreach (var acceptors in config.StoreReferences)
             {
