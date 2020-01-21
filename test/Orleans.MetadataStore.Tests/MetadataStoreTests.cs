@@ -42,9 +42,9 @@ namespace Orleans.MetadataStore.Tests
             public virtual void Dispose() => this.HostedCluster?.StopAllSilos();
         }
 
-        public class SiloConfigurator : ISiloBuilderConfigurator
+        public class SiloConfigurator : ISiloConfigurator
         {
-            public void Configure(ISiloHostBuilder builder)
+            public void Configure(ISiloBuilder builder)
             {
                 builder
                     //.ConfigureLogging(logging => logging.AddDebug())

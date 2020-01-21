@@ -1,12 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
+using Orleans.Configuration;
 using Orleans.Configuration.Internal;
 using Orleans.Hosting;
 using Orleans.Runtime;
@@ -16,16 +21,19 @@ using Xunit.Abstractions;
 
 namespace Orleans.MetadataStore.Tests
 {
+
+
     [Trait("Category", "MetadataStore")]
     public class MetadataStoreClusteringTests : IClassFixture<MetadataStoreClusteringTests.Fixture>
     {
         private readonly ITestOutputHelper output;
         private readonly Fixture fixture;
-        public class Fixture : IAsyncLifetime
+        private SiloAddress[] seedNodes = new SiloAddress[0];
+
+        public class Fixture
         {
             public Fixture()
             {
-                var primarySilo = Host.CreateDefaultBuilder();
                 var builder = new TestClusterBuilder();
                 builder.Options.InitialSilosCount = 3;
                 builder.AddSiloBuilderConfigurator<SiloConfigurator>();
@@ -44,106 +52,25 @@ namespace Orleans.MetadataStore.Tests
             public IClusterClient Client => this.HostedCluster?.Client;
 
             public virtual void Dispose() => this.HostedCluster?.StopAllSilos();
-
-            public async Task InitializeAsync()
-            {
-                this.PrimarySilo = await Host.CreateDefaultBuilder()
-                    .UseOrleans(siloBuilder =>
-                    siloBuilder.AddMe).StartAsync();
-            }
-
-            Task IAsyncLifetime.DisposeAsync()
-            {
-                throw new NotImplementedException();
-            }
         }
 
-        public class SiloConfigurator : ISiloBuilderConfigurator
+
+        public class SiloConfigurator : ISiloConfigurator
         {
-            public void Configure(ISiloHostBuilder builder)
+            public void Configure(ISiloBuilder builder)
             {
                 builder
-                    //.ConfigureLogging(logging => logging.AddDebug())
+                    .ConfigureLogging(logging => logging.AddDebug())
                     .ConfigureServices(services =>
                     {
                         services.AddSingleton<MetadataStoreMembershipTable>();
                         services.AddFromExisting<ILifecycleParticipant<ISiloLifecycle>, MetadataStoreMembershipTable>();
                         services.AddFromExisting<IMembershipTable, MetadataStoreMembershipTable>();
-                        services.AddOptions<MetadataStoreClusteringOptions>()
-                            .Configure((MetadataStoreClusteringOptions options, ILocalSiloDetails localSiloDetails) =>
-                            {
-                                options.SeedNodes = new[] { localSiloDetails.SiloAddress };
-                            });
+                        services.AddDynamicOptions<MetadataStoreClusteringOptions>();
                     })
-                    .ConfigureLogging(l => l.AddDebug())
                     .UseMetadataStore()
                     .UseMemoryLocalStore()
-                    .AddStartupTask<BootstrapCluster>()
                     .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(IMetadataStoreGrain).Assembly));
-            }
-        }
-
-        internal class BootstrapCluster : IStartupTask
-        {
-            private readonly ILocalSiloDetails localSiloDetails;
-            private readonly ConfigurationManager configurationManager;
-            private readonly IClusterMembershipService membershipService;
-            private readonly ILogger<BootstrapCluster> log;
-            private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
-
-            public BootstrapCluster(
-                ILocalSiloDetails localSiloDetails,
-                ConfigurationManager configurationManager,
-                IClusterMembershipService membershipService,
-                ILogger<BootstrapCluster> log)
-            {
-                this.localSiloDetails = localSiloDetails;
-                this.configurationManager = configurationManager;
-                this.membershipService = membershipService;
-                this.log = log;
-            }
-
-            public async Task Execute(CancellationToken cancellationToken)
-            {
-                if (this.configurationManager.AcceptedConfiguration?.Configuration == null)
-                {
-                    await this.configurationManager.ForceLocalConfiguration(
-                        new ReplicaSetConfiguration(
-                            stamp: new Ballot(1, this.configurationManager.NodeId),
-                            version: 1,
-                            nodes: new[] {this.localSiloDetails.SiloAddress},
-                            acceptQuorum: 1,
-                            prepareQuorum: 1,
-                            ranges: default,
-                            values: default));
-                }
-
-                //await this.configurationManager.TryAddServer(this.localSiloDetails.SiloAddress);
-                _ = Task.Run(RunAsync);
-            }
-
-            private async Task RunAsync()
-            {
-                while (!this.cancellation.IsCancellationRequested)
-                {
-                    try
-                    {
-                        var previous = default(ClusterMembershipSnapshot);
-                        await foreach (var snapshot in this.membershipService.MembershipUpdates.WithCancellation(this.cancellation.Token))
-                        {
-                            var update = previous is null ? snapshot.AsUpdate() : snapshot.CreateUpdate(previous);
-                            foreach (var change in update.Changes)
-                            {
-                                var (silo, status) = (change.SiloAddress, change.Status);
-                                log.LogInformation($"Got silo update: {silo} -> {status}");
-                            }
-                        }
-                    }
-                    catch (Exception exception)
-                    {
-                        this.log.LogError(exception, "Exception in RunAsync. Continuing.");
-                    }
-                }
             }
         }
 
@@ -151,9 +78,37 @@ namespace Orleans.MetadataStore.Tests
         {
             public void Configure(IConfiguration configuration, IClientBuilder builder)
             {
-                //builder.ConfigureLogging(logging => logging.AddDebug());
+                builder.ConfigureLogging(logging => logging.AddDebug());
+                builder.ConfigureServices(services => services.AddDynamicOptions<StaticGatewayListProviderOptions>());
             }
         }
+
+
+
+
+
+        // dynamic options
+
+        // dynamic options
+
+        // dynamic options
+
+        // dynamic options
+
+        // dynamic options
+
+        // dynamic options
+
+        // dynamic options
+
+        // dynamic options
+
+        // dynamic options
+
+
+
+
+
 
         public MetadataStoreClusteringTests(ITestOutputHelper output, Fixture fixture)
         {
