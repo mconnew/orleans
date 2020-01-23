@@ -6,7 +6,7 @@ using AsyncEx = Nito.AsyncEx;
 
 namespace Orleans.MetadataStore
 {
-    public class Acceptor<TValue> : IAcceptor<TValue>
+    public class Acceptor<TValue> : IAcceptor<TValue>, IAcceptorInternal<TValue>
     {
         private readonly AsyncEx.AsyncLock lockObj;
         private readonly ILocalStore store;
@@ -15,6 +15,8 @@ namespace Orleans.MetadataStore
         private readonly string key;
         private readonly ILogger log;
         private RegisterState<TValue> state;
+
+        RegisterState<TValue> IAcceptorInternal<TValue>.PrivateState { get => this.state; set => this.state = value; }
 
         public Acceptor(
             string key,
@@ -36,7 +38,7 @@ namespace Orleans.MetadataStore
             using (await this.lockObj.LockAsync())
             {
                 // Initialize the register state if it's not yet initialized.
-                await EnsureStateLoadedNoLock();
+                await this.EnsureStateLoadedNoLock();
 
                 PrepareResponse result;
                 var parentBallot = this.getParentBallot();
@@ -126,15 +128,23 @@ namespace Orleans.MetadataStore
             }
         }
 
-        private void LogPrepare(Ballot configVersion, Ballot ballot, PrepareResponse result)
+        private void LogPrepare(Ballot parentBallot, Ballot ballot, PrepareResponse result)
         {
-            if (this.log.IsEnabled(LogLevel.Information)) this.log.LogInformation($"Prepare(config: {configVersion}, ballot: {ballot}) -> {result}");
+            if (this.log.IsEnabled(LogLevel.Trace))
+            {
+                this.log.LogTrace("Prepare(parentBallot: {ParentBallot}, ballot: {Ballot}) -> {Result}", parentBallot, ballot, result);
+            }
         }
 
         private void LogAccept(Ballot ballot, TValue value, AcceptResponse result)
         {
-            if (this.log.IsEnabled(LogLevel.Information)) this.log.LogInformation($"Accept({ballot}, {value}) -> {result}");
+            if (this.log.IsEnabled(LogLevel.Trace))
+            {
+                this.log.LogTrace("Accept({Ballot}, {Value}) -> {Result}", ballot, value, result);
+            }
         }
+
+        Task IAcceptorInternal<TValue>.EnsureStateLoaded() => this.EnsureStateLoaded();
 
         internal async Task EnsureStateLoaded()
         {
@@ -144,15 +154,22 @@ namespace Orleans.MetadataStore
             }
         }
 
-        private async Task EnsureStateLoadedNoLock()
+        private ValueTask EnsureStateLoadedNoLock()
         {
-            if (this.state == null)
+            if (this.state is object) return default;
+
+            return EnsureStateLoadedNoLockAsync();
+
+            async ValueTask EnsureStateLoadedNoLockAsync()
             {
                 var stored = await this.store.Read<RegisterState<TValue>>(this.key);
                 this.state = stored ?? RegisterState<TValue>.Default;
                 this.onUpdateState?.Invoke(this.state);
 
-                this.log.LogInformation($"Initialized with register state {this.state}");
+                if (this.log.IsEnabled(LogLevel.Trace))
+                {
+                    this.log.LogTrace("Initialized with register state {State}", this.state);
+                }
             }
         }
 
@@ -163,5 +180,12 @@ namespace Orleans.MetadataStore
                 return (this.state.Accepted, this.state.Value);
             }
         }
+    }
+
+    public interface IAcceptorInternal<TValue>
+    {
+        Task EnsureStateLoaded();
+
+        RegisterState<TValue> PrivateState { get; set; }
     }
 }

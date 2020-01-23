@@ -183,8 +183,6 @@ namespace Orleans.MetadataStore
             return acceptors[nextInstanceId++];
         }
 
-        public delegate Task<AcceptResponse> Accept(IRemoteMetadataStore acceptor, string key, Ballot configStamp, Ballot ballot, TValue value);
-
         private async Task<bool> TryAccept(Ballot thisBallot, TValue newValue, ExpandedReplicaSetConfiguration config, CancellationToken cancellationToken)
         {
             // The prepare phase succeeded, proceed to propagate the new value to all acceptors.
