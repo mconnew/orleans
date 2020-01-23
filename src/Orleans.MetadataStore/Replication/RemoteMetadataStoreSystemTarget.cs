@@ -30,7 +30,5 @@ namespace Orleans.MetadataStore
         public ValueTask<AcceptResponse> Accept(string key, Ballot proposerParentBallot, Ballot ballot, object value) => this.manager.Accept(key, proposerParentBallot, ballot, value);
 
         public ValueTask<List<string>> GetKeys() => this.store.GetKeys(int.MaxValue);
-
-        public ValueTask<(Ballot, IVersioned)> GetAcceptedValue(string key) => this.manager.GetAcceptedValue(key);
     }
 }

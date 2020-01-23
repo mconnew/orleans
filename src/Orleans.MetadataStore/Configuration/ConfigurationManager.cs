@@ -323,7 +323,5 @@ namespace Orleans.MetadataStore
 
         ValueTask<AcceptResponse> IAcceptor<IVersioned>.Accept(Ballot proposerParentBallot, Ballot ballot, IVersioned value) =>
             this.acceptor.Accept(proposerParentBallot, ballot, value);
-
-        ValueTask<(Ballot, IVersioned)> IAcceptor<IVersioned>.GetAcceptedValue() => this.acceptor.GetAcceptedValue();
     }
 }

@@ -42,13 +42,13 @@ namespace Orleans.MetadataStore.Tests
         public async Task AcceptorLoadsCorrectState()
         {
             var expectedInitialState = new RegisterState<int>(new Ballot(10, 2), new Ballot(3, 4), 42);
-            var acceptorInternal = (IAcceptorInternal<int>)this.acceptor;
+            var acceptorInternal = (Acceptor<int>.ITestAccessor)this.acceptor;
             await this.store.Write<RegisterState<int>>(Key, expectedInitialState);
 
-            Assert.NotEqual(expectedInitialState, acceptorInternal.PrivateState);
+            Assert.Null(acceptorInternal.PrivateState);
             Assert.False(this.acceptorStates.Reader.TryRead(out _));
 
-            await ((IAcceptorInternal<int>)this.acceptor).EnsureStateLoaded();
+            await ((Acceptor<int>.ITestAccessor)this.acceptor).EnsureStateLoaded();
             Assert.Equal(expectedInitialState, acceptorInternal.PrivateState);
 
             Assert.True(this.acceptorStates.Reader.TryRead(out var initialRegisterState));
@@ -59,7 +59,7 @@ namespace Orleans.MetadataStore.Tests
         public async Task PrepareRejectsSupersededParentBallot()
         {
             this.acceptorParentBallot = new Ballot(2, 6);
-            var acceptorInternal = (IAcceptorInternal<int>)this.acceptor;
+            var acceptorInternal = (Acceptor<int>.ITestAccessor)this.acceptor;
 
             // The acceptor has a higher parent ballot than the proposer
             acceptorInternal.PrivateState = new RegisterState<int>(promised: Ballot.Zero, accepted: new Ballot(3, 4), value: 42);
@@ -80,7 +80,7 @@ namespace Orleans.MetadataStore.Tests
         public async Task PrepareRejectsSupersededBallot()
         {
             this.acceptorParentBallot = new Ballot(2, 6);
-            var acceptorInternal = (IAcceptorInternal<int>)this.acceptor;
+            var acceptorInternal = (Acceptor<int>.ITestAccessor)this.acceptor;
 
             // The acceptor has a higher accepted ballot than the proposer, which results in a rejection.
             acceptorInternal.PrivateState = new RegisterState<int>(promised: Ballot.Zero, accepted: new Ballot(3, 4), value: 42);
@@ -115,7 +115,7 @@ namespace Orleans.MetadataStore.Tests
         public async Task PrepareAcceptsSupersedingBallot()
         {
             this.acceptorParentBallot = new Ballot(2, 6);
-            var acceptorInternal = (IAcceptorInternal<int>)this.acceptor;
+            var acceptorInternal = (Acceptor<int>.ITestAccessor)this.acceptor;
 
             acceptorInternal.PrivateState = new RegisterState<int>(promised: Ballot.Zero, accepted: new Ballot(3, 4), value: 42);
             var response = await this.acceptor.Prepare(proposerParentBallot: this.acceptorParentBallot, ballot: new Ballot(3, 7));
@@ -132,7 +132,7 @@ namespace Orleans.MetadataStore.Tests
         public async Task AcceptRejectsSupersededParentBallot()
         {
             this.acceptorParentBallot = new Ballot(2, 6);
-            var acceptorInternal = (IAcceptorInternal<int>)this.acceptor;
+            var acceptorInternal = (Acceptor<int>.ITestAccessor)this.acceptor;
 
             // The acceptor has a higher parent ballot than the proposer
             acceptorInternal.PrivateState = new RegisterState<int>(promised: new Ballot(2, 7), accepted: Ballot.Zero, value: 42);
@@ -153,7 +153,7 @@ namespace Orleans.MetadataStore.Tests
         public async Task AcceptRejectsSupersededBallot()
         {
             this.acceptorParentBallot = new Ballot(2, 6);
-            var acceptorInternal = (IAcceptorInternal<int>)this.acceptor;
+            var acceptorInternal = (Acceptor<int>.ITestAccessor)this.acceptor;
 
             // The acceptor has a higher accepted ballot than the proposer, which results in a rejection.
             acceptorInternal.PrivateState = new RegisterState<int>(promised: Ballot.Zero, accepted: new Ballot(3, 4), value: 42);
@@ -188,7 +188,7 @@ namespace Orleans.MetadataStore.Tests
         public async Task AcceptAcceptsPromisedBallot()
         {
             this.acceptorParentBallot = new Ballot(2, 6);
-            var acceptorInternal = (IAcceptorInternal<int>)this.acceptor;
+            var acceptorInternal = (Acceptor<int>.ITestAccessor)this.acceptor;
 
             acceptorInternal.PrivateState = new RegisterState<int>(promised: new Ballot(3, 4), accepted: Ballot.Zero, value: 42);
             var response = await this.acceptor.Accept(this.acceptorParentBallot, new Ballot(3, 4), 43);

@@ -90,12 +90,6 @@ namespace Orleans.MetadataStore
             return acceptor.Accept(proposerParentBallot, ballot, (IVersioned)value);
         }
 
-        public ValueTask<(Ballot, IVersioned)> GetAcceptedValue(string key)
-        {
-            var acceptor = this.acceptors.GetOrAdd(key, this.acceptorFactory);
-            return acceptor.GetAcceptedValue();
-        }
-
         void ILifecycleParticipant<ISiloLifecycle>.Participate(ISiloLifecycle lifecycle)
         {
             lifecycle.Subscribe(nameof(MetadataStoreManager), ServiceLifecycleStage.RuntimeInitialize, this.OnRuntimeInitialize);

@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Orleans.MetadataStore
@@ -7,6 +7,6 @@ namespace Orleans.MetadataStore
 
     public interface IProposer<TValue>
     {
-        Task<(ReplicationStatus, TValue)> TryUpdate<TArg>(TArg value, ChangeFunction<TArg, TValue> changeFunction, CancellationToken cancellationToken);
+        Task<(ReplicationStatus Status, TValue Value)> TryUpdate<TArg>(TArg value, ChangeFunction<TArg, TValue> changeFunction, CancellationToken cancellationToken);
     }
 }

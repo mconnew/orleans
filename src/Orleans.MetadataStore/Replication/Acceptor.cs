@@ -6,7 +6,7 @@ using AsyncEx = Nito.AsyncEx;
 
 namespace Orleans.MetadataStore
 {
-    public class Acceptor<TValue> : IAcceptor<TValue>, IAcceptorInternal<TValue>
+    public class Acceptor<TValue> : IAcceptor<TValue>, Acceptor<TValue>.ITestAccessor
     {
         private readonly AsyncEx.AsyncLock lockObj;
         private readonly ILocalStore store;
@@ -16,7 +16,7 @@ namespace Orleans.MetadataStore
         private readonly ILogger log;
         private RegisterState<TValue> state;
 
-        RegisterState<TValue> IAcceptorInternal<TValue>.PrivateState { get => this.state; set => this.state = value; }
+        RegisterState<TValue> ITestAccessor.PrivateState { get => this.state; set => this.state = value; }
 
         public Acceptor(
             string key,
@@ -144,7 +144,7 @@ namespace Orleans.MetadataStore
             }
         }
 
-        Task IAcceptorInternal<TValue>.EnsureStateLoaded() => this.EnsureStateLoaded();
+        Task ITestAccessor.EnsureStateLoaded() => this.EnsureStateLoaded();
 
         internal async Task EnsureStateLoaded()
         {
@@ -173,19 +173,11 @@ namespace Orleans.MetadataStore
             }
         }
 
-        public async ValueTask<(Ballot, TValue)> GetAcceptedValue()
+        public interface ITestAccessor
         {
-            using (await this.lockObj.LockAsync())
-            {
-                return (this.state.Accepted, this.state.Value);
-            }
+            Task EnsureStateLoaded();
+
+            RegisterState<TValue> PrivateState { get; set; }
         }
-    }
-
-    public interface IAcceptorInternal<TValue>
-    {
-        Task EnsureStateLoaded();
-
-        RegisterState<TValue> PrivateState { get; set; }
     }
 }

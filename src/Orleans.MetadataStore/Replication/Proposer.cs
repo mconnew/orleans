@@ -7,7 +7,7 @@ using AsyncEx = Nito.AsyncEx;
 
 namespace Orleans.MetadataStore
 {
-    public class Proposer<TValue> : IProposer<TValue>
+    public class Proposer<TValue> : IProposer<TValue>, Proposer<TValue>.ITestAccessor
     {
         private readonly AsyncEx.AsyncLock lockObj;
         private readonly ILogger log;
@@ -28,7 +28,11 @@ namespace Orleans.MetadataStore
 
         internal Ballot Ballot { get; set; }
 
-        public async Task<(ReplicationStatus, TValue)> TryUpdate<TArg>(TArg value, ChangeFunction<TArg, TValue> changeFunction, CancellationToken cancellationToken)
+        Ballot ITestAccessor.Ballot { get => this.Ballot; set => this.Ballot = value; }
+        bool ITestAccessor.SkipPrepare { get => this.skipPrepare; set => this.skipPrepare = value; }
+        TValue ITestAccessor.CachedValue { get => this.cachedValue; set => this.cachedValue = value; }
+
+        public async Task<(ReplicationStatus Status, TValue Value)> TryUpdate<TArg>(TArg value, ChangeFunction<TArg, TValue> changeFunction, CancellationToken cancellationToken)
         {
             using (await this.lockObj.LockAsync(cancellationToken))
             {
@@ -36,7 +40,7 @@ namespace Orleans.MetadataStore
             }
         }
 
-        private async Task<(ReplicationStatus, TValue)> TryUpdateInternal<TArg>(
+        private async Task<(ReplicationStatus Status, TValue Value)> TryUpdateInternal<TArg>(
             TArg value,
             ChangeFunction<TArg, TValue> changeFunction,
             CancellationToken cancellationToken,
@@ -95,7 +99,7 @@ namespace Orleans.MetadataStore
                 return (ReplicationStatus.Success, newValue);
             }
 
-            // Since the accept did not succeed, this proposer issue a prepare before trying to have a value accepted.
+            // Since the accept did not succeed, this proposer should issue a prepare before trying to have its next value accepted.
             this.skipPrepare = false;
 
             if (numRetries > 0)
@@ -129,6 +133,7 @@ namespace Orleans.MetadataStore
             // Run a Prepare round in order to learn the current value of the register and secure a promise that a quorum
             // of nodes which accept our new value.
             var requiredConfirmations = config.Configuration.PrepareQuorum;
+            var remainingAllowedFailures = prepareTasks.Count - requiredConfirmations;
             var currentValue = default(TValue);
             var maxSuccess = Ballot.Zero;
             var maxConflict = Ballot.Zero;
@@ -151,20 +156,26 @@ namespace Orleans.MetadataStore
 
                             break;
                         case PrepareConflict conflict:
+                            --remainingAllowedFailures;
                             if (conflict.Conflicting > maxConflict) maxConflict = conflict.Conflicting;
                             break;
                         case PrepareConfigConflict _:
+                            --remainingAllowedFailures;
                             // Nothing needs to be done when encountering a configuration conflict, however it
                             // poses a good opportunity to ensure that this node's configuration is up-to-date.
                             // TODO: Signal to configuration manager that we need to update configuration.
                             break;
                     }
-
-                    // TODO: break the loop as soon as we receive a quorum of negative confirmations (and therefore cannot receive a quorum of positive confirmations).
                 }
                 catch (Exception exception)
                 {
+                    --remainingAllowedFailures;
                     if (this.log.IsEnabled(LogLevel.Warning)) this.log.LogWarning($"Exception during Prepare: {exception}");
+                }
+
+                if (remainingAllowedFailures < 0)
+                {
+                    break;
                 }
             }
 
@@ -232,6 +243,13 @@ namespace Orleans.MetadataStore
 
             var achievedQuorum = requiredConfirmations == 0;
             return achievedQuorum;
+        }
+
+        public interface ITestAccessor
+        {
+            Ballot Ballot { get; set; }
+            bool SkipPrepare { get; set; }
+            TValue CachedValue { get; set; }
         }
     }
 }

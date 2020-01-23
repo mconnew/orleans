@@ -5,8 +5,6 @@ namespace Orleans.MetadataStore
 {
     public interface IRemoteMetadataStore : ISystemTarget
     {
-        ValueTask<(Ballot, IVersioned)> GetAcceptedValue(string key);
-
         ValueTask<PrepareResponse> Prepare(string key, Ballot proposerParentBallot, Ballot ballot);
 
         /// <summary>
