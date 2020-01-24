@@ -62,7 +62,7 @@ namespace Orleans.MetadataStore
                 // phase, assuming that the value has not changed since this proposer last had a value accepted.
                 currentValue = this.cachedValue;
 
-                if (this.log.IsEnabled(LogLevel.Debug)) this.log.LogDebug($"Will attempt Accept using cached value, {currentValue}");
+                if (this.log.IsEnabled(LogLevel.Trace)) this.log.LogTrace($"Will attempt Accept using cached value, {currentValue}");
             }
             else
             {
@@ -75,25 +75,25 @@ namespace Orleans.MetadataStore
                     // Allow the proposer to retry in order to hide harmless fast-forward events.
                     if (numRetries > 0)
                     {
-                        if (this.log.IsEnabled(LogLevel.Information)) this.log.LogInformation("Prepare failed, will retry.");
+                        if (this.log.IsEnabled(LogLevel.Trace)) this.log.LogTrace("Prepare failed, will retry.");
                         return await this.TryUpdateInternal(value, changeFunction, cancellationToken, numRetries - 1);
                     }
 
-                    if (this.log.IsEnabled(LogLevel.Information)) this.log.LogInformation("Prepare failed, no remaining retries.");
+                    if (this.log.IsEnabled(LogLevel.Trace)) this.log.LogTrace("Prepare failed, no remaining retries.");
                     return (ReplicationStatus.Failed, currentValue);
                 }
 
-                if (this.log.IsEnabled(LogLevel.Information)) this.log.LogInformation($"Prepare succeeded, learned current value: {currentValue}");
+                if (this.log.IsEnabled(LogLevel.Trace)) this.log.LogTrace($"Prepare succeeded, learned current value: {currentValue}");
             }
 
             // Modify the currently accepted value and attempt to have it accepted on all acceptors.
             var newValue = changeFunction(currentValue, value);
-            if (this.log.IsEnabled(LogLevel.Information)) this.log.LogInformation($"Trying to have new value {newValue} accepted.");
+            if (this.log.IsEnabled(LogLevel.Trace)) this.log.LogTrace($"Trying to have new value {newValue} accepted.");
             var acceptSuccess = await this.TryAccept(prepareBallot, newValue, config, cancellationToken);
             if (acceptSuccess)
             {
                 // The accept succeeded, this proposer can attempt to use the current accept as a promise for a subsequent accept as an optimization.
-                if (this.log.IsEnabled(LogLevel.Information)) this.log.LogInformation($"Successfully updated value to {newValue}.");
+                if (this.log.IsEnabled(LogLevel.Trace)) this.log.LogTrace($"Successfully updated value to {newValue}.");
                 this.skipPrepare = true;
                 this.cachedValue = newValue;
                 return (ReplicationStatus.Success, newValue);
@@ -105,14 +105,14 @@ namespace Orleans.MetadataStore
             if (numRetries > 0)
             {
                 // This attempt may have failed because another proposer interfered, so attempt again to have this value accepted.
-                if (this.log.IsEnabled(LogLevel.Information)) this.log.LogInformation("Accept failed, will retry. No longer assuming leadership.");
+                if (this.log.IsEnabled(LogLevel.Trace)) this.log.LogTrace("Accept failed, will retry. No longer assuming leadership.");
                 return await this.TryUpdateInternal(value, changeFunction, cancellationToken, numRetries - 1);
             }
 
             // It is possible that the value was committed successfully without this node receiving a quorum of acknowledgements,
             // so the result is uncertain.
             // For example, an acceptor's acknowledgement message may have been lost in transmission due to a transient network fault.
-            if (this.log.IsEnabled(LogLevel.Information)) this.log.LogInformation("Accept failed, no remaining retries.");
+            if (this.log.IsEnabled(LogLevel.Trace)) this.log.LogTrace("Accept failed, no remaining retries.");
             return (ReplicationStatus.Uncertain, currentValue);
         }
 

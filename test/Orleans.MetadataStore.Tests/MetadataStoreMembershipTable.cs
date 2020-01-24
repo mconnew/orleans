@@ -234,6 +234,7 @@ namespace Orleans.MetadataStore.Tests
         public async Task<MembershipTableData> ReadAll()
         {
             await waitForClusterStability;
+            
             var (success, result) = await this.configurationManager.TryRead();
             if (!success)
             {
@@ -463,7 +464,7 @@ namespace Orleans.MetadataStore.Tests
             var monitorOptionsTask = new Task[1];
             lifecycle.Subscribe(
                 nameof(MetadataStoreMembershipTable),
-                ServiceLifecycleStage.RuntimeInitialize - 1,
+                ServiceLifecycleStage.RuntimeInitialize + 1,
                 cancellation =>
                 {
                     monitorOptionsTask[0] = Task.Run(this.MonitorSeedNodesAsync);

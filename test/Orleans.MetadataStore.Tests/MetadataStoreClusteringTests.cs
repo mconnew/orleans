@@ -217,7 +217,6 @@ namespace Orleans.MetadataStore.Tests
             var result = await grain.TryUpdate("testKey", new MyVersionedData {Value = "initial", Version = 1});
             log.LogInformation($"Wrote data and got answer: {result}");
 
-            await Task.Delay(5000);
             var configResult = await grain.Get<ReplicaSetConfiguration>("MDS.Config");
             log.LogInformation($"Read config and got answer: {configResult}");
 

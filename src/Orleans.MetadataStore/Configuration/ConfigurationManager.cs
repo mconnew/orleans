@@ -85,25 +85,35 @@ namespace Orleans.MetadataStore
             this.proposer = new Proposer<IVersioned>(
                 key: ClusterConfigurationKey,
                 initialBallot: Ballot.Zero,
-                getConfiguration: () => this.ProposedConfiguration ?? this.AcceptedConfiguration,
+                getConfiguration: () => this.AcceptedConfiguration,
                 log: loggerFactory.CreateLogger("MetadataStore.ConfigProposer")
             );
         }
 
-        private void OnUpdateConfiguration(RegisterState<IVersioned> state)
+        private ValueTask OnUpdateConfiguration(RegisterState<IVersioned> state)
         {
-            this.AcceptedConfiguration = ExpandedReplicaSetConfiguration.Create((ReplicaSetConfiguration) state.Value, this.options, this.referenceFactory);
+            //using (await this.updateLock.LockAsync())
+            {
+                this.AcceptedConfiguration = ExpandedReplicaSetConfiguration.Create((ReplicaSetConfiguration)state.Value, this.options, this.referenceFactory);
+                //this.ProposedConfiguration = null;
+            }
+            return default;
         }
 
         /// <summary>
         /// Returns the most recently accepted configuration. Note that this configuration may not be committed.
         /// </summary>
         public ExpandedReplicaSetConfiguration AcceptedConfiguration { get; private set; }
-        
+
         /// <summary>
         /// Returns the most recently proposed configuration.
         /// </summary>
         public ExpandedReplicaSetConfiguration ProposedConfiguration { get; private set; }
+
+        /// <summary>
+        /// Returns the active configuration.
+        /// </summary>
+        public ExpandedReplicaSetConfiguration ActiveConfiguration => this.ProposedConfiguration ?? this.AcceptedConfiguration;
 
         public int NodeId { get; set; }
 
@@ -179,7 +189,6 @@ namespace Orleans.MetadataStore
                     prepareQuorum: quorum,
                     ranges: update.Ranges,
                     values: update.Values);
-                var previouslyProposedConfiguration = this.ProposedConfiguration;
                 var success = false;
 
                 try
@@ -191,13 +200,13 @@ namespace Orleans.MetadataStore
                     success = status == ReplicationStatus.Success;
 
                     // Ensure that a quorum of acceptors have the latest value for all keys.
-                    if (success) success = await this.CatchupAllAcceptors();
+                    //if (success) success = await this.CatchupAllAcceptors();
 
                     return new UpdateResult<ReplicaSetConfiguration>(success, (ReplicaSetConfiguration)committedValue);
                 }
                 finally
                 {
-                    if (!success) this.ProposedConfiguration = previouslyProposedConfiguration;
+                    if (success) this.AcceptedConfiguration = this.ProposedConfiguration;
                 }
             }
         }
@@ -228,9 +237,9 @@ namespace Orleans.MetadataStore
 
         private async Task<(bool, HashSet<string>)> GetAllKeys()
         {
-            var quorum = this.ProposedConfiguration.Configuration.PrepareQuorum;
+            var quorum = this.ActiveConfiguration.Configuration.PrepareQuorum;
             var remainingConfirmations = quorum;
-            var storeReferences = this.ProposedConfiguration.StoreReferences;
+            var storeReferences = this.ActiveConfiguration.StoreReferences;
             var allKeys = new HashSet<string>();
             foreach (var storeReference in storeReferences)
             {

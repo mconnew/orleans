@@ -86,7 +86,7 @@ namespace Orleans.MetadataStore.Tests
 
             public async Task Execute(CancellationToken cancellationToken)
             {
-                if (this.configurationManager.AcceptedConfiguration?.Configuration == null)
+                if (this.configurationManager.AcceptedConfiguration?.Configuration is null)
                 {
                     await this.configurationManager.ForceLocalConfiguration(
                         new ReplicaSetConfiguration(new Ballot(1, this.configurationManager.NodeId),

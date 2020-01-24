@@ -11,18 +11,16 @@ namespace Orleans.MetadataStore
         private readonly AsyncEx.AsyncLock lockObj;
         private readonly ILocalStore store;
         private readonly Func<Ballot> getParentBallot;
-        private readonly Action<RegisterState<TValue>> onUpdateState;
+        private readonly Func<RegisterState<TValue>, ValueTask> onUpdateState;
         private readonly string key;
         private readonly ILogger log;
         private RegisterState<TValue> state;
-
-        RegisterState<TValue> ITestAccessor.PrivateState { get => this.state; set => this.state = value; }
-
+        
         public Acceptor(
             string key,
             ILocalStore store,
             Func<Ballot> getParentBallot,
-            Action<RegisterState<TValue>> onUpdateState,
+            Func<RegisterState<TValue>, ValueTask> onUpdateState,
             ILogger log)
         {
             this.lockObj = new AsyncEx.AsyncLock();
@@ -32,7 +30,9 @@ namespace Orleans.MetadataStore
             this.onUpdateState = onUpdateState;
             this.log = log;
         }
-        
+
+        RegisterState<TValue> ITestAccessor.VolatileState { get => this.state; set => this.state = value; }
+
         public async ValueTask<PrepareResponse> Prepare(Ballot proposerParentBallot, Ballot ballot)
         {
             using (await this.lockObj.LockAsync())
@@ -40,40 +40,47 @@ namespace Orleans.MetadataStore
                 // Initialize the register state if it's not yet initialized.
                 await this.EnsureStateLoadedNoLock();
 
-                PrepareResponse result;
-                var parentBallot = this.getParentBallot();
-                if (parentBallot > proposerParentBallot)
-                {
-                    // If the proposer is using a cluster configuration version which is lower than the highest
-                    // cluster configuration version observed by this node, then the Prepare is rejected.
-                    result = PrepareResponse.ConfigConflict(parentBallot);
-                }
-                else
-                {
-                    if (this.state.Promised > ballot)
-                    {
-                        // If a Prepare with a higher ballot has already been encountered, reject this.
-                        result = PrepareResponse.Conflict(this.state.Promised);
-                    }
-                    else if (this.state.Accepted > ballot)
-                    {
-                        // If an Accept with a higher ballot has already been encountered, reject this.
-                        result = PrepareResponse.Conflict(this.state.Accepted);
-                    }
-                    else
-                    {
-                        // Record a tentative promise to accept this proposer's value.
-                        var newState = new RegisterState<TValue>(ballot, this.state.Accepted, this.state.Value);
-                        await this.store.Write(this.key, newState);
-                        this.state = newState;
-
-                        result = PrepareResponse.Success(this.state.Accepted, this.state.Value);
-                    }
-                }
+                var result = await PrepareCore(proposerParentBallot, ballot);
 
                 LogPrepare(proposerParentBallot, ballot, result);
                 return result;
             }
+        }
+
+        private async Task<PrepareResponse> PrepareCore(Ballot proposerParentBallot, Ballot ballot)
+        {
+            PrepareResponse result;
+            var parentBallot = this.getParentBallot();
+            if (parentBallot > proposerParentBallot)
+            {
+                // If the proposer is using a cluster configuration version which is lower than the highest
+                // cluster configuration version observed by this node, then the Prepare is rejected.
+                result = PrepareResponse.ConfigConflict(parentBallot);
+            }
+            else
+            {
+                if (this.state.Promised > ballot)
+                {
+                    // If a Prepare with a higher ballot has already been encountered, reject this.
+                    result = PrepareResponse.Conflict(this.state.Promised);
+                }
+                else if (this.state.Accepted > ballot)
+                {
+                    // If an Accept with a higher ballot has already been encountered, reject this.
+                    result = PrepareResponse.Conflict(this.state.Accepted);
+                }
+                else
+                {
+                    // Record a tentative promise to accept this proposer's value.
+                    var newState = new RegisterState<TValue>(ballot, this.state.Accepted, this.state.Value);
+                    await this.store.Write(this.key, newState);
+                    this.state = newState;
+
+                    result = PrepareResponse.Success(this.state.Accepted, this.state.Value);
+                }
+            }
+
+            return result;
         }
 
         public async ValueTask<AcceptResponse> Accept(Ballot proposerParentBallot, Ballot ballot, TValue value)
@@ -109,7 +116,7 @@ namespace Orleans.MetadataStore
                         var newState = new RegisterState<TValue>(ballot, ballot, value);
                         await this.store.Write(this.key, newState);
                         this.state = newState;
-                        this.onUpdateState?.Invoke(this.state);
+                        if (this.onUpdateState?.Invoke(this.state) is ValueTask task) await task;
                         result = AcceptResponse.Success();
                     }
                 }
@@ -124,7 +131,7 @@ namespace Orleans.MetadataStore
             using (await this.lockObj.LockAsync())
             {
                 this.state = new RegisterState<TValue>(Ballot.Zero, Ballot.Zero, newState);
-                this.onUpdateState?.Invoke(this.state);
+                if (this.onUpdateState?.Invoke(this.state) is ValueTask task) await task;
             }
         }
 
@@ -177,7 +184,7 @@ namespace Orleans.MetadataStore
         {
             Task EnsureStateLoaded();
 
-            RegisterState<TValue> PrivateState { get; set; }
+            RegisterState<TValue> VolatileState { get; set; }
         }
     }
 }

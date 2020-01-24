@@ -15,7 +15,7 @@ namespace Orleans.MetadataStore.Tests
         private const string Key = "key";
         private readonly TestMemoryLocalStore store = new TestMemoryLocalStore();
         private readonly Func<Ballot> getParentBallot;
-        private readonly Action<RegisterState<int>> onUpdateState;
+        private readonly Func<RegisterState<int>, ValueTask> onUpdateState;
         private readonly Channel<RegisterState<int>> acceptorStates = Channel.CreateUnbounded<RegisterState<int>>(new UnboundedChannelOptions
         {
             AllowSynchronousContinuations = false,
@@ -29,7 +29,7 @@ namespace Orleans.MetadataStore.Tests
         public AcceptorTests(ITestOutputHelper output)
         {
             this.getParentBallot = () => this.acceptorParentBallot;
-            this.onUpdateState = s => Assert.True(this.acceptorStates.Writer.TryWrite(s), "TryWrite failed");
+            this.onUpdateState = s => { Assert.True(this.acceptorStates.Writer.TryWrite(s), "TryWrite failed"); return default; };
             this.acceptor = new Acceptor<int>(
                 Key,
                 this.store,
@@ -45,11 +45,11 @@ namespace Orleans.MetadataStore.Tests
             var acceptorInternal = (Acceptor<int>.ITestAccessor)this.acceptor;
             await this.store.Write<RegisterState<int>>(Key, expectedInitialState);
 
-            Assert.Null(acceptorInternal.PrivateState);
+            Assert.Null(acceptorInternal.VolatileState);
             Assert.False(this.acceptorStates.Reader.TryRead(out _));
 
             await ((Acceptor<int>.ITestAccessor)this.acceptor).EnsureStateLoaded();
-            Assert.Equal(expectedInitialState, acceptorInternal.PrivateState);
+            Assert.Equal(expectedInitialState, acceptorInternal.VolatileState);
 
             Assert.True(this.acceptorStates.Reader.TryRead(out var initialRegisterState));
             Assert.Equal(expectedInitialState, initialRegisterState);
@@ -62,7 +62,7 @@ namespace Orleans.MetadataStore.Tests
             var acceptorInternal = (Acceptor<int>.ITestAccessor)this.acceptor;
 
             // The acceptor has a higher parent ballot than the proposer
-            acceptorInternal.PrivateState = new RegisterState<int>(promised: Ballot.Zero, accepted: new Ballot(3, 4), value: 42);
+            acceptorInternal.VolatileState = new RegisterState<int>(promised: Ballot.Zero, accepted: new Ballot(3, 4), value: 42);
             var response = await this.acceptor.Prepare(proposerParentBallot: new Ballot(1, 7), ballot: new Ballot(2, 7));
             var conflict = Assert.IsType<PrepareConfigConflict>(response);
             Assert.Equal(conflict.Conflicting, this.acceptorParentBallot);
@@ -71,9 +71,9 @@ namespace Orleans.MetadataStore.Tests
             var expected = new RegisterState<int>(promised: Ballot.Zero, accepted: new Ballot(3, 4), value: 42);
             Assert.False(this.acceptorStates.Reader.TryRead(out _));
             Assert.False(this.store.Values.ContainsKey(Key));
-            Assert.Equal(expected.Promised, acceptorInternal.PrivateState.Promised);
-            Assert.Equal(expected.Accepted, acceptorInternal.PrivateState.Accepted);
-            Assert.Equal(expected.Value, acceptorInternal.PrivateState.Value);
+            Assert.Equal(expected.Promised, acceptorInternal.VolatileState.Promised);
+            Assert.Equal(expected.Accepted, acceptorInternal.VolatileState.Accepted);
+            Assert.Equal(expected.Value, acceptorInternal.VolatileState.Value);
         }
 
         [Fact]
@@ -83,7 +83,7 @@ namespace Orleans.MetadataStore.Tests
             var acceptorInternal = (Acceptor<int>.ITestAccessor)this.acceptor;
 
             // The acceptor has a higher accepted ballot than the proposer, which results in a rejection.
-            acceptorInternal.PrivateState = new RegisterState<int>(promised: Ballot.Zero, accepted: new Ballot(3, 4), value: 42);
+            acceptorInternal.VolatileState = new RegisterState<int>(promised: Ballot.Zero, accepted: new Ballot(3, 4), value: 42);
             var response = await this.acceptor.Prepare(proposerParentBallot: this.acceptorParentBallot, ballot: new Ballot(2, 7));
             var conflict = Assert.IsType<PrepareConflict>(response);
             Assert.Equal(conflict.Conflicting, new Ballot(3, 4));
@@ -92,12 +92,12 @@ namespace Orleans.MetadataStore.Tests
             var expected = new RegisterState<int>(promised: Ballot.Zero, accepted: new Ballot(3, 4), value: 42);
             Assert.False(this.acceptorStates.Reader.TryRead(out _));
             Assert.False(this.store.Values.ContainsKey(Key));
-            Assert.Equal(expected.Promised, acceptorInternal.PrivateState.Promised);
-            Assert.Equal(expected.Accepted, acceptorInternal.PrivateState.Accepted);
-            Assert.Equal(expected.Value, acceptorInternal.PrivateState.Value);
+            Assert.Equal(expected.Promised, acceptorInternal.VolatileState.Promised);
+            Assert.Equal(expected.Accepted, acceptorInternal.VolatileState.Accepted);
+            Assert.Equal(expected.Value, acceptorInternal.VolatileState.Value);
 
             // The acceptor has a higher promised ballot than the proposer, which results in a rejection.
-            acceptorInternal.PrivateState = new RegisterState<int>(promised: new Ballot(3, 4), accepted: Ballot.Zero, value: 42);
+            acceptorInternal.VolatileState = new RegisterState<int>(promised: new Ballot(3, 4), accepted: Ballot.Zero, value: 42);
             response = await this.acceptor.Prepare(proposerParentBallot: this.acceptorParentBallot, ballot: new Ballot(2, 7));
             conflict = Assert.IsType<PrepareConflict>(response);
             Assert.Equal(conflict.Conflicting, new Ballot(3, 4));
@@ -106,9 +106,9 @@ namespace Orleans.MetadataStore.Tests
             expected = new RegisterState<int>(promised: new Ballot(3, 4), accepted: Ballot.Zero, value: 42);
             Assert.False(this.acceptorStates.Reader.TryRead(out _));
             Assert.False(this.store.Values.ContainsKey(Key));
-            Assert.Equal(expected.Promised, acceptorInternal.PrivateState.Promised);
-            Assert.Equal(expected.Accepted, acceptorInternal.PrivateState.Accepted);
-            Assert.Equal(expected.Value, acceptorInternal.PrivateState.Value);
+            Assert.Equal(expected.Promised, acceptorInternal.VolatileState.Promised);
+            Assert.Equal(expected.Accepted, acceptorInternal.VolatileState.Accepted);
+            Assert.Equal(expected.Value, acceptorInternal.VolatileState.Value);
         }
 
         [Fact]
@@ -117,14 +117,14 @@ namespace Orleans.MetadataStore.Tests
             this.acceptorParentBallot = new Ballot(2, 6);
             var acceptorInternal = (Acceptor<int>.ITestAccessor)this.acceptor;
 
-            acceptorInternal.PrivateState = new RegisterState<int>(promised: Ballot.Zero, accepted: new Ballot(3, 4), value: 42);
+            acceptorInternal.VolatileState = new RegisterState<int>(promised: Ballot.Zero, accepted: new Ballot(3, 4), value: 42);
             var response = await this.acceptor.Prepare(proposerParentBallot: this.acceptorParentBallot, ballot: new Ballot(3, 7));
             var success = Assert.IsType<PrepareSuccess<int>>(response);
             Assert.Equal(42, success.Value);
             Assert.Equal(new Ballot(3, 4), success.Accepted);
             Assert.False(this.acceptorStates.Reader.TryRead(out _));
             var writtenState = (RegisterState<int>)this.store.Values[Key];
-            Assert.Equal(new Ballot(3, 7), acceptorInternal.PrivateState.Promised);
+            Assert.Equal(new Ballot(3, 7), acceptorInternal.VolatileState.Promised);
             Assert.Equal(new Ballot(3, 7), writtenState.Promised);
         }
 
@@ -135,7 +135,7 @@ namespace Orleans.MetadataStore.Tests
             var acceptorInternal = (Acceptor<int>.ITestAccessor)this.acceptor;
 
             // The acceptor has a higher parent ballot than the proposer
-            acceptorInternal.PrivateState = new RegisterState<int>(promised: new Ballot(2, 7), accepted: Ballot.Zero, value: 42);
+            acceptorInternal.VolatileState = new RegisterState<int>(promised: new Ballot(2, 7), accepted: Ballot.Zero, value: 42);
             var response = await this.acceptor.Accept(proposerParentBallot: new Ballot(1, 7), ballot: new Ballot(2, 7), 43);
             var conflict = Assert.IsType<AcceptConfigConflict>(response);
             Assert.Equal(conflict.Conflicting, this.acceptorParentBallot);
@@ -144,9 +144,9 @@ namespace Orleans.MetadataStore.Tests
             var expected = new RegisterState<int>(promised: new Ballot(2, 7), accepted: Ballot.Zero, value: 42);
             Assert.False(this.acceptorStates.Reader.TryRead(out _));
             Assert.False(this.store.Values.ContainsKey(Key));
-            Assert.Equal(expected.Promised, acceptorInternal.PrivateState.Promised);
-            Assert.Equal(expected.Accepted, acceptorInternal.PrivateState.Accepted);
-            Assert.Equal(expected.Value, acceptorInternal.PrivateState.Value);
+            Assert.Equal(expected.Promised, acceptorInternal.VolatileState.Promised);
+            Assert.Equal(expected.Accepted, acceptorInternal.VolatileState.Accepted);
+            Assert.Equal(expected.Value, acceptorInternal.VolatileState.Value);
         }
 
         [Fact]
@@ -156,7 +156,7 @@ namespace Orleans.MetadataStore.Tests
             var acceptorInternal = (Acceptor<int>.ITestAccessor)this.acceptor;
 
             // The acceptor has a higher accepted ballot than the proposer, which results in a rejection.
-            acceptorInternal.PrivateState = new RegisterState<int>(promised: Ballot.Zero, accepted: new Ballot(3, 4), value: 42);
+            acceptorInternal.VolatileState = new RegisterState<int>(promised: Ballot.Zero, accepted: new Ballot(3, 4), value: 42);
             var response = await this.acceptor.Accept(proposerParentBallot: this.acceptorParentBallot, ballot: new Ballot(2, 7), 43);
             var conflict = Assert.IsType<AcceptConflict>(response);
             Assert.Equal(conflict.Conflicting, new Ballot(3, 4));
@@ -165,12 +165,12 @@ namespace Orleans.MetadataStore.Tests
             var expected = new RegisterState<int>(promised: Ballot.Zero, accepted: new Ballot(3, 4), value: 42);
             Assert.False(this.acceptorStates.Reader.TryRead(out _));
             Assert.False(this.store.Values.ContainsKey(Key));
-            Assert.Equal(expected.Promised, acceptorInternal.PrivateState.Promised);
-            Assert.Equal(expected.Accepted, acceptorInternal.PrivateState.Accepted);
-            Assert.Equal(expected.Value, acceptorInternal.PrivateState.Value);
+            Assert.Equal(expected.Promised, acceptorInternal.VolatileState.Promised);
+            Assert.Equal(expected.Accepted, acceptorInternal.VolatileState.Accepted);
+            Assert.Equal(expected.Value, acceptorInternal.VolatileState.Value);
 
             // The acceptor has a higher promised ballot than the proposer, which results in a rejection.
-            acceptorInternal.PrivateState = new RegisterState<int>(promised: new Ballot(3, 4), accepted: Ballot.Zero, value: 42);
+            acceptorInternal.VolatileState = new RegisterState<int>(promised: new Ballot(3, 4), accepted: Ballot.Zero, value: 42);
             response = await this.acceptor.Accept(proposerParentBallot: this.acceptorParentBallot, ballot: new Ballot(2, 7), 43);
             conflict = Assert.IsType<AcceptConflict>(response);
             Assert.Equal(conflict.Conflicting, new Ballot(3, 4));
@@ -179,9 +179,9 @@ namespace Orleans.MetadataStore.Tests
             expected = new RegisterState<int>(promised: new Ballot(3, 4), accepted: Ballot.Zero, value: 42);
             Assert.False(this.acceptorStates.Reader.TryRead(out _));
             Assert.False(this.store.Values.ContainsKey(Key));
-            Assert.Equal(expected.Promised, acceptorInternal.PrivateState.Promised);
-            Assert.Equal(expected.Accepted, acceptorInternal.PrivateState.Accepted);
-            Assert.Equal(expected.Value, acceptorInternal.PrivateState.Value);
+            Assert.Equal(expected.Promised, acceptorInternal.VolatileState.Promised);
+            Assert.Equal(expected.Accepted, acceptorInternal.VolatileState.Accepted);
+            Assert.Equal(expected.Value, acceptorInternal.VolatileState.Value);
         }
 
         [Fact]
@@ -190,16 +190,16 @@ namespace Orleans.MetadataStore.Tests
             this.acceptorParentBallot = new Ballot(2, 6);
             var acceptorInternal = (Acceptor<int>.ITestAccessor)this.acceptor;
 
-            acceptorInternal.PrivateState = new RegisterState<int>(promised: new Ballot(3, 4), accepted: Ballot.Zero, value: 42);
+            acceptorInternal.VolatileState = new RegisterState<int>(promised: new Ballot(3, 4), accepted: Ballot.Zero, value: 42);
             var response = await this.acceptor.Accept(this.acceptorParentBallot, new Ballot(3, 4), 43);
             Assert.IsType<AcceptSuccess>(response);
             Assert.True(this.acceptorStates.Reader.TryRead(out var updatedState));
             var writtenState = (RegisterState<int>)this.store.Values[Key];
 
             var expected = new RegisterState<int>(new Ballot(3, 4), new Ballot(3, 4), 43);
-            Assert.Equal(expected.Promised, acceptorInternal.PrivateState.Promised);
-            Assert.Equal(expected.Accepted, acceptorInternal.PrivateState.Accepted);
-            Assert.Equal(expected.Value, acceptorInternal.PrivateState.Value);
+            Assert.Equal(expected.Promised, acceptorInternal.VolatileState.Promised);
+            Assert.Equal(expected.Accepted, acceptorInternal.VolatileState.Accepted);
+            Assert.Equal(expected.Value, acceptorInternal.VolatileState.Value);
 
             Assert.Equal(expected.Promised, writtenState.Promised);
             Assert.Equal(expected.Accepted, writtenState.Accepted);

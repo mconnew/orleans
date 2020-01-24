@@ -281,7 +281,7 @@ namespace Orleans.Runtime.MembershipService
 
                 lifecycle.Subscribe(
                     nameof(MembershipAgent),
-                    ServiceLifecycleStage.RuntimeInitialize,
+                    ServiceLifecycleStage.RuntimeInitialize + 10,
                     OnRuntimeInitializeStart,
                     OnRuntimeInitializeStop);
             }
