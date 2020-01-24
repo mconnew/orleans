@@ -129,15 +129,16 @@ namespace Orleans.MetadataStore.Tests
                             if (accepted?.Nodes is null || accepted.Nodes.Length < snapshot.MinimumNodes)
                             {
                                 var quorumSize = Math.Max(snapshotSeedNodes.Count / 2 + 1, snapshot.MinimumNodes);
-                                await this.configurationManager.ForceLocalConfiguration(
-                                    new ReplicaSetConfiguration(
+                                var forcedConfiguration = new ReplicaSetConfiguration(
                                         stamp: accepted?.Stamp.Successor() ?? Ballot.Zero,
                                         version: (accepted?.Version ?? 0) + 1,
                                         nodes: snapshotSeedNodes.Select(s => SiloAddress.New(s, 0)).ToArray(),
                                         acceptQuorum: quorumSize,
                                         prepareQuorum: quorumSize,
                                         ranges: accepted?.Ranges ?? default,
-                                        values: accepted?.Values));
+                                        values: accepted?.Values);
+                                this.log.LogInformation("Insufficient nodes in accepted configuration {Accepted}. Locally forcing configuration {ForcedConfiguration}", accepted, forcedConfiguration);
+                                await this.configurationManager.ForceLocalConfiguration(forcedConfiguration);
                             }
 
                             // TODO: we must enforce changes to be at most one node at a time to maintain linearizability.
