@@ -109,8 +109,6 @@ namespace Orleans.MetadataStore
                 this.taskScheduler.RegisterWorkContext(instance.SchedulingContext);
                 this.activationDirectory.RecordNewSystemTarget(instance);
             }
-
-            // TODO: bootstrap initial state from static file.
         }
     }
 }

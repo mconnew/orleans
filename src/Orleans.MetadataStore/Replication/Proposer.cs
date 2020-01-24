@@ -205,6 +205,7 @@ namespace Orleans.MetadataStore
             }
 
             var requiredConfirmations = config.Configuration.AcceptQuorum;
+            var remainingAllowedFailures = acceptTasks.Count - requiredConfirmations;
             var maxConflict = Ballot.Zero;
             while (acceptTasks.Count > 0 && requiredConfirmations > 0 && !cancellationToken.IsCancellationRequested)
             {
@@ -219,16 +220,18 @@ namespace Orleans.MetadataStore
                             --requiredConfirmations;
                             break;
                         case AcceptConflict conflict:
+                            --remainingAllowedFailures;
                             if (conflict.Conflicting > maxConflict) maxConflict = conflict.Conflicting;
                             break;
                         case AcceptConfigConflict _:
                             // Nothing needs to be done when encountering a configuration conflict, however it
                             // poses a good opportunity to ensure that this node's configuration is up-to-date.
                             // TODO: Signal to configuration manager that we need to update configuration?
+                            --remainingAllowedFailures;
                             break;
                     }
 
-                    // TODO: break the loop as soon as we receive a quorum of negative confirmations (and therefore cannot receive a quorum of positive confirmations).
+                    if (requiredConfirmations <= 0 || remainingAllowedFailures < 0) break;
                 }
                 catch (Exception exception)
                 {

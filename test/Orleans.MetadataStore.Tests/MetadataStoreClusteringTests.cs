@@ -1,23 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
-using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Primitives;
 using Orleans.Configuration;
 using Orleans.Configuration.Internal;
 using Orleans.Hosting;
 using Orleans.Messaging;
 using Orleans.Runtime;
 using Orleans.TestingHost;
+using Serilog;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -42,7 +40,14 @@ namespace Orleans.MetadataStore.Tests
 
             public async Task DisposeAsync()
             {
-                await this.HostedCluster?.StopAllSilosAsync();
+                if (this.HostedCluster is TestCluster cluster)
+                {
+                    foreach (var silo in cluster.GetActiveSilos().ToList())
+                    {
+                        await silo.StopSiloAsync(stopGracefully: true);
+                    }
+                }
+
                 shutdownToken.Cancel();
             }
 
@@ -116,7 +121,7 @@ namespace Orleans.MetadataStore.Tests
                     if (didReload) await Task.Delay(TimeSpan.FromSeconds(2));
                     else await Task.Delay(TimeSpan.FromSeconds(15));
 
-                    var seedNodes = siloHandles.Select(s => s.SiloAddress).ToArray();
+                    var seedNodes = siloHandles.Select(s => s.SiloAddress.Endpoint).ToArray();
                     didReload = false;
                     foreach (var siloHandle in siloHandles)
                     {
@@ -140,7 +145,8 @@ namespace Orleans.MetadataStore.Tests
 
             private void UpdateClientGateways(TestCluster testCluster)
             {
-                var services = testCluster.Client.ServiceProvider;
+                var services = testCluster.Client?.ServiceProvider;
+                if (services is null) return;
                 var options = services.GetRequiredService<IOptionsMonitor<StaticGatewayListProviderOptions>>();
                 var updater = services.GetOptionsUpdater<StaticGatewayListProviderOptions>();
 
@@ -159,7 +165,7 @@ namespace Orleans.MetadataStore.Tests
             public void Configure(ISiloBuilder builder)
             {
                 builder
-                    //.ConfigureLogging(logging => logging.AddDebug())
+                    .Configure<SiloMessagingOptions>(o => o.ResponseTimeoutWithDebugger = TimeSpan.FromSeconds(30))
                     .ConfigureServices(services =>
                     {
                         services.AddSingleton<MetadataStoreMembershipTable>();
@@ -168,6 +174,14 @@ namespace Orleans.MetadataStore.Tests
 
                         // Use dynamically refreshed options to contain the seed nodes.
                         services.AddDynamicOptions<MetadataStoreClusteringOptions>();
+
+                        /*
+                        Log.Logger = new LoggerConfiguration()
+                            .WriteTo.Seq("http://localhost:5341")
+                            .Enrich.WithProperty("Node", builder.GetConfigurationValue("SiloPort"))
+                            .CreateLogger();
+                         */
+                        services.AddLogging(logging => logging.AddDebug());
                     })
                     .UseMetadataStore()
                     .UseMemoryLocalStore()
@@ -180,6 +194,7 @@ namespace Orleans.MetadataStore.Tests
             public void Configure(IConfiguration configuration, IClientBuilder builder)
             {
                 builder.ConfigureLogging(logging => logging.AddDebug());
+                builder.Configure<ClientMessagingOptions>(o => o.ResponseTimeoutWithDebugger = TimeSpan.FromSeconds(30));
                 builder.ConfigureServices(services =>
                 {
                     services.AddSingleton<IGatewayListProvider, StaticGatewayListProvider>();

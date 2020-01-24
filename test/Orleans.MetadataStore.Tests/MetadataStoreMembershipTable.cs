@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,15 +14,27 @@ using Orleans.Serialization;
 
 namespace Orleans.MetadataStore.Tests
 {
-    public class MetadataStoreClusteringOptions
-    {
-        public int MinimumNodes { get; set; }
-        public SiloAddress[] SeedNodes { get; set; }
 
-        public override string ToString() => $"[{nameof(MinimumNodes)}: {this.MinimumNodes}, {nameof(SeedNodes)}: [{string.Join(",", this.SeedNodes?.Select(s => s.ToString()) ?? Array.Empty<string>())}]]";
-    }
+    // TODO: make this a high-pri system target or disable blocking application messages
+    // TODO: make this a high-pri system target or disable blocking application messages
+    // TODO: make this a high-pri system target or disable blocking application messages
+    // TODO: make this a high-pri system target or disable blocking application messages
+    // TODO: make this a high-pri system target or disable blocking application messages
+    // TODO: make this a high-pri system target or disable blocking application messages
+    // TODO: make this a high-pri system target or disable blocking application messages
+    // TODO: make this a high-pri system target or disable blocking application messages
+    // TODO: make this a high-pri system target or disable blocking application messages
+    // TODO: make this a high-pri system target or disable blocking application messages
+    // TODO: make this a high-pri system target or disable blocking application messages
+    // TODO: make this a high-pri system target or disable blocking application messages
+    // TODO: make this a high-pri system target or disable blocking application messages
+    // TODO: make this a high-pri system target or disable blocking application messages
 
-    public class MetadataStoreMembershipTable : IMembershipTable, ILifecycleParticipant<ISiloLifecycle>
+
+
+
+
+    public class MetadataStoreMembershipTable : SystemTarget, IMembershipTable, ILifecycleParticipant<ISiloLifecycle>
     {
         private const string MembershipKey = "membership";
         private readonly ILocalSiloDetails localSiloDetails;
@@ -79,11 +92,11 @@ namespace Orleans.MetadataStore.Tests
                     var acceptedSeedNodes = accepted?.Nodes?.ToSet() ?? new HashSet<SiloAddress>();
 
                     // Second, see what the configuration is telling us we should be seeing.
-                    var snapshotSeedNodes = snapshot.SeedNodes ?? Array.Empty<SiloAddress>();
-                    converged = acceptedSeedNodes.Count == snapshotSeedNodes.Length;
+                    var snapshotSeedNodes = snapshot.SeedNodes?.ToSet() ?? new HashSet<IPEndPoint>();
+                    converged = acceptedSeedNodes.Count == snapshotSeedNodes.Count;
                     foreach (var node in snapshotSeedNodes)
                     {
-                        if (!acceptedSeedNodes.Contains(node))
+                        if (!acceptedSeedNodes.Any(a => a.Endpoint.Equals(node)))
                         {
                             converged = false;
                             break;
@@ -111,20 +124,20 @@ namespace Orleans.MetadataStore.Tests
                     {
                         this.log.LogInformation("Converging with configuration snapshot {Configuration}", snapshot);
 
-                        if (snapshotSeedNodes.Length >= snapshot.MinimumNodes)
+                        if (snapshotSeedNodes.Count >= snapshot.MinimumNodes)
                         {
                             if (accepted?.Nodes is null || accepted.Nodes.Length < snapshot.MinimumNodes)
                             {
-                                var quorumSize = Math.Max(snapshotSeedNodes.Length / 2 + 1, snapshot.MinimumNodes);
+                                var quorumSize = Math.Max(snapshotSeedNodes.Count / 2 + 1, snapshot.MinimumNodes);
                                 await this.configurationManager.ForceLocalConfiguration(
                                     new ReplicaSetConfiguration(
-                                        stamp: Ballot.Zero,
-                                        version: 0,
-                                        nodes: snapshotSeedNodes,
+                                        stamp: accepted?.Stamp.Successor() ?? Ballot.Zero,
+                                        version: (accepted?.Version ?? 0) + 1,
+                                        nodes: snapshotSeedNodes.Select(s => SiloAddress.New(s, 0)).ToArray(),
                                         acceptQuorum: quorumSize,
                                         prepareQuorum: quorumSize,
-                                        ranges: default,
-                                        values: default));
+                                        ranges: accepted?.Ranges ?? default,
+                                        values: accepted?.Values));
                             }
 
                             // TODO: we must enforce changes to be at most one node at a time to maintain linearizability.
@@ -169,8 +182,8 @@ namespace Orleans.MetadataStore.Tests
 
             static (bool ShouldUpdate, ReplicaSetConfigurationUpdate Update) UpdateSeedConfiguration(ReplicaSetConfiguration existing, MetadataStoreClusteringOptions snapshot)
             {
-                var seedNodes = snapshot.SeedNodes ?? Array.Empty<SiloAddress>();
-                return (true, new ReplicaSetConfigurationUpdate(nodes: seedNodes, ranges: existing.Ranges, values: existing.Values));
+                var seedNodes = snapshot.SeedNodes ?? Array.Empty<IPEndPoint>();
+                return (true, new ReplicaSetConfigurationUpdate(nodes: seedNodes.Select(s => SiloAddress.New(s, 0)).ToArray(), ranges: existing.Ranges, values: existing.Values));
             }
         }
 
@@ -341,7 +354,7 @@ namespace Orleans.MetadataStore.Tests
                 var updatedValues = existing.Values.SetItem(MembershipKey, serialized);
 
                 var existingNodes = existing.Nodes;
-                var proposedNodes = value.GetSiloStatuses(filter: s => !s.IsUnavailable(), includeMyself: true, this.localSiloDetails.SiloAddress).Keys.ToArray();
+                var proposedNodes = value.Members.Where(s => !s.Item1.Status.IsUnavailable()).Select(s => SiloAddress.New(s.Item1.SiloAddress.Endpoint, 0)).ToArray();
                 var updatedNodes = GetUpdatedNodes(existingNodes, proposedNodes);
 
                 return (true, new ReplicaSetConfigurationUpdate(nodes: updatedNodes, ranges: existing.Ranges, updatedValues));
@@ -450,7 +463,7 @@ namespace Orleans.MetadataStore.Tests
             var monitorOptionsTask = new Task[1];
             lifecycle.Subscribe(
                 nameof(MetadataStoreMembershipTable),
-                ServiceLifecycleStage.RuntimeInitialize,
+                ServiceLifecycleStage.RuntimeInitialize - 1,
                 cancellation =>
                 {
                     monitorOptionsTask[0] = Task.Run(this.MonitorSeedNodesAsync);
