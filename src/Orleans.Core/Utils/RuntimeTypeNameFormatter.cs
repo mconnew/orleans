@@ -13,8 +13,7 @@ namespace Orleans.Utilities
         private static readonly Assembly SystemAssembly = typeof(int).Assembly;
         private static readonly char[] SimpleNameTerminators = { '`', '*', '[', '&' };
 
-        private static readonly CachedReadConcurrentDictionary<Type, string> Cache =
-            new CachedReadConcurrentDictionary<Type, string>();
+        private static readonly CachedReadConcurrentDictionary<Type, string> Cache = new CachedReadConcurrentDictionary<Type, string>();
 
         /// <summary>
         /// Returns a <see cref="string"/> form of <paramref name="type"/> which can be parsed by <see cref="Type.GetType(string)"/>.
