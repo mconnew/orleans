@@ -19,11 +19,9 @@ namespace Orleans.Metadata
         public LocalGrainMetadata(
             IEnumerable<IGrainMetadataProvider> grainMetadataProviders,
             IApplicationPartManager applicationPartManager,
-            GrainTypeProvider grainTypeProvider,
-            IEnumerable<IGrainInterfaceMetadataProvider> grainInterfaceMetadataProviders)
+            GrainTypeProvider grainTypeProvider)
         {
             this.GrainMetadata = BuildGrainMetadata(grainMetadataProviders, applicationPartManager, grainTypeProvider);
-            this.GrainInterfaceMetadata = BuildGrainInterfaceMetadata(grainInterfaceMetadataProviders, applicationPartManager);
         }
 
         private static ImmutableDictionary<GrainType, GrainMetadata> BuildGrainMetadata(
@@ -56,38 +54,7 @@ namespace Orleans.Metadata
             return builder.ToImmutableDictionary();
         }
 
-        private static ImmutableDictionary<GrainInterfaceId, GrainInterfaceMetadata> BuildGrainInterfaceMetadata(
-            IEnumerable<IGrainInterfaceMetadataProvider> providers,
-            IApplicationPartManager applicationPartManager)
-        {
-            var feature = applicationPartManager.CreateAndPopulateFeature<GrainInterfaceFeature>();
-            var builder = ImmutableDictionary.CreateBuilder<GrainInterfaceId, GrainInterfaceMetadata>();
-            foreach (var grainClassMetadata in feature.Interfaces)
-            {
-                var interfaceType = grainClassMetadata.InterfaceType;
-                var interfaceId = new GrainInterfaceId(RuntimeTypeNameFormatter.Format(interfaceType));
-                var properties = new Dictionary<string, string>();
-                foreach (var provider in providers)
-                {
-                    provider.Populate(interfaceType, properties);
-                }
-
-                var grainMetadata = new GrainInterfaceMetadata(properties.ToImmutableDictionary());
-                if (builder.ContainsKey(interfaceId))
-                {
-                    throw new InvalidOperationException($"An entry with the key {interfaceId} is already present."
-                        + $"\nExisting: {builder[interfaceId].ToDetailedString()}\nTrying to add: {grainMetadata.ToDetailedString()}");
-                }
-
-                builder.Add(interfaceId, grainMetadata);
-            }
-
-            return builder.ToImmutableDictionary();
-        }
-
         public ImmutableDictionary<GrainType, GrainMetadata> GrainMetadata { get; }
-
-        public ImmutableDictionary<GrainInterfaceId, GrainInterfaceMetadata> GrainInterfaceMetadata { get; }
     }
 
     public static class DefaultGrainMetadataProviders

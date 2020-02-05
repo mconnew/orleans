@@ -7,6 +7,7 @@ namespace Orleans.Runtime
     /// </summary>
     internal interface IInvokable
     {
-        IGrainMethodInvoker GetInvoker(GrainTypeManager typeManager, int interfaceId, string genericGrainType = null);
+        // TODO: This interface will not work!! InterfaceId is not a sufficient way to identify an interface/invoker (at least needs generic args)
+        IGrainMethodInvoker GetInvoker(GrainTypeManager typeManager, int interfaceId);
     }
 }

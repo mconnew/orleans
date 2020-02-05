@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Orleans.Transactions.Abstractions;
 
@@ -20,7 +20,7 @@ namespace Orleans.Transactions.TestKit
 
         public override Task OnActivateAsync()
         {
-            this.logger = this.loggerFactory.CreateLogger(this.GetGrainIdentity().ToString());
+            this.logger = this.loggerFactory.CreateLogger(this.GrainId.ToString());
             return base.OnActivateAsync();
         }
 

@@ -14,7 +14,7 @@ namespace Orleans.Runtime
         Type GrainType { get; }
 
         /// <summary>Gets the identity of the grain activation.</summary>
-        IGrainIdentity GrainIdentity { get; }
+        GrainId Identity { get; }
 
         /// <summary>Gets the <see cref="IServiceProvider"/> that provides access to the grain activation's service container.</summary>
         IServiceProvider ActivationServices { get; }

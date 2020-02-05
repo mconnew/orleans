@@ -98,7 +98,7 @@ namespace Orleans
             this.ClientStatistics = clientStatisticsManager;
             this.messagingTrace = messagingTrace;
             this.logger = loggerFactory.CreateLogger<OutsideRuntimeClient>();
-            this.clientId = GrainId.NewClientId();
+            this.clientId = LegacyGrainId.NewClientId();
             callbacks = new ConcurrentDictionary<CorrelationId, CallbackData>();
             this.clientMessagingOptions = clientMessagingOptions.Value;
             this.typeMapRefreshInterval = typeManagementOptions.Value.TypeMapRefreshInterval;
@@ -328,23 +328,6 @@ namespace Orleans
             message.SendingGrain = CurrentActivationAddress.Grain;
             message.SendingActivation = CurrentActivationAddress.Activation;
             message.TargetGrain = targetGrainId;
-            if (!String.IsNullOrEmpty(genericArguments))
-                message.GenericGrainType = genericArguments;
-
-            if (targetGrainId.IsSystemTarget())
-            {
-                // If the silo isn't be supplied, it will be filled in by the sender to be the gateway silo
-                message.TargetSilo = target.SystemTargetSilo;
-                if (target.SystemTargetSilo != null)
-                {
-                    message.TargetActivation = ActivationId.GetDeterministic(targetGrainId);
-                }
-            }
-            // Client sending messages to another client (observer). Yes, we support that.
-            if (target.IsObserverReference)
-            {
-                message.TargetObserverId = target.ObserverId;
-            }
 
             if (message.IsExpirableMessage(this.clientMessagingOptions.DropExpiredMessages))
             {
@@ -486,7 +469,7 @@ namespace Orleans
                 throw new ArgumentException("Argument must not be a grain class.", nameof(obj));
 
             GrainReference gr = GrainReference.NewObserverGrainReference(clientId, GuidId.GetNewGuidId(), this.GrainReferenceRuntime);
-            if (!localObjects.TryRegister(obj, gr.ObserverId, invoker))
+            if (!localObjects.TryRegister(obj, gr.GrainId, invoker))
             {
                 throw new ArgumentException(String.Format("Failed to add new observer {0} to localObjects collection.", gr), "gr");
             }

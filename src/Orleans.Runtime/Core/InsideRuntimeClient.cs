@@ -58,7 +58,6 @@ namespace Orleans.Runtime
         public InsideRuntimeClient(
             ILocalSiloDetails siloDetails,
             GrainTypeManager typeManager,
-            TypeMetadataCache typeMetadataCache,
             OrleansTaskScheduler scheduler,
             IServiceProvider serviceProvider,
             MessageFactory messageFactory,
@@ -78,7 +77,7 @@ namespace Orleans.Runtime
             this.messageFactory = messageFactory;
             this.transactionAgent = transactionAgent;
             this.Scheduler = scheduler;
-            this.ConcreteGrainFactory = new GrainFactory(this, typeMetadataCache);
+            this.ConcreteGrainFactory = ActivatorUtilities.CreateInstance<GrainFactory>(serviceProvider, this);
             this.logger = loggerFactory.CreateLogger<InsideRuntimeClient>();
             this.invokeExceptionLogger = loggerFactory.CreateLogger($"{typeof(Grain).FullName}.InvokeException");
             this.loggerFactory = loggerFactory;
@@ -134,7 +133,6 @@ namespace Orleans.Runtime
             GrainReference target,
             InvokeMethodRequest request,
             TaskCompletionSource<object> context,
-            InvokeMethodOptions options,
             string genericArguments)
         {
             var message = this.messageFactory.CreateMessage(request, options);
@@ -142,8 +140,6 @@ namespace Orleans.Runtime
             // fill in sender
             if (message.SendingSilo == null)
                 message.SendingSilo = MySilo;
-            if (!String.IsNullOrEmpty(genericArguments))
-                message.GenericGrainType = genericArguments;
 
             SchedulingContext schedulingContext = RuntimeContext.CurrentActivationContext as SchedulingContext;
 
@@ -187,18 +183,13 @@ namespace Orleans.Runtime
                 SiloAddress targetSilo = (target.SystemTargetSilo ?? MySilo);
                 message.TargetSilo = targetSilo;
                 message.TargetActivation = ActivationId.GetDeterministic(targetGrainId);
-                message.Category = targetGrainId.Equals(Constants.MembershipOracleId) ?
+                message.Category = targetGrainId.Type.Equals(Constants.MembershipOracleType) ?
                     Message.Categories.Ping : Message.Categories.System;
                 sharedData = this.systemSharedCallbackData;
             }
             else
             {
                 sharedData = this.sharedCallbackData;
-            }
-
-            if (target.IsObserverReference)
-            {
-                message.TargetObserverId = target.ObserverId;
             }
 
             var oneWay = (options & InvokeMethodOptions.OneWay) != 0;
@@ -342,11 +333,11 @@ namespace Orleans.Runtime
                         CancellationSourcesExtension.RegisterCancellationTokens(target, request, this.loggerFactory, logger, this, this.cancellationTokenRuntime);
                     }
 
-                    var invoker = invokable.GetInvoker(typeManager, request.InterfaceId, message.GenericGrainType);
+                    var invoker = invokable.GetInvoker(typeManager, request.InterfaceId);
 
                     if (invoker is IGrainExtensionMethodInvoker &&
                         !(target is IGrainExtension) &&
-                        !TryInstallExtension(request.InterfaceId, invokable, message.GenericGrainType, ref invoker))
+                        !TryInstallExtension(request.InterfaceId, invokable, ref invoker))
                     {
                         // We are trying the invoke a grain extension method on a grain 
                         // -- most likely reason is that the dynamic extension is not installed for this grain
@@ -491,7 +482,7 @@ namespace Orleans.Runtime
             }
         }
 
-        private bool TryInstallExtension(int interfaceId, IInvokable invokable, string genericGrainType, ref IGrainMethodInvoker invoker)
+        private bool TryInstallExtension(int interfaceId, IInvokable invokable, ref IGrainMethodInvoker invoker)
         {
             IGrainExtension extension = TryGetCurrentActivationData(out ActivationData activationData)
                 ? activationData.ActivationServices.GetServiceByKey<int, IGrainExtension>(interfaceId)
@@ -508,7 +499,7 @@ namespace Orleans.Runtime
             }
 
             // Get the newly installed invoker for the grain extension.
-            invoker = invokable.GetInvoker(typeManager, interfaceId, genericGrainType);
+            invoker = invokable.GetInvoker(typeManager, interfaceId);
             return true;
         }
 

@@ -102,7 +102,7 @@ namespace Orleans.Runtime.Core
         }
 
         /// <summary>
-        /// The central point 
+        /// The central point for creating grain activations.
         /// </summary>
         public sealed class GrainContextActivator
         {
@@ -119,40 +119,39 @@ namespace Orleans.Runtime.Core
 
             public IGrainContext CreateContext(GrainId grainId)
             {
-                if (this.factories.TryGetValue(grainId.Type, out var factory))
+                if (!this.factories.TryGetValue(grainId.Type, out var factory))
                 {
-                    return factory.CreateContext(grainId);
+                    factory = this.CreateFactory(grainId.Type);
                 }
 
-                return CreateSlow(grainId);
+                return factory.CreateContext(grainId);
+            }
 
-                IGrainContext CreateSlow(GrainId grainId)
+            private IGrainContextActivator CreateFactory(GrainType grainType)
+            {
+                lock (this.lockObj)
                 {
-                    lock (this.lockObj)
+                    if (!this.factories.TryGetValue(grainType, out var factory))
                     {
-                        var grainType = grainId.Type;
-                        if (!this.factories.TryGetValue(grainType, out var factory))
+                        foreach (var item in this.grainContextFactories)
                         {
-                            foreach (var item in this.grainContextFactories)
+                            if (item.CanCreate(grainType))
                             {
-                                if (item.CanCreate(grainType))
-                                {
-                                    factory = item;
-                                    this.factories = this.factories.SetItem(grainType, factory);
-                                    break;
-                                }
+                                factory = item;
+                                this.factories = this.factories.SetItem(grainType, factory);
+                                break;
                             }
                         }
-
-                        // Fallback to the default.
-                        if (factory is null)
-                        {
-                            factory = this.defaultActivator;
-                            this.factories = this.factories.SetItem(grainType, factory);
-                        }
-
-                        return factory.CreateContext(grainId);
                     }
+
+                    // Fallback to the default.
+                    if (factory is null)
+                    {
+                        factory = this.defaultActivator;
+                        this.factories = this.factories.SetItem(grainType, factory);
+                    }
+
+                    return factory;
                 }
             }
         }
@@ -218,7 +217,7 @@ namespace Orleans.Runtime.Core
                 return prototype;
             }
 
-            private struct ContextActivator
+            private readonly struct ContextActivator
             {
                 private readonly IConfigureGrainContext[] configureActions;
                 private readonly GrainPrototype prototype;
@@ -229,7 +228,7 @@ namespace Orleans.Runtime.Core
                     this.configureActions = configureActions.Where(c => c.CanConfigure(prototype.GrainType)).ToArray();
                 }
 
-                public DefaultGrainContext CreateContext(GrainId grainId)
+                public readonly DefaultGrainContext CreateContext(GrainId grainId)
                 {
                     var result = new DefaultGrainContext(this.prototype, grainId.Key);
                     foreach (var configure in this.configureActions)

@@ -59,7 +59,7 @@ namespace Orleans.Runtime.Placement
 
         public static void GetGrainTypeInfo(this IPlacementRuntime @this, GrainId grainId, out string grainClass, out PlacementStrategy placement, string genericArguments = null)
         {
-            @this.GetGrainTypeInfo(grainId, out grainClass, out placement, out activationStrategy, genericArguments);
+            @this.GetGrainTypeInfo(grainId, out grainClass, out placement, genericArguments);
         }
     }
 }

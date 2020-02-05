@@ -120,7 +120,7 @@ namespace Orleans.Runtime
             IOptions<GrainCollectionOptions> collectionOptions,
             IOptions<SiloMessagingOptions> messagingOptions,
             RuntimeMessagingTrace messagingTrace)
-            : base(Constants.CatalogId, messageCenter.MyAddress, loggerFactory)
+            : base(Constants.CatalogType, messageCenter.MyAddress, loggerFactory)
         {
             this.LocalSilo = localSiloDetails.SiloAddress;
             this.localSiloName = localSiloDetails.Name;
@@ -348,7 +348,7 @@ namespace Orleans.Runtime
             {
                 PlacementStrategy unused;
                 string grainClassName;
-                grainTypeManager.GetTypeInfo(((LegacyGrainId)grain).TypeCode, out grainClassName, out unused, out unusedActivationStrategy);
+                grainTypeManager.GetTypeInfo(((LegacyGrainId)grain).TypeCode, out grainClassName, out unused);
                 report.GrainClassTypeName = grainClassName;
             }
             catch (Exception exc)
@@ -423,7 +423,7 @@ namespace Orleans.Runtime
 
         public void GetGrainTypeInfo(int typeCode, out string grainClass, out PlacementStrategy placement, string genericArguments = null)
         {
-            grainTypeManager.GetTypeInfo(typeCode, out grainClass, out placement, out activationStrategy, genericArguments);
+            grainTypeManager.GetTypeInfo(typeCode, out grainClass, out placement, genericArguments);
         }
 
         public int ActivationCount { get { return activations.Count; } }
@@ -445,7 +445,6 @@ namespace Orleans.Runtime
             ActivationAddress address,
             bool newPlacement,
             string grainType,
-            string genericArguments,
             Dictionary<string, object> requestContextData,
             out Task activatedPromise)
         {
@@ -487,14 +486,12 @@ namespace Orleans.Runtime
                     // We want to do this (RegisterMessageTarget) under the same lock that we tested TryGetActivationData. They both access ActivationDirectory.
                     result = new ActivationData(
                         address,
-                        genericArguments,
                         placement,
                         this.activationCollector,
                         ageLimit,
                         this.messagingOptions,
                         this.maxWarningRequestProcessingTime,
                         this.maxRequestProcessingTime,
-                        this.RuntimeClient,
                         this.loggerFactory);
                     RegisterMessageTarget(result);
                 }

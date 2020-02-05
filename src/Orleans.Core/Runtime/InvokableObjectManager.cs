@@ -14,7 +14,7 @@ namespace Orleans
     internal class InvokableObjectManager : IDisposable
     {
         private readonly CancellationTokenSource disposed = new CancellationTokenSource();
-        private readonly ConcurrentDictionary<GuidId, LocalObjectData> localObjects = new ConcurrentDictionary<GuidId, LocalObjectData>();
+        private readonly ConcurrentDictionary<GrainId, LocalObjectData> localObjects = new ConcurrentDictionary<GrainId, LocalObjectData>();
         private readonly IRuntimeClient runtimeClient;
         private readonly ILogger logger;
         private readonly SerializationManager serializationManager;
@@ -36,26 +36,19 @@ namespace Orleans
                 this.LocalObjectMessagePumpAsync((LocalObjectData) o);
         }
 
-        public bool TryRegister(IAddressable obj, GuidId objectId, IGrainMethodInvoker invoker)
+        public bool TryRegister(IAddressable obj, GrainId objectId, IGrainMethodInvoker invoker)
         {
             return this.localObjects.TryAdd(objectId, new LocalObjectData(obj, objectId, invoker));
         }
 
-        public bool TryDeregister(GuidId objectId)
+        public bool TryDeregister(GrainId objectId)
         {
             return this.localObjects.TryRemove(objectId, out LocalObjectData ignored);
         }
 
         public void Dispatch(Message message)
         {
-            GuidId observerId = message.TargetObserverId;
-            if (observerId == null)
-            {
-                this.logger.Error(
-                    ErrorCode.ProxyClient_OGC_TargetNotFound_2,
-                    string.Format("Did not find TargetObserverId header in the message = {0}. A request message to a client is expected to have an observerId.", message));
-                return;
-            }
+            var observerId = message.TargetGrain;
 
             if (this.localObjects.TryGetValue(observerId, out var objectData))
             {
@@ -290,11 +283,11 @@ namespace Orleans
         {
             internal WeakReference LocalObject { get; }
             internal IGrainMethodInvoker Invoker { get; }
-            internal GuidId ObserverId { get; }
+            internal GrainId ObserverId { get; }
             internal Queue<Message> Messages { get; }
             internal bool Running { get; set; }
 
-            internal LocalObjectData(IAddressable obj, GuidId observerId, IGrainMethodInvoker invoker)
+            internal LocalObjectData(IAddressable obj, GrainId observerId, IGrainMethodInvoker invoker)
             {
                 this.LocalObject = new WeakReference(obj);
                 this.ObserverId = observerId;

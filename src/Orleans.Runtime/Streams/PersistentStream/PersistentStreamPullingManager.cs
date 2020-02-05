@@ -9,6 +9,8 @@ using Orleans.Runtime;
 using Orleans.Configuration;
 using RunState = Orleans.Configuration.StreamLifecycleOptions.RunState;
 using Orleans.Internal;
+using System.Threading;
+using System.Globalization;
 
 namespace Orleans.Streams
 {
@@ -33,6 +35,7 @@ namespace Orleans.Streams
         private readonly IQueueAdapterFactory adapterFactory;
         private RunState managerState;
         private IDisposable queuePrintTimer;
+        private int nextAgentId;
         private int NumberRunningAgents { get { return queuesToAgentsMap.Count; } }
 
         internal PersistentStreamPullingManager(
@@ -216,7 +219,8 @@ namespace Orleans.Streams
             {
                 try
                 {
-                    var agentId = LegacyGrainId.NewSystemTargetGrainIdByTypeCode(Constants.PULLING_AGENT_SYSTEM_TARGET_TYPE_CODE);
+                    var agentIdNumber = Interlocked.Increment(ref nextAgentId);
+                    var agentId = GrainId.Create(Constants.StreamPullingAgentType, this.Silo.ToParsableString() + "!" + agentIdNumber.ToString(CultureInfo.InvariantCulture));
                     var agent = new PersistentStreamPullingAgent(agentId, streamProviderName, providerRuntime, this.loggerFactory, pubSub, queueId, this.options);
                     providerRuntime.RegisterSystemTarget(agent);
                     queuesToAgentsMap.Add(queueId, agent);

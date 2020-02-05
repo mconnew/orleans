@@ -38,7 +38,7 @@ namespace UnitTests.Grains
 
         public Task<string> GetStringValue()
         {
-            return Task.FromResult(this.grainActivationContext.GrainIdentity.PrimaryKeyLong.ToString());
+            return Task.FromResult(this.grainActivationContext.Identity.ToString());
         }
 
         public Task<string> GetInjectedSingletonServiceValue()

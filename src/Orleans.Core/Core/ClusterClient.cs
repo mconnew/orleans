@@ -11,6 +11,7 @@ using Orleans.Runtime;
 using Orleans.Streams;
 using Microsoft.Extensions.Hosting;
 using Orleans.Hosting;
+using Orleans.Metadata.NewGrainRefSystem;
 
 namespace Orleans
 {
@@ -96,6 +97,10 @@ namespace Orleans
         /// </summary>
         private bool IsDisposing => this.state == LifecycleState.Disposed ||
                                     this.state == LifecycleState.Disposing;
+
+        bool IClusterClient.IsInitialized => throw new NotImplementedException();
+
+        IServiceProvider IClusterClient.ServiceProvider => throw new NotImplementedException();
 
         /// <inheritdoc />
         public IStreamProvider GetStreamProvider(string name)
@@ -234,9 +239,15 @@ namespace Orleans
         }
 
         /// <inheritdoc />
-        TGrainInterface IInternalGrainFactory.GetSystemTarget<TGrainInterface>(GrainId grainId, SiloAddress destination)
+        TGrainInterface IInternalGrainFactory.GetSystemTarget<TGrainInterface>(GrainType grainType, SiloAddress destination)
         {
-            return this.InternalGrainFactory.GetSystemTarget<TGrainInterface>(grainId, destination);
+            return this.InternalGrainFactory.GetSystemTarget<TGrainInterface>(grainType, destination);
+        }
+
+        /// <inheritdoc />
+        TGrainInterface IInternalGrainFactory.GetSystemTarget<TGrainInterface>(GrainId grainId)
+        {
+            return this.InternalGrainFactory.GetSystemTarget<TGrainInterface>(grainId);
         }
 
         /// <inheritdoc />
@@ -246,7 +257,7 @@ namespace Orleans
         }
 
         /// <inheritdoc />
-        TGrainInterface IInternalGrainFactory.GetGrain<TGrainInterface>(GrainId grainId)
+        TGrainInterface IGrainFactory.GetGrain<TGrainInterface>(GrainId grainId)
         {
             return this.InternalGrainFactory.GetGrain<TGrainInterface>(grainId);
         }
@@ -306,6 +317,10 @@ namespace Orleans
         /// <inheritdoc />
         public TGrainInterface GetGrain<TGrainInterface>(Type grainInterfaceType, long grainPrimaryKey, string keyExtension) where TGrainInterface : IGrain
             => this.InternalGrainFactory.GetGrain<TGrainInterface>(grainInterfaceType, grainPrimaryKey, keyExtension);
+
+        /// <inheritdoc />
+        public IGrainReference GetGrain(GrainId grainId, Type interfaceType)
+            => this.InternalGrainFactory.GetGrain(grainId, interfaceType);
 
         /// <inheritdoc />
         public IGrain GetGrain(Type grainInterfaceType, string grainPrimaryKey)

@@ -19,7 +19,7 @@ namespace Orleans.Runtime.ReminderService
         {
             var loggerFactory = this.ServiceProvider.GetRequiredService<ILoggerFactory>();
             logger = loggerFactory.CreateLogger(String.Format("{0}_{1}", typeof(GrainBasedReminderTable).FullName, Data.Address.ToString()));
-            logger.Info("GrainBasedReminderTable {0} Activated. Full identity: {1}", Identity, Data.Address.ToFullString());
+            logger.Info("GrainBasedReminderTable {0} Activated. Full identity: {1}", GrainId, Data.Address.ToFullString());
             remTable = new Table(loggerFactory);
             base.DelayDeactivation(TimeSpan.FromDays(10 * 365)); // Delay Deactivation for GrainBasedReminderTable virtually indefinitely.
             return Task.CompletedTask;
@@ -27,7 +27,7 @@ namespace Orleans.Runtime.ReminderService
 
         public override Task OnDeactivateAsync()
         {
-            logger.Info("GrainBasedReminderTable {0} OnDeactivateAsync. Full identity: {1}", Identity, Data.Address.ToFullString());
+            logger.Info("GrainBasedReminderTable {0} OnDeactivateAsync. Full identity: {1}", GrainId, Data.Address.ToFullString());
             return Task.CompletedTask;
         }
 
@@ -67,7 +67,7 @@ namespace Orleans.Runtime.ReminderService
             if (result == false)
             {
                 logger.Warn(ErrorCode.RS_Table_Remove, "RemoveRow failed for grainRef = {0}, ReminderName = {1}, eTag = {2}. Table now is: {3}",
-                    grainRef.ToDetailedString(), reminderName, eTag, remTable.ReadAll());
+                    grainRef, reminderName, eTag, remTable.ReadAll());
             }
             return Task.FromResult(result);
         }

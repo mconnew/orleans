@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
+using System.Threading.Tasks;
 using Orleans.Runtime;
 
 namespace Orleans.Metadata
@@ -47,6 +48,7 @@ namespace Orleans.Metadata
                 result.Append($"\"{entry.Key}\": \"{entry.Value}\"");
                 first = false;
             }
+
             result.Append("]");
 
             return result.ToString();
@@ -85,6 +87,7 @@ namespace Orleans.Metadata
                 result.Append($"\"{entry.Key}\": \"{entry.Value}\"");
                 first = false;
             }
+
             result.Append("]");
 
             return result.ToString();

@@ -6,7 +6,6 @@ namespace Orleans.Runtime
     //TODO: this interface should not meta-data for a grain activation. 
     internal interface IActivationData
     {
-        GrainReference GrainReference { get; }
         GrainId Identity { get; }
         string GrainTypeName { get; }
         Grain GrainInstance { get; }
