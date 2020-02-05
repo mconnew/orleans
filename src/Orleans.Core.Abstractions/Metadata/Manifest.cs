@@ -11,13 +11,13 @@ namespace Orleans.Metadata
 
         public GrainInterfaceId(string typeName) => this.TypeName = typeName;
 
-        public static GrainInterfaceId Create(Type type) => new GrainInterfaceId(RuntimeTypeNameFormatter.Format(type));
-
         public override bool Equals(object obj) => obj is GrainInterfaceId id && this.Equals(id);
 
         public bool Equals(GrainInterfaceId other) => string.Equals(this.TypeName, other.TypeName, StringComparison.Ordinal);
 
         public override int GetHashCode() => HashCode.Combine(this.TypeName);
+
+        public override string ToString() => this.TypeName;
     }
 
     /// <summary>

@@ -79,29 +79,6 @@ namespace Orleans.Metadata
         GrainType? GetGrainType(Type type);
     }
 
-    public class AttributeGrainTypeProvider : IGrainTypeProvider
-    {
-        private readonly IServiceProvider serviceProvider;
-
-        public AttributeGrainTypeProvider(IServiceProvider serviceProvider)
-        {
-            this.serviceProvider = serviceProvider;
-        }
-
-        public GrainType? GetGrainType(Type grainClass)
-        {
-            foreach (var attr in grainClass.GetCustomAttributes(inherit: true))
-            {
-                if (attr is IGrainTypeProviderAttribute typeProviderAttribute)
-                {
-                    return typeProviderAttribute.GetGrainType(this.serviceProvider, grainClass);
-                }
-            }
-
-            return default;
-        }
-    }
-
     /// <summary>
     /// An <see cref="Attribute"/> which implements this specifies the <see cref="GrainType"/> of the
     /// type which it is attached to.

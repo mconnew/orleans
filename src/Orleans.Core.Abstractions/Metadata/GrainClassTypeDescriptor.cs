@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 
 namespace Orleans.Metadata
@@ -7,13 +7,13 @@ namespace Orleans.Metadata
     /// Describes a grain class.
     /// </summary>
     [DebuggerDisplay("{" + nameof(ClassType) + "}")]
-    public class GrainClassMetadata
+    public class GrainClassTypeDescriptor
     {
         /// <summary>
-        /// Initializes an instance of the <see cref="GrainClassMetadata"/> class.
+        /// Initializes an instance of the <see cref="GrainClassTypeDescriptor"/> class.
         /// </summary>
         /// <param name="classType">The grain class type.</param>
-        public GrainClassMetadata(Type classType)
+        public GrainClassTypeDescriptor(Type classType)
         {
             this.ClassType = classType;
         }

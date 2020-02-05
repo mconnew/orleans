@@ -78,8 +78,8 @@ namespace Orleans.CodeGenerator
                 IPEndPoint = Type("System.Net.IPEndPoint"),
                 SiloAddress = Type("Orleans.Runtime.SiloAddress"),
                 GrainId = Type("Orleans.Runtime.GrainId"),
-                GrainInterfaceMetadata = Type("Orleans.Metadata.GrainInterfaceMetadata"),
-                GrainClassMetadata = Type("Orleans.Metadata.GrainClassMetadata"),
+                GrainInterfaceTypeDescriptor = Type("Orleans.Metadata.GrainInterfaceTypeDescriptor"),
+                GrainClassTypeDescriptor = Type("Orleans.Metadata.GrainClassTypeDescriptor"),
                 IFeaturePopulator_1 = Type("Orleans.Metadata.IFeaturePopulator`1"),
                 FeaturePopulatorAttribute = Type("Orleans.Metadata.FeaturePopulatorAttribute"),
                 GrainClassFeature = Type("Orleans.Metadata.GrainClassFeature"),
@@ -150,8 +150,8 @@ namespace Orleans.CodeGenerator
         public IAssemblySymbol AbstractionsAssembly { get; private set; }
         public INamedTypeSymbol Attribute { get; private set; }
         public INamedTypeSymbol TimeSpan { get; private set; }
-        public INamedTypeSymbol GrainClassMetadata { get; private set; }
-        public INamedTypeSymbol GrainInterfaceMetadata { get; private set; }
+        public INamedTypeSymbol GrainClassTypeDescriptor { get; private set; }
+        public INamedTypeSymbol GrainInterfaceTypeDescriptor { get; private set; }
         public INamedTypeSymbol IPAddress { get; private set; }
         public INamedTypeSymbol IPEndPoint { get; private set; }
         public INamedTypeSymbol SiloAddress { get; private set; }

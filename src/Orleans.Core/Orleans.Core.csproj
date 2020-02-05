@@ -44,4 +44,8 @@
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="$(MicrosoftBclAsyncInterfacesVersion)" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Metadata\" />
+  </ItemGroup>
+
 </Project>

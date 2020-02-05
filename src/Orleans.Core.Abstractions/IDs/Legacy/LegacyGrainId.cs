@@ -180,6 +180,16 @@ namespace Orleans.Runtime
             }
         }
 
+        public static GrainType CreateGrainTypeForGrain(int typeCode)
+        {
+            return GrainType.Create($"{GrainTypePrefix.LegacyGrainPrefix}{typeCode:X16}");
+        }
+
+        public static GrainType CreateGrainTypeForSystemTarget(int typeCode)
+        {
+            return GrainType.Create($"{GrainTypePrefix.SystemTargetPrefix}{typeCode:X16}");
+        }
+
         private SpanId GetGrainKey()
         {
             // TODO: intern
@@ -391,6 +401,15 @@ namespace Orleans.Runtime
                     GetUniformHashCode(),              // 6
                     GetUniformHashCode(),              // 7
                     Key.HasKeyExt ? String.Format(", KeyExtension: {0}", kx) : "");   // 8
+        }
+
+        public static bool IsLegacyGrainType(Type type)
+        {
+            return typeof(IGrainWithGuidKey).IsAssignableFrom(type)
+                || typeof(IGrainWithIntegerKey).IsAssignableFrom(type)
+                || typeof(IGrainWithStringKey).IsAssignableFrom(type)
+                || typeof(IGrainWithGuidCompoundKey).IsAssignableFrom(type)
+                || typeof(IGrainWithIntegerCompoundKey).IsAssignableFrom(type);
         }
 
         internal string ToStringWithHashCode()
