@@ -20,15 +20,25 @@ namespace Orleans.Metadata
         public const string MultiClusterRegistrationPolicy = "multi-cluster-registration-policy";
 
         /// <summary>
+        /// Whether or not messages to this grain are unordered.
+        /// </summary>
+        public const string Unordered = "unordered";
+
+        /// <summary>
         /// The legacy grain id type for this grain, if this grain implements a legacy grain interface such as <see cref="IGrainWithGuidKey"/>.
         /// For valid values, see <see cref="LegacyGrainIdTypes"/>.
         /// </summary>
         public const string LegacyGrainIdType = "legacy-grain-id-type";
 
         /// <summary>
-        /// Whether or not messages to this grain are unordered.
+        /// The base type code for the grain if the grain uses a legacy grain id.
         /// </summary>
-        public const string Unordered = "unordered";
+        public const string LegacyGrainIdBaseTypeCode = "legacy-grain-id-base-typecode";
+
+        /// <summary>
+        /// The number of generic parameters, if the grain is implemented by a generic class.
+        /// </summary>
+        public const string GenericParameterCount = "generic-parameter-count";
 
         public static class LegacyGrainIdTypes
         {

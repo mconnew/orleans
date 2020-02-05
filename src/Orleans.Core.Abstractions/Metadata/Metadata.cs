@@ -57,13 +57,38 @@ namespace Orleans.Metadata
     /// Information about a communication interface
     /// </summary>
     [Serializable]
-    public class cGrainInterfaceMetadata
+    public class GrainInterfaceMetadata
     {
+        public GrainInterfaceMetadata(ImmutableDictionary<string, string> values)
+        {
+            this.Values = values;
+        }
+
         // 'version' -> populated by the [Version(x)] attribute, which will implement IGrainInterfaceMetadataProviderAttribute
         // and therefore automatically populate the value during startup.
         //
         // 'primary-implementation' -> encoded GrainType of primary implementation, if it exists
         public ImmutableDictionary<string, string> Values { get; }
+
+        public string ToDetailedString()
+        {
+            if (this.Values is null) return string.Empty;
+            var result = new StringBuilder("[");
+            bool first = true;
+            foreach (var entry in this.Values)
+            {
+                if (!first)
+                {
+                    result.Append(", ");
+                }
+
+                result.Append($"\"{entry.Key}\": \"{entry.Value}\"");
+                first = false;
+            }
+            result.Append("]");
+
+            return result.ToString();
+        }
     }
 
     public interface IGrainInterfaceMetadataProviderAttribute
@@ -98,7 +123,7 @@ namespace Orleans.Metadata
         // Should there be some separation between GrainType and a 'behavior' class?
         // * Eg, consider grain extensions, or multiple classes per 'type' by some other means. Do they also need this kind of data?
         // * If so, how?
-        void Populate(IServiceProvider services, Type type, Dictionary<string, string> properties);
+        void Populate(IServiceProvider services, GrainType grainType, Type grainClass, Dictionary<string, string> properties);
     }
 
     // For grain interfaces (communication interfaces)
@@ -106,11 +131,11 @@ namespace Orleans.Metadata
     {
         // Q: Type or GrainInterfaceId? Type is probably more useful. It will not be available on silos without that type.
         // This is only supposed to run locally
-        void Populate(Type type, Dictionary<string, string> properties);
+        void Populate(Type interfaceType, Dictionary<string, string> properties);
     }
 
     public interface IGrainMetadataProvider
     {
-        void Populate(GrainType type, Dictionary<string, string> properties);
+        void Populate(GrainType grainType, Type classType, Dictionary<string, string> properties);
     }
 }

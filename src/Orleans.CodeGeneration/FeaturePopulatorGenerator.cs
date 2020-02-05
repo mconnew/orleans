@@ -52,12 +52,12 @@ namespace Orleans.CodeGenerator
             var featureParameter = interfaceMethod.GetParameters()[0].Name.ToIdentifierName();
 
             var grainsMember = TypeUtils.Member((GrainInterfaceFeature feature) => feature.Interfaces);
-            var addMethod = TypeUtils.Method((IList<GrainInterfaceMetadata> _) => _.Add(default(GrainInterfaceMetadata)));
+            var addMethod = TypeUtils.Method((IList<GrainInterfaceTypeDescriptor> _) => _.Add(default(GrainInterfaceTypeDescriptor)));
 
             var bodyStatements = new List<StatementSyntax>();
             foreach (var metadata in grains)
             {
-                var newMetadataExpression = SF.ObjectCreationExpression(typeof(GrainInterfaceMetadata).GetTypeSyntax())
+                var newMetadataExpression = SF.ObjectCreationExpression(typeof(GrainInterfaceTypeDescriptor).GetTypeSyntax())
                                               .AddArgumentListArguments(
                                                   SF.Argument(SF.TypeOfExpression(metadata.Interface)),
                                                   SF.Argument(SF.TypeOfExpression(metadata.Reference)),
@@ -79,12 +79,12 @@ namespace Orleans.CodeGenerator
             var featureParameter = interfaceMethod.GetParameters()[0].Name.ToIdentifierName();
 
             var grainsMember = TypeUtils.Member((GrainClassFeature feature) => feature.Classes);
-            var addMethod = TypeUtils.Method((IList<GrainClassMetadata> _) => _.Add(default(GrainClassMetadata)));
+            var addMethod = TypeUtils.Method((IList<GrainClassTypeDescriptor> _) => _.Add(default(GrainClassTypeDescriptor)));
 
             var bodyStatements = new List<StatementSyntax>();
             foreach (var metadata in grains)
             {
-                var newMetadataExpression = SF.ObjectCreationExpression(typeof(GrainClassMetadata).GetTypeSyntax())
+                var newMetadataExpression = SF.ObjectCreationExpression(typeof(GrainClassTypeDescriptor).GetTypeSyntax())
                                               .AddArgumentListArguments(
                                                   SF.Argument(SF.TypeOfExpression(metadata.ClassType)));
                 bodyStatements.Add(

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace Orleans.Metadata
 {
@@ -10,6 +10,6 @@ namespace Orleans.Metadata
         /// <summary>
         /// Gets a collection of metadata about grain interfaces.
         /// </summary>
-        public IList<GrainInterfaceMetadata> Interfaces { get; } = new List<GrainInterfaceMetadata>();
+        public IList<GrainInterfaceTypeDescriptor> Interfaces { get; } = new List<GrainInterfaceTypeDescriptor>();
     }
 }

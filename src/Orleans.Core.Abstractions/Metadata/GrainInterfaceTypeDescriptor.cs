@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 
 namespace Orleans.Metadata
@@ -7,16 +7,16 @@ namespace Orleans.Metadata
     /// Describes a grain interface.
     /// </summary>
     [DebuggerDisplay("{" + nameof(InterfaceType) + "}")]
-    public class GrainInterfaceMetadata
+    public class GrainInterfaceTypeDescriptor
     {
         /// <summary>
-        /// Initializes an instance of the <see cref="GrainInterfaceMetadata"/> class.
+        /// Initializes an instance of the <see cref="GrainInterfaceTypeDescriptor"/> class.
         /// </summary>
         /// <param name="interfaceType">The grain interface type</param>
         /// <param name="referenceType">The grain reference type.</param>
         /// <param name="invokerType">The grain method invoker type.</param>
         /// <param name="interfaceId">The interface id.</param>
-        public GrainInterfaceMetadata(Type interfaceType, Type referenceType, Type invokerType, int interfaceId)
+        public GrainInterfaceTypeDescriptor(Type interfaceType, Type referenceType, Type invokerType, int interfaceId)
         {
             this.InterfaceType = interfaceType;
             this.ReferenceType = referenceType;

@@ -240,14 +240,14 @@ namespace Orleans.Runtime
         {
             var result = new Dictionary<int, InvokerData>();
 
-            foreach (var grainInterfaceMetadata in grainInterfaceFeature.Interfaces)
+            foreach (var descriptor in grainInterfaceFeature.Interfaces)
             {
-                int ifaceId = grainInterfaceMetadata.InterfaceId;
+                int ifaceId = descriptor.InterfaceId;
 
                 if (result.ContainsKey(ifaceId))
-                    throw new InvalidOperationException($"Grain method invoker classes {result[ifaceId]} and {grainInterfaceMetadata.InvokerType.FullName} use the same interface id {ifaceId}");
+                    throw new InvalidOperationException($"Grain method invoker classes {result[ifaceId]} and {descriptor.InvokerType.FullName} use the same interface id {ifaceId}");
 
-                result[ifaceId] = new InvokerData(grainInterfaceMetadata.InvokerType);
+                result[ifaceId] = new InvokerData(descriptor.InvokerType);
             }
 
             return result;

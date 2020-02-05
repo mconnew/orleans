@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace Orleans.Metadata
 {
@@ -8,8 +8,8 @@ namespace Orleans.Metadata
     public class GrainClassFeature
     {
         /// <summary>
-        /// Gets a collection of metadata about grain classes.
+        /// Gets a collection of grain classes.
         /// </summary>
-        public IList<GrainClassMetadata> Classes { get; } = new List<GrainClassMetadata>();
+        public IList<GrainClassTypeDescriptor> Classes { get; } = new List<GrainClassTypeDescriptor>();
     }
 }
