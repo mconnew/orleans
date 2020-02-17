@@ -25,7 +25,7 @@ namespace Orleans.Metadata
 
                 // Eg, to set TTL, InvokeMethodOptions.Unordered, InvokeMethodOptions.OneWay?, SystemTargetSilo?, Category?
                 // How does ResponseTimeout get propagated?
-                void PrepareMessage(object /*IMessage*/ message);
+                //void PrepareMessage(object /*IMessage*/ message);
             }
 
             // Per 'GrainId'
@@ -73,7 +73,7 @@ namespace Orleans.Metadata
             }
 
             /// <summary>
-            /// The central point 
+            /// The central point for creating grain references.
             /// </summary>
             public sealed class GrainReferenceActivator
             {
@@ -88,19 +88,18 @@ namespace Orleans.Metadata
                     this.defaultActivator = defaultActivator;
                 }
 
-                public IGrainReference CreateGrainReference<TInterface>(GrainId grainId)
+                public IGrainReference CreateGrainReference(GrainId grainId, Type interfaceType)
                 {
-                    var key = (grainId.Type, typeof(TInterface));
-                    if (this.factories.TryGetValue(key, out var factory))
+                    if (this.factories.TryGetValue((grainId.Type, interfaceType), out var factory))
                     {
-                        return factory.CreateGrainReference(grainId, typeof(TInterface));
+                        return factory.CreateGrainReference(grainId, interfaceType);
                     }
 
-                    return CreateSlow(grainId);
+                    return CreateSlow(grainId, interfaceType);
 
-                    IGrainReference CreateSlow(GrainId grainId)
+                    IGrainReference CreateSlow(GrainId grainId, Type interfaceType)
                     {
-                        var key = (grainId.Type, typeof(TInterface));
+                        var key = (grainId.Type, interfaceType);
                         lock (this.lockObj)
                         {
                             var grainType = grainId.Type;
@@ -108,7 +107,7 @@ namespace Orleans.Metadata
                             {
                                 foreach (var item in this.grainContextFactories)
                                 {
-                                    if (item.CanCreate(grainType, typeof(TInterface)))
+                                    if (item.CanCreate(grainType, interfaceType))
                                     {
                                         factory = item;
                                         this.factories = this.factories.SetItem(key, factory);
@@ -124,7 +123,7 @@ namespace Orleans.Metadata
                                 this.factories = this.factories.SetItem(key, factory);
                             }
 
-                            return factory.CreateGrainReference(grainId, typeof(TInterface));
+                            return factory.CreateGrainReference(grainId, interfaceType);
                         }
                     }
                 }
@@ -152,27 +151,26 @@ namespace Orleans.Metadata
 
                 public IGrainReference CreateGrainReference(GrainId grainId, Type interfaceType)
                 {
-                    if (this.factories.TryGetValue(grainId.Type, out var factory))
+                    if (!this.factories.TryGetValue(grainId.Type, out var factory))
                     {
-                        return factory.CreateContext(grainId, interfaceType);
+                        factory = this.CreateFactory(grainId.Type, interfaceType);
                     }
 
-                    return CreateSlow(grainId);
+                    return factory.CreateContext(grainId, interfaceType);
+                }
 
-                    IGrainReference CreateSlow(GrainId grainId)
+                private ContextActivator CreateFactory(GrainType grainType, Type interfaceType)
+                {
+                    lock (this.lockObj)
                     {
-                        lock (this.lockObj)
+                        if (!this.factories.TryGetValue(grainType, out var factory))
                         {
-                            var grainType = grainId.Type;
-                            if (!this.factories.TryGetValue(grainType, out var factory))
-                            {
-                                var prototype = this.CreatePrototype(grainType, interfaceType);
-                                factory = new ContextActivator(prototype, this.configureActivationActions);
-                                this.factories = this.factories.SetItem(grainType, factory);
-                            }
-
-                            return factory.CreateContext(grainId, interfaceType);
+                            var prototype = this.CreatePrototype(grainType, interfaceType);
+                            factory = new ContextActivator(prototype, this.configureActivationActions);
+                            this.factories = this.factories.SetItem(grainType, factory);
                         }
+
+                        return factory;
                     }
                 }
 
