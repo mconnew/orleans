@@ -70,7 +70,7 @@ namespace Orleans.Runtime
             this.timerLogger = loggerFactory.CreateLogger<GrainTimer>();
         }
 
-        IGrainMethodInvoker IInvokable.GetInvoker(GrainTypeManager typeManager, int interfaceId, string genericGrainType)
+        IGrainMethodInvoker IInvokable.GetInvoker(GrainTypeManager typeManager, int interfaceId)
         {
             // Return previous cached invoker, if applicable
             if (lastInvoker != null && interfaceId == lastInvoker.InterfaceId) // extension invoker returns InterfaceId==0, so this condition will never be true if an extension is installed
@@ -84,7 +84,7 @@ namespace Orleans.Runtime
             else
             {
                 // Find the specific invoker for this interface / grain type
-                lastInvoker = typeManager.GetInvoker(interfaceId, genericGrainType);
+                lastInvoker = typeManager.GetInvoker(interfaceId);
             }
 
             return lastInvoker;

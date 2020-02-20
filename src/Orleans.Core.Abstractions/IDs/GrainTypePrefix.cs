@@ -6,7 +6,7 @@ namespace Orleans.Runtime
     public static class GrainTypePrefix
     {
         public const string SystemPrefix = "sys.";
-        public const string SystemTargetPrefix = SystemPrefix + "st.";
+        public const string SystemTargetPrefix = SystemPrefix + "svc.";
         public static readonly ReadOnlyMemory<byte> SystemTargetPrefixBytes = Encoding.UTF8.GetBytes(SystemTargetPrefix);
 
         public const string ClientPrefix = SystemPrefix + "client";
@@ -32,5 +32,7 @@ namespace Orleans.Runtime
         {
             return GrainId.Create(kind, address.ToParsableString());
         }
+
+        public static GrainType GetSystemTargetType(string name) => GrainType.Create($"{GrainTypePrefix.SystemTargetPrefix}.{name}");
     }
 }

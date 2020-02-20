@@ -235,7 +235,7 @@ namespace Orleans.Runtime.GrainDirectory
                 var clusterGatewayAddress = gossipOracle.GetRandomClusterGateway(remoteCluster);
                 if (clusterGatewayAddress != null)
                 {
-                    var clusterGrainDir = this.grainFactory.GetSystemTarget<IClusterGrainDirectory>(Constants.ClusterDirectoryServiceId, clusterGatewayAddress);
+                    var clusterGrainDir = this.grainFactory.GetSystemTarget<IClusterGrainDirectory>(Constants.ClusterDirectoryServiceType, clusterGatewayAddress);
 
                     // try to send request
 
@@ -283,7 +283,7 @@ namespace Orleans.Runtime.GrainDirectory
                 var clusterGatewayAddress = gossipOracle.GetRandomClusterGateway(remoteCluster);
                 if (clusterGatewayAddress != null)
                 {
-                    var clusterGrainDir = this.grainFactory.GetSystemTarget<IClusterGrainDirectory>(Constants.ClusterDirectoryServiceId, clusterGatewayAddress);
+                    var clusterGrainDir = this.grainFactory.GetSystemTarget<IClusterGrainDirectory>(Constants.ClusterDirectoryServiceType, clusterGatewayAddress);
 
                     // try to send request
                     tasks.Add(clusterGrainDir.ProcessDeletion(gid));
@@ -317,7 +317,7 @@ namespace Orleans.Runtime.GrainDirectory
                 // find gateway
                 var gossiporacle = this.multiClusterOracle;
                 var clusterGatewayAddress = gossiporacle.GetRandomClusterGateway(remotecluster);
-                var clusterGrainDir = this.grainFactory.GetSystemTarget<IClusterGrainDirectory>(Constants.ClusterDirectoryServiceId, clusterGatewayAddress);
+                var clusterGrainDir = this.grainFactory.GetSystemTarget<IClusterGrainDirectory>(Constants.ClusterDirectoryServiceType, clusterGatewayAddress);
 
                 // try to send request
                 return await clusterGrainDir.ProcessActivationRequest(grain, this.clusterId, 0);

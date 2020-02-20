@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -41,7 +41,7 @@ namespace Orleans.Transactions.TestKit
 
         public override Task OnActivateAsync()
         {
-            this.logger = this.loggerFactory.CreateLogger(this.GetGrainIdentity().ToString());
+            this.logger = this.loggerFactory.CreateLogger(this.GrainId.ToString());
             this.logger.LogInformation($"GrainId : {this.GetPrimaryKey()}.");
 
             return base.OnActivateAsync();

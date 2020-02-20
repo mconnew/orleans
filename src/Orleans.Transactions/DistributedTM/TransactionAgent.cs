@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Orleans.Runtime;
 using Orleans.Concurrency;
 using Orleans.Transactions.Abstractions;
+using Orleans;
 
 namespace Orleans.Transactions
 {
@@ -18,13 +19,15 @@ namespace Orleans.Transactions
         private readonly CausalClock clock;
         private readonly ITransactionAgentStatistics statistics;
         private readonly ITransactionOverloadDetector overloadDetector;
+        private readonly IGrainFactory grainFactory;
 
-        public TransactionAgent(IClock clock, ILogger<TransactionAgent> logger, ITransactionAgentStatistics statistics, ITransactionOverloadDetector overloadDetector)
+        public TransactionAgent(IClock clock, ILogger<TransactionAgent> logger, ITransactionAgentStatistics statistics, ITransactionOverloadDetector overloadDetector, IGrainFactory grainFactory)
         {
             this.clock = new CausalClock(clock);
             this.logger = logger;
             this.statistics = statistics;
             this.overloadDetector = overloadDetector;
+            this.grainFactory = grainFactory;
         }
 
         public Task<ITransactionInfo> StartTransaction(bool readOnly, TimeSpan timeout)
@@ -89,8 +92,9 @@ namespace Orleans.Transactions
             {
                 foreach (KeyValuePair<ParticipantId, AccessCounter> resource in resources)
                 {
-                    tasks.Add(resource.Key.Reference.AsReference<ITransactionalResourceExtension>()
-                                   .CommitReadOnly(resource.Key.Name, transactionInfo.TransactionId, resource.Value, transactionInfo.TimeStamp));
+                    var grain = this.grainFactory.GetGrain<ITransactionalResourceExtension>(resource.Key.GrainId);
+                    var commitTask = grain.CommitReadOnly(resource.Key.Name, transactionInfo.TransactionId, resource.Value, transactionInfo.TimeStamp);
+                    tasks.Add(commitTask);
                 }
 
                 // wait for all responses
@@ -126,7 +130,7 @@ namespace Orleans.Transactions
             {
                 try
                 {
-                    await Task.WhenAll(resources.Select(r => r.Key.Reference.AsReference<ITransactionalResourceExtension>()
+                    await Task.WhenAll(resources.Select(r => this.grainFactory.GetGrain<ITransactionalResourceExtension>(r.Key.GrainId)
                                 .Abort(r.Key.Name, transactionInfo.TransactionId)));
                 }
                 catch (Exception ex)
@@ -154,13 +158,13 @@ namespace Orleans.Transactions
                     if (p.Key.Equals(manager.Key))
                         continue;
                     // one-way prepare message
-                    p.Key.Reference.AsReference<ITransactionalResourceExtension>()
+                    this.grainFactory.GetGrain<ITransactionalResourceExtension>(p.Key.GrainId)
                             .Prepare(p.Key.Name, transactionInfo.TransactionId, p.Value, transactionInfo.TimeStamp, manager.Key)
                             .Ignore();
                 }
 
                 // wait for the TM to commit the transaction
-                status = await manager.Key.Reference.AsReference<ITransactionManagerExtension>()
+                status = await this.grainFactory.GetGrain<ITransactionManagerExtension>(manager.Key.GrainId)
                     .PrepareAndCommit(manager.Key.Name, transactionInfo.TransactionId, manager.Value, transactionInfo.TimeStamp, writeResources, resources.Count);
             }
             catch (TimeoutException)
@@ -189,7 +193,7 @@ namespace Orleans.Transactions
                     {
                         await Task.WhenAll(writeResources
                             .Where(p => !p.Equals(manager.Key))
-                            .Select(p => p.Reference.AsReference<ITransactionalResourceExtension>()
+                            .Select(p => this.grainFactory.GetGrain<ITransactionalResourceExtension>(p.GrainId)
                                     .Cancel(p.Name, transactionInfo.TransactionId, transactionInfo.TimeStamp, status)));
                     }
                 }
@@ -219,7 +223,7 @@ namespace Orleans.Transactions
                 logger.Trace($"abort {transactionInfo} {string.Join(",", participants.Select(p => p.ToString()))}");
 
             // send one-way abort messages to release the locks and roll back any updates
-            await Task.WhenAll(participants.Select(p => p.Reference.AsReference<ITransactionalResourceExtension>()
+            await Task.WhenAll(participants.Select(p => this.grainFactory.GetGrain<ITransactionalResourceExtension>(p.GrainId)
                  .Abort(p.Name, transactionInfo.TransactionId)));
         }
 

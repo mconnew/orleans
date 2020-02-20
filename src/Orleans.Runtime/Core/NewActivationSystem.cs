@@ -217,7 +217,7 @@ namespace Orleans.Runtime.Core
                 return prototype;
             }
 
-            private struct ContextActivator
+            private readonly struct ContextActivator
             {
                 private readonly IConfigureGrainContext[] configureActions;
                 private readonly GrainPrototype prototype;
@@ -228,7 +228,7 @@ namespace Orleans.Runtime.Core
                     this.configureActions = configureActions.Where(c => c.CanConfigure(prototype.GrainType)).ToArray();
                 }
 
-                public DefaultGrainContext CreateContext(GrainId grainId)
+                public readonly DefaultGrainContext CreateContext(GrainId grainId)
                 {
                     var result = new DefaultGrainContext(this.prototype, grainId.Key);
                     foreach (var configure in this.configureActions)

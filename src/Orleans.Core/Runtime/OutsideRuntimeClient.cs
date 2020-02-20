@@ -369,42 +369,21 @@ namespace Orleans
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope",
             Justification = "CallbackData is IDisposable but instances exist beyond lifetime of this method so cannot Dispose yet.")]
-        public void SendRequest(GrainReference target, InvokeMethodRequest request, TaskCompletionSource<object> context, string debugContext = null, InvokeMethodOptions options = InvokeMethodOptions.None, string genericArguments = null)
+        public void SendRequest(GrainReference target, InvokeMethodRequest request, TaskCompletionSource<object> context, InvokeMethodOptions options)
         {
             var message = this.messageFactory.CreateMessage(request, options);
             OrleansOutsideRuntimeClientEvent.Log.SendRequest(message);
-            SendRequestMessage(target, message, context, debugContext, options, genericArguments);
+            SendRequestMessage(target, message, context, options);
         }
 
-        private void SendRequestMessage(GrainReference target, Message message, TaskCompletionSource<object> context, string debugContext = null, InvokeMethodOptions options = InvokeMethodOptions.None, string genericArguments = null)
+        private void SendRequestMessage(GrainReference target, Message message, TaskCompletionSource<object> context, InvokeMethodOptions options)
         {
             var targetGrainId = target.GrainId;
             var oneWay = (options & InvokeMethodOptions.OneWay) != 0;
             message.SendingGrain = CurrentActivationAddress.Grain;
             message.SendingActivation = CurrentActivationAddress.Activation;
             message.TargetGrain = targetGrainId;
-            if (!String.IsNullOrEmpty(genericArguments))
-                message.GenericGrainType = genericArguments;
 
-            if (targetGrainId.IsSystemTarget())
-            {
-                // If the silo isn't be supplied, it will be filled in by the sender to be the gateway silo
-                message.TargetSilo = target.SystemTargetSilo;
-                if (target.SystemTargetSilo != null)
-                {
-                    message.TargetActivation = ActivationId.GetDeterministic(targetGrainId);
-                }
-            }
-            // Client sending messages to another client (observer). Yes, we support that.
-            if (target.IsObserverReference)
-            {
-                message.TargetObserverId = target.ObserverId;
-            }
-
-            if (debugContext != null)
-            {
-                message.DebugContext = debugContext;
-            }
             if (message.IsExpirableMessage(this.clientMessagingOptions.DropExpiredMessages))
             {
                 // don't set expiration for system target messages.
@@ -545,7 +524,7 @@ namespace Orleans
                 throw new ArgumentException("Argument must not be a grain class.", nameof(obj));
 
             GrainReference gr = GrainReference.NewObserverGrainReference(clientId, GuidId.GetNewGuidId(), this.GrainReferenceRuntime);
-            if (!localObjects.TryRegister(obj, gr.ObserverId, invoker))
+            if (!localObjects.TryRegister(obj, gr.GrainId, invoker))
             {
                 throw new ArgumentException(String.Format("Failed to add new observer {0} to localObjects collection.", gr), "gr");
             }

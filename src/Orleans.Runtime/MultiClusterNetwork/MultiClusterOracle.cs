@@ -50,7 +50,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
             IInternalGrainFactory grainFactory,
             ILoggerFactory loggerFactory,
             IOptions<MultiClusterOptions> multiClusterOptions)
-            : base(Constants.MultiClusterOracleId, siloDetails.SiloAddress, loggerFactory)
+            : base(Constants.MultiClusterOracleType, siloDetails.SiloAddress, loggerFactory)
         {
             this.loggerFactory = loggerFactory;
             this.channelFactory = channelFactory;
@@ -479,7 +479,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
                     var silo = GetRandomClusterGateway(cluster);
                     if (silo == null)
                         throw new OrleansException("no gateway for cluster " + cluster);
-                    var remoteOracle = this.grainFactory.GetSystemTarget<IMultiClusterGossipService>(Constants.MultiClusterOracleId, silo);
+                    var remoteOracle = this.grainFactory.GetSystemTarget<IMultiClusterGossipService>(Constants.MultiClusterOracleType, silo);
                     tasks.Add(remoteOracle.FindLaggingSilos(expected, true));
                 }
             }
@@ -512,7 +512,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
 
                 foreach (var activeSilo in this.GetApproximateOtherActiveSilos())
                 {
-                    var remoteOracle = this.grainFactory.GetSystemTarget<IMultiClusterGossipService>(Constants.MultiClusterOracleId, activeSilo);
+                    var remoteOracle = this.grainFactory.GetSystemTarget<IMultiClusterGossipService>(Constants.MultiClusterOracleType, activeSilo);
                     tasks.Add(remoteOracle.FindLaggingSilos(expected, false));
                 }
 
@@ -712,7 +712,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 try
                 {
                     // publish to the remote system target
-                    var remoteOracle = this.grainFactory.GetSystemTarget<IMultiClusterGossipService>(Constants.MultiClusterOracleId, Silo);
+                    var remoteOracle = this.grainFactory.GetSystemTarget<IMultiClusterGossipService>(Constants.MultiClusterOracleType, Silo);
                     await remoteOracle.Publish(data, TargetsRemoteCluster);
 
                     LastException = null;
@@ -740,7 +740,7 @@ namespace Orleans.Runtime.MultiClusterNetwork
                 oracle.logger.Debug("-{0} Synchronize with silo {1} ({2})", id, Silo, Cluster ?? "local");
                 try
                 {
-                    var remoteOracle = this.grainFactory.GetSystemTarget<IMultiClusterGossipService>(Constants.MultiClusterOracleId, Silo);
+                    var remoteOracle = this.grainFactory.GetSystemTarget<IMultiClusterGossipService>(Constants.MultiClusterOracleType, Silo);
                     var data = oracle.localData.Current;
                     var answer = (MultiClusterData)await remoteOracle.Synchronize(oracle.localData.Current);
 

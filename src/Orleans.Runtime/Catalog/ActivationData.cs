@@ -41,7 +41,6 @@ namespace Orleans.Runtime
         
         public ActivationData(
             ActivationAddress addr,
-            string genericArguments,
             PlacementStrategy placedUsing,
             IMultiClusterRegistrationStrategy registrationStrategy,
             IActivationCollector collector,
@@ -49,7 +48,6 @@ namespace Orleans.Runtime
             IOptions<SiloMessagingOptions> messagingOptions,
             TimeSpan maxWarningRequestProcessingTime,
 			TimeSpan maxRequestProcessingTime,
-            IRuntimeClient runtimeClient,
             ILoggerFactory loggerFactory)
         {
             if (null == addr) throw new ArgumentNullException(nameof(addr));
@@ -73,13 +71,10 @@ namespace Orleans.Runtime
 
             CollectionAgeLimit = ageLimit;
 
-            GrainReference = GrainReference.FromGrainId(addr.Grain, runtimeClient.GrainReferenceRuntime, genericArguments, Grain.IsSystemTarget() ? addr.Silo : null);
             this.SchedulingContext = new SchedulingContext(this);
         }
 
         public Type GrainType => GrainTypeData.Type;
-
-        public IGrainIdentity GrainIdentity => (LegacyGrainId)this.Identity;
 
         public IServiceProvider ActivationServices => this.serviceScope.ServiceProvider;
 
@@ -93,7 +88,7 @@ namespace Orleans.Runtime
             }
         }
 
-        public IGrainMethodInvoker GetInvoker(GrainTypeManager typeManager, int interfaceId, string genericGrainType = null)
+        public IGrainMethodInvoker GetInvoker(GrainTypeManager typeManager, int interfaceId)
         {
             // Return previous cached invoker, if applicable
             if (lastInvoker != null && interfaceId == lastInvoker.InterfaceId) // extension invoker returns InterfaceId==0, so this condition will never be true if an extension is installed
@@ -107,7 +102,7 @@ namespace Orleans.Runtime
             else
             {
                 // Find the specific invoker for this interface / grain type
-                lastInvoker = typeManager.GetInvoker(interfaceId, genericGrainType);
+                lastInvoker = typeManager.GetInvoker(interfaceId);
             }
 
             return lastInvoker;
@@ -188,11 +183,6 @@ namespace Orleans.Runtime
             await streamDirectory.Cleanup(true, false);
         }
 
-        GrainReference IActivationData.GrainReference
-        {
-            get { return GrainReference; }
-        }
-        
         public GrainId Identity
         {
             get { return Grain; }
@@ -220,8 +210,6 @@ namespace Orleans.Runtime
         {
             AddTimer(timer);
         }
-
-        internal readonly GrainReference GrainReference;
 
         public SiloAddress Silo { get { return Address.Silo;  } }
 

@@ -32,7 +32,7 @@ namespace Orleans.Runtime
             OrleansTaskScheduler scheduler,
             IOptions<SiloMessagingOptions> messagingOptions,
             ILoggerFactory loggerFactory)
-            : base(Constants.ClientObserverRegistrarId, siloDetails.SiloAddress, loggerFactory)
+            : base(Constants.ClientObserverRegistrarType, siloDetails.SiloAddress, loggerFactory)
         {
             grainDirectory = dir;
             myAddress = siloDetails.SiloAddress;

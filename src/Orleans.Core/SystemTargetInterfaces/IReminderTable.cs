@@ -142,7 +142,7 @@ namespace Orleans
 
         public override string ToString()
         {
-            return string.Format("<IOrleansReminder: GrainRef={0} ReminderName={1} ETag={2}>", GrainRef.ToDetailedString(), ReminderName, ETag);
+            return string.Format("<IOrleansReminder: GrainRef={0} ReminderName={1} ETag={2}>", GrainRef, ReminderName, ETag);
         }
     }
 }

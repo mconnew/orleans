@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Orleans.CodeGeneration;
 using Orleans.Core;
+using Orleans.Metadata.NewGrainRefSystem;
 using Orleans.Runtime;
 
 namespace Orleans
@@ -13,32 +14,12 @@ namespace Orleans
     {
         private const string WRONG_GRAIN_ERROR_MSG = "Passing a half baked grain as an argument. It is possible that you instantiated a grain class explicitly, as a regular object and not via Orleans runtime or via proper test mocking";
 
-        internal static GrainReference AsWeaklyTypedReference(this IAddressable grain)
+        internal static IGrainReference AsWeaklyTypedReference(this IAddressable grain) => grain switch
         {
-            ThrowIfNullGrain(grain);
-
-            // When called against an instance of a grain reference class, do nothing
-            var reference = grain as GrainReference;
-            if (reference != null) return reference;
-
-            var grainBase = grain as Grain;
-            if (grainBase != null)
-            {
-                if (grainBase.Data?.GrainReference == null)
-                {
-                    throw new ArgumentException(WRONG_GRAIN_ERROR_MSG, nameof(grain));
-                }
-
-                return grainBase.Data.GrainReference;
-            }
-
-            var systemTarget = grain as ISystemTargetBase;
-            if (systemTarget != null) return GrainReference.FromGrainId(systemTarget.GrainId, systemTarget.GrainReferenceRuntime, null, systemTarget.Silo);
-
-            throw new ArgumentException(
-                $"AsWeaklyTypedReference has been called on an unexpected type: {grain.GetType().FullName}.",
-                nameof(grain));
-        }
+            GrainReference reference => reference,
+            null => throw new ArgumentNullException(nameof(grain)),
+            _ => new UntypedGrainReference(grain.GetGrainId())
+        };
 
         /// <summary>
         /// Converts this grain to a specific grain interface.
@@ -71,7 +52,6 @@ namespace Orleans
         /// <returns>A reference to <paramref name="grain"/> which implements <paramref name="interfaceType"/>.</returns>
         public static object Cast(this IAddressable grain, Type interfaceType)
         {
-
             return grain.AsWeaklyTypedReference().Runtime.Convert(grain, interfaceType);
         }
 
@@ -85,45 +65,26 @@ namespace Orleans
             grainFactory.BindGrainReference(grain);
         }
 
-        internal static GrainId GetGrainId(IAddressable grain)
+        public static GrainId GetGrainId(this IAddressable grain)
         {
             switch (grain)
             {
                 case Grain grainBase:
-                    if (grainBase.Identity.IsDefault)
+                    if (grainBase.GrainId.IsDefault)
                     {
                         throw new ArgumentException(WRONG_GRAIN_ERROR_MSG, "grain");
                     }
-                    return grainBase.Identity;
+                    return grainBase.GrainId;
                 case GrainReference grainReference:
                     if (grainReference.GrainId.IsDefault)
                     {
                         throw new ArgumentException(WRONG_GRAIN_ERROR_MSG, "grain");
                     }
                     return grainReference.GrainId;
+                case ISystemTargetBase systemTarget:
+                    return systemTarget.GrainId;
                 default:
-                    throw new ArgumentException(String.Format("GetGrainId has been called on an unexpected type: {0}.", grain.GetType().FullName), "grain");
-            }
-        }
-
-        public static GrainId GetGrainIdentity(this IGrain grain)
-        {
-            switch (grain)
-            {
-                case Grain grainBase:
-                    if (grainBase.Identity.IsDefault)
-                    {
-                        throw new ArgumentException(WRONG_GRAIN_ERROR_MSG, "grain");
-                    }
-                    return grainBase.Identity;
-                case GrainReference grainReference:
-                    if (grainReference.GrainId.IsDefault)
-                    {
-                        throw new ArgumentException(WRONG_GRAIN_ERROR_MSG, "grain");
-                    }
-                    return grainReference.GrainId;
-                default:
-                    throw new ArgumentException(String.Format("GetGrainIdentity has been called on an unexpected type: {0}.", grain.GetType().FullName), "grain");
+                    throw new ArgumentException($"{nameof(GetGrainId)} has been called on an unexpected type: {grain.GetType().FullName}.", "grain");
             }
         }
 
@@ -190,42 +151,24 @@ namespace Orleans
 
         public static long GetPrimaryKeyLong(this IGrain grain, out string keyExt)
         {
-            return ((LegacyGrainId)GetGrainIdentity(grain)).GetPrimaryKeyLong(out keyExt);
+            return ((LegacyGrainId)GetGrainId(grain)).GetPrimaryKeyLong(out keyExt);
         }
         public static long GetPrimaryKeyLong(this IGrain grain)
         {
-            return ((LegacyGrainId)GetGrainIdentity(grain)).PrimaryKeyLong;
+            return ((LegacyGrainId)GetGrainId(grain)).PrimaryKeyLong;
         }
         public static Guid GetPrimaryKey(this IGrain grain, out string keyExt)
         {
-            return ((LegacyGrainId)GetGrainIdentity(grain)).GetPrimaryKey(out keyExt);
+            return ((LegacyGrainId)GetGrainId(grain)).GetPrimaryKey(out keyExt);
         }
         public static Guid GetPrimaryKey(this IGrain grain)
         {
-            return ((LegacyGrainId)GetGrainIdentity(grain)).PrimaryKey;
+            return ((LegacyGrainId)GetGrainId(grain)).PrimaryKey;
         }
 
         public static string GetPrimaryKeyString(this IGrainWithStringKey grain)
         {
-            return ((LegacyGrainId)GetGrainIdentity(grain)).PrimaryKeyString;
-        }
-
-        /// <summary>
-        /// Invokes a method of a grain interface is one-way fashion so that no response message will be sent to the caller.
-        /// </summary>
-        /// <typeparam name="T">Grain interface</typeparam>
-        /// <param name="grainReference">Grain reference which will be copied and then a call executed on it</param>
-        /// <param name="grainMethodInvocation">Function that should invoke grain method and return resulting task</param>
-        public static void InvokeOneWay<T>(this T grainReference, Func<T, Task> grainMethodInvocation) where T : class, IAddressable
-        {
-            var oneWayGrainReferenceCopy = new GrainReference(grainReference.AsWeaklyTypedReference(), InvokeMethodOptions.OneWay).Cast<T>();
-
-            // Task is always completed at this point. Should also help to catch situations of mistakenly calling the method on original grain reference
-            var invokationResult = grainMethodInvocation(oneWayGrainReferenceCopy);
-            if (!invokationResult.IsCompleted)
-            {
-                throw new InvalidOperationException("Invoking of methods with one way flag must result in completed task");
-            }
+            return ((LegacyGrainId)GetGrainId(grain)).PrimaryKeyString;
         }
 
         private static void ThrowIfNullGrain(IAddressable grain)

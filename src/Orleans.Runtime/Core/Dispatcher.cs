@@ -99,7 +99,7 @@ namespace Orleans.Runtime
                     message.TargetAddress, 
                     message.IsNewPlacement,
                     message.NewGrainType,
-                    String.IsNullOrEmpty(message.GenericGrainType) ? null : message.GenericGrainType, 
+                    genericArguments: null,
                     message.RequestContextData,
                     out ignore);
 
@@ -786,7 +786,7 @@ namespace Orleans.Runtime
 
         internal void SendSystemTargetMessage(Message message)
         {
-            message.Category = message.TargetGrain.Equals(Constants.MembershipOracleId) ? 
+            message.Category = message.TargetGrain.Equals(Constants.MembershipOracleType) ? 
                 Message.Categories.Ping : Message.Categories.System;
 
             if (message.TargetSilo == null)

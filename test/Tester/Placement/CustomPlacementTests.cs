@@ -139,7 +139,7 @@ namespace Tester.CustomPlacementTests
             {
                 var g = this.fixture.GrainFactory.GetGrain<IHashBasedPlacementGrain>(Guid.NewGuid(),
                     "UnitTests.Grains.HashBasedBasedPlacementGrain");
-                grains.Add(g.GetGrainIdentity());
+                grains.Add(g.GetGrainId());
                 tasks[i] = g.GetSiloAddress();
             }
 

@@ -1,71 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Collections.Immutable;
+using System.Linq;
+using Orleans.Runtime;
 
 namespace Orleans.Metadata
 {
     namespace NewGrainRefSystem
     {
-        using System;
-        using System.Collections.Immutable;
-        using System.Linq;
-        using System.Runtime.CompilerServices;
-        using System.Threading;
-        using System.Threading.Tasks;
-        using Orleans.CodeGeneration;
-        using Orleans.Runtime;
-
         namespace NewNewNew
         {
-            public interface IGrainReference
-            {
-                GrainId GrainId { get; }
-
-                Type InterfaceType { get; }
-
-                // Eg, to set TTL, InvokeMethodOptions.Unordered, InvokeMethodOptions.OneWay?, SystemTargetSilo?, Category?
-                // How does ResponseTimeout get propagated?
-                //void PrepareMessage(object /*IMessage*/ message);
-            }
-
-            // Per 'GrainId'
-            // Imr = InvokeMethodRequest. Named this way because it uses messages with Body = InvokeMethodRequest instance to send messages.
-            // An alternative can use a different mechanism
-            public abstract class ImrGrainReferenceBase : IGrainReference
-            {
-                private readonly ImrGrainReferencePrototype prototype;
-                private readonly SpanId key;
-
-                public ImrGrainReferenceBase(ImrGrainReferencePrototype prototype, SpanId key)
-                {
-                    this.prototype = prototype;
-                    this.key = key;
-                }
-
-                public GrainId GrainId => new GrainId(this.prototype.GrainType, this.key);
-
-                public abstract Type InterfaceType { get; }
-            }
-
-            public class ImrGrainReferencePrototype
-            {
-                public ImrGrainReferencePrototype(GrainType grainType, Type interfaceType, IGrainReferenceRuntime grainRuntime)
-                {
-                    this.GrainType = grainType;
-                    this.InterfaceType = interfaceType;
-                    this.Runtime = grainRuntime;
-                }
-
-                // Everything shared by a grain for given type
-                public GrainType GrainType { get; }
-
-                public Type InterfaceType { get; }
-
-                public IGrainReferenceRuntime Runtime { get; }
-
-                public InvokeMethodOptions InvokeMethodOptions { get; set; }
-            }
-
             public interface IGrainReferenceActivator
             {
                 bool CanCreate(GrainType grainType, Type interfaceType);
@@ -135,7 +79,7 @@ namespace Orleans.Metadata
                 private readonly IConfigureGrainReferencePrototype[] configurePrototypeActions;
                 private readonly IConfigureGrainReference[] configureActivationActions;
                 private readonly IGrainReferenceRuntime grainRuntime;
-                private ImmutableDictionary<GrainType, ContextActivator> factories = ImmutableDictionary<GrainType, ContextActivator>.Empty;
+                private ImmutableDictionary<GrainType, ReferenceFactory> factories = ImmutableDictionary<GrainType, ReferenceFactory>.Empty;
 
                 public DefaultGrainReferenceActivator(
                     IEnumerable<IConfigureGrainReference> configureActivationActions,
@@ -151,27 +95,39 @@ namespace Orleans.Metadata
 
                 public IGrainReference CreateGrainReference(GrainId grainId, Type interfaceType)
                 {
+                    var factory = this.GetFactory(grainId, interfaceType);
+                    return factory.CreateContext(grainId);
+                }
+
+                private ReferenceFactory GetFactory(GrainId grainId, Type interfaceType)
+                {
                     if (!this.factories.TryGetValue(grainId.Type, out var factory))
                     {
                         factory = this.CreateFactory(grainId.Type, interfaceType);
                     }
 
-                    return factory.CreateContext(grainId, interfaceType);
+                    return factory;
                 }
 
-                private ContextActivator CreateFactory(GrainType grainType, Type interfaceType)
+                private ReferenceFactory CreateFactory(GrainType grainType, Type interfaceType)
                 {
                     lock (this.lockObj)
                     {
                         if (!this.factories.TryGetValue(grainType, out var factory))
                         {
                             var prototype = this.CreatePrototype(grainType, interfaceType);
-                            factory = new ContextActivator(prototype, this.configureActivationActions);
+                            factory = new ReferenceFactory(prototype, this.configureActivationActions);
                             this.factories = this.factories.SetItem(grainType, factory);
                         }
 
                         return factory;
                     }
+                }
+
+                public void BindGrainReference(IGrainReference reference, GrainId grainId, Type interfaceType)
+                {
+                    var factory = this.GetFactory(grainId, interfaceType);
+                    factory.BindContext(reference);
                 }
 
                 private ImrGrainReferencePrototype CreatePrototype(GrainType grainType, Type interfaceType)
@@ -189,26 +145,39 @@ namespace Orleans.Metadata
                     return prototype;
                 }
 
-                private struct ContextActivator
+                private readonly struct ReferenceFactory
                 {
                     private readonly ImrGrainReferencePrototype prototype;
                     private readonly IConfigureGrainReference[] configureActions;
 
-                    public ContextActivator(ImrGrainReferencePrototype prototype, IConfigureGrainReference[] configureActions)
+                    public ReferenceFactory(ImrGrainReferencePrototype prototype, IConfigureGrainReference[] configureActions)
                     {
                         this.prototype = prototype;
                         this.configureActions = configureActions.Where(c => c.CanConfigure(prototype.GrainType, prototype.InterfaceType)).ToArray();
                     }
 
-                    public ImrGrainReferenceBase CreateContext(GrainId grainId, Type interfaceType)
+                    public readonly IGrainReference CreateContext(GrainId grainId)
                     {
                         var result = new ImrGrainReferenceBase(this.prototype, grainId.Key);
                         foreach (var configure in this.configureActions)
                         {
-                            configure.Configure(result, interfaceType);
+                            configure.Configure(result);
                         }
 
                         return result;
+                    }
+
+                    public readonly void BindContext(IGrainReference reference)
+                    {
+                        if (reference is GrainReference grainReference)
+                        {
+                            grainReference.Bind(this.prototype);
+                        }
+
+                        foreach (var configure in this.configureActions)
+                        {
+                            configure.Configure(reference, this.prototype.InterfaceType);
+                        }
                     }
                 }
             }

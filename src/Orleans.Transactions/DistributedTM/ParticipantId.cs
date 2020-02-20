@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Orleans.Concurrency;
@@ -22,26 +22,26 @@ namespace Orleans.Transactions
         }
 
         public string Name { get; }
-        public GrainReference Reference { get; }
+        public GrainId GrainId { get; }
         public Role SupportedRoles { get; }
 
-        public ParticipantId(string name, GrainReference reference, Role supportedRoles)
+        public ParticipantId(string name, GrainId grainId, Role supportedRoles)
         {
             this.Name = name;
-            this.Reference = reference;
+            this.GrainId = grainId;
             this.SupportedRoles = supportedRoles;
         }
 
         public override string ToString()
         {
-            return $"ParticipantId.{Name}.{Reference}";
+            return $"ParticipantId.{Name}.{GrainId}";
         }
 
         private class IdComparer : IEqualityComparer<ParticipantId>
         {
             public bool Equals(ParticipantId x, ParticipantId y)
             {
-                return string.CompareOrdinal(x.Name, y.Name) == 0 && Equals(x.Reference, y.Reference);
+                return string.CompareOrdinal(x.Name, y.Name) == 0 && Equals(x.GrainId, y.GrainId);
             }
 
             public int GetHashCode(ParticipantId obj)
@@ -49,7 +49,7 @@ namespace Orleans.Transactions
                 unchecked
                 {
                     var idHashCode = (obj.Name != null) ? obj.Name.GetHashCode() : 0;
-                    var referenceHashCode = (obj.Reference != null) ? obj.Reference.GetHashCode() : 0;
+                    var referenceHashCode = (obj.GrainId != null) ? obj.GrainId.GetHashCode() : 0;
                     return (idHashCode * 397) ^ (referenceHashCode);
                 }
             }

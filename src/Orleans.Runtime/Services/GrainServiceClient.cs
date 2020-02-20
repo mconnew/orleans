@@ -53,16 +53,16 @@ namespace Orleans.Runtime.Services
         /// <summary>
         /// Resolves the Grain Reference invoking this request.
         /// </summary>
-        protected GrainReference CallingGrainReference => (RuntimeContext.Current?.ActivationContext as SchedulingContext)?.Activation?.GrainReference;
+        protected GrainId CallingGrainReference => (RuntimeContext.Current?.ActivationContext as SchedulingContext)?.Activation?.Identity ?? throw new InvalidOperationException("No activation is currently in scope");
 
         /// <summary>
         /// Moved from InsideRuntimeClient.cs
         /// </summary>
-        /// <param name="grainRef"></param>
+        /// <param name="grainId"></param>
         /// <returns></returns>
-        private SiloAddress MapGrainReferenceToSiloRing(GrainReference grainRef)
+        private SiloAddress MapGrainReferenceToSiloRing(GrainId grainId)
         {
-            var hashCode = grainRef.GetUniformHashCode();
+            var hashCode = grainId.GetUniformHashCode();
             return ringProvider.GetPrimaryTargetSilo(hashCode);
         }
     }

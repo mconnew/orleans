@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Orleans.Metadata.NewGrainRefSystem;
 using Orleans.Streams;
 
 namespace Orleans.Runtime
@@ -210,6 +211,16 @@ namespace Orleans.Runtime
         public IGrain GetGrain(Type grainInterfaceType, long grainPrimaryKey, string keyExtension)
         {
             return this.grainFactory.GetGrain(grainInterfaceType, grainPrimaryKey);
+        }
+
+        public IGrainReference GetGrain(GrainId grainId, Type interfaceType)
+        {
+            return this.grainFactory.GetGrain(grainId, interfaceType);
+        }
+
+        public TGrainInterface GetGrain<TGrainInterface>(GrainId grainId) where TGrainInterface : IAddressable
+        {
+            return this.grainFactory.GetGrain<TGrainInterface>(grainId);
         }
     }
 }

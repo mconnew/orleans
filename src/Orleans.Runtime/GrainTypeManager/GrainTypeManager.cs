@@ -300,13 +300,13 @@ namespace Orleans.Runtime
             return grainTypes.Keys.ToArray();
         }
 
-        internal IGrainMethodInvoker GetInvoker(int interfaceId, string genericGrainType = null)
+        internal IGrainMethodInvoker GetInvoker(int interfaceId)
         {
             try
             {
                 InvokerData invokerData;
                 if (invokers.TryGetValue(interfaceId, out invokerData))
-                    return invokerData.GetInvoker(genericGrainType);
+                    return invokerData.GetInvoker();
             }
             catch (Exception ex)
             {

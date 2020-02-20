@@ -237,7 +237,7 @@ namespace Orleans.Runtime.GrainDirectory
                 try
                 {
                     var validator = this.grainFactory.GetSystemTarget<IClusterGrainDirectory>(
-                        Constants.ClusterDirectoryServiceId,
+                        Constants.ClusterDirectoryServiceType,
                         silo);
                     clusterId = await validator.Ping();
                 }
@@ -296,7 +296,7 @@ namespace Orleans.Runtime.GrainDirectory
                 // find gateway and send batched request
                 try
                 {
-                    var clusterGrainDir = this.grainFactory.GetSystemTarget<IClusterGrainDirectory>(Constants.ClusterDirectoryServiceId, remotecluster.Value);
+                    var clusterGrainDir = this.grainFactory.GetSystemTarget<IClusterGrainDirectory>(Constants.ClusterDirectoryServiceType, remotecluster.Value);
                     var r = await clusterGrainDir.ProcessActivationRequestBatch(addresses.Select(a => a.Grain).ToArray(), this.siloDetails.ClusterId).WithCancellation(Cts.Token);
                     batchResponses.Add(r);
                 }
@@ -426,7 +426,7 @@ namespace Orleans.Runtime.GrainDirectory
             // remove loser activations
             foreach (var kvp in loser_activations_per_silo)
             {
-                var catalog = this.grainFactory.GetSystemTarget<ICatalog>(Constants.CatalogId, kvp.Key);
+                var catalog = this.grainFactory.GetSystemTarget<ICatalog>(Constants.CatalogType, kvp.Key);
                 catalog.DeleteActivations(kvp.Value).Ignore();
             }
         }

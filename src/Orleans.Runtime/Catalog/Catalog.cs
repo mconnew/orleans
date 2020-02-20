@@ -120,7 +120,7 @@ namespace Orleans.Runtime
             IOptions<GrainCollectionOptions> collectionOptions,
             IOptions<SiloMessagingOptions> messagingOptions,
             RuntimeMessagingTrace messagingTrace)
-            : base(Constants.CatalogId, messageCenter.MyAddress, loggerFactory)
+            : base(Constants.CatalogType, messageCenter.MyAddress, loggerFactory)
         {
             this.LocalSilo = localSiloDetails.SiloAddress;
             this.localSiloName = localSiloDetails.Name;
@@ -441,7 +441,6 @@ namespace Orleans.Runtime
             ActivationAddress address,
             bool newPlacement,
             string grainType,
-            string genericArguments,
             Dictionary<string, object> requestContextData,
             out Task activatedPromise)
         {
@@ -485,7 +484,6 @@ namespace Orleans.Runtime
                     // We want to do this (RegisterMessageTarget) under the same lock that we tested TryGetActivationData. They both access ActivationDirectory.
                     result = new ActivationData(
                         address,
-                        genericArguments,
                         placement,
                         activationStrategy,
                         this.activationCollector,
@@ -493,7 +491,6 @@ namespace Orleans.Runtime
                         this.messagingOptions,
                         this.maxWarningRequestProcessingTime,
                         this.maxRequestProcessingTime,
-                        this.RuntimeClient,
                         this.loggerFactory);
                     RegisterMessageTarget(result);
                 }

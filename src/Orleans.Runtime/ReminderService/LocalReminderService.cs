@@ -24,6 +24,7 @@ namespace Orleans.Runtime.ReminderService
         private uint initialReadCallCount = 0;
         private readonly ILogger timerLogger;
         private readonly ILoggerFactory loggerFactory;
+        private readonly IGrainFactory grainFactory;
         private readonly AverageTimeSpanStatistic tardinessStat;
         private readonly CounterStatistic ticksDeliveredStat;
         private readonly TimeSpan initTimeout;
@@ -32,7 +33,8 @@ namespace Orleans.Runtime.ReminderService
             Silo silo,
             IReminderTable reminderTable,
             TimeSpan initTimeout,
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory,
+            IGrainFactory grainFactory)
             : base(GetGrainId(), silo, loggerFactory)
         {
             this.timerLogger = loggerFactory.CreateLogger<GrainTimer>();
@@ -41,6 +43,7 @@ namespace Orleans.Runtime.ReminderService
             this.initTimeout = initTimeout;
             localTableSequence = 0;
             this.loggerFactory = loggerFactory;
+            this.grainFactory = grainFactory;
             tardinessStat = AverageTimeSpanStatistic.FindOrCreate(StatisticNames.REMINDERS_AVERAGE_TARDINESS_SECONDS);
             IntValueStatistic.FindOrCreate(StatisticNames.REMINDERS_NUMBER_ACTIVE_REMINDERS, () => localReminders.Count);
             ticksDeliveredStat = CounterStatistic.FindOrCreate(StatisticNames.REMINDERS_COUNTERS_TICKS_DELIVERED);
@@ -77,8 +80,9 @@ namespace Orleans.Runtime.ReminderService
             // currently, this is taken care of by periodically reading the reminder table
         }
 
-        public async Task<IGrainReminder> RegisterOrUpdateReminder(GrainReference grainRef, string reminderName, TimeSpan dueTime, TimeSpan period)
+        public async Task<IGrainReminder> RegisterOrUpdateReminder(GrainId grainId, string reminderName, TimeSpan dueTime, TimeSpan period)
         {
+            var grainRef = (GrainReference)this.grainFactory.GetGrain<IRemindable>(grainId);
             var entry = new ReminderEntry
             {
                 GrainRef = grainRef,
@@ -148,16 +152,18 @@ namespace Orleans.Runtime.ReminderService
             }
         }
 
-        public async Task<IGrainReminder> GetReminder(GrainReference grainRef, string reminderName)
+        public async Task<IGrainReminder> GetReminder(GrainId grainId, string reminderName)
         {
-            if(logger.IsEnabled(LogLevel.Debug)) logger.Debug(ErrorCode.RS_GetReminder,"GetReminder: GrainReference={0} ReminderName={1}", grainRef.ToDetailedString(), reminderName);
+            if(logger.IsEnabled(LogLevel.Debug)) logger.Debug(ErrorCode.RS_GetReminder,"GetReminder: Grain={0} ReminderName={1}", grainId, reminderName);
+            var grainRef = (GrainReference)this.grainFactory.GetGrain<IRemindable>(grainId);
             var entry = await reminderTable.ReadRow(grainRef, reminderName);
             return entry == null ? null : entry.ToIGrainReminder();
         }
 
-        public async Task<List<IGrainReminder>> GetReminders(GrainReference grainRef)
+        public async Task<List<IGrainReminder>> GetReminders(GrainId grainId)
         {
-            if (logger.IsEnabled(LogLevel.Debug)) logger.Debug(ErrorCode.RS_GetReminders, "GetReminders: GrainReference={0}", grainRef.ToDetailedString());
+            var grainRef = (GrainReference)this.grainFactory.GetGrain<IRemindable>(grainId);
+            if (logger.IsEnabled(LogLevel.Debug)) logger.Debug(ErrorCode.RS_GetReminders, "GetReminders: GrainReference={0}", grainRef);
             var tableData = await reminderTable.ReadRows(grainRef);
             return tableData.Reminders.Select(entry => entry.ToIGrainReminder()).ToList();
         }
@@ -475,7 +481,7 @@ namespace Orleans.Runtime.ReminderService
             if (!RingRange.InRange(grainRef))
             {
                 logger.Warn(ErrorCode.RS_NotResponsible, "I shouldn't have received request '{0}' for {1}. It is not in my responsibility range: {2}",
-                    debugInfo, grainRef.ToDetailedString(), RingRange);
+                    debugInfo, grainRef, RingRange);
                 // For now, we still let the caller proceed without throwing an exception... the periodical mechanism will take care of reminders being registered at the wrong silo
                 // otherwise, we can either reject the request, or re-route the request
             }
@@ -609,7 +615,7 @@ namespace Orleans.Runtime.ReminderService
             {
                 return string.Format("[{0}, {1}, {2}, {3}, {4}, {5}, {6}]",
                                         ReminderName,
-                                        GrainRef.ToDetailedString(),
+                                        GrainRef,
                                         period,
                                         LogFormatter.PrintDate(firstTickTime),
                                         ETag,
