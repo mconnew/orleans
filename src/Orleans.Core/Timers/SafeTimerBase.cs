@@ -17,11 +17,8 @@ namespace Orleans.Runtime
         private Timer               timer;
         private Func<object, Task>  asyncTaskCallback;
         private TimerCallback       syncCallbackFunc;
-        private TimeSpan            dueTime;
         private TimeSpan            timerFrequency;
         private bool                timerStarted;
-        private DateTime            previousTickTime;
-        private int                 totalNumTicks;
         private ILogger      logger;
 
         internal SafeTimerBase(ILogger logger, Func<object, Task> asyncTaskCallback, object state)
@@ -52,9 +49,7 @@ namespace Orleans.Runtime
             if (period == TimeSpan.Zero) throw new ArgumentOutOfRangeException("period", period, "Cannot use TimeSpan.Zero for timer period");
            
             timerFrequency = period;
-            dueTime = due;
             timerStarted = true;
-            previousTickTime = DateTime.UtcNow;
             timer.Change(due, Constants.INFINITE_TIMESPAN);
         }
 
@@ -68,8 +63,6 @@ namespace Orleans.Runtime
             this.asyncTaskCallback = asynCallback;
             syncCallbackFunc = synCallback;
             timerFrequency = period;
-            this.dueTime = due;
-            totalNumTicks = 0;
             this.logger = logger;
             if (logger.IsEnabled(LogLevel.Debug)) logger.Debug(ErrorCode.TimerChanging, "Creating timer {0} with dueTime={1} period={2}", GetFullName(), due, period);
 
@@ -124,12 +117,6 @@ namespace Orleans.Runtime
             throw new InvalidOperationException("invalid SafeTimerBase state");
         }
 
-        public bool CheckTimerFreeze(DateTime lastCheckTime, Func<string> callerName)
-        {
-            return CheckTimerDelay(previousTickTime, totalNumTicks,
-                        dueTime, timerFrequency, logger, () => String.Format("{0}.{1}", GetFullName(), callerName()), ErrorCode.Timer_SafeTimerIsNotTicking, true);
-        }
-
         public static bool CheckTimerDelay(DateTime previousTickTime, int totalNumTicks, 
                         TimeSpan dueTime, TimeSpan timerFrequency, ILogger logger, Func<string> getName, ErrorCode errorCode, bool freezeCheck)
         {
@@ -164,36 +151,6 @@ namespace Orleans.Runtime
             return false;
         }
 
-        /// <summary>
-        /// Changes the start time and the interval between method invocations for a timer, using TimeSpan values to measure time intervals.
-        /// </summary>
-        /// <param name="newDueTime">A TimeSpan representing the amount of time to delay before invoking the callback method specified when the Timer was constructed. Specify negative one (-1) milliseconds to prevent the timer from restarting. Specify zero (0) to restart the timer immediately.</param>
-        /// <param name="period">The time interval between invocations of the callback method specified when the Timer was constructed. Specify negative one (-1) milliseconds to disable periodic signaling.</param>
-        /// <returns><c>true</c> if the timer was successfully updated; otherwise, <c>false</c>.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
-        private bool Change(TimeSpan newDueTime, TimeSpan period)
-        {
-            if (period == TimeSpan.Zero) throw new ArgumentOutOfRangeException("period", period, string.Format("Cannot use TimeSpan.Zero for timer {0} period", GetFullName()));
-
-            if (timer == null) return false;
-
-            timerFrequency = period;
-
-            if (logger.IsEnabled(LogLevel.Debug)) logger.Debug(ErrorCode.TimerChanging, "Changing timer {0} to dueTime={1} period={2}", GetFullName(), newDueTime, period);
-
-            try
-            {
-                // Queue first new timer tick
-                return timer.Change(newDueTime, Constants.INFINITE_TIMESPAN);
-            }
-            catch (Exception exc)
-            {
-                logger.Warn(ErrorCode.TimerChangeError,
-                    string.Format("Error changing timer period - timer {0} not changed", GetFullName()), exc);
-                return false;
-            }
-        }
-
         private void HandleTimerCallback(object state)
         {
             if (timer == null) return;
@@ -223,7 +180,6 @@ namespace Orleans.Runtime
             }
             finally
             {
-                previousTickTime = DateTime.UtcNow;
                 // Queue next timer callback
                 QueueNextTimerTick();
             }
@@ -254,7 +210,6 @@ namespace Orleans.Runtime
             }
             finally
             {
-                previousTickTime = DateTime.UtcNow;
                 // Queue next timer callback
                 QueueNextTimerTick();
             }
@@ -266,8 +221,6 @@ namespace Orleans.Runtime
             try
             {
                 if (timer == null) return;
-
-                totalNumTicks++;
 
                 if (logger.IsEnabled(LogLevel.Trace)) logger.Trace(ErrorCode.TimerChanging, "About to QueueNextTimerTick for timer {0}", GetFullName());
 
