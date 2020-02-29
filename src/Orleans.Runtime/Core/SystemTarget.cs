@@ -128,12 +128,8 @@ namespace Orleans.Runtime
         /// <returns></returns>
         public IDisposable RegisterTimer(Func<object, Task> asyncCallback, object state, TimeSpan dueTime, TimeSpan period, string name = null)
         {
-            var ctxt = RuntimeContext.CurrentGrainContext;
-            this.RuntimeClient.Scheduler.CheckSchedulingContextValidity(ctxt);
-            name = name ?? ctxt.GrainId + "Timer";
-
-            var timer = GrainTimer.FromTaskCallback(this.RuntimeClient.Scheduler, this.timerLogger, asyncCallback, state, dueTime, period, name);
-            timer.Start();
+            name ??= this.grainId.ToString() + "Timer";
+            var timer = GrainTimer.StartNew(this.RuntimeClient.Scheduler, this.timerLogger, asyncCallback, state, dueTime, period, name);
             return timer;
         }
 

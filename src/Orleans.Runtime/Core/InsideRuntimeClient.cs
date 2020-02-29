@@ -712,7 +712,7 @@ namespace Orleans.Runtime
             var timerLogger = this.loggerFactory.CreateLogger<SafeTimer>();
             var minTicks = Math.Min(this.messagingOptions.ResponseTimeout.Ticks, TimeSpan.FromSeconds(1).Ticks);
             var period = TimeSpan.FromTicks(minTicks);
-            this.callbackTimer = new SafeTimer(timerLogger, this.OnCallbackExpiryTick, null, period, period);
+            this.callbackTimer = SafeTimer.StartNew(timerLogger, this.OnCallbackExpiryTick, null, period, period);
             this.disposables.Add(this.callbackTimer);
 
             typeManager.Start();

@@ -8,9 +8,9 @@ namespace Orleans.Runtime.Scheduler
     {
         private readonly TaskCompletionSource<bool> completion = new TaskCompletionSource<bool>();
         private readonly Func<Task> continuation;
-        private readonly string name;
+        private string name;
 
-        public override string Name => this.name ?? GetMethodName(this.continuation);
+        public override string Name => this.name ??= GetMethodName(this.continuation);
         public Task Task => this.completion.Task;
 
         public AsyncClosureWorkItem(Func<Task> closure, string name, IGrainContext grainContext)
@@ -63,17 +63,10 @@ namespace Orleans.Runtime.Scheduler
     {
         private readonly TaskCompletionSource<T> completion = new TaskCompletionSource<T>();
         private readonly Func<Task<T>> continuation;
-        private readonly string name;
+        private string name;
 
-        public override string Name => this.name ?? AsyncClosureWorkItem.GetMethodName(this.continuation);
+        public override string Name => this.name ??= AsyncClosureWorkItem.GetMethodName(this.continuation);
         public Task<T> Task => this.completion.Task;
-
-        public AsyncClosureWorkItem(Func<Task<T>> closure, string name, IGrainContext grainContext)
-        {
-            this.continuation = closure;
-            this.name = name;
-            this.GrainContext = grainContext;
-        }
 
         public AsyncClosureWorkItem(Func<Task<T>> closure, IGrainContext grainContext)
         {

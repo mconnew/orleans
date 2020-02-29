@@ -170,7 +170,7 @@ namespace Orleans.Statistics
 
             if (cpuCounterPF != null)
             {
-                cpuUsageTimer = new SafeTimer(this.logger, CheckCpuUsage, null, CPU_CHECK_PERIOD, CPU_CHECK_PERIOD);
+                cpuUsageTimer = SafeTimer.StartNew(this.logger, CheckCpuUsage, null, CPU_CHECK_PERIOD, CPU_CHECK_PERIOD);
             }
             try
             {

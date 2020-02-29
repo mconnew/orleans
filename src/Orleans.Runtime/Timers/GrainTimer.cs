@@ -7,52 +7,60 @@ using Orleans.Runtime.Scheduler;
 
 namespace Orleans.Runtime
 {
-    internal class GrainTimer : IGrainTimer
+    internal class GrainTimer : SafeTimerBase, IGrainTimer
     {
-        private Func<object, Task> asyncCallback;
-        private AsyncTaskSafeTimer timer;
+        private static readonly Func<object, Task> ExecuteTickTask = timer => ((GrainTimer)timer).ForwardToAsyncCallback();
+        private readonly object state;
         private readonly TimeSpan dueTime;
         private readonly TimeSpan timerFrequency;
-        private DateTime previousTickTime;
-        private int totalNumTicks;
         private readonly ILogger logger;
+        private readonly IGrainContext context;
+        private readonly TaskScheduler taskScheduler;
+
+        private Func<object, Task> asyncCallback;
         private Task currentlyExecutingTickTask;
-        private readonly OrleansTaskScheduler scheduler;
-        private readonly IActivationData activationData;
-
-        public string Name { get; }
         
-        private bool TimerAlreadyStopped { get { return timer == null || asyncCallback == null; } }
-
-        private GrainTimer(OrleansTaskScheduler scheduler, IActivationData activationData, ILogger logger, Func<object, Task> asyncCallback, object state, TimeSpan dueTime, TimeSpan period, string name)
+        private GrainTimer(
+            OrleansTaskScheduler scheduler,
+            IGrainContext context,
+            ILogger logger,
+            Func<object, Task> asyncCallback,
+            object state,
+            TimeSpan dueTime,
+            TimeSpan period,
+            string name)
+            : base(logger)
         {
-            var ctxt = RuntimeContext.CurrentGrainContext;
-            scheduler.CheckSchedulingContextValidity(ctxt);
-            this.scheduler = scheduler;
-            this.activationData = activationData;
-            this.logger = logger;
-            this.Name = name;
-            this.asyncCallback = asyncCallback;
-            timer = new AsyncTaskSafeTimer(logger, 
-                stateObj => TimerTick(stateObj, ctxt),
-                state);
+            if (scheduler is null) throw new ArgumentNullException(nameof(scheduler));
+            this.context = context;
+            this.state = state;
+            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this.Name = name ?? "GrainTimer";
+            this.asyncCallback = asyncCallback ?? throw new ArgumentNullException(nameof(asyncCallback));
             this.dueTime = dueTime;
-            timerFrequency = period;
-            previousTickTime = DateTime.UtcNow;
-            totalNumTicks = 0;
+            this.timerFrequency = period;
+            this.taskScheduler = scheduler.GetTaskSchedulerOrDefault(context);
         }
 
-        internal static IGrainTimer FromTaskCallback(
+        private bool TimerAlreadyStopped => asyncCallback is null || !this.IsValid;
+
+        public override string Name { get; }
+
+        internal static IGrainTimer StartNew(
             OrleansTaskScheduler scheduler,
             ILogger logger,
             Func<object, Task> asyncCallback,
             object state,
             TimeSpan dueTime,
             TimeSpan period,
-            string name = null,
-            IActivationData activationData = null)
+            string name,
+            IGrainContext context = null)
         {
-            return new GrainTimer(scheduler, activationData, logger, asyncCallback, state, dueTime, period, name);
+            scheduler.CheckSchedulingContextValidity(context ?? RuntimeContext.CurrentGrainContext);
+            var result = new GrainTimer(scheduler, context, logger, asyncCallback, state, dueTime, period, name);
+            (context as IActivationData)?.OnTimerCreated(result);
+            result.Start();
+            return result;
         }
 
         public void Start()
@@ -60,69 +68,54 @@ namespace Orleans.Runtime
             if (TimerAlreadyStopped)
                 throw new ObjectDisposedException(String.Format("The timer {0} was already disposed.", GetFullName()));
 
-            timer.Start(dueTime, timerFrequency);
+            base.Start(dueTime, timerFrequency);
         }
 
         public void Stop()
         {
             asyncCallback = null;
         }
-
-        private async Task TimerTick(object state, IGrainContext context)
-        {
-            if (TimerAlreadyStopped)
-                return;
-            try
-            {
-                // Schedule call back to grain context
-                await this.scheduler.QueueNamedTask(() => ForwardToAsyncCallback(state), context, this.Name);
-            }
-            catch (InvalidSchedulingContextException exc)
-            {
-                logger.Error(ErrorCode.Timer_InvalidContext,
-                    string.Format("Caught an InvalidSchedulingContextException on timer {0}, context is {1}. Going to dispose this timer!",
-                        GetFullName(), context), exc);
-                DisposeTimer();
-            }
-        }
-
-        private async Task ForwardToAsyncCallback(object state)
+        
+        private async Task ForwardToAsyncCallback()
         {
             // AsyncSafeTimer ensures that calls to this method are serialized.
             var callback = asyncCallback;
             if (TimerAlreadyStopped) return;
-            
-            totalNumTicks++;
 
             if (logger.IsEnabled(LogLevel.Trace))
-                logger.Trace(ErrorCode.TimerBeforeCallback, "About to make timer callback for timer {0}", GetFullName());
+            {
+                logger.LogTrace((int)ErrorCode.TimerBeforeCallback, "About to make timer callback for timer {Timer}", GetFullName());
+            }
 
             try
             {
                 RequestContext.Clear(); // Clear any previous RC, so it does not leak into this call by mistake. 
                 currentlyExecutingTickTask = callback(state);
                 await currentlyExecutingTickTask;
-                
-                if (logger.IsEnabled(LogLevel.Trace)) logger.Trace(ErrorCode.TimerAfterCallback, "Completed timer callback for timer {0}", GetFullName());
+
+                if (logger.IsEnabled(LogLevel.Trace))
+                {
+                    logger.LogTrace((int)ErrorCode.TimerAfterCallback, "Completed timer callback for timer {Timer}", GetFullName());
+                }
             }
             catch (Exception exc)
             {
-                logger.Error( 
-                    ErrorCode.Timer_GrainTimerCallbackError,
-                    string.Format( "Caught and ignored exception: {0} with message: {1} thrown from timer callback {2}",
-                        exc.GetType(),
-                        exc.Message,
-                        GetFullName()),
+                logger.LogError( 
+                    (int)ErrorCode.Timer_GrainTimerCallbackError,
+                    exc,
+                    "Caught and ignored exception thrown from timer callback {Timer}: {Exception}",
+                    GetFullName(),
                     exc);       
             }
             finally
             {
-                previousTickTime = DateTime.UtcNow;
                 currentlyExecutingTickTask = null;
                 // if this is not a repeating timer, then we can
                 // dispose of the timer.
                 if (timerFrequency == Constants.INFINITE_TIMESPAN)
-                    DisposeTimer();                
+                {
+                    DisposeTimer();
+                }
             }
         }
 
@@ -139,52 +132,50 @@ namespace Orleans.Runtime
             return $"GrainTimer.{this.Name ?? string.Empty} TimerCallbackHandler:{callbackTarget ?? string.Empty}->{callbackMethodInfo ?? string.Empty}";
         }
 
-        // The reason we need to check CheckTimerFreeze on both the SafeTimer and this GrainTimer
-        // is that SafeTimer may tick OK (no starvation by .NET thread pool), but then scheduler.QueueWorkItem
-        // may not execute and starve this GrainTimer callback.
-        public bool CheckTimerFreeze(DateTime lastCheckTime)
+        protected override void DisposeTimer()
         {
-            if (TimerAlreadyStopped) return true;
-            // check underlying SafeTimer (checking that .NET thread pool does not starve this timer)
-            if (!timer.CheckTimerFreeze(lastCheckTime, () => Name)) return false; 
-            // if SafeTimer failed the check, no need to check GrainTimer too, since it will fail as well.
-            
-            // check myself (checking that scheduler.QueueWorkItem does not starve this timer)
-            return SafeTimerBase.CheckTimerDelay(previousTickTime, totalNumTicks,
-                dueTime, timerFrequency, logger, GetFullName, ErrorCode.Timer_TimerInsideGrainIsNotTicking, true);
+            if (!this.IsValid) return;
+            base.DisposeTimer();
+            (context as IActivationData)?.OnTimerDisposed(this);
         }
 
-        public bool CheckTimerDelay()
+        protected override void HandleTimerCallback()
         {
-            return SafeTimerBase.CheckTimerDelay(previousTickTime, totalNumTicks,
-                dueTime, timerFrequency, logger, GetFullName, ErrorCode.Timer_TimerInsideGrainIsNotTicking, false);
+            _ = HandleTimerCallbackAsync();
         }
 
-        public void Dispose()
+        private async Task HandleTimerCallbackAsync()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
+            if (TimerAlreadyStopped)
+            {
+                return;
+            }
 
-        // Maybe called by finalizer thread with disposing=false. As per guidelines, in such a case do not touch other objects.
-        // Dispose() may be called multiple times
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposing)
+            try
+            {
+                // Schedule call back to grain context
+                await Task.Factory.StartNew(ExecuteTickTask, this, CancellationToken.None, TaskCreationOptions.RunContinuationsAsynchronously, this.taskScheduler).Unwrap();
+            }
+            catch (InvalidSchedulingContextException exc)
+            {
+                logger.LogError(
+                    (int)ErrorCode.Timer_InvalidContext,
+                    exc,
+                    "Caught an InvalidSchedulingContextException on timer {Timer}, context is {Context}: {Exception}",
+                    GetFullName(),
+                    context,
+                    exc);
                 DisposeTimer();
-            
-            asyncCallback = null;
-        }
-
-        private void DisposeTimer()
-        {
-            var tmp = timer;
-            if (tmp == null) return;
-
-            Utils.SafeExecute(tmp.Dispose);
-            timer = null;
-            asyncCallback = null;
-            activationData?.OnTimerDisposed(this);
+            }
+            catch (Exception exc)
+            {
+                Logger.LogWarning((int)ErrorCode.TimerCallbackError, exc, "Ignored exception {Exception} during async task timer {Timer}", exc, this.Name);
+            }
+            finally
+            {
+                // Queue next timer callback
+                QueueNextTimerTick();
+            }
         }
     }
 }

@@ -154,6 +154,8 @@ namespace Orleans.Runtime.Scheduler
             cancellationTokenSource.Cancel();
         }
 
+        public TaskScheduler GetTaskSchedulerOrDefault(IGrainContext context) => GetWorkItemGroup(context)?.TaskScheduler ?? TaskScheduler.Default;
+
         private static readonly Action<Action> ExecuteActionCallback = obj => obj.Invoke();
         private static readonly WaitCallback ExecuteAction = obj => ((Action)obj).Invoke();
         public void QueueAction(Action action, IGrainContext context)

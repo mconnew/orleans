@@ -142,7 +142,7 @@ namespace Orleans
                 var timerLogger = this.loggerFactory.CreateLogger<SafeTimer>();
                 var minTicks = Math.Min(this.clientMessagingOptions.ResponseTimeout.Ticks, TimeSpan.FromSeconds(1).Ticks);
                 var period = TimeSpan.FromTicks(minTicks);
-                this.callbackTimer = new SafeTimer(timerLogger, this.OnCallbackExpiryTick, null, period, period);
+                this.callbackTimer = SafeTimer.StartNew(timerLogger, this.OnCallbackExpiryTick, null, period, period);
                 
                 this.GrainReferenceRuntime = this.ServiceProvider.GetRequiredService<IGrainReferenceRuntime>();
 
@@ -233,7 +233,7 @@ namespace Orleans
                 async () => this.GrainTypeResolver = await transport.GetGrainTypeResolver(this.InternalGrainFactory),
                 retryFilter);
 
-            this.typeMapRefreshTimer = new AsyncTaskSafeTimer(
+            this.typeMapRefreshTimer = AsyncTaskSafeTimer.StartNew(
                 this.logger, 
                 RefreshGrainTypeResolver, 
                 null,

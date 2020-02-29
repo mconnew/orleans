@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -120,7 +120,7 @@ namespace UnitTests.StreamingTests
         {
             return this.producer.ProducePeriodicSeries(timerCallback =>
                     {
-                        return new AsyncTaskSafeTimer(NullLogger.Instance, timerCallback, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(10));
+                        return AsyncTaskSafeTimer.StartNew(NullLogger.Instance, timerCallback, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(10));
                     }, count);
         }
 

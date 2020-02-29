@@ -35,7 +35,7 @@ namespace Orleans.Runtime
 
         internal void Start()
         {
-            reportTimer = new AsyncTaskSafeTimer(loggerFactory.CreateLogger<AsyncTaskSafeTimer>(), Reporter, null, reportFrequency, reportFrequency); // Start a new fresh timer.
+            reportTimer = AsyncTaskSafeTimer.StartNew(loggerFactory.CreateLogger<AsyncTaskSafeTimer>(), Reporter, null, reportFrequency, reportFrequency); // Start a new fresh timer.
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]

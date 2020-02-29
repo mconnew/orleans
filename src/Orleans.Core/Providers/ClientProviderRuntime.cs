@@ -88,11 +88,6 @@ namespace Orleans.Providers
             throw new NotImplementedException();
         }
 
-        public IDisposable RegisterTimer(Func<object, Task> asyncCallback, object state, TimeSpan dueTime, TimeSpan period)
-        {
-            return new AsyncTaskSafeTimer(this.timerLogger, asyncCallback, state, dueTime, period);
-        }
-
         public async Task<Tuple<TExtension, TExtensionInterface>> BindExtension<TExtension, TExtensionInterface>(Func<TExtension> newExtensionFunc)
             where TExtension : IGrainExtension
             where TExtensionInterface : IGrainExtension

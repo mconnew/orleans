@@ -75,7 +75,7 @@ namespace Orleans.Messaging
             this.knownGateways = cachedLiveGateways = knownGateways.Select(gw => gw.ToGatewayAddress()).ToList();
 
             lastRefreshTime = DateTime.UtcNow;
-            gatewayRefreshTimer = new AsyncTaskSafeTimer(
+            gatewayRefreshTimer = AsyncTaskSafeTimer.StartNew(
                 this.loggerFactory.CreateLogger<SafeTimer>(),
                 RefreshSnapshotLiveGateways_TimerCallback,
                 null,
