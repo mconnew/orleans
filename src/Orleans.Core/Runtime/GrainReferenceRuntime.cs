@@ -11,7 +11,6 @@ namespace Orleans.Runtime
     internal class GrainReferenceRuntime : IGrainReferenceRuntime
     {
         private readonly Func<GrainReference, InvokeMethodRequest, InvokeMethodOptions, Task<object>> sendRequestDelegate;
-        private readonly IInternalGrainFactory internalGrainFactory;
         private readonly SerializationManager serializationManager;
         private readonly IGrainCancellationTokenRuntime cancellationTokenRuntime;
         private readonly IOutgoingGrainCallFilter[] filters;
@@ -20,20 +19,22 @@ namespace Orleans.Runtime
         public GrainReferenceRuntime(
             IRuntimeClient runtimeClient,
             IGrainCancellationTokenRuntime cancellationTokenRuntime,
-            IInternalGrainFactory internalGrainFactory,
             SerializationManager serializationManager,
-            IEnumerable<IOutgoingGrainCallFilter> outgoingCallFilters)
+            IEnumerable<IOutgoingGrainCallFilter> outgoingCallFilters,
+            TypeMetadataCache typeMetadataCache)
         {
             this.grainReferenceMethodCache = new InterfaceToImplementationMappingCache();
             this.sendRequestDelegate = SendRequest;
             this.RuntimeClient = runtimeClient;
             this.cancellationTokenRuntime = cancellationTokenRuntime;
-            this.internalGrainFactory = internalGrainFactory;
+            this.GrainReferenceFactory = new GrainReferenceFactory(typeMetadataCache, this);
             this.serializationManager = serializationManager;
             this.filters = outgoingCallFilters.ToArray();
         }
 
         public IRuntimeClient RuntimeClient { get; private set; }
+
+        public GrainReferenceFactory GrainReferenceFactory { get; }
 
         /// <inheritdoc />
         public void InvokeOneWayMethod(GrainReference reference, int methodId, object[] arguments, InvokeMethodOptions options, SiloAddress silo)
@@ -76,10 +77,10 @@ namespace Orleans.Runtime
         }
 
         public TGrainInterface Convert<TGrainInterface>(IAddressable grain)
-            => this.internalGrainFactory.Cast<TGrainInterface>(grain);
+            => (TGrainInterface)this.GrainReferenceFactory.Cast(grain, typeof(TGrainInterface));
 
         public object Convert(IAddressable grain, Type interfaceType)
-            => this.internalGrainFactory.Cast(grain, interfaceType);
+            => this.GrainReferenceFactory.Cast(grain, interfaceType);
 
         private Task<object> InvokeMethod_Impl(GrainReference reference, InvokeMethodRequest request, InvokeMethodOptions options)
         {
