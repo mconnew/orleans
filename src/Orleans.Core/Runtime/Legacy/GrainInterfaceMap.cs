@@ -15,7 +15,13 @@ namespace Orleans.Runtime
     {
         private readonly Dictionary<string, GrainInterfaceData> typeToInterfaceData;
         private readonly Dictionary<int, GrainInterfaceData> table;
+
+#pragma warning disable IDE0051 // Remove unused private members
+#pragma warning disable CS0169 // Remove unused private members
+        // Unused. Retained for serialization compatibility.
         private readonly HashSet<int> unordered;
+#pragma warning restore CS0169 // Remove unused private members
+#pragma warning restore IDE0051 // Remove unused private members
 
         private readonly Dictionary<int, GrainClassData> implementationIndex;
         private readonly Dictionary<int, PlacementStrategy> placementStrategiesIndex;
@@ -45,7 +51,6 @@ namespace Orleans.Runtime
             primaryImplementations = new Dictionary<string, string>();
             implementationIndex = new Dictionary<int, GrainClassData>();
             placementStrategiesIndex = new Dictionary<int, PlacementStrategy>();
-            unordered = new HashSet<int>();
             this.localTestMode = localTestMode;
             this.defaultPlacementStrategy = defaultPlacementStrategy;
             if(localTestMode) // if we are running in test mode, we'll build a list of loaded grain assemblies to help with troubleshooting deployment issue
@@ -68,11 +73,6 @@ namespace Orleans.Runtime
                 {
                     table.Add(kvp.Key, kvp.Value);
                 }
-            }
-
-            foreach (var grainClassTypeCode in map.unordered)
-            {
-                unordered.Add(grainClassTypeCode);
             }
 
             foreach (var kvp in map.implementationIndex)
@@ -224,26 +224,9 @@ namespace Orleans.Runtime
             }
         }
 
-        public void AddToUnorderedList(Type grainClass)
-        {
-            var grainClassTypeCode = GrainInterfaceUtils.GetGrainClassTypeCode(grainClass);
-            if (!unordered.Contains(grainClassTypeCode))
-                unordered.Add(grainClassTypeCode);
-        }
-
-        public bool IsUnordered(int grainTypeCode)
-        {
-            return unordered.Contains(grainTypeCode);
-        }
-
         public IGrainTypeResolver GetGrainTypeResolver()
         {
-            return new GrainTypeResolver(
-                this.typeToInterfaceData,
-                this.table,
-                this.loadedGrainAsemblies,
-                this.unordered
-                );
+            return new GrainTypeResolver(this.typeToInterfaceData);
         }
     }
 }

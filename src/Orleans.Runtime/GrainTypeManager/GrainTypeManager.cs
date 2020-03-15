@@ -198,10 +198,10 @@ namespace Orleans.Runtime
         private void InitializeInterfaceMap()
         {
             foreach (GrainTypeData grainType in grainTypes.Values)
-                AddToGrainInterfaceToClassMap(grainType.Type, grainType.RemoteInterfaceTypes, grainType.IsStatelessWorker);
+                AddToGrainInterfaceToClassMap(grainType.Type, grainType.RemoteInterfaceTypes);
         }
 
-        private void AddToGrainInterfaceToClassMap(Type grainClass, IEnumerable<Type> grainInterfaces, bool isUnordered)
+        private void AddToGrainInterfaceToClassMap(Type grainClass, IEnumerable<Type> grainInterfaces)
         {
             var placement = GrainTypeData.GetPlacementStrategy(grainClass, this.defaultPlacementStrategy);
 
@@ -210,11 +210,7 @@ namespace Orleans.Runtime
                 var isPrimaryImplementor = IsPrimaryImplementor(grainClass, iface);
                 grainInterfaceMap.AddEntry(iface, grainClass, placement, isPrimaryImplementor);
             }
-
-            if (isUnordered)
-                grainInterfaceMap.AddToUnorderedList(grainClass);
         }
-
 
         private static bool IsPrimaryImplementor(Type grainClass, Type iface)
         {
@@ -232,15 +228,6 @@ namespace Orleans.Runtime
         {
             // the map is immutable at this point
             return grainInterfaceMap;
-        }
-
-        private void AddInvokerClass(int interfaceId, Type invoker)
-        {
-            lock (invokers)
-            {
-                if (!invokers.ContainsKey(interfaceId))
-                    invokers.Add(interfaceId, new InvokerData(invoker));
-            }
         }
 
         /// <summary>
