@@ -1,11 +1,9 @@
-using Microsoft.Extensions.Logging;
 using Orleans.CodeGeneration;
 using Orleans.Internal;
 using Orleans.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Orleans.Runtime
@@ -13,7 +11,6 @@ namespace Orleans.Runtime
     internal class GrainReferenceRuntime : IGrainReferenceRuntime
     {
         private readonly Func<GrainReference, InvokeMethodRequest, InvokeMethodOptions, Task<object>> sendRequestDelegate;
-        private readonly ILogger logger;
         private readonly IInternalGrainFactory internalGrainFactory;
         private readonly SerializationManager serializationManager;
         private readonly IGrainCancellationTokenRuntime cancellationTokenRuntime;
@@ -21,7 +18,6 @@ namespace Orleans.Runtime
         private readonly InterfaceToImplementationMappingCache grainReferenceMethodCache;
 
         public GrainReferenceRuntime(
-            ILogger<GrainReferenceRuntime> logger,
             IRuntimeClient runtimeClient,
             IGrainCancellationTokenRuntime cancellationTokenRuntime,
             IInternalGrainFactory internalGrainFactory,
@@ -30,7 +26,6 @@ namespace Orleans.Runtime
         {
             this.grainReferenceMethodCache = new InterfaceToImplementationMappingCache();
             this.sendRequestDelegate = SendRequest;
-            this.logger = logger;
             this.RuntimeClient = runtimeClient;
             this.cancellationTokenRuntime = cancellationTokenRuntime;
             this.internalGrainFactory = internalGrainFactory;
@@ -61,9 +56,6 @@ namespace Orleans.Runtime
             }
 
             var request = new InvokeMethodRequest(reference.InterfaceId, reference.InterfaceVersion, methodId, arguments);
-
-            if (IsUnordered(reference))
-                options |= InvokeMethodOptions.Unordered;
 
             Task<object> resultTask = InvokeMethod_Impl(reference, request, options);
 
@@ -134,11 +126,6 @@ namespace Orleans.Runtime
             {
                 (argument as GrainCancellationToken)?.AddGrainReference(this.cancellationTokenRuntime, target);
             }
-        }
-
-        private bool IsUnordered(GrainReference reference)
-        {
-            return this.RuntimeClient.GrainTypeResolver?.IsUnordered(((LegacyGrainId)reference.GrainId).TypeCode) == true;
         }
     }
 }
