@@ -461,16 +461,11 @@ namespace UnitTests.General
             GrainReference grainRef = this.environment.InternalGrainFactory.GetGrain(regularGrainId);
             TestGrainReference(grainRef);
 
-            grainRef = GrainReference.FromGrainId(regularGrainId, null, "generic");
-            TestGrainReference(grainRef);
-
-            GrainId systemTragetGrainId = LegacyGrainId.NewSystemTargetGrainIdByTypeCode(2);
-            grainRef = GrainReference.FromGrainId(systemTragetGrainId, null, null, SiloAddressUtils.NewLocalSiloAddress(1));
-            this.environment.GrainFactory.BindGrainReference(grainRef);
+            grainRef = this.environment.InternalGrainFactory.GetGrain(regularGrainId);
             TestGrainReference(grainRef);
 
             GrainId observerGrainId = LegacyGrainId.NewClientId();
-            grainRef = GrainReference.NewObserverGrainReference(observerGrainId, GuidId.GetNewGuidId(), this.environment.RuntimeClient.GrainReferenceRuntime);
+            grainRef = this.environment.InternalGrainFactory.GetGrain(observerGrainId);
             this.environment.GrainFactory.BindGrainReference(grainRef);
             TestGrainReference(grainRef);
         }
