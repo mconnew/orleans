@@ -13,17 +13,17 @@ namespace Orleans
     /// </summary>
     internal class GrainFactory : IInternalGrainFactory, IGrainReferenceConverter
     {
+        private GrainReferenceRuntime grainReferenceRuntime;
+
         /// <summary>
         /// The collection of <see cref="IGrainMethodInvoker"/>s for their corresponding grain interface type.
         /// </summary>
-        private readonly ConcurrentDictionary<Type, IGrainMethodInvoker> invokers =
-            new ConcurrentDictionary<Type, IGrainMethodInvoker>();
+        private readonly ConcurrentDictionary<Type, IGrainMethodInvoker> invokers = new ConcurrentDictionary<Type, IGrainMethodInvoker>();
 
         /// <summary>
         /// The cache of typed system target references.
         /// </summary>
-        private readonly Dictionary<Tuple<GrainId, Type>, Dictionary<SiloAddress, ISystemTarget>> typedSystemTargetReferenceCache =
-                    new Dictionary<Tuple<GrainId, Type>, Dictionary<SiloAddress, ISystemTarget>>();
+        private readonly Dictionary<Tuple<GrainId, Type>, ISystemTarget> typedSystemTargetReferenceCache = new Dictionary<Tuple<GrainId, Type>, ISystemTarget>();
 
         /// <summary>
         /// The cache of type metadata.
@@ -32,18 +32,15 @@ namespace Orleans
 
         private readonly IRuntimeClient runtimeClient;
 
-        private readonly GrainReferenceFactory referenceFactory;
-
-        private IGrainReferenceRuntime GrainReferenceRuntime => this.runtimeClient.GrainReferenceRuntime;
-
-        // Make this internal so that client code is forced to access the IGrainFactory using the 
-        // GrainClient (to make sure they don't forget to initialize the client).
-        public GrainFactory(IRuntimeClient runtimeClient, TypeMetadataCache typeCache)
+        public GrainFactory(
+            IRuntimeClient runtimeClient,
+            TypeMetadataCache typeCache)
         {
             this.runtimeClient = runtimeClient;
             this.typeCache = typeCache;
-            this.referenceFactory = new GrainReferenceFactory(typeCache, runtimeClient.GrainReferenceRuntime);
         }
+
+        private GrainReferenceRuntime GrainReferenceRuntime => this.grainReferenceRuntime ??= (GrainReferenceRuntime)this.runtimeClient.GrainReferenceRuntime;
 
         /// <inheritdoc />
         public TGrainInterface GetGrain<TGrainInterface>(Guid primaryKey, string grainClassNamePrefix = null) where TGrainInterface : IGrainWithGuidKey
@@ -139,46 +136,38 @@ namespace Orleans
         /// <param name="grain">The grain.</param>
         /// <param name="interfaceType">The resulting interface type.</param>
         /// <returns>A reference to <paramref name="grain"/> which implements <paramref name="interfaceType"/>.</returns>
-        public object Cast(IAddressable grain, Type interfaceType) => this.referenceFactory.Cast(grain, interfaceType);
+        public object Cast(IAddressable grain, Type interfaceType) => this.GrainReferenceRuntime.Convert(grain, interfaceType);
+
+        public TGrainInterface GetSystemTarget<TGrainInterface>(GrainType grainType, SiloAddress destination)
+            where TGrainInterface : ISystemTarget
+        {
+            var grainId = GrainTypePrefix.GetSystemTargetGrainId(grainType, destination);
+            return this.GetSystemTarget<TGrainInterface>(grainId);
+        }
 
         /// <summary>
         /// Gets a reference to the specified system target.
         /// </summary>
         /// <typeparam name="TGrainInterface">The system target interface.</typeparam>
         /// <param name="grainId">The id of the target.</param>
-        /// <param name="destination">The destination silo.</param>
         /// <returns>A reference to the specified system target.</returns>
-        public TGrainInterface GetSystemTarget<TGrainInterface>(GrainId grainId, SiloAddress destination)
+        public TGrainInterface GetSystemTarget<TGrainInterface>(GrainId grainId)
             where TGrainInterface : ISystemTarget
         {
-            Dictionary<SiloAddress, ISystemTarget> cache;
+            ISystemTarget reference;
             Tuple<GrainId, Type> key = Tuple.Create(grainId, typeof(TGrainInterface));
 
             lock (this.typedSystemTargetReferenceCache)
             {
-                if (this.typedSystemTargetReferenceCache.ContainsKey(key)) cache = this.typedSystemTargetReferenceCache[key];
-                else
+                if (this.typedSystemTargetReferenceCache.TryGetValue(key, out reference))
                 {
-                    cache = new Dictionary<SiloAddress, ISystemTarget>();
-                    this.typedSystemTargetReferenceCache[key] = cache;
+                    return (TGrainInterface)reference;
                 }
-            }
 
-            ISystemTarget reference;
-            lock (cache)
-            {
-                if (cache.ContainsKey(destination))
-                {
-                    reference = cache[destination];
-                }
-                else
-                {
-                    reference = this.Cast<TGrainInterface>(GrainReference.FromGrainId(grainId, this.GrainReferenceRuntime, null, destination));
-                    cache[destination] = reference; // Store for next time
-                }
+                reference = this.Cast<TGrainInterface>(GrainReference.FromGrainId(grainId, this.GrainReferenceRuntime, null));
+                this.typedSystemTargetReferenceCache[key] = reference;
+                return (TGrainInterface)reference;
             }
-
-            return (TGrainInterface)reference;
         }
 
         /// <inheritdoc />
@@ -291,7 +280,7 @@ namespace Orleans
             return implementation.GetTypeCode(interfaceType);
         }
 
-        private object CreateGrainReference(Type interfaceType, GrainId grainId) => referenceFactory.CreateGrainReference(interfaceType, grainId);
+        private object CreateGrainReference(Type interfaceType, GrainId grainId) => GrainReferenceRuntime.GrainReferenceFactory.CreateGrainReference(interfaceType, grainId);
 
         private object CreateObjectReference(Type interfaceType, IAddressable obj)
         {
@@ -315,56 +304,6 @@ namespace Orleans
             }
 
             return this.Cast(this.runtimeClient.CreateObjectReference(obj, invoker), interfaceType);
-        }
-    }
-
-    internal class GrainReferenceFactory
-    {
-        /// <summary>
-        /// The mapping between concrete grain interface types and delegate
-        /// </summary>
-        private readonly ConcurrentDictionary<Type, GrainReferenceCaster> casters = new ConcurrentDictionary<Type, GrainReferenceCaster>();
-        private readonly TypeMetadataCache typeCache;
-        private readonly IGrainReferenceRuntime grainReferenceRuntime;
-
-        /// <summary>
-        /// Casts an <see cref="IAddressable"/> to a concrete <see cref="GrainReference"/> implementation.
-        /// </summary>
-        /// <param name="existingReference">The existing <see cref="IAddressable"/> reference.</param>
-        /// <returns>The concrete <see cref="GrainReference"/> implementation.</returns>
-        internal delegate object GrainReferenceCaster(IAddressable existingReference);
-
-        public GrainReferenceFactory(TypeMetadataCache typeCache, IGrainReferenceRuntime grainReferenceRuntime)
-        {
-            this.typeCache = typeCache;
-            this.grainReferenceRuntime = grainReferenceRuntime;
-        }
-
-        public object CreateGrainReference(Type interfaceType, GrainId grainId)
-        {
-            var untypedGrainReference = GrainReference.FromGrainId(
-                grainId,
-                this.grainReferenceRuntime,
-                interfaceType.IsGenericType ? TypeUtils.GenericTypeArgsString(interfaceType.UnderlyingSystemType.FullName) : null);
-            return this.Cast(untypedGrainReference, interfaceType);
-        }
-
-        public object Cast(IAddressable grain, Type interfaceType)
-        {
-            GrainReferenceCaster caster;
-            if (!this.casters.TryGetValue(interfaceType, out caster))
-            {
-                // Create and cache a caster for the interface type.
-                caster = this.casters.GetOrAdd(interfaceType, MakeCaster);
-            }
-
-            return caster(grain);
-
-            GrainReferenceCaster MakeCaster(Type interfaceType)
-            {
-                var grainReferenceType = this.typeCache.GetGrainReferenceType(interfaceType);
-                return GrainCasterFactory.CreateGrainReferenceCaster(interfaceType, grainReferenceType);
-            }
         }
     }
 }

@@ -50,7 +50,7 @@ namespace Orleans.Runtime
             this.logger = logger;
             this.defaultPlacementStrategy = defaultPlacementStrategy;
             this.serializationManager = serializationManager;
-            grainInterfaceMap = new GrainInterfaceMap(localTestMode, this.defaultPlacementStrategy);
+            grainInterfaceMap = new GrainInterfaceMap(this.defaultPlacementStrategy);
             ClusterGrainInterfaceMap = grainInterfaceMap;
             GrainTypeResolver = grainInterfaceMap.GetGrainTypeResolver();
             grainInterfaceMapsBySilo = new Dictionary<SiloAddress, GrainInterfaceMap>();
@@ -107,9 +107,9 @@ namespace Orleans.Runtime
                             try
                             {
                                 // Instantiate the specific type from generic template
-                                var genericGrainTypeData = (GenericGrainTypeData)grainTypes[templateName];
+                                var grainTypeData = grainTypes[templateName];
                                 Type[] typeArgs = TypeUtils.GenericTypeArgsFromClassName(className);
-                                var concreteTypeData = genericGrainTypeData.MakeGenericType(typeArgs);
+                                var concreteTypeData = grainTypeData.MakeGenericType(typeArgs);
 
                                 // Add to lookup tables for next time
                                 var grainClassName = concreteTypeData.GrainClass;
@@ -262,7 +262,7 @@ namespace Orleans.Runtime
 
         private void RebuildFullGrainInterfaceMap()
         {
-            var newClusterGrainInterfaceMap = new GrainInterfaceMap(false, this.defaultPlacementStrategy);
+            var newClusterGrainInterfaceMap = new GrainInterfaceMap(this.defaultPlacementStrategy);
             var newSupportedSilosByTypeCode = new Dictionary<int, List<SiloAddress>>();
             var newSupportedSilosByInterface = new Dictionary<int, Dictionary<ushort, List<SiloAddress>>>();
             foreach (var kvp in grainInterfaceMapsBySilo)
@@ -311,10 +311,7 @@ namespace Orleans.Runtime
 
                 if (excluded != null && excluded.Contains(className)) continue;
 
-                var typeData = grainType.IsGenericTypeDefinition ?
-                    new GenericGrainTypeData(grainType) :
-                    new GrainTypeData(grainType);
-                result[className] = typeData;
+                result[className] = new GrainTypeData(grainType);
             }
 
             return result;
