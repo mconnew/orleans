@@ -302,11 +302,8 @@ namespace Orleans
             if (targetGrainId.IsSystemTarget())
             {
                 // If the silo isn't be supplied, it will be filled in by the sender to be the gateway silo
-                message.TargetSilo = target.SystemTargetSilo;
-                if (target.SystemTargetSilo != null)
-                {
-                    message.TargetActivation = ActivationId.GetDeterministic(targetGrainId);
-                }
+                message.TargetSilo = GrainTypePrefix.GetSystemTargetSilo(targetGrainId);
+                message.TargetActivation = ActivationId.GetDeterministic(targetGrainId);
             }
             // Client sending messages to another client (observer). Yes, we support that.
             if (target.IsObserverReference)
