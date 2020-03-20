@@ -15,15 +15,8 @@ namespace Orleans.Serialization
             var writer = context.StreamWriter;
             var input = (GrainReference)obj;
             writer.Write(input.GrainId);
-            if (input.IsSystemTarget)
-            {
-                writer.Write((byte)1);
-                writer.Write(input.SystemTargetSilo);
-            }
-            else
-            {
-                writer.Write((byte)0);
-            }
+
+            writer.Write((byte)0);
 
             if (input.IsObserverReference)
             {
