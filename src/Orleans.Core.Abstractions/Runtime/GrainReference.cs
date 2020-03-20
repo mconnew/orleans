@@ -48,21 +48,8 @@ namespace Orleans.Runtime
 
         public GrainId GrainId { get; private set; }
 
-        /// <summary>
-        /// Called from generated code.
-        /// </summary>
-        protected internal readonly SiloAddress SystemTargetSilo;
-
-        public SiloAddress GrainServiceSiloAddress => this.SystemTargetSilo;    // TODO make this distinct
-
         [NonSerialized]
         private IGrainReferenceRuntime runtime;
-
-        /// <summary>
-        /// Whether the runtime environment for system targets has been initialized yet.
-        /// Called from generated code.
-        /// </summary>
-        protected internal bool IsInitializedSystemTarget { get { return SystemTargetSilo != null; } }
 
         internal string GenericArguments => this.genericArguments;
 
@@ -86,8 +73,8 @@ namespace Orleans.Runtime
             var isSystemTarget = grainId.IsSystemTarget();
             if (isSystemTarget)
             {
-                this.SystemTargetSilo = GrainTypePrefix.GetSystemTargetSilo(grainId);
-                if (SystemTargetSilo == null)
+                var systemTargetSilo = GrainTypePrefix.GetSystemTargetSilo(grainId);
+                if (systemTargetSilo is null)
                 {
                     throw new ArgumentNullException("systemTargetSilo", String.Format("Trying to create a GrainReference for SystemTarget grain id {0}, but passing null systemTargetSilo.", grainId));
                 }
@@ -184,10 +171,6 @@ namespace Orleans.Runtime
             {
                 return false;
             }
-            if (IsSystemTarget)
-            {
-                return Equals(SystemTargetSilo, other.SystemTargetSilo);
-            }
             if (IsObserverReference)
             {
                 return observerId.Equals(other.observerId);
@@ -199,10 +182,6 @@ namespace Orleans.Runtime
         public override int GetHashCode()
         {
             int hash = GrainId.GetHashCode();
-            if (IsSystemTarget)
-            {
-                hash = hash ^ SystemTargetSilo.GetHashCode();
-            }
             if (IsObserverReference)
             {
                 hash = hash ^ observerId.GetHashCode();
@@ -328,10 +307,6 @@ namespace Orleans.Runtime
         /// <summary>Returns a string representation of this reference.</summary>
         public override string ToString()
         {
-            if (IsSystemTarget)
-            {
-                return String.Format("{0}:{1}/{2}", SYSTEM_TARGET_STR, GrainId, SystemTargetSilo);
-            }
             if (IsObserverReference)
             {
                 return String.Format("{0}:{1}/{2}", OBSERVER_ID_STR, GrainId, observerId);
@@ -342,10 +317,6 @@ namespace Orleans.Runtime
 
         internal string ToDetailedString()
         {
-            if (IsSystemTarget)
-            {
-                return String.Format("{0}:{1}/{2}", SYSTEM_TARGET_STR, GrainId.ToString(), SystemTargetSilo);
-            }
             if (IsObserverReference)
             {
                 return String.Format("{0}:{1}/{2}", OBSERVER_ID_STR, GrainId.ToString(), observerId.ToString());
@@ -362,10 +333,12 @@ namespace Orleans.Runtime
             {
                 return String.Format("{0}={1} {2}={3}", GRAIN_REFERENCE_STR, ((LegacyGrainId)GrainId).ToParsableString(), OBSERVER_ID_STR, observerId.ToParsableString());
             }
+            /*
             if (IsSystemTarget)
             {
                 return String.Format("{0}={1} {2}={3}", GRAIN_REFERENCE_STR, ((LegacyGrainId)GrainId).ToParsableString(), SYSTEM_TARGET_STR, SystemTargetSilo.ToParsableString());
             }
+            */
             if (HasGenericArgument)
             {
                 return String.Format("{0}={1} {2}={3}", GRAIN_REFERENCE_STR, ((LegacyGrainId)GrainId).ToParsableString(), GENERIC_ARGUMENTS_STR, genericArguments);
@@ -441,10 +414,6 @@ namespace Orleans.Runtime
         {
             // Use the AddValue method to specify serialized values.
             info.AddValue("GrainId", GrainId, typeof(GrainId));
-            if (IsSystemTarget)
-            {
-                info.AddValue("SystemTargetSilo", SystemTargetSilo.ToParsableString(), typeof(string));
-            }
             if (IsObserverReference)
             {
                 info.AddValue(OBSERVER_ID_STR, observerId.ToParsableString(), typeof(string));
@@ -463,7 +432,7 @@ namespace Orleans.Runtime
             if (IsSystemTarget)
             {
                 var siloAddressStr = info.GetString("SystemTargetSilo");
-                SystemTargetSilo = SiloAddress.FromParsableString(siloAddressStr);
+                _ = SiloAddress.FromParsableString(siloAddressStr);
             }
             if (IsObserverReference)
             {

@@ -162,7 +162,7 @@ namespace Orleans.Runtime
             SharedCallbackData sharedData;
             if (targetGrainId.IsSystemTarget())
             {
-                SiloAddress targetSilo = (target.SystemTargetSilo ?? MySilo);
+                SiloAddress targetSilo = GrainTypePrefix.GetSystemTargetSilo(targetGrainId);
                 message.TargetSilo = targetSilo;
                 message.TargetActivation = ActivationId.GetDeterministic(targetGrainId);
                 message.Category = targetGrainId.Type.Equals(Constants.MembershipOracleType) ?
