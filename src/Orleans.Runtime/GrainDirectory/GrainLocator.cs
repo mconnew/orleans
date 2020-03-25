@@ -48,8 +48,10 @@ namespace Orleans.Runtime.GrainDirectory
 
         public async Task<List<ActivationAddress>> Lookup(GrainId grainId)
         {
-            if (grainId.IsClient())
-                return await this.inClusterGrainLocator.Lookup(grainId);
+            if (ClientGrainId.TryGetClientId(grainId, out var clientId))
+            {
+                return await this.inClusterGrainLocator.Lookup(clientId);
+            }
 
             List<ActivationAddress> results;
 
@@ -88,7 +90,9 @@ namespace Orleans.Runtime.GrainDirectory
         public async Task<ActivationAddress> Register(ActivationAddress address)
         {
             if (address.Grain.IsClient())
+            {
                 return await this.inClusterGrainLocator.Register(address);
+            }
 
             var grainAddress = address.ToGrainAddress();
 

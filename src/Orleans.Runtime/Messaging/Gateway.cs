@@ -198,15 +198,22 @@ namespace Orleans.Runtime.Messaging
         {
             // See if it's a grain we're proxying.
             ClientState client;
-            
-            // not taking global lock on the crytical path!
-            if (!clients.TryGetValue(msg.TargetGrain, out client))
+
+            var targetGrain = msg.TargetGrain;
+            if (!ClientGrainId.TryGetClientId(targetGrain, out var clientId))
+            {
                 return false;
+            }
+
+            if (!clients.TryGetValue(clientId, out client))
+            {
+                return false;
+            }
             
             // when this Gateway receives a message from client X to client addressale object Y
             // it needs to record the original Gateway address through which this message came from (the address of the Gateway that X is connected to)
             // it will use this Gateway to re-route the REPLY from Y back to X.
-            if (msg.SendingGrain.IsClient() && msg.TargetGrain.IsClient())
+            if (msg.SendingGrain.IsClient())
             {
                 clientsReplyRoutingCache.RecordClientRoute(msg.SendingGrain, msg.SendingSilo);
             }
@@ -215,7 +222,10 @@ namespace Orleans.Runtime.Messaging
             // Override the SendingSilo only if the sending grain is not 
             // a system target
             if (!msg.SendingGrain.IsSystemTarget())
+            {
                 msg.SendingSilo = gatewayAddress;
+            }
+
             QueueRequest(client, msg);
             return true;
         }

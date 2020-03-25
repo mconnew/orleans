@@ -98,7 +98,7 @@ namespace Orleans
             this.ClientStatistics = clientStatisticsManager;
             this.messagingTrace = messagingTrace;
             this.logger = loggerFactory.CreateLogger<OutsideRuntimeClient>();
-            this.clientId = LegacyGrainId.NewClientId();
+            this.clientId = ClientGrainId.Create();
             callbacks = new ConcurrentDictionary<CorrelationId, CallbackData>();
             this.clientMessagingOptions = clientMessagingOptions.Value;
             this.typeMapRefreshInterval = typeManagementOptions.Value.TypeMapRefreshInterval;
@@ -329,11 +329,6 @@ namespace Orleans
                 message.TargetSilo = GrainTypePrefix.GetSystemTargetSilo(targetGrainId);
                 message.TargetActivation = ActivationId.GetDeterministic(targetGrainId);
             }
-            // Client sending messages to another client (observer). Yes, we support that.
-            if (target.IsObserverReference)
-            {
-                message.TargetObserverId = target.ObserverId;
-            }
 
             if (message.IsExpirableMessage(this.clientMessagingOptions.DropExpiredMessages))
             {
@@ -469,8 +464,9 @@ namespace Orleans
             if (obj is Grain)
                 throw new ArgumentException("Argument must not be a grain class.", nameof(obj));
 
-            GrainReference gr = GrainReference.NewObserverGrainReference(clientId, GuidId.GetNewGuidId(), this.GrainReferenceRuntime);
-            if (!localObjects.TryRegister(obj, gr.ObserverId, invoker))
+            GrainId observerId = ClientGrainId.CreateObserverId(this.clientId);
+            GrainReference gr = GrainReference.NewObserverGrainReference(observerId, this.GrainReferenceRuntime);
+            if (!localObjects.TryRegister(obj, observerId, invoker))
             {
                 throw new ArgumentException(String.Format("Failed to add new observer {0} to localObjects collection.", gr), "gr");
             }
@@ -483,7 +479,7 @@ namespace Orleans
                 throw new ArgumentException("Argument reference is not a grain reference.");
 
             var reference = (GrainReference)obj;
-            if (!localObjects.TryDeregister(reference.ObserverId))
+            if (!localObjects.TryDeregister(reference.GrainId))
                 throw new ArgumentException("Reference is not associated with a local object.", "reference");
         }
 

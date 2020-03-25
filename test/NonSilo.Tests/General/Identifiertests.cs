@@ -464,7 +464,7 @@ namespace UnitTests.General
             grainRef = this.environment.InternalGrainFactory.GetGrain(regularGrainId);
             TestGrainReference(grainRef);
 
-            GrainId observerGrainId = LegacyGrainId.NewClientId();
+            GrainId observerGrainId = ClientGrainId.CreateObserverId(ClientGrainId.Create());
             grainRef = this.environment.InternalGrainFactory.GetGrain(observerGrainId);
             this.environment.GrainFactory.BindGrainReference(grainRef);
             TestGrainReference(grainRef);
