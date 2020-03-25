@@ -155,7 +155,7 @@ namespace Orleans.Runtime.MembershipService
         {
             if (this.log.IsEnabled(LogLevel.Trace))
             {
-                this.log.LogTrace("Got failed ping response for ping #{ProbeNumber}/{Id} from {Silo}: {Exception}", diagnosticProbeNumber, id, this.SiloAddress, failureReason);
+                this.log.LogTrace(failureReason, "Got failed ping response for ping #{ProbeNumber}/{Id} from {Silo}", diagnosticProbeNumber, id, this.SiloAddress);
             }
 
             MessagingStatisticsGroup.OnPingReplyMissed(this.SiloAddress);
@@ -189,11 +189,11 @@ namespace Orleans.Runtime.MembershipService
 
                     this.log.LogWarning(
                         (int)ErrorCode.MembershipMissedPing,
-                        "Did not get ping response for ping #{ProbeNumber}/{Id} from {Silo}: {Exception}",
+                        failureReason,
+                        "Did not get ping response for ping #{ProbeNumber}/{Id} from {Silo}",
                         diagnosticProbeNumber,
                         id,
-                        this.SiloAddress,
-                        failureReason);
+                        this.SiloAddress);
                     if (this.log.IsEnabled(LogLevel.Trace))
                     {
                         this.log.LogTrace("Current number of failed probes for {Silo}: {MissedProbes}", this.SiloAddress, missed);

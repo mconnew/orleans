@@ -55,7 +55,7 @@ namespace Orleans.Runtime
 
             try
             {
-                this.logger.LogError((int)ErrorCode.Runtime_Error_100104, baseException, "Silo caught an unobserved exception thrown from context {Context}: {Exception}", context, baseException);
+                this.logger.LogError((int)ErrorCode.Runtime_Error_100104, baseException, "Silo caught an unobserved exception thrown from context {Context}", context);
             }
             finally
             {
@@ -77,7 +77,7 @@ namespace Orleans.Runtime
         private void DomainUnobservedExceptionHandler(object context, UnhandledExceptionEventArgs args)
         {
             var exception = (Exception)args.ExceptionObject;
-            logger.LogError((int)ErrorCode.Runtime_Error_100324, exception, "Silo caught an unobserved exception thrown from context {Context}: {Exception}", context, exception);
+            logger.LogError((int)ErrorCode.Runtime_Error_100324, exception, "Silo caught an unobserved exception thrown from context {Context}", context);
         }
 
         public void Dispose()

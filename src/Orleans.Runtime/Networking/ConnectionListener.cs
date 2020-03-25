@@ -96,7 +96,7 @@ namespace Orleans.Runtime.Messaging
                 }
                 catch (Exception exception)
                 {
-                    this.NetworkingTrace.LogCritical("Exception in AcceptAsync: {Exception}", exception);
+                    this.NetworkingTrace.LogCritical(exception, "Exception in AcceptAsync");
                 }
                 finally
                 {
@@ -154,7 +154,7 @@ namespace Orleans.Runtime.Messaging
             }
             catch (Exception exception)
             {
-                this.NetworkingTrace.LogWarning("Exception during shutdown: {Exception}", exception);
+                this.NetworkingTrace.LogWarning(exception, "Exception during shutdown");
             }
         }
 

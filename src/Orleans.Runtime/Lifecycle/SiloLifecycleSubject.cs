@@ -126,10 +126,10 @@ namespace Orleans.Runtime
                 {
                     this.logger?.LogError(
                         (int)ErrorCode.LifecycleStartFailure,
-                        "{Name} failed to start due to errors at stage {Stage}: {Exception}",
+                        exception,
+                        "{Name} failed to start due to errors at stage {Stage}",
                         this.Name,
-                        this.StageName,
-                        exception);
+                        this.StageName);
                     throw;
                 }
             }
@@ -152,10 +152,10 @@ namespace Orleans.Runtime
                 {
                     this.logger?.LogError(
                         (int)ErrorCode.LifecycleStartFailure,
-                        "{Name} failed to stop due to errors at stage {Stage}: {Exception}",
+                        exception,
+                        "{Name} failed to stop due to errors at stage {Stage}",
                         this.Name,
-                        this.StageName,
-                        exception);
+                        this.StageName);
                     throw;
                 }
             }

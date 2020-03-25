@@ -165,9 +165,9 @@ namespace Orleans
                         if (this.logger.IsEnabled(LogLevel.Warning))
                         {
                             this.logger.LogWarning(
-                                "Exception during message body deserialization in " + nameof(LocalObjectMessagePumpAsync) + " for message: {Message}, Exception: {Exception}",
-                                message,
-                                deserializationException);
+                                deserializationException,
+                                "Exception during message body deserialization in " + nameof(LocalObjectMessagePumpAsync) + " for message: {Message}",
+                                message);
                         }
 
                         this.runtimeClient.SendResponse(message, Response.ExceptionResponse(deserializationException));
@@ -202,7 +202,7 @@ namespace Orleans
                 catch (Exception outerException)
                 {
                     // ignore, keep looping.
-                    this.logger.LogWarning("Exception in " + nameof(LocalObjectMessagePumpAsync) + ": {Exception}", outerException);
+                    this.logger.LogWarning(outerException, "Exception in " + nameof(LocalObjectMessagePumpAsync));
                 }
                 finally
                 {
@@ -261,7 +261,7 @@ namespace Orleans
 
                 case Message.Directions.Request:
                 {
-                    Exception deepCopy = null;
+                    Exception deepCopy;
                     try
                     {
                         // we're expected to notify the caller if the deep copy failed.
@@ -282,7 +282,7 @@ namespace Orleans
                 }
 
                 default:
-                    throw new InvalidOperationException($"Unrecognized direction for message {message}, request {request}, which resulted in exception: {exception}");
+                    throw new InvalidOperationException($"Unrecognized direction for message {message}, request {request}, which resulted in exception: {exception}", exception);
             }
         }
 

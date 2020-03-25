@@ -108,7 +108,7 @@ namespace Orleans.Transactions.AzureStorage
             }
             catch (Exception ex)
             {
-                this.logger.LogError("Transactional state load failed {Exception}.", ex);
+                this.logger.LogError(ex, "Transactional state load failed");
                 throw;
             }
         }
@@ -329,7 +329,7 @@ namespace Orleans.Transactions.AzureStorage
                                 logger.LogTrace($"{batchOperation[i].Entity.PartitionKey}.{batchOperation[i].Entity.RowKey} batch-op failed {i}");
                         }
 
-                        this.logger.LogError("Transactional state store failed {Exception}.", ex);
+                        this.logger.LogError(ex, "Transactional state store failed");
                         throw;
                     }
             }

@@ -377,9 +377,8 @@ namespace Orleans.Runtime.Scheduler
                         this.log.LogError(
                             (int)ErrorCode.SchedulerExceptionFromExecute,
                             ex,
-                            "Worker thread caught an exception thrown from Execute by task {Task}. Exception: {Exception}",
-                            OrleansTaskExtentions.ToString(task),
-                            ex);
+                            "Worker thread caught an exception thrown from Execute by task {Task}",
+                            OrleansTaskExtentions.ToString(task));
                         throw;
                     }
                     finally
@@ -411,9 +410,8 @@ namespace Orleans.Runtime.Scheduler
                 this.log.LogError(
                     (int)ErrorCode.Runtime_Error_100032,
                     ex,
-                    "Worker thread {Thread} caught an exception thrown from IWorkItem.Execute: {Exception}",
-                    Thread.CurrentThread.ManagedThreadId,
-                    ex);
+                    "Worker thread {Thread} caught an exception thrown from IWorkItem.Execute",
+                    Thread.CurrentThread.ManagedThreadId);
             }
             finally
             {

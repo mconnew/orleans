@@ -189,10 +189,10 @@ namespace Orleans.Runtime.Messaging
             if (exception != null)
             {
                 this.trace.LogWarning(
-                    "Connection {Connection} to endpoint {EndPoint} terminated with exception {Exception}",
+                    exception,
+                    "Connection {Connection} to endpoint {EndPoint} terminated with an exception",
                     connection,
-                    address,
-                    exception);
+                    address);
             }
             else
             {
@@ -256,9 +256,9 @@ namespace Orleans.Runtime.Messaging
                 this.OnConnectionFailed(address, DateTime.UtcNow);
 
                 this.trace.LogWarning(
-                    "Connection attempt to endpoint {EndPoint} failed with exception {Exception}",
-                    address,
-                    exception);
+                    exception,
+                    "Connection attempt to endpoint {EndPoint} failed with an exception",
+                    address);
 
                 throw new ConnectionFailedException(
                     $"Unable to connect to endpoint {address}. See {nameof(exception.InnerException)}", exception);
@@ -340,7 +340,7 @@ namespace Orleans.Runtime.Messaging
             }
             catch (Exception exception)
             {
-                this.trace?.LogWarning("Exception during shutdown: {Exception}", exception);
+                this.trace?.LogWarning(exception, "Exception during shutdown");
             }
             finally
             {

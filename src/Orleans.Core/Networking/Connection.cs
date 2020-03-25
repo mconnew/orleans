@@ -148,9 +148,8 @@ namespace Orleans.Runtime.Messaging
                         {
                             this.Log.LogInformation(
                                 exception,
-                                "Closing connection with remote endpoint {EndPoint}. Exception: {Exception}",
-                                this.RemoteEndPoint,
-                                exception);
+                                "Closing connection with remote endpoint {EndPoint}",
+                                this.RemoteEndPoint);
                         }
                     }
 
@@ -176,7 +175,7 @@ namespace Orleans.Runtime.Messaging
                 catch (Exception innerException)
                 {
                     // Swallow any exceptions here.
-                    this.Log.LogWarning(innerException, "Exception closing connection with remote endpoint {EndPoint}: {Exception}", this.RemoteEndPoint, innerException);
+                    this.Log.LogWarning(innerException, "Exception closing connection with remote endpoint {EndPoint}", this.RemoteEndPoint);
                 }
             }
         }
@@ -255,9 +254,8 @@ namespace Orleans.Runtime.Messaging
             {
                 this.Log.LogWarning(
                     exception,
-                    "Exception while processing messages from remote endpoint {EndPoint}: {Exception}",
-                    this.RemoteEndPoint,
-                    exception);
+                    "Exception while processing messages from remote endpoint {EndPoint}",
+                    this.RemoteEndPoint);
                 error = exception;
             }
             finally
@@ -330,9 +328,8 @@ namespace Orleans.Runtime.Messaging
             {
                 this.Log.LogWarning(
                     exception,
-                    "Exception while processing messages to remote endpoint {EndPoint}: {Exception}",
-                    this.RemoteEndPoint,
-                    exception);
+                    "Exception while processing messages to remote endpoint {EndPoint}",
+                    this.RemoteEndPoint);
                 error = exception;
             }
             finally
@@ -426,11 +423,11 @@ namespace Orleans.Runtime.Messaging
         private bool HandleReceiveMessageFailure(Message message, Exception exception)
         {
             this.Log.LogWarning(
-                "Exception reading message {Message} from remote endpoint {Remote} to local endpoint {Local}: {Exception}",
+                exception,
+                "Exception reading message {Message} from remote endpoint {Remote} to local endpoint {Local}",
                 message,
                 this.RemoteEndPoint,
-                this.LocalEndPoint,
-                exception);
+                this.LocalEndPoint);
 
             // If deserialization completely failed, rethrow the exception so that it can be handled at another level.
             if (message?.Headers is null)
@@ -471,9 +468,9 @@ namespace Orleans.Runtime.Messaging
             // Response msg fails to serialize on the responding silo, so we try to send an error response back.
             this.Log.LogWarning(
                 (int)ErrorCode.Messaging_SerializationError,
-                "Unexpected error serializing message {Message}: {Exception}",
-                message,
-                exception);
+                exception,
+                "Unexpected error serializing message {Message}",
+                message);
 
             MessagingStatisticsGroup.OnFailedSentMessage(message);
 
@@ -499,9 +496,9 @@ namespace Orleans.Runtime.Messaging
             {
                 this.Log.LogWarning(
                     (int)ErrorCode.Messaging_OutgoingMS_DroppingMessage,
-                    "Dropping message which failed during serialization: {Message}. Exception = {Exception}",
-                    message,
-                    exception);
+                    exception,
+                    "Dropping message which failed during serialization: {Message}",
+                    message);
 
                 MessagingStatisticsGroup.OnDroppedSentMessage(message);
             }

@@ -236,7 +236,7 @@ namespace Orleans.Runtime.ReminderService
                 }
                 catch (Exception exception)
                 {
-                    this.logger.LogWarning(exception, "Exception while reading reminders: {Exception}", exception);
+                    this.logger.LogWarning(exception, "Exception while reading reminders");
                     overrideDelay = random.NextTimeSpan(TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(20));
                 }
             }
@@ -550,10 +550,9 @@ namespace Orleans.Runtime.ReminderService
                     {
                         this.reminderService.logger.LogWarning(
                             exception,
-                            "Exception firing reminder \"{ReminderName}\" for grain {GrainId}: {Exception}",
+                            "Exception firing reminder \"{ReminderName}\" for grain {GrainId}",
                             this.Identity.ReminderName,
-                            this.Identity.GrainRef?.GrainId,
-                            exception);
+                            this.Identity.GrainRef?.GrainId);
                     }
 
                     dueTimeSpan = CalculateDueTime();

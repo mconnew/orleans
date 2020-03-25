@@ -182,8 +182,8 @@ namespace Orleans.Runtime.MembershipService
             {
                 this.log.LogError(
                     (int)ErrorCode.MembershipUpdateIAmAliveFailure,
-                    "Exception while monitoring cluster members: {Exception}",
-                    exception);
+                    exception,
+                    "Exception while monitoring cluster members");
             }
 
             async Task PingSilo(SiloHealthMonitor monitor, CancellationToken pingCancellation)
@@ -222,7 +222,11 @@ namespace Orleans.Runtime.MembershipService
                 }
                 catch (Exception exception)
                 {
-                    this.log.LogError((int)ErrorCode.MembershipFailedToSuspect, "Failed to register death vote for silo {Silo}: {Exception}", monitor.SiloAddress, exception);
+                    this.log.LogError(
+                        (int)ErrorCode.MembershipFailedToSuspect,
+                        exception,
+                        "Failed to register death vote for silo {Silo}",
+                        monitor.SiloAddress);
                 }
             }
         }

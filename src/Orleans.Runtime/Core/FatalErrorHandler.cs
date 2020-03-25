@@ -32,10 +32,9 @@ namespace Orleans.Runtime
                 this.log.LogError(
                     (int)ErrorCode.Logger_ProcessCrashing,
                     exception,
-                    "Fatal error from {Sender}. Context: {Context}. Exception: {Exception}",
+                    "Fatal error from {Sender}. Context: {Context}",
                     sender,
-                    context,
-                    exception);
+                    context);
             }
             else
             {

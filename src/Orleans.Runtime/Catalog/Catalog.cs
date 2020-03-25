@@ -249,7 +249,7 @@ namespace Orleans.Runtime
                 }
                 catch (Exception exception)
                 {
-                    this.logger.LogError(exception, "Exception while collecting activations: {Exception}", exception);
+                    this.logger.LogError(exception, "Exception while collecting activations");
                 }
             }
         }

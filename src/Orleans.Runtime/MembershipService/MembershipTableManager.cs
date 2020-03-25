@@ -141,8 +141,8 @@ namespace Orleans.Runtime.MembershipService
             {
                 success = false;
                 this.log.LogWarning(
-                    "Exception while trying to clean up my table entries: {Exception}",
-                    exception);
+                    exception,
+                    "Exception while trying to clean up my table entries");
             }
 
             // If cleanup was not required then the cleanup result is ignored.
@@ -184,7 +184,7 @@ namespace Orleans.Runtime.MembershipService
             }
             catch (Exception exception)
             {
-                this.log.LogError((int)ErrorCode.MembershipFailedToStart, "Membership failed to start: {Exception}", exception);
+                this.log.LogError((int)ErrorCode.MembershipFailedToStart, exception, "Membership failed to start");
                 throw;
             }
         }
@@ -254,8 +254,8 @@ namespace Orleans.Runtime.MembershipService
                     {
                         this.log.LogError(
                             (int)ErrorCode.MembershipUpdateIAmAliveFailure,
-                            "Failed to refresh membership table, will retry shortly: {Exception}",
-                            exception);
+                            exception,
+                            "Failed to refresh membership table, will retry shortly");
 
                         // Retry quickly
                         onceOffDelay = TimeSpan.FromMilliseconds(200);
@@ -264,7 +264,7 @@ namespace Orleans.Runtime.MembershipService
             }
             catch (Exception exception) when (this.fatalErrorHandler.IsUnexpected(exception))
             {
-                this.log.LogError("Error refreshing membership table: {Exception}", exception);
+                this.log.LogError(exception, "Error refreshing membership table");
                 this.fatalErrorHandler.OnFatalException(this, nameof(PeriodicallyRefreshMembershipTable), exception);
             }
             finally
@@ -599,7 +599,7 @@ namespace Orleans.Runtime.MembershipService
             }
             catch (Exception exception)
             {
-                this.log.LogWarning("Exception while gossiping status to other silos: {Exception}", exception);
+                this.log.LogWarning(exception, "Exception while gossiping status to other silos");
             }
         }
 
