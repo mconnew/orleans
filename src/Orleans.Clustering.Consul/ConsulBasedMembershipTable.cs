@@ -117,7 +117,7 @@ namespace Orleans.Runtime.Membership
             }
             catch (Exception ex)
             {
-                _logger.Info("ConsulMembershipProvider failed to insert registration for silo {0}; {1}.", entry.SiloAddress, ex);
+                _logger.LogInformation(ex, "Failed to insert registration for silo {SiloAddress}", entry.SiloAddress);
                 throw;
             }
         }
@@ -136,7 +136,7 @@ namespace Orleans.Runtime.Membership
                 var responses = await _consulClient.KV.Txn(new List<KVTxnOp> { rowUpdate, versionUpdate });
                 if (!responses.Response.Success)
                 {
-                    _logger.Debug("ConsulMembershipProvider failed the CAS check when updating the registration for silo {0}.", entry.SiloAddress);
+                    _logger.Debug("Failed the CAS check when updating the registration for silo {0}.", entry.SiloAddress);
                     return false;
                 }
 
@@ -144,7 +144,7 @@ namespace Orleans.Runtime.Membership
             }
             catch (Exception ex)
             {
-                _logger.Info("ConsulMembershipProvider failed to update the registration for silo {0}: {1}.", entry.SiloAddress, ex);
+                _logger.LogInformation(ex, "Failed to update the registration for silo {SiloAddress}", entry.SiloAddress);
                 throw;
             }
         }

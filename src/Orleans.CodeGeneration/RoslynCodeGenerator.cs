@@ -271,7 +271,7 @@ namespace Orleans.CodeGenerator
                         {
                             if (this.logger.IsEnabled(LogLevel.Information))
                             {
-                                this.logger.Info("Found grain implementation class: {0}", type.GetParseableName());
+                                this.logger.LogInformation("Found grain implementation class: {Type}", type.GetParseableName());
                             }
 
                             grainClasses.Add(type);
@@ -281,7 +281,7 @@ namespace Orleans.CodeGenerator
                         {
                             if (this.logger.IsEnabled(LogLevel.Information))
                             {
-                                this.logger.Info("Found grain interface: {0}", type.GetParseableName());
+                                this.logger.LogInformation("Found grain interface: {Type}", type.GetParseableName());
                             }
 
                             GrainInterfaceUtils.ValidateInterfaceRules(type);
@@ -489,8 +489,8 @@ namespace Orleans.CodeGenerator
 
                         if (this.logger.IsEnabled(LogLevel.Information))
                         {
-                            this.logger.Info(
-                                "Found type {0} is a serializer for type {1}",
+                            this.logger.LogInformation(
+                                "Found type {SerializerType} is a serializer for type {TargetType}",
                                 type.GetParseableName(),
                                 serializerAttribute.TargetType.GetParseableName());
                         }
@@ -511,8 +511,8 @@ namespace Orleans.CodeGenerator
                     {
                         if (this.logger.IsEnabled(LogLevel.Information))
                         {
-                            this.logger.Info(
-                                "Found type {0} is self-serializing.",
+                            this.logger.LogInformation(
+                                "Found type {Type} is self-serializing.",
                                 type.GetParseableName());
                         }
 

@@ -72,7 +72,7 @@ namespace Orleans.Runtime
             List<string> discoveredAssemblyLocations = loader.DiscoverAssemblies();
             foreach (var pathName in discoveredAssemblyLocations)
             {
-                loader.logger.Info("Loading assembly {0}...", pathName);
+                loader.logger.LogInformation("Loading assembly {AssemblyPath}", pathName);
 
                 // It is okay to use LoadFrom here because we are loading application assemblies deployed to the specific directory.
                 // Such application assemblies should not be deployed somewhere else, e.g. GAC, so this is safe.
@@ -86,7 +86,7 @@ namespace Orleans.Runtime
                 }
             }
 
-            loader.logger.Info("{0} assemblies loaded.", loadedAssemblies.Count);
+            loader.logger.LogInformation("{Count} assemblies loaded.", loadedAssemblies.Count);
             return loadedAssemblies;
         }
 
@@ -170,10 +170,10 @@ namespace Orleans.Runtime
                     continue;
                 }
 
-                logger.Info(
+                logger.LogInformation(
                     searchOption == SearchOption.TopDirectoryOnly ? 
-                        "Searching for assemblies in {0}..." :
-                        "Recursively searching for assemblies in {0}...",
+                        "Searching for assemblies in {Path}" :
+                        "Recursively searching for assemblies in {Path}",
                     pathName);
 
                 var candidates = 
@@ -202,7 +202,7 @@ namespace Orleans.Runtime
                         }
                         else
                         {
-                            if (logger.IsEnabled(LogLevel.Information)) logger.Info("{0} is not compatible with current process, loading is skipped.", j);
+                            if (logger.IsEnabled(LogLevel.Information)) logger.LogInformation("{Assembly} is not compatible with current process, loading is skipped.", j);
                         }
                     }
                     catch (Exception)

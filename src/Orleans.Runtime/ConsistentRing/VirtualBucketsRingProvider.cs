@@ -42,7 +42,7 @@ namespace Orleans.Runtime.ConsistentRing
             running = true;
             myRange = RangeFactory.CreateFullRange();
 
-            logger.Info("Starting {0} on silo {1}.", typeof(VirtualBucketsRingProvider).Name, siloAddress.ToStringWithHashCode());
+            logger.LogInformation("Starting virtual buckets ring provider on silo {Silo}.", siloAddress);
 
             StringValueStatistic.FindOrCreate(StatisticNames.CONSISTENTRING_RING, ToString);
             IntValueStatistic.FindOrCreate(StatisticNames.CONSISTENTRING_RINGSIZE, () => GetRingSize());

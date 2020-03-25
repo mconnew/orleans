@@ -124,7 +124,7 @@ namespace Orleans.Runtime.MembershipService
             {
                 if (id <= this.highestCompletedProbeId)
                 {
-                    this.log.Info(
+                    this.log.LogInformation(
                         "Ignoring success result for ping #{ProbeNumber}/{Id} from {Silo} since a later probe has already completed. Highest ({HighestCompletedProbeId}) > Current ({CurrentProbeId})",
                         diagnosticProbeNumber,
                         id,
@@ -135,7 +135,7 @@ namespace Orleans.Runtime.MembershipService
                 }
                 else if (this.stoppingCancellation.IsCancellationRequested)
                 {
-                    this.log.Info(
+                    this.log.LogInformation(
                         "Ignoring success result for ping #{ProbeNumber}/{Id} from {Silo} since this monitor has been stopped",
                         diagnosticProbeNumber,
                         id,
@@ -164,7 +164,7 @@ namespace Orleans.Runtime.MembershipService
             {
                 if (id <= this.highestCompletedProbeId)
                 {
-                    this.log.Info(
+                    this.log.LogInformation(
                         "Ignoring failure result for ping #{ProbeNumber}/{Id} from {Silo} since a later probe has already completed. Highest completed id ({HighestCompletedProbeId})",
                         diagnosticProbeNumber,
                         id,
@@ -175,7 +175,7 @@ namespace Orleans.Runtime.MembershipService
                 }
                 else if (this.stoppingCancellation.IsCancellationRequested)
                 {
-                    this.log.Info(
+                    this.log.LogInformation(
                         "Ignoring failure result for ping #{ProbeNumber}/{Id} from {Silo} since this monitor has been stopped",
                         diagnosticProbeNumber,
                         id,
