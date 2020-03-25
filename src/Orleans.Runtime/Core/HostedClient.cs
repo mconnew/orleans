@@ -59,7 +59,7 @@ namespace Orleans.Runtime
             this.messagingTrace = messagingTrace;
             this.logger = logger;
 
-            this.ClientAddress = ActivationAddress.NewActivationAddress(siloDetails.SiloAddress, LegacyGrainId.NewClientId());
+            this.ClientAddress = ActivationAddress.NewActivationAddress(siloDetails.SiloAddress, ClientGrainId.Create());
         }
 
         /// <inheritdoc />
@@ -79,8 +79,9 @@ namespace Orleans.Runtime
         {
             if (obj is GrainReference) throw new ArgumentException("Argument obj is already a grain reference.");
 
-            var grainReference = GrainReference.NewObserverGrainReference(this.ClientAddress.Grain, GuidId.GetNewGuidId(), this.grainReferenceRuntime);
-            if (!this.invokableObjects.TryRegister(obj, grainReference.ObserverId, invoker))
+            var observerId = ClientGrainId.CreateObserverId(this.ClientId);
+            var grainReference = GrainReference.NewObserverGrainReference(observerId, this.grainReferenceRuntime);
+            if (!this.invokableObjects.TryRegister(obj, observerId, invoker))
             {
                 throw new ArgumentException(
                     string.Format("Failed to add new observer {0} to localObjects collection.", grainReference),
@@ -95,7 +96,7 @@ namespace Orleans.Runtime
         {
             if (!(obj is GrainReference reference)) throw new ArgumentException("Argument reference is not a grain reference.");
 
-            if (!this.invokableObjects.TryDeregister(reference.ObserverId))throw new ArgumentException("Reference is not associated with a local object.", nameof(obj));
+            if (!this.invokableObjects.TryDeregister(reference.GrainId))throw new ArgumentException("Reference is not associated with a local object.", nameof(obj));
         }
 
         /// <inheritdoc />
@@ -138,7 +139,11 @@ namespace Orleans.Runtime
         /// <inheritdoc />
         public bool TryDispatchToClient(Message message)
         {
-            if (!this.ClientId.Equals(message.TargetGrain)) return false;
+            if (!ClientGrainId.TryGetClientId(message.TargetGrain, out var targetGrain) || !this.ClientId.Equals(targetGrain))
+            {
+                return false;
+            }
+
             if (message.IsExpired)
             {
                 this.messagingTrace.OnDropExpiredMessage(message, MessagingStatisticsGroup.Phase.Receive);
