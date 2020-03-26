@@ -114,7 +114,7 @@ namespace Orleans
             }
         }
 
-        public static GrainId GetGrainIdentity(this IGrain grain)
+        public static GrainId GetGrainId(this IGrain grain)
         {
             switch (grain)
             {
@@ -141,7 +141,8 @@ namespace Orleans
         /// <param name="grain">The target grain.</param>
         public static bool IsPrimaryKeyBasedOnLong(this IAddressable grain)
         {
-            return ((LegacyGrainId)GetGrainId(grain)).IsLongKey;
+            var id = GetGrainId(grain);
+            return id.TryGetIntegerKey(out _, out _);
         }
 
         /// <summary>
@@ -150,20 +151,14 @@ namespace Orleans
         /// <param name="grain">The grain to find the primary key for.</param>
         /// <param name="keyExt">The output parameter to return the extended key part of the grain primary key, if extended primary key was provided for that grain.</param>
         /// <returns>A long representing the primary key for this grain.</returns>
-        public static long GetPrimaryKeyLong(this IAddressable grain, out string keyExt)
-        {
-            return ((LegacyGrainId)GetGrainId(grain)).GetPrimaryKeyLong(out keyExt);
-        }
+        public static long GetPrimaryKeyLong(this IAddressable grain, out string keyExt) => GetGrainId(grain).GetIntegerKey(out keyExt);
 
         /// <summary>
         /// Returns the long representation of a grain primary key.
         /// </summary>
         /// <param name="grain">The grain to find the primary key for.</param>
         /// <returns>A long representing the primary key for this grain.</returns>
-        public static long GetPrimaryKeyLong(this IAddressable grain)
-        {
-            return ((LegacyGrainId)GetGrainId(grain)).GetPrimaryKeyLong();
-        }
+        public static long GetPrimaryKeyLong(this IAddressable grain) => GetGrainId(grain).GetIntegerKey(out _);
 
         /// <summary>
         /// Returns the Guid representation of a grain primary key.
@@ -171,20 +166,14 @@ namespace Orleans
         /// <param name="grain">The grain to find the primary key for.</param>
         /// <param name="keyExt">The output parameter to return the extended key part of the grain primary key, if extended primary key was provided for that grain.</param>
         /// <returns>A Guid representing the primary key for this grain.</returns>
-        public static Guid GetPrimaryKey(this IAddressable grain, out string keyExt)
-        {
-            return ((LegacyGrainId)GetGrainId(grain)).GetPrimaryKey(out keyExt);
-        }
+        public static Guid GetPrimaryKey(this IAddressable grain, out string keyExt) => GetGrainId(grain).GetGuidKey(out keyExt);
 
         /// <summary>
         /// Returns the Guid representation of a grain primary key.
         /// </summary>
         /// <param name="grain">The grain to find the primary key for.</param>
         /// <returns>A Guid representing the primary key for this grain.</returns>
-        public static Guid GetPrimaryKey(this IAddressable grain)
-        {
-            return ((LegacyGrainId)GetGrainId(grain)).GetPrimaryKey();
-        }
+        public static Guid GetPrimaryKey(this IAddressable grain) => GetGrainId(grain).GetGuidKey(out _);
 
         /// <summary>
         /// Returns the string primary key of the grain.
@@ -193,29 +182,8 @@ namespace Orleans
         /// <returns>A string representing the primary key for this grain.</returns>
         public static string GetPrimaryKeyString(this IAddressable grain)
         {
-            return ((LegacyGrainId)GetGrainId(grain)).GetPrimaryKeyString();
-        }
-
-        public static long GetPrimaryKeyLong(this IGrain grain, out string keyExt)
-        {
-            return ((LegacyGrainId)GetGrainIdentity(grain)).GetPrimaryKeyLong(out keyExt);
-        }
-        public static long GetPrimaryKeyLong(this IGrain grain)
-        {
-            return ((LegacyGrainId)GetGrainIdentity(grain)).PrimaryKeyLong;
-        }
-        public static Guid GetPrimaryKey(this IGrain grain, out string keyExt)
-        {
-            return ((LegacyGrainId)GetGrainIdentity(grain)).GetPrimaryKey(out keyExt);
-        }
-        public static Guid GetPrimaryKey(this IGrain grain)
-        {
-            return ((LegacyGrainId)GetGrainIdentity(grain)).PrimaryKey;
-        }
-
-        public static string GetPrimaryKeyString(this IGrainWithStringKey grain)
-        {
-            return ((LegacyGrainId)GetGrainIdentity(grain)).PrimaryKeyString;
+            GetGrainId(grain).GetGuidKey(out var result);
+            return result;
         }
 
         /// <summary>

@@ -198,8 +198,8 @@ namespace Orleans.Runtime
             // with the current silo
             if (this.messagingOptions.Value.AssumeHomogenousSilosForTesting)
                 return AllActiveSilos;
-
-            var typeCode = ((LegacyGrainId)target.GrainIdentity).TypeCode;
+      
+            var typeCode = LegacyGrainId.FromGrainId(target.GrainIdentity).TypeCode;
             var silos = target.InterfaceVersion > 0
                 ? versionSelectorManager.GetSuitableSilos(typeCode, target.InterfaceId, target.InterfaceVersion).SuitableSilos
                 : grainTypeManager.GetSupportedSilos(typeCode);
@@ -216,7 +216,7 @@ namespace Orleans.Runtime
             if (target.InterfaceVersion == 0)
                 throw new ArgumentException("Interface version not provided", nameof(target));
 
-            var typeCode = ((LegacyGrainId)target.GrainIdentity).TypeCode;
+            var typeCode = LegacyGrainId.FromGrainId(target.GrainIdentity).TypeCode;
             var silos = versionSelectorManager
                 .GetSuitableSilos(typeCode, target.InterfaceId, target.InterfaceVersion)
                 .SuitableSilosByVersion;
@@ -323,9 +323,8 @@ namespace Orleans.Runtime
                         stats.Add(new DetailedGrainStatistic()
                         {
                             GrainType = TypeUtils.GetFullName(data.GrainInstanceType),
-                            GrainIdentity = (LegacyGrainId)data.Grain,
-                            SiloAddress = data.Silo,
-                            Category = ((LegacyGrainId)data.Grain).Category.ToString()
+                            GrainId = data.Grain,
+                            SiloAddress = data.Silo
                         });
                     }
                 }
@@ -353,7 +352,8 @@ namespace Orleans.Runtime
             {
                 PlacementStrategy unused;
                 string grainClassName;
-                grainTypeManager.GetTypeInfo(((LegacyGrainId)grain).TypeCode, out grainClassName, out unused);
+
+                grainTypeManager.GetTypeInfo(LegacyGrainId.FromGrainId(grain).TypeCode, out grainClassName, out unused);
                 report.GrainClassTypeName = grainClassName;
             }
             catch (Exception exc)
@@ -464,8 +464,8 @@ namespace Orleans.Runtime
                 {
                     return result;
                 }
-                
-                int typeCode = ((LegacyGrainId)address.Grain).TypeCode;
+
+                int typeCode = LegacyGrainId.FromGrainId(address.Grain).TypeCode;
                 string actualGrainType = null;
 
                 if (typeCode != 0)
@@ -683,7 +683,7 @@ namespace Orleans.Runtime
             if (!grainTypeManager.TryGetPrimaryImplementation(grainTypeName, out grainClassName))
             {
                 // Lookup from grain type code
-                var typeCode = ((LegacyGrainId)data.Grain).TypeCode;
+                var typeCode = LegacyGrainId.FromGrainId(data.Grain).TypeCode;
                 if (typeCode != 0)
                 {
                     PlacementStrategy unused;
