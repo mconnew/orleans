@@ -325,9 +325,8 @@ namespace Orleans.Runtime
                         stats.Add(new DetailedGrainStatistic()
                         {
                             GrainType = TypeUtils.GetFullName(data.GrainInstanceType),
-                            GrainIdentity = (LegacyGrainId)data.Grain,
-                            SiloAddress = data.Silo,
-                            Category = ((LegacyGrainId)data.Grain).Category.ToString()
+                            GrainId = data.Grain,
+                            SiloAddress = data.Silo
                         });
                     }
                 }

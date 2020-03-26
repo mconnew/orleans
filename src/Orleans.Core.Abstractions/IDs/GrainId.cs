@@ -38,9 +38,6 @@ namespace Orleans.Runtime
             _key = new SpanId((byte[])info.GetValue("kv", typeof(byte[])), info.GetInt32("kh"));
         }
 
-        // TODO: remove implicit conversion (potentially make explicit to start with)
-        public static implicit operator LegacyGrainId(GrainId id) => LegacyGrainId.FromGrainId(id);
-
         public static GrainId Create(string type, string key) => Create(GrainType.Create(type), key);
 
         public static GrainId Create(string type, Guid key) => Create(GrainType.Create(type), key.ToString("N"));
@@ -58,6 +55,29 @@ namespace Orleans.Runtime
         public override readonly bool Equals(object obj) => obj is GrainId id && this.Equals(id);
 
         public readonly bool Equals(GrainId other) => this.Type.Equals(other.Type) && this._key.Equals(other._key);
+
+        public string ToParsableString()
+        {
+            var type = GrainType.UnsafeGetArray(this.Type);
+            var key = SpanId.UnsafeGetArray(this.Key);
+
+            // TODO: pick a better format for this and implement efficiently.
+            // 1 is the version number.
+            return $"1{Convert.ToBase64String(type)}*{Convert.ToBase64String(key)}";
+        }
+
+        public static GrainId FromParsableString(string value)
+        {
+            var version = value[0];
+            if (value.IndexOf('*') is int index && index < 0)
+            {
+                // invalid.
+            }
+
+            var type = Convert.FromBase64String(value.Substring(1, index - 1));
+            var key = Convert.FromBase64String(value.Substring(index + 1));
+            return new GrainId(type, key);
+        }
 
         public override readonly int GetHashCode() => HashCode.Combine(_type, _key);
 

@@ -289,24 +289,7 @@ namespace Orleans.Runtime
         }
 
         /// <summary> Get the key value for this grain, as a string. </summary>
-        public string ToKeyString()
-        {
-            if (IsObserverReference)
-            {
-                return String.Format("{0}={1} {2}={3}", GRAIN_REFERENCE_STR, ((LegacyGrainId)GrainId).ToParsableString(), OBSERVER_ID_STR, observerId.ToParsableString());
-            }
-            /*
-            if (IsSystemTarget)
-            {
-                return String.Format("{0}={1} {2}={3}", GRAIN_REFERENCE_STR, ((LegacyGrainId)GrainId).ToParsableString(), SYSTEM_TARGET_STR, SystemTargetSilo.ToParsableString());
-            }
-            */
-            if (HasGenericArgument)
-            {
-                return String.Format("{0}={1} {2}={3}", GRAIN_REFERENCE_STR, ((LegacyGrainId)GrainId).ToParsableString(), GENERIC_ARGUMENTS_STR, genericArguments);
-            }
-            return String.Format("{0}={1}", GRAIN_REFERENCE_STR, ((LegacyGrainId)GrainId).ToParsableString());
-        }
+        public string ToKeyString() => this.GrainId.ToString();
         
         internal static GrainReference FromKeyString(string key, IGrainReferenceRuntime runtime)
         {

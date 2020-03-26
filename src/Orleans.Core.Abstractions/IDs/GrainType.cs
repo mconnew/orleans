@@ -47,6 +47,10 @@ namespace Orleans.Runtime
 
         public readonly int CompareTo(GrainType other) => _value.CompareTo(other._value);
 
+        public static bool operator ==(GrainType a, GrainType b) => a.Equals(b);
+
+        public static bool operator !=(GrainType a, GrainType b) => !a.Equals(b);
+
         public readonly void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             info.AddValue("v", SpanId.UnsafeGetArray(_value));

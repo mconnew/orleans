@@ -76,8 +76,6 @@ namespace Orleans.Runtime
 
         public Type GrainType => GrainTypeData.Type;
 
-        public IGrainIdentity GrainIdentity => (LegacyGrainId)this.GrainId;
-
         public IServiceProvider ActivationServices => this.serviceScope.ServiceProvider;
 
         internal WorkItemGroup WorkItemGroup { get; set; }

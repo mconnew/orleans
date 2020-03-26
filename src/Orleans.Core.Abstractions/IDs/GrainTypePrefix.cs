@@ -3,6 +3,77 @@ using System.Text;
 
 namespace Orleans.Runtime
 {
+    public static class GrainIdKeyExtensions
+    {
+        /// <summary>
+        /// Returns whether part of the primary key is of type long.
+        /// </summary>
+        public static bool TryGetIntegerKey(this GrainId grainId, out long key, out string keyExt)
+        {
+            var keyString = grainId.Key.ToStringUtf8();
+            if (keyString.IndexOf('+') is int index && index >= 0)
+            {
+                keyExt = keyString.Substring(index + 1);
+                return long.TryParse(keyString.Substring(0, index), out key);
+            }
+
+            keyExt = default;
+            return long.TryParse(keyString, out key);
+        }
+
+        /// <summary>
+        /// Returns the integer representation of a grain primary key.
+        /// </summary>
+        /// <param name="grainId">The grain to find the primary key for.</param>
+        /// <param name="keyExt">The output parameter to return the extended key part of the grain primary key, if extended primary key was provided for that grain.</param>
+        /// <returns>A long representing the primary key for this grain.</returns>
+        public static long GetIntegerKey(this GrainId grainId, out string keyExt)
+        {
+            var key = grainId.Key.ToStringUtf8();
+            if (key.IndexOf('+') is int index && index >= 0)
+            {
+                keyExt = key.Substring(index + 1);
+                return long.Parse(key.Substring(0, index));
+            }
+
+            keyExt = default;
+            return long.Parse(key);
+        }
+
+        /// <summary>
+        /// Returns the long representation of a grain primary key.
+        /// </summary>
+        /// <param name="grainId">The grain to find the primary key for.</param>
+        /// <returns>A long representing the primary key for this grain.</returns>
+        public static long GetIntegerKey(this GrainId grainId) => GetIntegerKey(grainId, out _);
+
+        /// <summary>
+        /// Returns the Guid representation of a grain primary key.
+        /// </summary>
+        /// <param name="grainId">The grain to find the primary key for.</param>
+        /// <param name="keyExt">The output parameter to return the extended key part of the grain primary key, if extended primary key was provided for that grain.</param>
+        /// <returns>A Guid representing the primary key for this grain.</returns>
+        public static Guid GetGuidKey(this GrainId grainId, out string keyExt)
+        {
+            var key = grainId.Key.ToStringUtf8();
+            if (key.IndexOf('+') is int index && index >= 0)
+            {
+                keyExt = key.Substring(index + 1);
+                return Guid.Parse(key.Substring(0, index));
+            }
+
+            keyExt = default;
+            return Guid.Parse(key);
+        }
+
+        /// <summary>
+        /// Returns the Guid representation of a grain primary key.
+        /// </summary>
+        /// <param name="grainId">The grain to find the primary key for.</param>
+        /// <returns>A Guid representing the primary key for this grain.</returns>
+        public static Guid GetGuidKey(this GrainId grainId) => GetGuidKey(grainId, out _);
+    }
+
     public static class GrainTypePrefix
     {
         public const string SystemPrefix = "sys.";
