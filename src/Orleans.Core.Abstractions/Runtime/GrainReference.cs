@@ -13,8 +13,8 @@ namespace Orleans.Runtime
     [Serializable]
     public class GrainReference : IAddressable, IEquatable<GrainReference>, ISerializable
     {
-        private readonly string genericArguments;
-        private readonly GuidId observerId;
+        [NonSerialized]
+        private IGrainReferenceRuntime runtime;
 
         /// <summary>
         /// Invoke method options specific to this grain reference instance
@@ -22,24 +22,15 @@ namespace Orleans.Runtime
         [NonSerialized]
         private readonly InvokeMethodOptions invokeMethodOptions;
 
-        internal bool IsSystemTarget { get { return GrainId.IsSystemTarget(); } }
+        internal bool IsSystemTarget => GrainId.IsSystemTarget();
 
         public bool IsGrainService => this.IsSystemTarget;  // TODO make this distinct
 
-        internal bool IsObserverReference { get { return GrainId.IsObserverId(); } }
+        internal bool IsObserverReference => this.GrainId.IsObserverId();
 
-        internal GuidId ObserverId { get { return observerId; } }
-        
-        internal bool HasGenericArgument { get { return !String.IsNullOrEmpty(genericArguments); } }
+        internal bool HasGenericArgument => !string.IsNullOrEmpty(GenericArguments);
 
-        internal IGrainReferenceRuntime Runtime
-        {
-            get
-            {
-                if (this.runtime == null) throw new GrainReferenceNotBoundException(this);
-                return this.runtime;
-            }
-        }
+        internal IGrainReferenceRuntime Runtime => this.runtime ?? throw new GrainReferenceNotBoundException(this);
 
         /// <summary>
         /// Gets a value indicating whether this instance is bound to a runtime and hence valid for making requests.
@@ -48,10 +39,7 @@ namespace Orleans.Runtime
 
         public GrainId GrainId { get; private set; }
 
-        [NonSerialized]
-        private IGrainReferenceRuntime runtime;
-
-        internal string GenericArguments => this.genericArguments;
+        internal string GenericArguments { get; }
 
         /// <summary>Constructs a reference to the grain with the specified Id.</summary>
         /// <param name="grainId">The Id of the grain to refer to.</param>
@@ -60,11 +48,11 @@ namespace Orleans.Runtime
         private GrainReference(GrainId grainId, string genericArgument, IGrainReferenceRuntime runtime)
         {
             GrainId = grainId;
-            this.genericArguments = genericArgument;
+            this.GenericArguments = genericArgument;
             this.runtime = runtime;
             if (string.IsNullOrEmpty(genericArgument))
             {
-                genericArguments = null; // always keep it null instead of empty.
+                GenericArguments = null; // always keep it null instead of empty.
             }
 
             // SystemTarget checks
@@ -77,9 +65,9 @@ namespace Orleans.Runtime
                     throw new ArgumentNullException("systemTargetSilo", String.Format("Trying to create a GrainReference for SystemTarget grain id {0}, but passing null systemTargetSilo.", grainId));
                 }
 
-                if (genericArguments != null)
+                if (GenericArguments != null)
                 {
-                    throw new ArgumentException(String.Format("Trying to create a GrainReference for SystemTarget grain id {0}, and also passing non-null genericArguments {1}.", grainId, genericArguments), "genericArgument");
+                    throw new ArgumentException(String.Format("Trying to create a GrainReference for SystemTarget grain id {0}, and also passing non-null genericArguments {1}.", grainId, GenericArguments), "genericArgument");
                 }
             }
 
@@ -93,9 +81,9 @@ namespace Orleans.Runtime
                     throw new ArgumentNullException("observerId", String.Format("Trying to create a GrainReference for Observer with Client grain id {0}, but passing null observerId.", grainId));
                 }
 
-                if (genericArguments != null)
+                if (GenericArguments != null)
                 {
-                    throw new ArgumentException(String.Format("Trying to create a GrainReference for Client grain id {0}, and also passing non-null genericArguments {1}.", grainId, genericArguments), "genericArgument");
+                    throw new ArgumentException(String.Format("Trying to create a GrainReference for Client grain id {0}, and also passing non-null genericArguments {1}.", grainId, GenericArguments), "genericArgument");
                 }
             }
         }
@@ -105,7 +93,7 @@ namespace Orleans.Runtime
         /// </summary>
         /// <param name="other">The reference to copy.</param>
         protected GrainReference(GrainReference other)
-            : this(other.GrainId, other.genericArguments, other.runtime)
+            : this(other.GrainId, other.GenericArguments, other.runtime)
         {
             this.invokeMethodOptions = other.invokeMethodOptions;
         }
@@ -155,7 +143,7 @@ namespace Orleans.Runtime
             if (other == null)
                 return false;
 
-            if (genericArguments != other.genericArguments)
+            if (GenericArguments != other.GenericArguments)
                 return false;
             if (!GrainId.Equals(other.GrainId))
             {
@@ -183,10 +171,7 @@ namespace Orleans.Runtime
         /// <returns><c>true</c> if both grain references refer to the same grain (by grain identifier).</returns>
         public static bool operator ==(GrainReference reference1, GrainReference reference2)
         {
-            if (((object)reference1) == null)
-                return ((object)reference2) == null;
-
-            return reference1.Equals(reference2);
+            return reference1?.Equals(reference2) ?? reference2 is null;
         }
 
         /// <summary>
@@ -196,56 +181,29 @@ namespace Orleans.Runtime
         /// <param name="reference1">First grain reference to compare.</param>
         /// <param name="reference2">Second grain reference to compare.</param>
         /// <returns><c>false</c> if both grain references are resolved to the same grain (by grain identifier).</returns>
-        public static bool operator !=(GrainReference reference1, GrainReference reference2)
-        {
-            if (((object)reference1) == null)
-                return ((object)reference2) != null;
-
-            return !reference1.Equals(reference2);
-        }
+        public static bool operator !=(GrainReference reference1, GrainReference reference2) => !reference1?.Equals(reference2) ?? reference2 is object;
 
         /// <summary>
         /// Implemented by generated subclasses to return a constant
         /// Implemented in generated code.
         /// </summary>
-        public virtual int InterfaceId
-        {
-            get
-            {
-                throw new InvalidOperationException("Should be overridden by subclass");
-            }
-        }
+        public virtual int InterfaceId => throw new InvalidOperationException("Should be overridden by subclass");
 
         /// <summary>
         /// Implemented in generated code.
         /// </summary>
-        public virtual ushort InterfaceVersion
-        {
-            get
-            {
-                throw new InvalidOperationException("Should be overridden by subclass");
-            }
-        }
+        public virtual ushort InterfaceVersion => throw new InvalidOperationException("Should be overridden by subclass");
 
         /// <summary>
         /// Implemented in generated code.
         /// </summary>
-        public virtual bool IsCompatible(int interfaceId)
-        {
-            throw new InvalidOperationException("Should be overridden by subclass");
-        }
+        public virtual bool IsCompatible(int interfaceId) => throw new InvalidOperationException("Should be overridden by subclass");
 
         /// <summary>
         /// Return the name of the interface for this GrainReference. 
         /// Implemented in Orleans generated code.
         /// </summary>
-        public virtual string InterfaceName
-        {
-            get
-            {
-                throw new InvalidOperationException("Should be overridden by subclass");
-            }
-        }
+        public virtual string InterfaceName => throw new InvalidOperationException("Should be overridden by subclass");
 
         /// <summary>
         /// Return the method name associated with the specified interfaceId and methodId values.
@@ -274,77 +232,19 @@ namespace Orleans.Runtime
             return this.Runtime.InvokeMethodAsync<T>(this, methodId, arguments, options | invokeMethodOptions, silo);
         }
 
-        private const string GRAIN_REFERENCE_STR = "GrainReference";
-        private const string SYSTEM_TARGET_STR = "SystemTarget";
-        private const string SYSTEM_TARGET_STR_WITH_EQUAL_SIGN = SYSTEM_TARGET_STR + "=";
-        private const string OBSERVER_ID_STR = "ObserverId";
-        private const string OBSERVER_ID_STR_WITH_EQUAL_SIGN = OBSERVER_ID_STR + "=";
-        private const string GENERIC_ARGUMENTS_STR = "GenericArguments";
-        private const string GENERIC_ARGUMENTS_STR_WITH_EQUAL_SIGN = GENERIC_ARGUMENTS_STR + "=";
-
         /// <summary>Returns a string representation of this reference.</summary>
         public override string ToString()
         {
-            return $"{GRAIN_REFERENCE_STR}:{GrainId}{(!HasGenericArgument ? String.Empty : String.Format("<{0}>", genericArguments))}"; 
+            return $"{GrainId}{(!HasGenericArgument ? string.Empty : string.Format("<{0}>", GenericArguments))}"; 
         }
 
         /// <summary> Get the key value for this grain, as a string. </summary>
-        public string ToKeyString()
-        {
-            if (IsObserverReference)
-            {
-                return String.Format("{0}={1} {2}={3}", GRAIN_REFERENCE_STR, ((LegacyGrainId)GrainId).ToParsableString(), OBSERVER_ID_STR, observerId.ToParsableString());
-            }
-            /*
-            if (IsSystemTarget)
-            {
-                return String.Format("{0}={1} {2}={3}", GRAIN_REFERENCE_STR, ((LegacyGrainId)GrainId).ToParsableString(), SYSTEM_TARGET_STR, SystemTargetSilo.ToParsableString());
-            }
-            */
-            if (HasGenericArgument)
-            {
-                return String.Format("{0}={1} {2}={3}", GRAIN_REFERENCE_STR, ((LegacyGrainId)GrainId).ToParsableString(), GENERIC_ARGUMENTS_STR, genericArguments);
-            }
-            return String.Format("{0}={1}", GRAIN_REFERENCE_STR, ((LegacyGrainId)GrainId).ToParsableString());
-        }
+        public string ToKeyString() => this.GrainId.ToParsableString();
         
         internal static GrainReference FromKeyString(string key, IGrainReferenceRuntime runtime)
         {
             if (string.IsNullOrWhiteSpace(key)) throw new ArgumentNullException(nameof(key), "GrainReference.FromKeyString cannot parse null key");
-
-            ReadOnlySpan<char> trimmed = key.AsSpan().Trim();
-            ReadOnlySpan<char> grainIdStr;
-            int grainIdIndex = (GRAIN_REFERENCE_STR + "=").Length;
-
-            int genericIndex = trimmed.IndexOf(GENERIC_ARGUMENTS_STR_WITH_EQUAL_SIGN.AsSpan(), StringComparison.Ordinal);
-            int observerIndex = trimmed.IndexOf(OBSERVER_ID_STR_WITH_EQUAL_SIGN.AsSpan(), StringComparison.Ordinal);
-            int systemTargetIndex = trimmed.IndexOf(SYSTEM_TARGET_STR_WITH_EQUAL_SIGN.AsSpan(), StringComparison.Ordinal);
-
-            if (genericIndex >= 0)
-            {
-                grainIdStr = trimmed.Slice(grainIdIndex, genericIndex - grainIdIndex).Trim();
-                ReadOnlySpan<char> genericStr = trimmed.Slice(genericIndex + GENERIC_ARGUMENTS_STR_WITH_EQUAL_SIGN.Length);
-                return FromGrainId(LegacyGrainId.FromParsableString(grainIdStr), runtime, genericStr.ToString());
-            }
-            else if (observerIndex >= 0)
-            {
-                grainIdStr = trimmed.Slice(grainIdIndex, observerIndex - grainIdIndex).Trim();
-                return NewObserverGrainReference(LegacyGrainId.FromParsableString(grainIdStr), runtime);
-            }
-            else if (systemTargetIndex >= 0)
-            {
-                grainIdStr = trimmed.Slice(grainIdIndex, systemTargetIndex - grainIdIndex).Trim();
-                ReadOnlySpan<char> systemTargetStr = trimmed.Slice(systemTargetIndex + SYSTEM_TARGET_STR_WITH_EQUAL_SIGN.Length);
-
-                // TODO: Incorporate SiloAddress into GrainId or entirely remove FromKeyString - perhaps shift to a legacy/compat library
-                _ = SiloAddress.FromParsableString(systemTargetStr.ToString());
-                return FromGrainId(LegacyGrainId.FromParsableString(grainIdStr), runtime, null);
-            }
-            else
-            {
-                grainIdStr = trimmed.Slice(grainIdIndex);
-                return FromGrainId(LegacyGrainId.FromParsableString(grainIdStr), runtime);
-            }
+            return FromGrainId(GrainId.FromParsableString(key), runtime);
         }
 
         internal static GrainReference FromKeyInfo(GrainReferenceKeyInfo keyInfo, IGrainReferenceRuntime runtime)
@@ -369,18 +269,13 @@ namespace Orleans.Runtime
             }
         }
 
-
         public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             // Use the AddValue method to specify serialized values.
             info.AddValue("GrainId", GrainId, typeof(GrainId));
-            if (IsObserverReference)
-            {
-                info.AddValue(OBSERVER_ID_STR, observerId.ToParsableString(), typeof(string));
-            }
-            string genericArg = String.Empty;
+            string genericArg = string.Empty;
             if (HasGenericArgument)
-                genericArg = genericArguments;
+                genericArg = GenericArguments;
             info.AddValue("GenericArguments", genericArg, typeof(string));
         }
 
@@ -389,20 +284,10 @@ namespace Orleans.Runtime
         {
             // Reset the property value using the GetValue method.
             GrainId = (GrainId)info.GetValue("GrainId", typeof(GrainId));
-            if (IsSystemTarget)
-            {
-                var siloAddressStr = info.GetString("SystemTargetSilo");
-                _ = SiloAddress.FromParsableString(siloAddressStr);
-            }
-            if (IsObserverReference)
-            {
-                var observerIdStr = info.GetString(OBSERVER_ID_STR);
-                observerId = GuidId.FromParsableString(observerIdStr);
-            }
             var genericArg = info.GetString("GenericArguments");
-            if (String.IsNullOrEmpty(genericArg))
+            if (string.IsNullOrEmpty(genericArg))
                 genericArg = null;
-            genericArguments = genericArg;
+            GenericArguments = genericArg;
 
             var serializerContext = context.Context as ISerializerContext;
             this.runtime = serializerContext?.ServiceProvider.GetService(typeof(IGrainReferenceRuntime)) as IGrainReferenceRuntime;

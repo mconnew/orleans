@@ -59,7 +59,7 @@ namespace Orleans.Runtime
             this.messagingTrace = messagingTrace;
             this.logger = logger;
 
-            this.ClientAddress = ActivationAddress.NewActivationAddress(siloDetails.SiloAddress, ClientGrainId.Create());
+            this.ClientAddress = ActivationAddress.NewActivationAddress(siloDetails.SiloAddress, ClientGrainId.Create(siloDetails.SiloAddress.ToString()));
         }
 
         /// <inheritdoc />
