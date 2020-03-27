@@ -35,7 +35,7 @@ namespace Orleans
             }
 
             var systemTarget = grain as ISystemTargetBase;
-            if (systemTarget != null) return GrainReference.FromGrainId(systemTarget.GrainId, systemTarget.GrainReferenceRuntime, null);
+            if (systemTarget != null) return GrainReference.FromGrainId(systemTarget.GrainId, systemTarget.GrainReferenceRuntime);
 
             throw new ArgumentException(
                 $"AsWeaklyTypedReference has been called on an unexpected type: {grain.GetType().FullName}.",

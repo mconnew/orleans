@@ -41,7 +41,6 @@ namespace Orleans.Runtime
         
         public ActivationData(
             ActivationAddress addr,
-            string genericArguments,
             PlacementStrategy placedUsing,
             IActivationCollector collector,
             TimeSpan ageLimit,
@@ -71,7 +70,7 @@ namespace Orleans.Runtime
 
             CollectionAgeLimit = ageLimit;
 
-            GrainReference = GrainReference.FromGrainId(addr.Grain, runtimeClient.GrainReferenceRuntime, genericArguments);
+            GrainReference = GrainReference.FromGrainId(addr.Grain, runtimeClient.GrainReferenceRuntime);
         }
 
         public Type GrainType => GrainTypeData.Type;

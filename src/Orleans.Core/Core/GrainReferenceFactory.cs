@@ -30,8 +30,7 @@ namespace Orleans
         {
             var untypedGrainReference = GrainReference.FromGrainId(
                 grainId,
-                this.grainReferenceRuntime,
-                interfaceType.IsGenericType ? TypeUtils.GenericTypeArgsString(interfaceType.UnderlyingSystemType.FullName) : null);
+                this.grainReferenceRuntime);
             return this.Cast(untypedGrainReference, interfaceType);
         }
 

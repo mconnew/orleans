@@ -49,7 +49,7 @@ namespace UnitTests.StorageTests.Relational
                 Guid grainId = GetRandom<Guid>();
                 if(type != typeof(NotApplicable))
                 {
-                    return grainFactory.GetGrain(LegacyGrainId.GetGrainId(UniqueKey.NewKey(grainId, keyExtension ? UniqueKey.Category.KeyExtGrain : UniqueKey.Category.Grain, keyExtension ? KeyExtensionGrainTypeCode : NormalGrainTypeCode, extension)), type.FullName);
+                    return grainFactory.GetGrain(LegacyGrainId.GetGrainId(UniqueKey.NewKey(grainId, keyExtension ? UniqueKey.Category.KeyExtGrain : UniqueKey.Category.Grain, keyExtension ? KeyExtensionGrainTypeCode : NormalGrainTypeCode, extension)));
                 }
 
                 return grainFactory.GetGrain(LegacyGrainId.GetGrainId(UniqueKey.NewKey(grainId, keyExtension ? UniqueKey.Category.KeyExtGrain : UniqueKey.Category.Grain, keyExtension ? KeyExtensionGrainTypeCode : NormalGrainTypeCode, extension)));
@@ -63,7 +63,7 @@ namespace UnitTests.StorageTests.Relational
                 long grainId = GetRandom<long>();
                 if(type != typeof(NotApplicable))
                 {
-                    return grainFactory.GetGrain(LegacyGrainId.GetGrainId(UniqueKey.NewKey(grainId, keyExtension ? UniqueKey.Category.KeyExtGrain : UniqueKey.Category.Grain, keyExtension ? KeyExtensionGrainTypeCode : NormalGrainTypeCode, extension)), type.FullName);
+                    return grainFactory.GetGrain(LegacyGrainId.GetGrainId(UniqueKey.NewKey(grainId, keyExtension ? UniqueKey.Category.KeyExtGrain : UniqueKey.Category.Grain, keyExtension ? KeyExtensionGrainTypeCode : NormalGrainTypeCode, extension)));
                 }
 
                 return grainFactory.GetGrain(LegacyGrainId.GetGrainId(UniqueKey.NewKey(grainId, keyExtension ? UniqueKey.Category.KeyExtGrain : UniqueKey.Category.Grain, keyExtension ? KeyExtensionGrainTypeCode : NormalGrainTypeCode, extension)));
@@ -79,7 +79,7 @@ namespace UnitTests.StorageTests.Relational
                     return grainFactory.GetGrain(LegacyGrainId.FromParsableString(LegacyGrainId.GetGrainId(NormalGrainTypeCode, grainId).ToParsableString()));
                 }
 
-                return grainFactory.GetGrain(LegacyGrainId.FromParsableString(LegacyGrainId.GetGrainId(NormalGrainTypeCode, grainId).ToParsableString()), type.FullName);
+                return grainFactory.GetGrain(LegacyGrainId.FromParsableString(LegacyGrainId.GetGrainId(NormalGrainTypeCode, grainId).ToParsableString()));
             }
         };
 

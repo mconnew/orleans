@@ -8,13 +8,6 @@ namespace Orleans.Runtime
         /// Key string for grain references as unique as ToKeyString, but shorter and parseable.  Intended for use where
         /// uniqueness and brevity are important.
         /// </summary>
-        public static string ToShortKeyString(this GrainReference grainRef)
-        {
-            if (grainRef.HasGenericArgument)
-            {
-                return String.Format("{0}_{1}", grainRef.GrainId.ToString(), grainRef.GenericArguments);
-            }
-            return String.Format("{0}", grainRef.GrainId.ToString());
-        }
+        public static string ToShortKeyString(this GrainReference grainRef) => grainRef.ToKeyString();
     }
 }

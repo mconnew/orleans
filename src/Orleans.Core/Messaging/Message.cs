@@ -319,25 +319,6 @@ namespace Orleans.Runtime
             list.Add(address);
             CacheInvalidationHeader = list;
         }
-        
-        /// <summary>
-        /// Set by sender's placement logic when NewPlacementRequested is true
-        /// so that receiver knows desired grain type
-        /// </summary>
-        public string NewGrainType
-        {
-            get { return GetNotNullString(Headers.NewGrainType); }
-            set { Headers.NewGrainType = value; }
-        }
-        
-        /// <summary>
-        /// Set by caller's grain reference 
-        /// </summary>
-        public string GenericGrainType
-        {
-            get { return GetNotNullString(Headers.GenericGrainType); }
-            set { Headers.GenericGrainType = value; }
-        }
 
         public RejectionTypes RejectionType
         {
@@ -389,14 +370,12 @@ namespace Orleans.Runtime
             AppendIfExists(HeadersContainer.Headers.DIRECTION, sb, (m) => m.Direction);
             AppendIfExists(HeadersContainer.Headers.TIME_TO_LIVE, sb, (m) => m.TimeToLive);
             AppendIfExists(HeadersContainer.Headers.FORWARD_COUNT, sb, (m) => m.ForwardCount);
-            AppendIfExists(HeadersContainer.Headers.GENERIC_GRAIN_TYPE, sb, (m) => m.GenericGrainType);
             AppendIfExists(HeadersContainer.Headers.CORRELATION_ID, sb, (m) => m.Id);
             AppendIfExists(HeadersContainer.Headers.ALWAYS_INTERLEAVE, sb, (m) => m.IsAlwaysInterleave);
             AppendIfExists(HeadersContainer.Headers.IS_NEW_PLACEMENT, sb, (m) => m.IsNewPlacement);
             AppendIfExists(HeadersContainer.Headers.IS_RETURNED_FROM_REMOTE_CLUSTER, sb, (m) => m.IsReturnedFromRemoteCluster);
             AppendIfExists(HeadersContainer.Headers.READ_ONLY, sb, (m) => m.IsReadOnly);
             AppendIfExists(HeadersContainer.Headers.IS_UNORDERED, sb, (m) => m.IsUnordered);
-            AppendIfExists(HeadersContainer.Headers.NEW_GRAIN_TYPE, sb, (m) => m.NewGrainType);
             AppendIfExists(HeadersContainer.Headers.REJECTION_INFO, sb, (m) => m.RejectionInfo);
             AppendIfExists(HeadersContainer.Headers.REJECTION_TYPE, sb, (m) => m.RejectionType);
             AppendIfExists(HeadersContainer.Headers.REQUEST_CONTEXT, sb, (m) => m.RequestContextData);
@@ -462,9 +441,6 @@ namespace Orleans.Runtime
 
             if (value.IsNewPlacement)
                 IsNewPlacement = true;
-
-            if (!String.IsNullOrEmpty(value.GrainType))
-                NewGrainType = value.GrainType;
         }
 
 
@@ -606,8 +582,6 @@ namespace Orleans.Runtime
             private ITransactionInfo _transactionInfo;
             private TimeSpan? _timeToLive;
             private List<ActivationAddress> _cacheInvalidationHeader;
-            private string _newGrainType;
-            private string _genericGrainType;
             private RejectionTypes _rejectionType;
             private string _rejectionInfo;
             private Dictionary<string, object> _requestContextData;
@@ -827,31 +801,6 @@ namespace Orleans.Runtime
                 }
             }
 
-            /// <summary>
-            /// Set by sender's placement logic when NewPlacementRequested is true
-            /// so that receiver knows desired grain type
-            /// </summary>
-            public string NewGrainType
-            {
-                get { return _newGrainType; }
-                set
-                {
-                    _newGrainType = value;
-                }
-            }
-
-            /// <summary>
-            /// Set by caller's grain reference 
-            /// </summary>
-            public string GenericGrainType
-            {
-                get { return _genericGrainType; }
-                set
-                {
-                    _genericGrainType = value;
-                }
-            }
-
             public RejectionTypes RejectionType
             {
                 get { return _rejectionType; }
@@ -920,8 +869,6 @@ namespace Orleans.Runtime
                 headers = _result == default(ResponseTypes)? headers & ~Headers.RESULT : headers | Headers.RESULT;
                 headers = _timeToLive == null ? headers & ~Headers.TIME_TO_LIVE : headers | Headers.TIME_TO_LIVE;
                 headers = _cacheInvalidationHeader == null || _cacheInvalidationHeader.Count == 0 ? headers & ~Headers.CACHE_INVALIDATION_HEADER : headers | Headers.CACHE_INVALIDATION_HEADER;
-                headers = string.IsNullOrEmpty(_newGrainType) ? headers & ~Headers.NEW_GRAIN_TYPE : headers | Headers.NEW_GRAIN_TYPE;
-                headers = string.IsNullOrEmpty(GenericGrainType) ? headers & ~Headers.GENERIC_GRAIN_TYPE : headers | Headers.GENERIC_GRAIN_TYPE;
                 headers = _rejectionType == default(RejectionTypes) ? headers & ~Headers.REJECTION_TYPE : headers | Headers.REJECTION_TYPE;
                 headers = string.IsNullOrEmpty(_rejectionInfo) ? headers & ~Headers.REJECTION_INFO : headers | Headers.REJECTION_INFO;
                 headers = _requestContextData == null || _requestContextData.Count == 0 ? headers & ~Headers.REQUEST_CONTEXT : headers | Headers.REQUEST_CONTEXT;
@@ -970,9 +917,6 @@ namespace Orleans.Runtime
                 if ((headers & Headers.FORWARD_COUNT) != Headers.NONE)
                     writer.Write(input.ForwardCount);
 
-                if ((headers & Headers.GENERIC_GRAIN_TYPE) != Headers.NONE)
-                    writer.Write(input.GenericGrainType);
-
                 if ((headers & Headers.CORRELATION_ID) != Headers.NONE)
                     writer.Write(input.Id);
 
@@ -993,9 +937,6 @@ namespace Orleans.Runtime
 
                 if ((headers & Headers.IS_UNORDERED) != Headers.NONE)
                     writer.Write(input.IsUnordered);
-
-                if ((headers & Headers.NEW_GRAIN_TYPE) != Headers.NONE)
-                    writer.Write(input.NewGrainType);
 
                 if ((headers & Headers.REJECTION_INFO) != Headers.NONE)
                     writer.Write(input.RejectionInfo);
@@ -1105,7 +1046,7 @@ namespace Orleans.Runtime
                     result.ForwardCount = reader.ReadInt();
 
                 if ((headers & Headers.GENERIC_GRAIN_TYPE) != Headers.NONE)
-                    result.GenericGrainType = reader.ReadString();
+                    _ = reader.ReadString();
 
                 if ((headers & Headers.CORRELATION_ID) != Headers.NONE)
                     result.Id = (Orleans.Runtime.CorrelationId)ReadObj(sm, typeof(CorrelationId), context);
@@ -1129,7 +1070,7 @@ namespace Orleans.Runtime
                     result.IsUnordered = ReadBool(reader);
 
                 if ((headers & Headers.NEW_GRAIN_TYPE) != Headers.NONE)
-                    result.NewGrainType = reader.ReadString();
+                    _ = reader.ReadString();
 
                 if ((headers & Headers.REJECTION_INFO) != Headers.NONE)
                     result.RejectionInfo = reader.ReadString();

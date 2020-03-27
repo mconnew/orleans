@@ -15,19 +15,6 @@ namespace Orleans.Serialization
             var writer = context.StreamWriter;
             var input = (GrainReference)obj;
             writer.Write(input.GrainId);
-
-            writer.Write((byte)0);
-
-            if (input.IsObserverReference)
-            {
-                GuidId.Default.SerializeToStream(writer);
-            }
-
-            // store as null, serialize as empty.
-            var genericArg = string.Empty;
-            if (input.HasGenericArgument)
-                genericArg = input.GenericArguments;
-            writer.Write(genericArg);
         }
 
         /// <summary> Deserializer function for grain reference.</summary>
@@ -37,31 +24,9 @@ namespace Orleans.Serialization
         {
             var reader = context.StreamReader;
             GrainId id = reader.ReadGrainId();
-            byte siloAddressPresent = reader.ReadByte();
-            if (siloAddressPresent != 0)
-            {
-                // Unused: silo.
-                // Note, this should become part of the GrainId when reading a legacy SystemTarget grain id, and therefore converting it to a new GrainId
-                _ = reader.ReadSiloAddress();
-            }
-            bool expectObserverId = id.IsClient();
-            if (expectObserverId)
-            {
-                _ = GuidId.DeserializeFromStream(reader);
-            }
-            // store as null, serialize as empty.
-            var genericArg = reader.ReadString();
-            if (string.IsNullOrEmpty(genericArg))
-                genericArg = null;
 
-            var runtimeClient = context.AdditionalContext as IRuntimeClient;
-            var runtime = runtimeClient?.GrainReferenceRuntime;
-            if (expectObserverId)
-            {
-                return GrainReference.NewObserverGrainReference(id, runtime);
-            }
-
-            return GrainReference.FromGrainId(id, runtime, genericArg);
+            var runtime = (context.AdditionalContext as IRuntimeClient)?.GrainReferenceRuntime;
+            return GrainReference.FromGrainId(id, runtime);
         }
 
         /// <summary> Copier function for grain reference. </summary>

@@ -257,9 +257,9 @@ namespace Orleans
         }
 
         /// <inheritdoc />
-        GrainReference IInternalGrainFactory.GetGrain(GrainId grainId, string genericArguments)
+        GrainReference IInternalGrainFactory.GetGrain(GrainId grainId)
         {
-            return this.InternalGrainFactory.GetGrain(grainId, genericArguments);
+            return this.InternalGrainFactory.GetGrain(grainId);
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed")]

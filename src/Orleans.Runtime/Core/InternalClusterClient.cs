@@ -148,9 +148,9 @@ namespace Orleans.Runtime
         }
 
         /// <inheritdoc />
-        GrainReference IInternalGrainFactory.GetGrain(GrainId grainId, string genericArguments)
+        GrainReference IInternalGrainFactory.GetGrain(GrainId grainId)
         {
-            return this.grainFactory.GetGrain(grainId, genericArguments);
+            return this.grainFactory.GetGrain(grainId);
         }
 
         /// <inheritdoc />

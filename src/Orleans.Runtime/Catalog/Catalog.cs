@@ -494,7 +494,6 @@ namespace Orleans.Runtime
                     // We want to do this (RegisterMessageTarget) under the same lock that we tested TryGetActivationData. They both access ActivationDirectory.
                     result = new ActivationData(
                         address,
-                        genericArguments,
                         placement,
                         this.activationCollector,
                         ageLimit,

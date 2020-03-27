@@ -164,7 +164,7 @@ namespace Orleans
                     return (TGrainInterface)reference;
                 }
 
-                reference = this.Cast<TGrainInterface>(GrainReference.FromGrainId(grainId, this.GrainReferenceRuntime, null));
+                reference = this.Cast<TGrainInterface>(GrainReference.FromGrainId(grainId, this.GrainReferenceRuntime));
                 this.typedSystemTargetReferenceCache[key] = reference;
                 return (TGrainInterface)reference;
             }
@@ -177,7 +177,7 @@ namespace Orleans
         }
 
         /// <inheritdoc />
-        public GrainReference GetGrain(GrainId grainId, string genericArguments) => GrainReference.FromGrainId(grainId, this.GrainReferenceRuntime, genericArguments);
+        public GrainReference GetGrain(GrainId grainId) => GrainReference.FromGrainId(grainId, this.GrainReferenceRuntime);
 
         /// <inheritdoc />
         public TGrainInterface GetGrain<TGrainInterface>(Type grainInterfaceType, Guid grainPrimaryKey)

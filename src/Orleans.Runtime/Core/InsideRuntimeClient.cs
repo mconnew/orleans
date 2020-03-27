@@ -131,16 +131,13 @@ namespace Orleans.Runtime
             GrainReference target,
             InvokeMethodRequest request,
             TaskCompletionSource<object> context,
-            InvokeMethodOptions options,
-            string genericArguments)
+            InvokeMethodOptions options)
         {
             var message = this.messageFactory.CreateMessage(request, options);
 
             // fill in sender
             if (message.SendingSilo == null)
                 message.SendingSilo = MySilo;
-            if (!String.IsNullOrEmpty(genericArguments))
-                message.GenericGrainType = genericArguments;
 
             IGrainContext sendingActivation = RuntimeContext.CurrentGrainContext;
 
@@ -315,11 +312,12 @@ namespace Orleans.Runtime
                         CancellationSourcesExtension.RegisterCancellationTokens(target, request, this.loggerFactory, logger, this, this.cancellationTokenRuntime);
                     }
 
-                    var invoker = invokable.GetInvoker(typeManager, request.InterfaceId, message.GenericGrainType);
+                    message.TargetGrain.Type.TryGetGenericArguments(out var genericArgs);
+                    var invoker = invokable.GetInvoker(typeManager, request.InterfaceId, genericArgs);
 
                     if (invoker is IGrainExtensionMethodInvoker &&
                         !(target is IGrainExtension) &&
-                        !TryInstallExtension(request.InterfaceId, invokable, message.GenericGrainType, ref invoker))
+                        !TryInstallExtension(request.InterfaceId, invokable, genericArgs, ref invoker))
                     {
                         // We are trying the invoke a grain extension method on a grain 
                         // -- most likely reason is that the dynamic extension is not installed for this grain
