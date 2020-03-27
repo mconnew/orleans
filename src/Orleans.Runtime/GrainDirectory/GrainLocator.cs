@@ -63,7 +63,7 @@ namespace Orleans.Runtime.GrainDirectory
 
             results = new List<ActivationAddress>();
 
-            var entry = await this.grainDirectory.Lookup(((LegacyGrainId)grainId).ToParsableString());
+            var entry = await this.grainDirectory.Lookup(grainId.ToParsableString());
 
             // Nothing found
             if (entry == null)
@@ -238,7 +238,7 @@ namespace Orleans.Runtime.GrainDirectory
             return new GrainAddress
             {
                 SiloAddress = addr.Silo.ToParsableString(),
-                GrainId = ((LegacyGrainId)addr.Grain).ToParsableString(),
+                GrainId = addr.Grain.ToParsableString(),
                 ActivationId = (addr.Activation.Key.ToHexString())
             };
         }

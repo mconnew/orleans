@@ -11,7 +11,7 @@ namespace Orleans.Runtime
     public class UniqueKey : IComparable<UniqueKey>, IEquatable<UniqueKey>
     {
         private const ulong TYPE_CODE_DATA_MASK = 0xFFFFFFFF; // Lowest 4 bytes
-        private static readonly char[] KeyExtSeparationChar = {'+'};
+        private static readonly char[] ParsableKeySeparators = {'/', '+'};
 
         /// <summary>
         /// Type id values encoded into UniqueKeys
@@ -83,7 +83,7 @@ namespace Orleans.Runtime
                 return NewKey(guid);
             else
             {
-                var fields = trimmed.Split(KeyExtSeparationChar, 2);
+                var fields = trimmed.Split(ParsableKeySeparators, 3);
                 var n0 = ulong.Parse(fields[0].Substring(0, 16), NumberStyles.HexNumber);
                 var n1 = ulong.Parse(fields[0].Substring(16, 16), NumberStyles.HexNumber);
                 var typeCodeData = ulong.Parse(fields[0].Substring(32, 16), NumberStyles.HexNumber);

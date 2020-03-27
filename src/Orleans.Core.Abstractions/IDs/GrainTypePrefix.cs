@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Text;
 
 namespace Orleans.Runtime
@@ -14,11 +15,11 @@ namespace Orleans.Runtime
             if (keyString.IndexOf('+') is int index && index >= 0)
             {
                 keyExt = keyString.Substring(index + 1);
-                return long.TryParse(keyString.Substring(0, index), out key);
+                return long.TryParse(keyString.Substring(0, index), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out key);
             }
 
             keyExt = default;
-            return long.TryParse(keyString, out key);
+            return long.TryParse(keyString, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out key);
         }
 
         /// <summary>
@@ -33,11 +34,11 @@ namespace Orleans.Runtime
             if (key.IndexOf('+') is int index && index >= 0)
             {
                 keyExt = key.Substring(index + 1);
-                return long.Parse(key.Substring(0, index));
+                return long.Parse(key.Substring(0, index), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
             }
 
             keyExt = default;
-            return long.Parse(key);
+            return long.Parse(key, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
         }
 
         /// <summary>

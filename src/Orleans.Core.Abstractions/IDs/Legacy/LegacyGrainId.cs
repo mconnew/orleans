@@ -181,9 +181,15 @@ namespace Orleans.Runtime
 
         private SpanId GetGrainKey()
         {
-            // TODO: intern
-            var key = this.Key;
-            return SpanId.Create($"{key.N0:X16}{key.N1:X16}{(key.HasKeyExt ? ("+" + key.KeyExt) : string.Empty)}");
+            // TODO: intern?
+            return SpanId.Create($"{ConvertToGuid(this.Key):N}{(this.Key.HasKeyExt ? ("+" + this.Key.KeyExt) : string.Empty)}");
+
+            static Guid ConvertToGuid(UniqueKey key)
+            {
+                var n0 = key.N0;
+                var n1 = key.N1;
+                return new Guid((uint)(n0 & 0xffffffff), (ushort)(n0 >> 32), (ushort)(n0 >> 48), (byte)n1, (byte)(n1 >> 8), (byte)(n1 >> 16), (byte)(n1 >> 24), (byte)(n1 >> 32), (byte)(n1 >> 40), (byte)(n1 >> 48), (byte)(n1 >> 56));
+            }
         }
 
         public GrainId ToGrainId()
@@ -213,11 +219,8 @@ namespace Orleans.Runtime
             }
             else if (typeSpan.StartsWith(GrainTypePrefix.SystemTargetPrefixBytes.Span))
             {
+                // TODO: remove and return null? We shouldn't support legacy system target ids - no need.
                 prefixLength = GrainTypePrefix.SystemTargetPrefixBytes.Length;
-            }
-            else if (typeSpan.StartsWith(GrainTypePrefix.ClientPrefixBytes.Span))
-            {
-                return null;
             }
             else
             {

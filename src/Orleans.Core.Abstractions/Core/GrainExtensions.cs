@@ -180,7 +180,11 @@ namespace Orleans
         /// </summary>
         /// <param name="grain">The grain to find the primary key for.</param>
         /// <returns>A string representing the primary key for this grain.</returns>
-        public static string GetPrimaryKeyString(this IAddressable grain) => GetGrainId(grain).Key.ToStringUtf8();
+        public static string GetPrimaryKeyString(this IAddressable grain)
+        {
+            GetGrainId(grain).GetGuidKey(out var result);
+            return result;
+        }
 
         /// <summary>
         /// Invokes a method of a grain interface is one-way fashion so that no response message will be sent to the caller.
