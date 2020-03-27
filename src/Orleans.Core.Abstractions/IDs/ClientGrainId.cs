@@ -6,6 +6,11 @@ namespace Orleans.Runtime
     public static class ClientGrainId
     {
         public static GrainId Create() => GrainId.Create(GrainTypePrefix.ClientGrainType, Guid.NewGuid().ToString("N"));
+        public static GrainId Create(string name)
+        {
+            if (name.Contains("+")) throw new ArgumentException("Client name cannot contain '+' symbols");
+            return GrainId.Create(GrainTypePrefix.ClientGrainType, name);
+        }
 
         public static GrainId CreateObserverId(GrainId clientId)
         {

@@ -229,7 +229,7 @@ namespace Orleans.Runtime.GrainDirectory
         {
             return ActivationAddress.GetAddress(
                     SiloAddress.FromParsableString(addr.SiloAddress),
-                    LegacyGrainId.FromParsableString(addr.GrainId),
+                    GrainId.FromParsableString(addr.GrainId),
                     ActivationId.GetActivationId(UniqueKey.Parse(addr.ActivationId.AsSpan())));
         }
 
