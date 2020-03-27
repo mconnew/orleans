@@ -269,7 +269,6 @@ namespace Orleans.Runtime
             }
         }
 
-
         public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             // Use the AddValue method to specify serialized values.

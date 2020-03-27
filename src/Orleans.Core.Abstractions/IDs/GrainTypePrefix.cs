@@ -95,12 +95,11 @@ namespace Orleans.Runtime
 
         private static bool IsLegacyGrain(this in GrainType type) => type.Value.Span.StartsWith(LegacyGrainPrefixBytes.Span);
 
-        public static bool IsClient(this in GrainId id) => id.Type.IsClient() || LegacyGrainId.TryConvertFromGrainId(id, out var legacyId) && legacyId.IsClient;
+        public static bool IsClient(this in GrainId id) => id.Type.IsClient();
 
-        public static bool IsSystemTarget(this in GrainId id) => id.Type.IsSystemTarget() || LegacyGrainId.TryConvertFromGrainId(id, out var legacyId) && legacyId.IsSystemTarget;
+        public static bool IsSystemTarget(this in GrainId id) => id.Type.IsSystemTarget();
 
-        public static bool IsLegacyGrain(this in GrainId id) => id.Type.IsLegacyGrain()
-            || (LegacyGrainId.TryConvertFromGrainId(id, out var legacyId) && legacyId.IsGrain);
+        public static bool IsLegacyGrain(this in GrainId id) => id.Type.IsLegacyGrain();
 
         public static GrainId GetSystemTargetGrainId(GrainType kind, SiloAddress address)
         {
