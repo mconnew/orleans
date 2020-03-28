@@ -1,11 +1,13 @@
 using System.Threading.Tasks;
 using Orleans;
+using Orleans.Metadata;
 using Orleans.Runtime;
 using UnitTests.GrainInterfaces;
 using UnitTests.Grains;
 
 namespace UnitTests.PersistentState.Grains
 {
+    [GrainTypePrefix("new")]
     public class GrainStorageTestGrain : Grain,
         IGrainStorageTestGrain, IGrainStorageTestGrain_LongKey
     {
@@ -42,6 +44,7 @@ namespace UnitTests.PersistentState.Grains
     }
 
     [Orleans.Providers.StorageProvider(ProviderName = "GrainStorageForTest")]
+    [GrainTypePrefix("new")]
     public class GrainStorageTestGrainExtendedKey : Grain,
         IGrainStorageTestGrain_GuidExtendedKey, IGrainStorageTestGrain_LongExtendedKey
     {

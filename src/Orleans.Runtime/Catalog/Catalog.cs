@@ -443,21 +443,21 @@ namespace Orleans.Runtime
         /// </summary>
         /// <param name="address">Grain's activation address</param>
         /// <param name="newPlacement">Creation of new activation was requested by the placement director.</param>
-        /// <param name="grainType">The type of grain to be activated or created</param>
-        /// <param name="genericArguments">Specific generic type of grain to be activated or created</param>
         /// <param name="requestContextData">Request context data.</param>
         /// <param name="activatedPromise"></param>
         /// <returns></returns>
         public ActivationData GetOrCreateActivation(
             ActivationAddress address,
             bool newPlacement,
-            string grainType,
-            string genericArguments,
             Dictionary<string, object> requestContextData,
             out Task activatedPromise)
         {
-            ActivationData result;
             activatedPromise = Task.CompletedTask;
+            throw new NotImplementedException();
+
+            // TODO: MAKE WORK
+            /*
+            ActivationData result;
             PlacementStrategy placement;
 
             lock (activations)
@@ -528,6 +528,7 @@ namespace Orleans.Runtime
             }
             activatedPromise = InitActivation(result, requestContextData);
             return result;
+            */
         }
 
         private void SetupActivationInstance(ActivationData result, string grainType, string genericArguments)

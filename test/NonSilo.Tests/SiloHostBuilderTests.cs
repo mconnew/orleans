@@ -11,6 +11,7 @@ using Orleans.Configuration;
 using Orleans.Configuration.Internal;
 using Orleans.Configuration.Validators;
 using Orleans.Hosting;
+using Orleans.Metadata;
 using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
 using Orleans.Statistics;
@@ -88,6 +89,29 @@ namespace NonSilo.Tests
                     options.ValidateOnBuild = true;
                 })
                 .Build();
+
+            var clusterClient = host.Services.GetRequiredService<IClusterClient>();
+        }
+
+        [Fact]
+        public void GrainMetadataTest()
+        {
+            var host = new HostBuilder()
+                .UseOrleans((ctx, siloBuilder) =>
+                {
+                    siloBuilder
+                        .UseLocalhostClustering()
+                        .Configure<ClusterOptions>(options => options.ClusterId = "someClusterId")
+                        .Configure<EndpointOptions>(options => options.AdvertisedIPAddress = IPAddress.Loopback);
+                })
+                .UseDefaultServiceProvider((context, options) =>
+                {
+                    options.ValidateScopes = true;
+                    options.ValidateOnBuild = true;
+                })
+                .Build();
+
+            var localMetadata = host.Services.GetRequiredService<LocalGrainMetadataProvider>();
 
             var clusterClient = host.Services.GetRequiredService<IClusterClient>();
         }

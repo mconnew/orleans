@@ -3,6 +3,9 @@ using System.Runtime.CompilerServices;
 
 namespace Orleans.Runtime
 {
+    /// <summary>
+    /// Methods for creating and parsing parameterised <see cref="GrainType"/>s.
+    /// </summary>
     public static class GenericGrainType
     {
         public static readonly char GenericParameterIndicator = '`';

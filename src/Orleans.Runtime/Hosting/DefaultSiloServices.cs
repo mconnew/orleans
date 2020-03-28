@@ -281,6 +281,16 @@ namespace Orleans.Hosting
             applicationPartManager.AddFeatureProvider(new AssemblyAttributeFeatureProvider<SerializerFeature>());
             services.AddTransient<IConfigurationValidator, ApplicationPartValidator>();
 
+            // Type metadata
+            services.TryAddSingleton<LocalGrainMetadataProvider>();
+            services.TryAddSingleton<GrainTypeProvider>();
+            services.TryAddSingleton<GrainInterfaceIdProvider>();
+            services.AddSingleton<IGrainTypeProvider, AttributeGrainTypeProvider>();
+            services.AddSingleton<IGrainInterfaceMetadataProvider, AttributeGrainInterfaceMetadataProvider>();
+            services.AddSingleton<IGrainMetadataProvider, AttributeGrainMetadataProvider>();
+            services.AddSingleton<IGrainInterfaceMetadataProvider, DiagnosticInfoGrainMetadataProvider>();
+            services.AddSingleton<IGrainMetadataProvider, DiagnosticInfoGrainMetadataProvider>();
+
             //Add default option formatter if none is configured, for options which are required to be configured
             services.ConfigureFormatter<SiloOptions>();
             services.ConfigureFormatter<SchedulingOptions>();

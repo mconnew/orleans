@@ -19,6 +19,7 @@ using Orleans.Serialization;
 using UnitTests.GrainInterfaces;
 using Xunit;
 using Orleans.Storage;
+using Orleans.Metadata;
 
 namespace UnitTests.Grains
 {

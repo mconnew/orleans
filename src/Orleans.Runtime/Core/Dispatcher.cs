@@ -103,8 +103,6 @@ namespace Orleans.Runtime
                 ActivationData target = catalog.GetOrCreateActivation(
                     message.TargetAddress, 
                     message.IsNewPlacement,
-                    message.NewGrainType,
-                    String.IsNullOrEmpty(message.GenericGrainType) ? null : message.GenericGrainType, 
                     message.RequestContextData,
                     out ignore);
 
@@ -137,7 +135,7 @@ namespace Orleans.Runtime
                     var nea = ex as Catalog.NonExistentActivationException;
                     if (nea == null)
                     {
-                        var str = $"Error creating activation for {message.NewGrainType}. Message {message}";
+                        var str = $"Error creating activation for message {message}";
                         logger.Error(ErrorCode.Dispatcher_ErrorCreatingActivation, str, ex);
                         throw new OrleansException(str, ex);
                     }

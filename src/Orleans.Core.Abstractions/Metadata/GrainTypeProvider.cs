@@ -10,6 +10,7 @@ namespace Orleans.Metadata
     /// </summary>
     public class GrainTypeProvider
     {
+        private const string GrainSuffix = "grain";
         private readonly IGrainTypeProvider[] providers;
 
         public GrainTypeProvider(IEnumerable<IGrainTypeProvider> providers)
@@ -54,8 +55,8 @@ namespace Orleans.Metadata
             }
 
             // Trim "Grain" suffix
-            index = name.LastIndexOf("grain");
-            if (index > 0)
+            index = name.LastIndexOf(GrainSuffix);
+            if (index > 0 && name.Length - index == GrainSuffix.Length)
             {
                 name = name.Substring(0, index);
             }
@@ -130,5 +131,20 @@ namespace Orleans.Metadata
         }
 
         public override GrainType GetGrainType(IServiceProvider services, Type type) => this.grainType;
+    }
+
+    /// <summary>
+    /// Specifies the grain type of the type which it is attached to.
+    /// </summary>
+    public sealed class GrainTypePrefixAttribute : GrainTypeProviderAttribute
+    {
+        private readonly string prefix;
+
+        public GrainTypePrefixAttribute(string prefix)
+        {
+            this.prefix = prefix;
+        }
+
+        public override GrainType GetGrainType(IServiceProvider services, Type type) => GrainType.Create(this.prefix + GrainTypeProvider.GetGrainTypeByConvention(type).ToStringUtf8());
     }
 }
