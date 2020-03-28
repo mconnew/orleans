@@ -96,7 +96,7 @@ namespace Orleans.Metadata
 
     public interface IGrainInterfaceMetadataProviderAttribute
     {
-        void Populate(IServiceProvider services, Type type, Dictionary<string, string> properties);
+        void Populate(IServiceProvider services, Type interfaceType, Dictionary<string, string> properties);
     }
 
     /// <summary>
@@ -105,16 +105,16 @@ namespace Orleans.Metadata
     [AttributeUsage(AttributeTargets.Interface, AllowMultiple = false)]
     public sealed class DefaultGrainTypeAttribute : Attribute, IGrainInterfaceMetadataProviderAttribute
     {
-        private readonly GrainType grainType;
+        private readonly string grainType;
 
         public DefaultGrainTypeAttribute(string grainType)
         {
-            this.grainType = GrainType.Create(grainType);
+            this.grainType = grainType;
         }
 
         public void Populate(IServiceProvider services, Type type, Dictionary<string, string> properties)
         {
-            properties[WellKnownGrainInterfaceProperties.DefaultGrainType] = this.grainType.ToString();
+            properties[WellKnownGrainInterfaceProperties.DefaultGrainType] = this.grainType;
         }
     }
 
@@ -127,13 +127,13 @@ namespace Orleans.Metadata
             this.serviceProvider = serviceProvider;
         }
 
-        public void Populate(Type type, GrainInterfaceId interfaceId, Dictionary<string, string> properties)
+        public void Populate(Type interfaceType, GrainInterfaceId interfaceId, Dictionary<string, string> properties)
         {
-            foreach (var attr in type.GetCustomAttributes(inherit: true))
+            foreach (var attr in interfaceType.GetCustomAttributes(inherit: true))
             {
                 if (attr is IGrainInterfaceMetadataProviderAttribute providerAttribute)
                 {
-                    providerAttribute.Populate(this.serviceProvider, type, properties);
+                    providerAttribute.Populate(this.serviceProvider, interfaceType, properties);
                 }
             }
         }
@@ -160,7 +160,7 @@ namespace Orleans.Metadata
 
     public interface IGrainMetadataProvider
     {
-        void Populate(Type type, GrainType grainType, Dictionary<string, string> properties);
+        void Populate(Type grainClass, GrainType grainType, Dictionary<string, string> properties);
     }
 
     public sealed class AttributeGrainMetadataProvider : IGrainMetadataProvider
@@ -181,21 +181,6 @@ namespace Orleans.Metadata
                     providerAttribute.Populate(this.serviceProvider, grainClass, grainType, properties);
                 }
             }
-        }
-    }
-
-    public sealed class DiagnosticInfoGrainMetadataProvider : IGrainMetadataProvider, IGrainInterfaceMetadataProvider
-    {
-        public void Populate(Type type, GrainType grainType, Dictionary<string, string> properties)
-        {
-            properties["diagnostics.type"] = type.FullName;
-            properties["diagnostics.asm"] = type.Assembly.GetName().Name;
-        }
-
-        public void Populate(Type interfaceType, GrainInterfaceId interfaceId, Dictionary<string, string> properties)
-        {
-            properties["diagnostics.type"] = interfaceType.FullName;
-            properties["diagnostics.asm"] = interfaceType.Assembly.GetName().Name;
         }
     }
 }

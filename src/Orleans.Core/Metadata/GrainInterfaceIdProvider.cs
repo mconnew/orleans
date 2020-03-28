@@ -29,6 +29,11 @@ namespace Orleans.Metadata
                 throw new ArgumentException($"Argument {nameof(type)} must be an interface. Provided value, \"{type}\", is not an interface.", nameof(type));
             }
 
+            if (type.IsConstructedGenericType)
+            {
+                type = type.GetGenericTypeDefinition();
+            }
+
             // Configured providers take precedence
             foreach (var provider in this.providers)
             {

@@ -15,11 +15,6 @@ namespace Orleans.Metadata
         public const string DirectoryPolicy = "directory-policy";
 
         /// <summary>
-        /// The multi-cluster registration policy for grains of this type.
-        /// </summary>
-        public const string MultiClusterRegistrationPolicy = "multi-cluster-registration-policy";
-
-        /// <summary>
         /// The legacy grain id type for this grain, if this grain implements a legacy grain interface such as <see cref="IGrainWithGuidKey"/>.
         /// For valid values, see <see cref="LegacyGrainIdTypes"/>.
         /// </summary>
@@ -29,6 +24,11 @@ namespace Orleans.Metadata
         /// Whether or not messages to this grain are unordered.
         /// </summary>
         public const string Unordered = "unordered";
+
+        /// <summary>
+        /// Prefix for keys which indicate <see cref="GrainInterfaceId"/> of interfaces which a grain class implements.
+        /// </summary>
+        public const string ImplementedInterfacePrefix = "iface.";
 
         public static class LegacyGrainIdTypes
         {

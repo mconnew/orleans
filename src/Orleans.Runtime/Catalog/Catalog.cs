@@ -456,7 +456,7 @@ namespace Orleans.Runtime
             throw new NotImplementedException();
 
             // TODO: MAKE WORK
-            /*
+            
             ActivationData result;
             PlacementStrategy placement;
 
@@ -528,7 +528,6 @@ namespace Orleans.Runtime
             }
             activatedPromise = InitActivation(result, requestContextData);
             return result;
-            */
         }
 
         private void SetupActivationInstance(ActivationData result, string grainType, string genericArguments)

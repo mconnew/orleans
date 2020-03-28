@@ -20,15 +20,12 @@ namespace Orleans.Runtime
         internal string GrainClass { get; private set; }
         internal List<Type> RemoteInterfaceTypes { get; private set; }
         internal bool IsReentrant { get; private set; }
-        internal bool IsStatelessWorker { get; private set; }
         internal Func<InvokeMethodRequest, bool> MayInterleave { get; private set; }
 
         public GrainTypeData(Type type)
         {
             Type = type;
             this.IsReentrant = type.GetCustomAttributes(typeof (ReentrantAttribute), true).Any();
-            // TODO: shouldn't this use GrainInterfaceUtils.IsStatelessWorker?
-            this.IsStatelessWorker = type.GetCustomAttributes(typeof(StatelessWorkerAttribute), true).Any();
             this.GrainClass = TypeUtils.GetFullName(type);
             RemoteInterfaceTypes = GetRemoteInterfaces(type);
             this.MayInterleave = GetMayInterleavePredicate(type) ?? (_ => false);

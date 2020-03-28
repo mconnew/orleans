@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 using Orleans;
 using Orleans.Configuration;
 using Orleans.Configuration.Internal;
@@ -111,8 +112,9 @@ namespace NonSilo.Tests
                 })
                 .Build();
 
-            var localMetadata = host.Services.GetRequiredService<LocalGrainMetadataProvider>();
+            var localMetadata = host.Services.GetRequiredService<LocalSiloManifestProvider>();
 
+            var str = JsonConvert.SerializeObject(localMetadata);
             var clusterClient = host.Services.GetRequiredService<IClusterClient>();
         }
 

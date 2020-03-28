@@ -2,6 +2,7 @@ using Orleans.Placement;
 using Orleans.Runtime;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 
 namespace Orleans.Concurrency
@@ -55,6 +56,12 @@ namespace Orleans.Concurrency
         public StatelessWorkerAttribute()
             : base(new StatelessWorkerPlacement())
         {
+        }
+
+        public override void Populate(IServiceProvider services, Type grainClass, GrainType grainType, Dictionary<string, string> properties)
+        {
+            base.Populate(services, grainClass, grainType, properties);
+            properties["max-local-workers"] = ((StatelessWorkerPlacement)this.PlacementStrategy).MaxLocal.ToString(CultureInfo.InvariantCulture);
         }
     }
 

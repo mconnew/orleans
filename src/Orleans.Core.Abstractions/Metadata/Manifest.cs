@@ -1,16 +1,21 @@
 using System;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using Orleans.Runtime;
 
 namespace Orleans.Metadata
 {
     /// <summary>
-    /// Information about available a silo.
+    /// Information about a silo.
     /// </summary>
     [Serializable]
     public class SiloManifest
     {
+        public SiloManifest(ImmutableDictionary<GrainType, GrainMetadata> grains, ImmutableDictionary<GrainInterfaceId, cGrainInterfaceMetadata> interfaces)
+        {
+            this.Interfaces = interfaces;
+            this.Grains = grains;
+        }
+
         // Map from formatted CLR type name -> interface metadata
         public ImmutableDictionary<GrainInterfaceId, cGrainInterfaceMetadata> Interfaces { get; }
 

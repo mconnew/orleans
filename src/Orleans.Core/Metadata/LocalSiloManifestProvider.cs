@@ -6,21 +6,21 @@ using Orleans.Runtime;
 
 namespace Orleans.Metadata
 {
-    public class LocalGrainMetadataProvider
+    public class LocalSiloManifestProvider
     {
-        public ImmutableDictionary<GrainType, GrainMetadata> GrainMetadata { get; }
-        public ImmutableDictionary<GrainInterfaceId, cGrainInterfaceMetadata> InterfaceMetadata { get; }
-
-        public LocalGrainMetadataProvider(
+        public LocalSiloManifestProvider(
             IEnumerable<IGrainMetadataProvider> grainMetadataProviders,
             IEnumerable<IGrainInterfaceMetadataProvider> grainInterfaceMetadataProviders,
             IApplicationPartManager applicationPartManager,
             GrainTypeProvider typeProvider,
             GrainInterfaceIdProvider interfaceIdProvider)
         {
-            this.GrainMetadata = CreateGrainMetadata(grainMetadataProviders, applicationPartManager, typeProvider);
-            this.InterfaceMetadata = CreateInterfaceMetadata(grainInterfaceMetadataProviders, applicationPartManager, interfaceIdProvider);
+            var grains = CreateGrainMetadata(grainMetadataProviders, applicationPartManager, typeProvider);
+            var interfaces = CreateInterfaceMetadata(grainInterfaceMetadataProviders, applicationPartManager, interfaceIdProvider);
+            this.SiloManifest = new SiloManifest(grains, interfaces);
         }
+
+        public SiloManifest SiloManifest { get; }
 
         private static ImmutableDictionary<GrainInterfaceId, cGrainInterfaceMetadata> CreateInterfaceMetadata(
             IEnumerable<IGrainInterfaceMetadataProvider> grainInterfaceMetadataProviders,

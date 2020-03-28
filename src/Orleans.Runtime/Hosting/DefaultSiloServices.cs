@@ -282,7 +282,7 @@ namespace Orleans.Hosting
             services.AddTransient<IConfigurationValidator, ApplicationPartValidator>();
 
             // Type metadata
-            services.TryAddSingleton<LocalGrainMetadataProvider>();
+            services.TryAddSingleton<SiloManifest>(sp => ActivatorUtilities.CreateInstance<LocalSiloManifestProvider>(sp).SiloManifest);
             services.TryAddSingleton<GrainTypeProvider>();
             services.TryAddSingleton<GrainInterfaceIdProvider>();
             services.AddSingleton<IGrainTypeProvider, AttributeGrainTypeProvider>();
@@ -290,6 +290,7 @@ namespace Orleans.Hosting
             services.AddSingleton<IGrainMetadataProvider, AttributeGrainMetadataProvider>();
             services.AddSingleton<IGrainInterfaceMetadataProvider, DiagnosticInfoGrainMetadataProvider>();
             services.AddSingleton<IGrainMetadataProvider, DiagnosticInfoGrainMetadataProvider>();
+            services.AddSingleton<IGrainMetadataProvider, ImplementedInterfaceProvider>();
 
             //Add default option formatter if none is configured, for options which are required to be configured
             services.ConfigureFormatter<SiloOptions>();
