@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Orleans;
 using Orleans.Hosting;
 using Orleans.TestingHost;
@@ -37,7 +38,7 @@ namespace Orleans.Connections.Security.Tests
 
                 var certificateModeString = configuration[ClientCertificateModeKey];
                 var certificateMode = (RemoteCertificateMode)Enum.Parse(typeof(RemoteCertificateMode), certificateModeString);
-
+                clientBuilder.ConfigureLogging(logging => logging.AddConsole());
                 clientBuilder.UseTls(options =>
                 {
                     options.SslProtocols = System.Security.Authentication.SslProtocols.Tls12;
@@ -55,7 +56,7 @@ namespace Orleans.Connections.Security.Tests
             public void Configure(ISiloBuilder hostBuilder)
             {
                 hostBuilder.ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(IPingGrain).Assembly));
-
+                hostBuilder.ConfigureLogging(logging => logging.AddConsole());
                 var config = hostBuilder.GetConfiguration();
                 var encodedCertificate = config[CertificateConfigKey];
                 var localCertificate = TestCertificateHelper.ConvertFromBase64(encodedCertificate);
