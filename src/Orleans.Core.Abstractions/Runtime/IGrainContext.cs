@@ -1,18 +1,22 @@
 
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Orleans.Runtime
 {
     /// <summary>
     /// Represents a grain from the perpsective of the runtime.
     /// </summary>
-    internal interface IGrainContext : IEquatable<IGrainContext>
+    internal interface IGrainContext : IEquatable<IGrainContext>, IAsyncDisposable
     {
         GrainReference GrainReference { get; }
         GrainId GrainId { get; }
         IAddressable GrainInstance { get; }
         ActivationId ActivationId { get; }
         ActivationAddress Address { get; }
+        ValueTask StartAsync(CancellationToken cancellationToken);
+        ValueTask StopAsync(CancellationToken cancellationToken);
     }
 
     internal interface IActivationData : IGrainContext

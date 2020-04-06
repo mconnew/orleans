@@ -8,21 +8,21 @@ using Microsoft.Extensions.Logging;
 
 namespace Orleans.Runtime
 {
-    internal class ActivationDirectory : IEnumerable<KeyValuePair<ActivationId, ActivationData>>
+    internal class ActivationDirectory : IEnumerable<KeyValuePair<ActivationId, IGrainContext>>
     {
         private readonly ILogger logger;
 
-        private readonly ConcurrentDictionary<ActivationId, ActivationData> activations;                // Activation data (app grains) only.
+        private readonly ConcurrentDictionary<ActivationId, IGrainContext> activations;                // Activation data (app grains) only.
         private readonly ConcurrentDictionary<ActivationId, SystemTarget> systemTargets;                // SystemTarget only.
-        private readonly ConcurrentDictionary<GrainId, List<ActivationData>> grainToActivationsMap;     // Activation data (app grains) only.
+        private readonly ConcurrentDictionary<GrainId, List<IGrainContext>> grainToActivationsMap;     // Activation data (app grains) only.
         private readonly ConcurrentDictionary<string, CounterStatistic> grainCounts;                    // simple statistics type->count
         private readonly ConcurrentDictionary<string, CounterStatistic> systemTargetCounts;             // simple statistics systemTargetTypeName->count
 
         public ActivationDirectory(ILogger<ActivationDirectory> logger)
         {
-            activations = new ConcurrentDictionary<ActivationId, ActivationData>();
+            activations = new ConcurrentDictionary<ActivationId, IGrainContext>();
             systemTargets = new ConcurrentDictionary<ActivationId, SystemTarget>();
-            grainToActivationsMap = new ConcurrentDictionary<GrainId, List<ActivationData>>();
+            grainToActivationsMap = new ConcurrentDictionary<GrainId, List<IGrainContext>>();
             grainCounts = new ConcurrentDictionary<string, CounterStatistic>();
             systemTargetCounts = new ConcurrentDictionary<string, CounterStatistic>();
             this.logger = logger;
@@ -38,11 +38,7 @@ namespace Orleans.Runtime
             return systemTargets.Values;
         }
 
-        public ActivationData FindTarget(ActivationId key)
-        {
-            ActivationData target;
-            return activations.TryGetValue(key, out target) ? target : null;
-        }
+        public bool TryGetActivation(ActivationId key, out IGrainContext activation) => activations.TryGetValue(key, out activation);
 
         public SystemTarget FindSystemTarget(ActivationId key)
         {
@@ -83,12 +79,12 @@ namespace Orleans.Runtime
             return ctr;
         }
 
-        public void RecordNewTarget(ActivationData target)
+        public void RecordNewTarget(IGrainContext target)
         {
             if (!activations.TryAdd(target.ActivationId, target))
                 return;
-            grainToActivationsMap.AddOrUpdate(target.Grain,
-                g => new List<ActivationData> { target },
+            grainToActivationsMap.AddOrUpdate(target.GrainId,
+                g => new List<IGrainContext> { target },
                 (g, list) => { lock (list) { list.Add(target); } return list; });
         }
 
@@ -113,27 +109,26 @@ namespace Orleans.Runtime
             }
         }
 
-        public void RemoveTarget(ActivationData target)
+        public void RemoveTarget(IGrainContext target)
         {
-            ActivationData ignore;
-            if (!activations.TryRemove(target.ActivationId, out ignore))
+            if (!activations.TryRemove(target.ActivationId, out _))
                 return;
-            List<ActivationData> list;
-            if (grainToActivationsMap.TryGetValue(target.Grain, out list))
+            List<IGrainContext> list;
+            if (grainToActivationsMap.TryGetValue(target.GrainId, out list))
             {
                 lock (list)
                 {
                     list.Remove(target);
                     if (list.Count == 0)
                     {
-                        List<ActivationData> list2; // == list
-                        if (grainToActivationsMap.TryRemove(target.Grain, out list2))
+                        List<IGrainContext> list2; // == list
+                        if (grainToActivationsMap.TryRemove(target.GrainId, out list2))
                         {
                             lock (list2)
                             {
                                 if (list2.Count > 0)
                                 {
-                                    grainToActivationsMap.AddOrUpdate(target.Grain,
+                                    grainToActivationsMap.AddOrUpdate(target.GrainId,
                                         g => list2,
                                         (g, list3) => { lock (list3) { list3.AddRange(list2); } return list3; });
                                 }
@@ -147,14 +142,14 @@ namespace Orleans.Runtime
         /// <summary>
         /// Returns null if no activations exist for this grain ID, rather than an empty list
         /// </summary>
-        public List<ActivationData> FindTargets(GrainId key)
+        public List<IGrainContext> FindTargets(GrainId key)
         {
-            List<ActivationData> tmp;
+            List<IGrainContext> tmp;
             if (grainToActivationsMap.TryGetValue(key, out tmp))
             {
                 lock (tmp)
                 {
-                    return tmp.ToList();
+                    return new List<IGrainContext>(tmp);
                 }
             }
             return null;
@@ -171,7 +166,14 @@ namespace Orleans.Runtime
         {
             if (logger.IsEnabled(LogLevel.Information))
             {
-                string stats = Utils.EnumerableToString(activations.Values.OrderBy(act => act.Name), act => string.Format("++{0}", act.DumpStatus()), Environment.NewLine);
+                string stats = Utils.EnumerableToString(
+                    activations.Values.OrderBy(act => act.GrainId.GetUniformHashCode()),
+                    act => act switch
+                    {
+                        ActivationData activationData => $"++{activationData.DumpStatus()}",
+                        _ => $"++{act}"
+                    },
+                    Environment.NewLine);
                 if (stats.Length > 0)
                 {
                     logger.Info(ErrorCode.Catalog_ActivationDirectory_Statistics, $"ActivationDirectory.PrintActivationDirectory(): Size = { activations.Count}, Directory:{Environment.NewLine}{stats}");
@@ -179,7 +181,7 @@ namespace Orleans.Runtime
             }
         }
 
-        public IEnumerator<KeyValuePair<ActivationId, ActivationData>> GetEnumerator()
+        public IEnumerator<KeyValuePair<ActivationId, IGrainContext>> GetEnumerator()
         {
             return activations.GetEnumerator();
         }

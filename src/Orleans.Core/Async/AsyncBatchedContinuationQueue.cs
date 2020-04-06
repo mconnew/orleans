@@ -32,7 +32,7 @@ namespace Orleans
             lastContinuationStarted = DateTime.MinValue;
         }
 
-        public void Queue(IList<Tuple<Task, T>> tasks, Action<List<Tuple<Task, T>>> aggregateContinuation)
+        public void Queue(List<Tuple<Task, T>> tasks, Action<List<Tuple<Task, T>>> aggregateContinuation)
         {
             lock (lockable)
             {

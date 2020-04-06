@@ -178,8 +178,10 @@ namespace Orleans.Runtime
                 {
                     foreach (var activation in activations)
                     {
-                        ActivationData data = activation.Value;
-                        counter += data.GetRequestCount();
+                        if (activation.Value is ActivationData data)
+                        {
+                            counter += data.GetRequestCount();
+                        }
                     }
                 }
                 return counter;
@@ -286,24 +288,23 @@ namespace Orleans.Runtime
             var counts = new Dictionary<string, Dictionary<GrainId, int>>();
             lock (activations)
             {
-                foreach (var activation in activations)
+                foreach (var pair in activations)
                 {
-                    ActivationData data = activation.Value;
-                    if (data == null || data.GrainInstance == null) continue;
+                    var activation = pair.Value;
+                    if (!(activation?.GrainInstance is object grainInstance)) continue;
 
-                    // TODO: generic type expansion
-                    var grainTypeName = TypeUtils.GetFullName(data.GrainInstanceType);
+                    var grainTypeName = TypeUtils.GetFullName(grainInstance.GetType());
                     
                     Dictionary<GrainId, int> grains;
                     int n;
                     if (!counts.TryGetValue(grainTypeName, out grains))
                     {
-                        counts.Add(grainTypeName, new Dictionary<GrainId, int> { { data.Grain, 1 } });
+                        counts.Add(grainTypeName, new Dictionary<GrainId, int> { { activation.GrainId, 1 } });
                     }
-                    else if (!grains.TryGetValue(data.Grain, out n))
-                        grains[data.Grain] = 1;
+                    else if (!grains.TryGetValue(activation.GrainId, out n))
+                        grains[activation.GrainId] = 1;
                     else
-                        grains[data.Grain] = n + 1;
+                        grains[activation.GrainId] = n + 1;
                 }
             }
             return counts
@@ -316,19 +317,20 @@ namespace Orleans.Runtime
             var stats = new List<DetailedGrainStatistic>();
             lock (activations)
             {
-                foreach (var activation in activations)
+                foreach (var pair in activations)
                 {
-                    ActivationData data = activation.Value;
-                    if (data == null || data.GrainInstance == null) continue;
+                    var activation = pair.Value;
+                    if (!(activation?.GrainInstance is object grainInstance)) continue;
 
-                    if (types==null || types.Contains(TypeUtils.GetFullName(data.GrainInstanceType)))
+                    var grainTypeName = TypeUtils.GetFullName(grainInstance.GetType());
+                    if (types == null || types.Contains(grainTypeName))
                     {
                         stats.Add(new DetailedGrainStatistic()
                         {
-                            GrainType = TypeUtils.GetFullName(data.GrainInstanceType),
-                            GrainIdentity = data.Grain,
-                            SiloAddress = data.Silo,
-                            Category = data.Grain.Category.ToString()
+                            GrainType = grainTypeName,
+                            GrainIdentity = activation.GrainId,
+                            SiloAddress = activation.Address.Silo,
+                            Category = activation.GrainId.Category.ToString()
                         });
                     }
                 }
@@ -364,9 +366,9 @@ namespace Orleans.Runtime
                 report.GrainClassTypeName = exc.ToString();
             }
 
-            List<ActivationData> acts = activations.FindTargets(grain);
+            List<IGrainContext> acts = activations.FindTargets(grain);
             report.LocalActivations = acts != null ? 
-                acts.Select(activationData => activationData.ToDetailedString()).ToList() : 
+                acts.Select(activationData => activationData.ToString()).ToList() : 
                 new List<string>();
             return report;
         }
@@ -375,7 +377,7 @@ namespace Orleans.Runtime
         /// Register a new object to which messages can be delivered with the local lookup table and scheduler.
         /// </summary>
         /// <param name="activation"></param>
-        public void RegisterMessageTarget(ActivationData activation)
+        public void RegisterMessageTarget(IGrainContext activation)
         {
             scheduler.RegisterWorkContext(activation);
             activations.RecordNewTarget(activation);
@@ -386,21 +388,21 @@ namespace Orleans.Runtime
         /// Unregister message target and stop delivering messages to it
         /// </summary>
         /// <param name="activation"></param>
-        public void UnregisterMessageTarget(ActivationData activation)
+        public void UnregisterMessageTarget(IGrainContext activation)
         {
             activations.RemoveTarget(activation);
 
             // this should be removed once we've refactored the deactivation code path. For now safe to keep.
-            this.activationCollector.TryCancelCollection(activation);
+            this.activationCollector.TryCancelCollection((ActivationData)activation);
             activationsDestroyed.Increment();
 
             scheduler.UnregisterWorkContext(activation);
 
-            if (activation.GrainInstance == null) return;
+            if (!(activation.GrainInstance is object grainInstance)) return;
 
-            var grainTypeName = TypeUtils.GetFullName(activation.GrainInstanceType);
+            var grainTypeName = TypeUtils.GetFullName(grainInstance.GetType());
             activations.DecrementGrainCounter(grainTypeName);
-            activation.SetGrainInstance(null);
+            ((ActivationData)activation).SetGrainInstance(null);
         }
 
         /// <summary>
@@ -421,9 +423,9 @@ namespace Orleans.Runtime
 
         internal bool CanInterleave(ActivationId running, Message message)
         {
-            ActivationData target;
             GrainTypeData data;
-            return TryGetActivationData(running, out target) &&
+            return TryGetActivation(running, out var activation) &&
+                activation is ActivationData target &&
                 target.GrainInstance != null &&
                 GrainTypeManager.TryGetData(TypeUtils.GetFullName(target.GrainInstanceType), out data) &&
                 (data.IsReentrant || data.MayInterleave((InvokeMethodRequest)message.BodyObject));
@@ -449,7 +451,7 @@ namespace Orleans.Runtime
         /// <param name="requestContextData">Request context data.</param>
         /// <param name="activatedPromise"></param>
         /// <returns></returns>
-        public ActivationData GetOrCreateActivation(
+        public IGrainContext GetOrCreateActivation(
             ActivationAddress address,
             bool newPlacement,
             string grainType,
@@ -457,13 +459,13 @@ namespace Orleans.Runtime
             Dictionary<string, object> requestContextData,
             out Task activatedPromise)
         {
-            ActivationData result;
+            IGrainContext result;
             activatedPromise = Task.CompletedTask;
             PlacementStrategy placement;
 
             lock (activations)
             {
-                if (TryGetActivationData(address.Activation, out result))
+                if (TryGetActivation(address.Activation, out result))
                 {
                     return result;
                 }
@@ -532,7 +534,7 @@ namespace Orleans.Runtime
             return result;
         }
 
-        private void SetupActivationInstance(ActivationData result, string grainType, string genericArguments)
+        private void SetupActivationInstance(IGrainContext result, string grainType, string genericArguments)
         {
             lock (result)
             {
@@ -676,12 +678,10 @@ namespace Orleans.Runtime
         /// Perform just the prompt, local part of creating an activation object
         /// Caller is responsible for registering locally, registering with store and calling its activate routine
         /// </summary>
-        /// <param name="grainTypeName"></param>
-        /// <param name="data"></param>
-        /// <param name="genericArguments"></param>
-        /// <returns></returns>
-        private void CreateGrainInstance(string grainTypeName, ActivationData data, string genericArguments)
+        private void CreateGrainInstance(string grainTypeName, IGrainContext activation, string genericArguments)
         {
+            if (!(activation is ActivationData data)) throw new NotImplementedException($"Creating a grain instance for context type {activation?.GetType()} is not yet implemented");
+
             string grainClassName;
             if (!GrainTypeManager.TryGetPrimaryImplementation(grainTypeName, out grainClassName))
             {
@@ -737,14 +737,7 @@ namespace Orleans.Runtime
         /// <param name="activationId"></param>
         /// <param name="data"></param>
         /// <returns></returns>
-        public bool TryGetActivationData(ActivationId activationId, out ActivationData data)
-        {
-            data = null;
-            if (activationId.IsSystem) return false;
-
-            data = activations.FindTarget(activationId);
-            return data != null;
-        }
+        public bool TryGetActivation(ActivationId activationId, out IGrainContext data) => activations.TryGetActivation(activationId, out data);
 
         private Task DeactivateActivationsFromCollector(List<ActivationData> list)
         {
@@ -834,17 +827,17 @@ namespace Orleans.Runtime
         /// </summary>
         /// <param name="list"></param>
         /// <returns></returns>
-        internal async Task DeactivateActivations(List<ActivationData> list)
+        internal async Task DeactivateActivations(List<IGrainContext> list)
         {
             if (list == null || list.Count == 0) return;
 
             if (logger.IsEnabled(LogLevel.Debug)) logger.Debug("DeactivateActivations: {0} activations.", list.Count);
-            List<ActivationData> destroyNow = null;
+            List<IGrainContext> destroyNow = null;
             List<MultiTaskCompletionSource> destroyLater = null;
             int alreadyBeingDestroyed = 0;
             foreach (var d in list)
             {
-                var activationData = d; // capture
+                var activationData = (ActivationData)d; // capture
                 lock (activationData)
                 {
                     if (activationData.State == ActivationState.Valid)
@@ -856,7 +849,7 @@ namespace Orleans.Runtime
                         {
                             if (destroyNow == null)
                             {
-                                destroyNow = new List<ActivationData>();
+                                destroyNow = new List<IGrainContext>();
                             }
                             destroyNow.Add(activationData);
                         }
@@ -898,7 +891,7 @@ namespace Orleans.Runtime
         public Task DeactivateAllActivations()
         {
             logger.Info(ErrorCode.Catalog_DeactivateAllActivations, "DeactivateAllActivations.");
-            var activationsToShutdown = activations.Where(kv => !kv.Value.IsExemptFromCollection).Select(kv => kv.Value).ToList();
+            var activationsToShutdown = activations.Where(kv => !(kv.Value is ActivationData data) || !data.IsExemptFromCollection).Select(kv => kv.Value).ToList();
             return DeactivateActivations(activationsToShutdown);
         }
 
@@ -909,12 +902,12 @@ namespace Orleans.Runtime
         /// <param name="activation"></param>
         private void DestroyActivationVoid(ActivationData activation)
         {
-            StartDestroyActivations(new List<ActivationData> { activation });
+            StartDestroyActivations(new List<IGrainContext>(1) { activation });
         }
 
         private void DestroyActivationAsync(ActivationData activation, MultiTaskCompletionSource tcs)
         {
-            StartDestroyActivations(new List<ActivationData> { activation }, tcs);
+            StartDestroyActivations(new List<IGrainContext>(1) { activation }, tcs);
         }
 
         /// <summary>
@@ -936,7 +929,7 @@ namespace Orleans.Runtime
         // UnregisterMessageTarget -> no new tasks will be enqueue (if an orphan task get enqueud, it is ignored and dropped on the floor).
         // InvalidateCacheEntry
         // Reroute pending
-        private Task DestroyActivations(List<ActivationData> list)
+        private Task DestroyActivations(List<IGrainContext> list)
         {
             if (list == null || list.Count == 0) return Task.CompletedTask;
 
@@ -945,7 +938,7 @@ namespace Orleans.Runtime
             return tcs.Task;
         }
 
-        private async void StartDestroyActivations(List<ActivationData> list, MultiTaskCompletionSource tcs = null)
+        private async Task StartDestroyActivations(List<IGrainContext> list, MultiTaskCompletionSource tcs = null)
         {
             var cts = new CancellationTokenSource(this.collectionOptions.Value.DeactivationTimeout);
 
@@ -959,7 +952,7 @@ namespace Orleans.Runtime
                 var tasks1 = new List<Task>();
                 foreach (var activation in list)
                 {
-                    tasks1.Add(activation.WaitForAllTimersToFinish());
+                    tasks1.Add(((ActivationData)activation).WaitForAllTimersToFinish());
                 }
 
                 try
@@ -972,14 +965,14 @@ namespace Orleans.Runtime
                 }
 
                 // step 2 - CallGrainDeactivate
-                var tasks2 = new List<Tuple<Task, ActivationData>>();
+                var tasks2 = new List<Tuple<Task, IGrainContext>>();
                 foreach (var activation in list)
                 {
                     var activationData = activation; // Capture loop variable
                     var task = scheduler.RunOrQueueTask(() => CallGrainDeactivateAndCleanupStreams(activationData, cts.Token), activationData);
-                    tasks2.Add(new Tuple<Task, ActivationData>(task, activationData));
+                    tasks2.Add(new Tuple<Task, IGrainContext>(task, activation));
                 }
-                var asyncQueue = new AsyncBatchedContinuationQueue<ActivationData>();
+                var asyncQueue = new AsyncBatchedContinuationQueue<IGrainContext>();
                 asyncQueue.Queue(tasks2, tupleList =>
                 {
                     FinishDestroyActivations(tupleList.Select(t => t.Item2).ToList(), number, tcs);
@@ -992,7 +985,7 @@ namespace Orleans.Runtime
             }
         }
 
-        private async void FinishDestroyActivations(List<ActivationData> list, int number, MultiTaskCompletionSource tcs)
+        private async Task FinishDestroyActivations(List<IGrainContext> list, int number, MultiTaskCompletionSource tcs)
         {
             try
             {
@@ -1000,9 +993,10 @@ namespace Orleans.Runtime
                 // step 3 - UnregisterManyAsync
                 try
                 {            
-                    List<ActivationAddress> activationsToDeactivate = list.
-                        Where((ActivationData d) => d.IsUsingGrainDirectory).
-                        Select((ActivationData d) => ActivationAddress.GetAddress(LocalSilo, d.Grain, d.ActivationId)).ToList();
+                    List<ActivationAddress> activationsToDeactivate = list
+                        .Where(activation => activation is ActivationData data && data.IsUsingGrainDirectory)
+                        .Select(activation => activation.Address)
+                        .ToList();
 
                     if (activationsToDeactivate.Count > 0)
                     {
@@ -1019,12 +1013,12 @@ namespace Orleans.Runtime
                 // step 4 - UnregisterMessageTarget and OnFinishedGrainDeactivate
                 foreach (var activationData in list)
                 {
-                    Grain grainInstance = activationData.GrainInstance;
+                    var grainInstance = activationData.GrainInstance;
                     try
                     {
                         lock (activationData)
                         {
-                            activationData.SetState(ActivationState.Invalid); // Deactivate calls on this activation are finished
+                            ((ActivationData)activationData).SetState(ActivationState.Invalid); // Deactivate calls on this activation are finished
                         }
                         UnregisterMessageTarget(activationData);
                     }
@@ -1054,11 +1048,11 @@ namespace Orleans.Runtime
                         {
                             lock (activationData)
                             {
-                                grainCreator.Release(activationData, grainInstance);
+                                grainCreator.Release((IGrainActivationContext)activationData, grainInstance);
                             }
                         }
 
-                        activationData.Dispose();
+                        await activationData.DisposeAsync();
                     }
                     catch (Exception exc)
                     {
@@ -1076,11 +1070,11 @@ namespace Orleans.Runtime
                 logger.Error(ErrorCode.Catalog_FinishDeactivateActivation_Exception, String.Format("FinishDestroyActivations #{0} failed with {1} Activations.", number, list.Count), exc);
             }
         }
-        private void RerouteAllQueuedMessages(ActivationData activation, ActivationAddress forwardingAddress, string failedOperation, Exception exc = null)
+        private void RerouteAllQueuedMessages(IGrainContext activation, ActivationAddress forwardingAddress, string failedOperation, Exception exc = null)
         {
             lock (activation)
             {
-                List<Message> msgs = activation.DequeueAllWaitingMessages();
+                List<Message> msgs = ((ActivationData)activation).DequeueAllWaitingMessages();
                 if (msgs == null || msgs.Count <= 0) return;
 
                 if (logger.IsEnabled(LogLevel.Debug)) logger.Debug(ErrorCode.Catalog_RerouteAllQueuedMessages, String.Format("RerouteAllQueuedMessages: {0} msgs from Invalid activation {1}.", msgs.Count(), activation));
@@ -1118,9 +1112,9 @@ namespace Orleans.Runtime
             }
         }
 
-        private async Task CallGrainActivate(ActivationData activation, Dictionary<string, object> requestContextData)
+        private async Task CallGrainActivate(IGrainContext activation, Dictionary<string, object> requestContextData)
         {
-            var grainTypeName = activation.GrainInstanceType.FullName;
+            var grainTypeName = activation.GrainInstance?.GetType().FullName;
 
             // Note: This call is being made from within Scheduler.Queue wrapper, so we are already executing on worker thread
             if (logger.IsEnabled(LogLevel.Debug)) logger.Debug(ErrorCode.Catalog_BeforeCallingActivate, "About to call {1} grain's OnActivateAsync() method {0}", activation, grainTypeName);
@@ -1129,21 +1123,21 @@ namespace Orleans.Runtime
             try
             {
                 RequestContextExtensions.Import(requestContextData);
-                await activation.Lifecycle.OnStart();
+                await activation.StartAsync(CancellationToken.None);
                 if (logger.IsEnabled(LogLevel.Debug)) logger.Debug(ErrorCode.Catalog_AfterCallingActivate, "Returned from calling {1} grain's OnActivateAsync() method {0}", activation, grainTypeName);
 
                 lock (activation)
                 {
-                    if (activation.State == ActivationState.Activating)
+                    if (((ActivationData)activation).State == ActivationState.Activating)
                     {
-                        activation.SetState(ActivationState.Valid); // Activate calls on this activation are finished
+                        ((ActivationData)activation).SetState(ActivationState.Valid); // Activate calls on this activation are finished
                     }
-                    if (!activation.IsCurrentlyExecuting)
+                    if (!((ActivationData)activation).IsCurrentlyExecuting)
                     {
-                        activation.RunOnInactive();
+                        ((ActivationData)activation).RunOnInactive();
                     }
                     // Run message pump to see if there is a new request is queued to be processed
-                    this.Dispatcher.RunMessagePump(activation);
+                    this.Dispatcher.RunMessagePump((ActivationData)activation);
                 }
             }
             catch (Exception exc)
@@ -1169,11 +1163,11 @@ namespace Orleans.Runtime
             }
         }
 
-        private async Task<ActivationData> CallGrainDeactivateAndCleanupStreams(ActivationData activation, CancellationToken ct)
+        private async Task CallGrainDeactivateAndCleanupStreams(IGrainContext activation, CancellationToken ct)
         {
             try
             {
-                var grainTypeName = activation.GrainInstanceType.FullName;
+                var grainTypeName = activation.GrainInstance?.GetType().FullName;
 
                 // Note: This call is being made from within Scheduler.Queue wrapper, so we are already executing on worker thread
                 if (logger.IsEnabled(LogLevel.Debug)) logger.Debug(ErrorCode.Catalog_BeforeCallingDeactivate, "About to call {1} grain's OnDeactivateAsync() method {0}", activation, grainTypeName);
@@ -1182,12 +1176,10 @@ namespace Orleans.Runtime
                 try
                 {
                     // just check in case this activation data is already Invalid or not here at all.
-                    ActivationData ignore;
-                    if (TryGetActivationData(activation.ActivationId, out ignore) &&
-                        activation.State == ActivationState.Deactivating)
+                    if (TryGetActivation(activation.ActivationId, out _) && ((ActivationData)activation).State == ActivationState.Deactivating)
                     {
                         RequestContext.Clear(); // Clear any previous RC, so it does not leak into this call by mistake. 
-                        await activation.Lifecycle.OnStop().WithCancellation(ct);
+                        await activation.StopAsync(ct);
                     }
                     if (logger.IsEnabled(LogLevel.Debug)) logger.Debug(ErrorCode.Catalog_AfterCallingDeactivate, "Returned from calling {1} grain's OnDeactivateAsync() method {0}", activation, grainTypeName);
                 }
@@ -1197,11 +1189,11 @@ namespace Orleans.Runtime
                         string.Format("Error calling grain's OnDeactivateAsync() method - Grain type = {1} Activation = {0}", activation, grainTypeName), exc);
                 }
 
-                if (activation.IsUsingStreams)
+                if (activation is ActivationData data && data.IsUsingStreams)
                 {
                     try
                     {
-                        await activation.DeactivateStreamResources();
+                        await data.DeactivateStreamResources();
                     }
                     catch (Exception exc)
                     {
@@ -1218,7 +1210,6 @@ namespace Orleans.Runtime
             {
                 logger.Error(ErrorCode.Catalog_FinishGrainDeactivateAndCleanupStreams_Exception, String.Format("CallGrainDeactivateAndCleanupStreams Activation = {0} failed.", activation), exc);
             }
-            return activation;
         }
 
         /// <summary>
@@ -1309,12 +1300,12 @@ namespace Orleans.Runtime
         /// <param name="activation"></param>
         /// <param name="requestContextData"></param>
         /// <returns></returns>
-        private Task InvokeActivate(ActivationData activation, Dictionary<string, object> requestContextData)
+        private Task InvokeActivate(IGrainContext activation, Dictionary<string, object> requestContextData)
         {
             // NOTE: This should only be called with the correct schedulering context for the activation to be invoked.
             lock (activation)
             {
-                activation.SetState(ActivationState.Activating);
+                ((ActivationData)activation).SetState(ActivationState.Activating);
             }
             return scheduler.QueueTask(() => CallGrainActivate(activation, requestContextData), activation); // Target grain);
             // ActivationData will transition out of ActivationState.Activating via Dispatcher.OnActivationCompletedRequest
@@ -1336,7 +1327,7 @@ namespace Orleans.Runtime
             return scheduler.RunOrQueueTask(() => this.grainLocator.Lookup(grain), this);
         }
 
-        public bool LocalLookup(GrainId grain, out List<ActivationData> addresses)
+        public bool LocalLookup(GrainId grain, out List<IGrainContext> addresses)
         {
             addresses = activations.FindTargets(grain);
             return addresses != null;
@@ -1361,20 +1352,21 @@ namespace Orleans.Runtime
             }
         }
 
-        public Task DeleteActivations(List<ActivationAddress> addresses)
+        public Task DeleteActivations(List<IGrainContext> addresses)
         {
-            return DestroyActivations(TryGetActivationDatas(addresses));
+            return DestroyActivations(TryGetActivations(addresses));
         }
 
 
-        private List<ActivationData> TryGetActivationDatas(List<ActivationAddress> addresses)
+        private List<IGrainContext> TryGetActivations(List<IGrainContext> addresses)
         {
-            var datas = new List<ActivationData>(addresses.Count);
+            var datas = new List<IGrainContext>(addresses.Count);
             foreach (var activationAddress in addresses)
             {
-                ActivationData data;
-                if (TryGetActivationData(activationAddress.Activation, out data))
+                if (TryGetActivation(activationAddress.ActivationId, out var data))
+                {
                     datas.Add(data);
+                }
             }
             return datas;
         }
@@ -1394,7 +1386,7 @@ namespace Orleans.Runtime
                 this.RuntimeClient.BreakOutstandingMessagesToDeadSilo(updatedSilo);
             }
 
-            var activationsToShutdown = new List<ActivationData>();
+            var activationsToShutdown = new List<IGrainContext>();
             try
             {
                 // scan all activations in activation directory and deactivate the ones that the removed silo is their primary partition owner.
@@ -1404,7 +1396,7 @@ namespace Orleans.Runtime
                     {
                         try
                         {
-                            var activationData = activation.Value;
+                            var activationData = (ActivationData)activation.Value;
                             if (!activationData.IsUsingGrainDirectory) continue;
                             if (!updatedSilo.Equals(directory.GetPrimaryForGrain(activationData.Grain))) continue;
 

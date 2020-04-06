@@ -741,6 +741,16 @@ namespace Orleans.Runtime
         }
 
         bool IEquatable<IGrainContext>.Equals(IGrainContext other) => ReferenceEquals(this, other);
+
+        public async ValueTask StartAsync(CancellationToken cancellationToken) => await this.Lifecycle.OnStart(cancellationToken);
+
+        public async ValueTask StopAsync(CancellationToken cancellationToken) => await this.Lifecycle.OnStop(cancellationToken);
+
+        public ValueTask DisposeAsync()
+        {
+            this.Dispose();
+            return default;
+        }
     }
 
     internal static class StreamResourceTestControl
