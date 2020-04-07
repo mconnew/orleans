@@ -175,7 +175,7 @@ namespace Orleans.Runtime
                 {
                     foreach (var activation in activations)
                     {
-                        ActivationData data = activation.Value;
+                        if (!(activation.Value is ActivationData data)) continue;
                         counter += data.GetRequestCount();
                     }
                 }
@@ -263,7 +263,7 @@ namespace Orleans.Runtime
             long memBefore = GC.GetTotalMemory(false) / (1024 * 1024);
             logger.Info(ErrorCode.Catalog_BeforeCollection, "Before collection#{0}: memory={1}MB, #activations={2}, collector={3}.",
                 number, memBefore, activations.Count, this.activationCollector.ToString());
-            List<ActivationData> list = scanStale ? this.activationCollector.ScanStale() : this.activationCollector.ScanAll(ageLimit);
+            List<IGrainContext> list = scanStale ? this.activationCollector.ScanStale() : this.activationCollector.ScanAll(ageLimit);
             collectionCounter.Increment();
             var count = 0;
             if (list != null && list.Count > 0)
@@ -285,22 +285,22 @@ namespace Orleans.Runtime
             {
                 foreach (var activation in activations)
                 {
-                    ActivationData data = activation.Value;
+                    var data = activation.Value;
                     if (data == null || data.GrainInstance == null) continue;
 
                     // TODO: generic type expansion
-                    var grainTypeName = TypeUtils.GetFullName(data.GrainInstanceType);
+                    var grainTypeName = TypeUtils.GetFullName(data.GrainInstance?.GetType());
                     
                     Dictionary<GrainId, int> grains;
                     int n;
                     if (!counts.TryGetValue(grainTypeName, out grains))
                     {
-                        counts.Add(grainTypeName, new Dictionary<GrainId, int> { { data.Grain, 1 } });
+                        counts.Add(grainTypeName, new Dictionary<GrainId, int> { { data.GrainId, 1 } });
                     }
-                    else if (!grains.TryGetValue(data.Grain, out n))
-                        grains[data.Grain] = 1;
+                    else if (!grains.TryGetValue(data.GrainId, out n))
+                        grains[data.GrainId] = 1;
                     else
-                        grains[data.Grain] = n + 1;
+                        grains[data.GrainId] = n + 1;
                 }
             }
             return counts
@@ -315,16 +315,16 @@ namespace Orleans.Runtime
             {
                 foreach (var activation in activations)
                 {
-                    ActivationData data = activation.Value;
+                    var data = activation.Value;
                     if (data == null || data.GrainInstance == null) continue;
 
-                    if (types==null || types.Contains(TypeUtils.GetFullName(data.GrainInstanceType)))
+                    if (types==null || types.Contains(TypeUtils.GetFullName(data.GrainInstance.GetType())))
                     {
                         stats.Add(new DetailedGrainStatistic()
                         {
-                            GrainType = TypeUtils.GetFullName(data.GrainInstanceType),
-                            GrainId = data.Grain,
-                            SiloAddress = data.Silo
+                            GrainType = TypeUtils.GetFullName(data.GrainInstance.GetType()),
+                            GrainId = data.GrainId,
+                            SiloAddress = data.Address.Silo
                         });
                     }
                 }
@@ -361,9 +361,9 @@ namespace Orleans.Runtime
                 report.GrainClassTypeName = exc.ToString();
             }
 
-            List<ActivationData> acts = activations.FindTargets(grain);
+            List<IGrainContext> acts = activations.FindTargets(grain);
             report.LocalActivations = acts != null ? 
-                acts.Select(activationData => activationData.ToDetailedString()).ToList() : 
+                acts.Select(activationData => activationData.ToString()).ToList() : 
                 new List<string>();
             return report;
         }
@@ -372,7 +372,7 @@ namespace Orleans.Runtime
         /// Register a new object to which messages can be delivered with the local lookup table and scheduler.
         /// </summary>
         /// <param name="activation"></param>
-        public void RegisterMessageTarget(ActivationData activation)
+        public void RegisterMessageTarget(IGrainContext activation)
         {
             scheduler.RegisterWorkContext(activation);
             activations.RecordNewTarget(activation);
@@ -383,7 +383,7 @@ namespace Orleans.Runtime
         /// Unregister message target and stop delivering messages to it
         /// </summary>
         /// <param name="activation"></param>
-        public void UnregisterMessageTarget(ActivationData activation)
+        public void UnregisterMessageTarget(IGrainContext activation)
         {
             activations.RemoveTarget(activation);
 
@@ -395,9 +395,10 @@ namespace Orleans.Runtime
 
             if (activation.GrainInstance == null) return;
 
-            var grainTypeName = TypeUtils.GetFullName(activation.GrainInstanceType);
+            var grainTypeName = TypeUtils.GetFullName(activation.GrainInstance.GetType());
             activations.DecrementGrainCounter(grainTypeName);
-            activation.SetGrainInstance(null);
+
+            (activation as ActivationData)?.SetGrainInstance(null);
         }
 
         /// <summary>
@@ -418,9 +419,9 @@ namespace Orleans.Runtime
 
         internal bool CanInterleave(ActivationId running, Message message)
         {
-            ActivationData target;
             GrainTypeData data;
-            return TryGetActivationData(running, out target) &&
+            return TryGetActivationData(running, out var activation) &&
+                activation is ActivationData target &&
                 target.GrainInstance != null &&
                 grainTypeManager.TryGetData(TypeUtils.GetFullName(target.GrainInstanceType), out data) &&
                 (data.IsReentrant || data.MayInterleave((InvokeMethodRequest)message.BodyObject));
@@ -446,7 +447,7 @@ namespace Orleans.Runtime
         /// <param name="requestContextData">Request context data.</param>
         /// <param name="activatedPromise"></param>
         /// <returns></returns>
-        public ActivationData GetOrCreateActivation(
+        public IGrainContext GetOrCreateActivation(
             ActivationAddress address,
             bool newPlacement,
             string grainType,
@@ -454,7 +455,7 @@ namespace Orleans.Runtime
             Dictionary<string, object> requestContextData,
             out Task activatedPromise)
         {
-            ActivationData result;
+            IGrainContext result;
             activatedPromise = Task.CompletedTask;
             PlacementStrategy placement;
 
@@ -517,7 +518,7 @@ namespace Orleans.Runtime
 
             try
             {
-                SetupActivationInstance(result, grainType, genericArguments);
+                SetupActivationInstance((ActivationData)result, grainType, genericArguments);
             }
             catch
             {
@@ -525,7 +526,7 @@ namespace Orleans.Runtime
                 UnregisterMessageTarget(result);
                 throw;
             }
-            activatedPromise = InitActivation(result, requestContextData);
+            activatedPromise = InitActivation((ActivationData)result, requestContextData);
             return result;
         }
 
@@ -729,13 +730,9 @@ namespace Orleans.Runtime
         /// Try to get runtime data for an activation
         /// </summary>
         /// <param name="activationId"></param>
-        /// <param name="data"></param>
+        /// <param name="activation"></param>
         /// <returns></returns>
-        public bool TryGetActivationData(ActivationId activationId, out ActivationData data)
-        {
-            data = activations.FindTarget(activationId);
-            return data != null;
-        }
+        public bool TryGetActivationData(ActivationId activationId, out IGrainContext activation) => this.activations.TryGetActivation(activationId, out activation);
 
         private async Task DeactivateActivationsFromCollector(List<ActivationData> list)
         {
@@ -1033,8 +1030,7 @@ namespace Orleans.Runtime
                 try
                 {
                     // just check in case this activation data is already Invalid or not here at all.
-                    ActivationData ignore;
-                    if (TryGetActivationData(activation.ActivationId, out ignore) &&
+                    if (TryGetActivationData(activation.ActivationId, out _) &&
                         activation.State == ActivationState.Deactivating)
                     {
                         RequestContext.Clear(); // Clear any previous RC, so it does not leak into this call by mistake. 
@@ -1128,7 +1124,7 @@ namespace Orleans.Runtime
                 int maxNumLocalActivations = stPlacement.MaxLocal;
                 lock (activations)
                 {
-                    List<ActivationData> local;
+                    List<IGrainContext> local;
                     if (!LocalLookup(address.Grain, out local) || local.Count <= maxNumLocalActivations)
                         return ActivationRegistrationResult.Success;
 
@@ -1187,7 +1183,7 @@ namespace Orleans.Runtime
             return scheduler.RunOrQueueTask(() => this.grainLocator.Lookup(grain), this);
         }
 
-        public bool LocalLookup(GrainId grain, out List<ActivationData> addresses)
+        public bool LocalLookup(GrainId grain, out List<IGrainContext> addresses)
         {
             addresses = activations.FindTargets(grain);
             return addresses != null;
@@ -1251,7 +1247,7 @@ namespace Orleans.Runtime
                 this.RuntimeClient.BreakOutstandingMessagesToDeadSilo(updatedSilo);
             }
 
-            var activationsToShutdown = new List<ActivationData>();
+            var activationsToShutdown = new List<IGrainContext>();
             try
             {
                 // scan all activations in activation directory and deactivate the ones that the removed silo is their primary partition owner.
@@ -1261,7 +1257,8 @@ namespace Orleans.Runtime
                     {
                         try
                         {
-                            var activationData = activation.Value;
+                            if (!(activation.Value is ActivationData activationData)) continue;
+
                             if (!activationData.IsUsingGrainDirectory) continue;
                             if (!updatedSilo.Equals(directory.GetPrimaryForGrain(activationData.Grain))) continue;
 

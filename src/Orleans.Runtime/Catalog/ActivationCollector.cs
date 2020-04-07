@@ -20,7 +20,7 @@ namespace Orleans.Runtime
         private readonly ConcurrentDictionary<DateTime, Bucket> buckets;
         private readonly object nextTicketLock;
         private DateTime nextTicket;
-        private static readonly List<ActivationData> nothing = new List<ActivationData> { Capacity = 0 };
+        private static readonly List<IGrainContext> nothing = new List<IGrainContext> { Capacity = 0 };
         private readonly ILogger logger;
 
         public ActivationCollector(IOptions<GrainCollectionOptions> options, ILogger<ActivationCollector> logger)
@@ -91,8 +91,10 @@ namespace Orleans.Runtime
             }
         }
         
-        public bool TryCancelCollection(ActivationData item)
+        public bool TryCancelCollection(IGrainContext activation)
         {
+            if (!(activation is ActivationData item)) return false;
+
             if (item.IsExemptFromCollection) return false;
 
             lock (item)
@@ -187,10 +189,10 @@ namespace Orleans.Runtime
         /// Scans for activations that are due for collection.
         /// </summary>
         /// <returns>A list of activations that are due for collection.</returns>
-        public List<ActivationData> ScanStale()
+        public List<IGrainContext> ScanStale()
         {
             var now = DateTime.UtcNow;
-            List<ActivationData> result = null;
+            List<IGrainContext> result = null;
             IEnumerable<ActivationData> activations;
             while (DequeueQuantum(out activations, now))
             {
@@ -252,9 +254,9 @@ namespace Orleans.Runtime
         /// </summary>
         /// <param name="ageLimit">The age limit.</param>
         /// <returns></returns>
-        public List<ActivationData> ScanAll(TimeSpan ageLimit)
+        public List<IGrainContext> ScanAll(TimeSpan ageLimit)
         {
-            List<ActivationData> result = null;
+            List<IGrainContext> result = null;
             var now = DateTime.UtcNow;
             int bucketCount = buckets.Count;
             int i = 0;
@@ -308,18 +310,18 @@ namespace Orleans.Runtime
             return result ?? nothing;
         }
 
-        private void DecideToCollectActivation(ActivationData activation, ref List<ActivationData> condemned)
+        private void DecideToCollectActivation(IGrainContext activation, ref List<IGrainContext> condemned)
         {
             if (null == condemned)
             {
-                condemned = new List<ActivationData> { activation };
+                condemned = new List<IGrainContext> { activation };
             }
             else
             {
                 condemned.Add(activation);
             }
 
-            this.Debug_OnDecideToCollectActivation?.Invoke(activation.Grain);
+            this.Debug_OnDecideToCollectActivation?.Invoke(activation.GrainId);
         }
 
         private static void ThrowIfTicketIsInvalid(DateTime ticket, TimeSpan quantum)
@@ -392,10 +394,10 @@ namespace Orleans.Runtime
             }
         }
         
-        private class Bucket : IEnumerable<ActivationData>
+        private class Bucket : IEnumerable<IGrainContext>
         {
             private readonly DateTime key;
-            private readonly ConcurrentDictionary<ActivationId, ActivationData> items;
+            private readonly ConcurrentDictionary<ActivationId, IGrainContext> items;
 
             public DateTime Key { get { return key; } }
             public int ApproximateCount { get {  return items.Count; } }
@@ -404,7 +406,7 @@ namespace Orleans.Runtime
             {
                 ThrowIfTicketIsInvalid(key, quantum);
                 this.key = key;
-                items = new ConcurrentDictionary<ActivationId, ActivationData>();
+                items = new ConcurrentDictionary<ActivationId, IGrainContext>();
             }
 
             public void Add(ActivationData item)
@@ -415,16 +417,16 @@ namespace Orleans.Runtime
                 }
             }
 
-            public bool TryRemove(ActivationData item)
+            public bool TryRemove(IGrainContext item)
             {
                 if (!item.TrySetCollectionCancelledFlag()) return false;
 
-                return items.TryRemove(item.ActivationId, out ActivationData unused);
+                return items.TryRemove(item.ActivationId, out IGrainContext unused);
             }
 
-            public IEnumerable<ActivationData> CancelAll()
+            public IEnumerable<IGrainContext> CancelAll()
             {
-                List<ActivationData> result = null;
+                List<IGrainContext> result = null;
                 foreach (var pair in items)
                 {
                     // attempt to cancel the item. if we succeed, it wasn't already cancelled and we can return it. otherwise, we silently ignore it.
@@ -433,7 +435,7 @@ namespace Orleans.Runtime
                         if (result == null)
                         {
                             // we only need to ensure there's enough space left for this element and any potential entries.
-                            result = new List<ActivationData>();
+                            result = new List<IGrainContext>();
                         }
                         result.Add(pair.Value);
                     }
@@ -442,7 +444,7 @@ namespace Orleans.Runtime
                 return result ?? nothing;
             }
 
-            public IEnumerator<ActivationData> GetEnumerator()
+            public IEnumerator<IGrainContext> GetEnumerator()
             {
                 return items.Values.GetEnumerator();
             }

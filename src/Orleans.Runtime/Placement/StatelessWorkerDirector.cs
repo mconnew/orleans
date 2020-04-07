@@ -79,7 +79,7 @@ namespace Orleans.Runtime.Placement
             return null;
         }
 
-        internal static ActivationData PickRandom(List<ActivationData> local)
+        internal static IGrainContext PickRandom(List<IGrainContext> local)
         {
             return local[local.Count == 1 ? 0 : random.Next(local.Count)];
         }
