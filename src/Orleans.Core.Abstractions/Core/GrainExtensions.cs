@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Orleans.CodeGeneration;
 using Orleans.Core;
+using Orleans.Metadata.NewGrainRefSystem;
 using Orleans.Runtime;
 
 namespace Orleans
@@ -13,34 +14,12 @@ namespace Orleans
     {
         private const string WRONG_GRAIN_ERROR_MSG = "Passing a half baked grain as an argument. It is possible that you instantiated a grain class explicitly, as a regular object and not via Orleans runtime or via proper test mocking";
 
-        internal static GrainReference AsWeaklyTypedReference(this IAddressable grain)
+        internal static IGrainReference AsWeaklyTypedReference(this IAddressable grain) => grain switch
         {
-            ThrowIfNullGrain(grain);
-
-            // When called against an instance of a grain reference class, do nothing
-            var reference = grain as GrainReference;
-            if (reference != null) return reference;
-
-            var grainBase = grain as Grain;
-            if (grainBase != null)
-            {
-                if (grainBase.Data?.GrainReference is GrainReference grainRef)
-                {
-                    return grainRef;
-                }
-                else
-                {
-                    throw new ArgumentException(WRONG_GRAIN_ERROR_MSG, nameof(grain));
-                }
-            }
-
-            var systemTarget = grain as ISystemTargetBase;
-            if (systemTarget != null) return GrainReference.FromGrainId(systemTarget.GrainId, systemTarget.GrainReferenceRuntime, null);
-
-            throw new ArgumentException(
-                $"AsWeaklyTypedReference has been called on an unexpected type: {grain.GetType().FullName}.",
-                nameof(grain));
-        }
+            GrainReference reference => reference,
+            null => throw new ArgumentNullException(nameof(grain)),
+            _ => new UntypedGrainReference(grain.GetGrainId())
+        };
 
         /// <summary>
         /// Converts this grain to a specific grain interface.
@@ -73,7 +52,6 @@ namespace Orleans
         /// <returns>A reference to <paramref name="grain"/> which implements <paramref name="interfaceType"/>.</returns>
         public static object Cast(this IAddressable grain, Type interfaceType)
         {
-
             return grain.AsWeaklyTypedReference().Runtime.Convert(grain, interfaceType);
         }
 
@@ -87,16 +65,16 @@ namespace Orleans
             grainFactory.BindGrainReference(grain);
         }
 
-        internal static GrainId GetGrainId(IAddressable grain)
+        public static GrainId GetGrainId(this IAddressable grain)
         {
             switch (grain)
             {
                 case Grain grainBase:
-                    if (grainBase.Identity.IsDefault)
+                    if (grainBase.GrainId.IsDefault)
                     {
                         throw new ArgumentException(WRONG_GRAIN_ERROR_MSG, "grain");
                     }
-                    return grainBase.Identity;
+                    return grainBase.GrainId;
                 case GrainReference grainReference:
                     if (grainReference.GrainId.IsDefault)
                     {
@@ -104,34 +82,9 @@ namespace Orleans
                     }
                     return grainReference.GrainId;
                 case ISystemTargetBase systemTarget:
-                    if (systemTarget.GrainId.IsDefault)
-                    {
-                        throw new ArgumentException(WRONG_GRAIN_ERROR_MSG, "grain");
-                    }
                     return systemTarget.GrainId;
                 default:
-                    throw new ArgumentException(String.Format("GetGrainId has been called on an unexpected type: {0}.", grain.GetType().FullName), "grain");
-            }
-        }
-
-        public static GrainId GetGrainId(this IGrain grain)
-        {
-            switch (grain)
-            {
-                case Grain grainBase:
-                    if (grainBase.Identity.IsDefault)
-                    {
-                        throw new ArgumentException(WRONG_GRAIN_ERROR_MSG, "grain");
-                    }
-                    return grainBase.Identity;
-                case GrainReference grainReference:
-                    if (grainReference.GrainId.IsDefault)
-                    {
-                        throw new ArgumentException(WRONG_GRAIN_ERROR_MSG, "grain");
-                    }
-                    return grainReference.GrainId;
-                default:
-                    throw new ArgumentException(String.Format("GetGrainIdentity has been called on an unexpected type: {0}.", grain.GetType().FullName), "grain");
+                    throw new ArgumentException($"{nameof(GetGrainId)} has been called on an unexpected type: {grain.GetType().FullName}.", "grain");
             }
         }
 

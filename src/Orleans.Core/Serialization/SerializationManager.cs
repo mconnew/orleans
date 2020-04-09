@@ -116,9 +116,10 @@ namespace Orleans.Serialization
 
         private void RegisterGrainReferenceSerializers(GrainInterfaceFeature grainInterfaceFeature)
         {
+            var referenceSerializer = this.serviceProvider.GetRequiredService<GrainReferenceSerializer>();
             foreach (var grainInterface in grainInterfaceFeature.Interfaces)
             {
-                this.RegisterGrainReferenceSerializers(grainInterface.ReferenceType);
+                this.RegisterGrainReferenceSerializers(grainInterface.ReferenceType, referenceSerializer);
             }
         }
 
@@ -417,7 +418,7 @@ namespace Orleans.Serialization
         /// <param name="type">
         /// The type.
         /// </param>
-        private void RegisterGrainReferenceSerializers(Type type)
+        private void RegisterGrainReferenceSerializers(Type type, GrainReferenceSerializer referenceSerializer)
         {
             var attr = type.GetCustomAttribute<GrainReferenceAttribute>();
             if (attr?.TargetType == null)
@@ -425,30 +426,12 @@ namespace Orleans.Serialization
                 return;
             }
 
-            var defaultCtorDelegate = CreateGrainRefConstructorDelegate(type, null);
-
             // Register GrainReference serialization methods.
             Register(
                 type,
-                GrainReferenceSerializer.CopyGrainReference,
-                GrainReferenceSerializer.SerializeGrainReference,
-                (expected, context) =>
-                {
-                    Func<GrainReference, GrainReference> ctorDelegate;
-                    var deserialized = (GrainReference)GrainReferenceSerializer.DeserializeGrainReference(expected, context);
-                    if (expected.IsConstructedGenericType == false)
-                    {
-                        return defaultCtorDelegate(deserialized);
-                    }
-
-                    if (!grainRefConstructorDictionary.TryGetValue(expected, out ctorDelegate))
-                    {
-                        ctorDelegate = CreateGrainRefConstructorDelegate(type, expected.GenericTypeArguments);
-                        grainRefConstructorDictionary.TryAdd(expected, ctorDelegate);
-                    }
-
-                    return ctorDelegate(deserialized);
-                });
+                referenceSerializer.CopyGrainReference,
+                referenceSerializer.SerializeGrainReference,
+                referenceSerializer.DeserializeGrainReference);
         }
 
         private static Func<GrainReference, GrainReference> CreateGrainRefConstructorDelegate(Type type, Type[] genericArgs)

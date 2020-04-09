@@ -9,6 +9,7 @@ using Orleans.Transactions.Abstractions;
 using Orleans.Storage;
 using Orleans.Configuration;
 using Orleans.Timers.Internal;
+using Orleans;
 
 namespace Orleans.Transactions.State
 {
@@ -22,6 +23,7 @@ namespace Orleans.Transactions.State
         private readonly BatchWorker storageWorker;
         protected readonly ILogger logger;
         private readonly IActivationLifetime activationLifetime;
+        private readonly IGrainFactory grainFactory;
         private readonly ConfirmationWorker<TState> confirmationWorker;
         private CommitQueue<TState> commitQueue;
         private Task readyTask;
@@ -55,7 +57,8 @@ namespace Orleans.Transactions.State
             IClock clock,
             ILogger logger,
             ITimerManager timerManager,
-            IActivationLifetime activationLifetime)
+            IActivationLifetime activationLifetime,
+            IGrainFactory grainFactory)
         {
             this.options = options.Value;
             this.resource = resource;
@@ -64,6 +67,7 @@ namespace Orleans.Transactions.State
             this.Clock = new CausalClock(clock);
             this.logger = logger;
             this.activationLifetime = activationLifetime;
+            this.grainFactory = grainFactory;
             this.storageWorker = new BatchWorkerFromDelegate(StorageWork, this.activationLifetime.OnDeactivating);
             this.RWLock = new ReadWriteLock<TState>(options, this, this.storageWorker, logger, activationLifetime);
             this.confirmationWorker = new ConfirmationWorker<TState>(options, this.resource, this.storageWorker, () => this.storageBatch, this.logger, timerManager, activationLifetime);
@@ -147,7 +151,7 @@ namespace Orleans.Transactions.State
                                         logger.Trace("Sending immediate prepared {Record}", record);
                                     }
                                     // can send prepared message immediately after persisting prepare record
-                                    record.TransactionManager.Reference.AsReference<ITransactionManagerExtension>()
+                                    this.grainFactory.GetGrain<ITransactionManagerExtension>(record.TransactionManager.GrainId)
                                           .Prepared(record.TransactionManager.Name, record.TransactionId, record.Timestamp, this.resource, TransactionalStatus.Ok)
                                           .Ignore();
                                     record.LastSent = DateTime.UtcNow;
@@ -267,8 +271,8 @@ namespace Orleans.Transactions.State
                         if (logger.IsEnabled(LogLevel.Trace))
                             logger.Trace("aborting via Prepared. Status={Status} Entry={Entry}", status, entry);
 
-                        entry.TransactionManager.Reference.AsReference<ITransactionManagerExtension>()
-                             .Prepared(entry.TransactionManager.Name, entry.TransactionId, entry.Timestamp, resource, status)
+                        this.grainFactory.GetGrain<ITransactionManagerExtension>(entry.TransactionManager.GrainId)
+                             .Prepared(entry.TransactionManager.Name, entry.TransactionId, entry.Timestamp, this.resource, status)
                              .Ignore();
                         break;
                     }
@@ -282,7 +286,7 @@ namespace Orleans.Transactions.State
                             // tell remote participants
                             await Task.WhenAll(entry.WriteParticipants
                                 .Where(p => !p.Equals(resource))
-                                .Select(p => p.Reference.AsReference<ITransactionalResourceExtension>()
+                                .Select(p => this.grainFactory.GetGrain<ITransactionalResourceExtension>(p.GrainId)
                                      .Cancel(p.Name, entry.TransactionId, entry.Timestamp, status)));
                         } catch(Exception ex)
                         {
@@ -333,7 +337,7 @@ namespace Orleans.Transactions.State
                         logger.Trace("received ping for {TransactionId}, unknown - presumed abort", transactionId);
 
                     // we never heard of this transaction - so it must have aborted
-                    await resource.Reference.AsReference<ITransactionalResourceExtension>()
+                    await this.grainFactory.GetGrain<ITransactionalResourceExtension>(resource.GrainId)
                             .Cancel(resource.Name, transactionId, timeStamp, TransactionalStatus.PresumedAbort);
                 }
             }
@@ -432,7 +436,7 @@ namespace Orleans.Transactions.State
             // resume prepared transactions (not TM)
             foreach (var pr in loadresponse.PendingStates.OrderBy(ps => ps.TimeStamp))
             {
-                if (pr.SequenceId > loadresponse.CommittedSequenceId && pr.TransactionManager.Reference != null)
+                if (pr.SequenceId > loadresponse.CommittedSequenceId && pr.TransactionManager.GrainId != null)
                 {
                     if (logger.IsEnabled(LogLevel.Debug))
                         logger.Debug($"recover two-phase-commit {pr.TransactionId}");
@@ -655,8 +659,8 @@ namespace Orleans.Transactions.State
                             if (bottom.PrepareIsPersisted && !bottom.LastSent.HasValue)
                             {
                                 // send PreparedMessage to remote TM
-                                bottom.TransactionManager.Reference.AsReference<ITransactionManagerExtension>()
-                                      .Prepared(bottom.TransactionManager.Name, bottom.TransactionId, bottom.Timestamp, resource, TransactionalStatus.Ok)
+                                this.grainFactory.GetGrain<ITransactionManagerExtension>(bottom.TransactionManager.GrainId)
+                                      .Prepared(bottom.TransactionManager.Name, bottom.TransactionId, bottom.Timestamp, this.resource, TransactionalStatus.Ok)
                                       .Ignore();                                
                                     
                                 bottom.LastSent = now;
@@ -681,8 +685,8 @@ namespace Orleans.Transactions.State
                                 {
                                     if (logger.IsEnabled(LogLevel.Trace))
                                         logger.Trace("sent ping {BottomEntry}", bottom);
-                                    bottom.TransactionManager.Reference.AsReference<ITransactionManagerExtension>()
-                                          .Ping(bottom.TransactionManager.Name, bottom.TransactionId, bottom.Timestamp, resource).Ignore();
+                                    this.grainFactory.GetGrain<ITransactionManagerExtension>(bottom.TransactionManager.GrainId)
+                                          .Ping(bottom.TransactionManager.Name, bottom.TransactionId, bottom.Timestamp, this.resource).Ignore();
                                     bottom.LastSent = now;
                                 }
                                 storageWorker.Notify(bottom.LastSent.Value + this.options.RemoteTransactionPingFrequency);

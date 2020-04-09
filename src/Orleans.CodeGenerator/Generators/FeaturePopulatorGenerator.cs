@@ -57,7 +57,7 @@ namespace Orleans.CodeGenerator.Generators
             var bodyStatements = new List<StatementSyntax>();
             foreach (var metadata in grains)
             {
-                var newMetadataExpression = ObjectCreationExpression(wellKnownTypes.GrainInterfaceMetadata.ToTypeSyntax())
+                var newMetadataExpression = ObjectCreationExpression(wellKnownTypes.GrainInterfaceTypeDescriptor.ToTypeSyntax())
                     .AddArgumentListArguments(
                         Argument(TypeOfExpression(metadata.Type.WithoutTypeParameters().ToTypeSyntax())),
                         Argument(TypeOfExpression(metadata.ReferenceType)),
@@ -81,7 +81,7 @@ namespace Orleans.CodeGenerator.Generators
             var bodyStatements = new List<StatementSyntax>();
             foreach (var metadata in grains)
             {
-                var newMetadataExpression = ObjectCreationExpression(wellKnownTypes.GrainClassMetadata.ToTypeSyntax())
+                var newMetadataExpression = ObjectCreationExpression(wellKnownTypes.GrainClassTypeDescriptor.ToTypeSyntax())
                     .AddArgumentListArguments(
                         Argument(TypeOfExpression(metadata.Type.WithoutTypeParameters().ToTypeSyntax())));
                 bodyStatements.Add(

@@ -14,17 +14,17 @@ namespace Orleans
         /// <summary>
         /// Registers a new reminder or updates an existing one
         /// </summary>
-        /// <param name="grainRef"></param>
+        /// <param name="grainId"></param>
         /// <param name="reminderName"></param>
         /// <param name="dueTime"></param>
         /// <param name="period"></param>
         /// <returns></returns>
-        Task<IGrainReminder> RegisterOrUpdateReminder(GrainReference grainRef, string reminderName, TimeSpan dueTime, TimeSpan period);
+        Task<IGrainReminder> RegisterOrUpdateReminder(GrainId grainId, string reminderName, TimeSpan dueTime, TimeSpan period);
 
         Task UnregisterReminder(IGrainReminder reminder);
 
-        Task<IGrainReminder> GetReminder(GrainReference grainRef, string reminderName);
+        Task<IGrainReminder> GetReminder(GrainId grainId, string reminderName);
 
-        Task<List<IGrainReminder>> GetReminders(GrainReference grainRef);
+        Task<List<IGrainReminder>> GetReminders(GrainId grainId);
     }
 }

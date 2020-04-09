@@ -177,17 +177,7 @@ namespace Orleans.Runtime
                 targetAddress = value;
             }
         }
-        
-        public GuidId TargetObserverId
-        {
-            get { return Headers.TargetObserverId; }
-            set
-            {
-                Headers.TargetObserverId = value;
-                targetAddress = null;
-            }
-        }
-        
+                
         public SiloAddress SendingSilo
         {
             get { return Headers.SendingSilo; }
@@ -329,15 +319,6 @@ namespace Orleans.Runtime
             get { return GetNotNullString(Headers.NewGrainType); }
             set { Headers.NewGrainType = value; }
         }
-        
-        /// <summary>
-        /// Set by caller's grain reference 
-        /// </summary>
-        public string GenericGrainType
-        {
-            get { return GetNotNullString(Headers.GenericGrainType); }
-            set { Headers.GenericGrainType = value; }
-        }
 
         public RejectionTypes RejectionType
         {
@@ -389,7 +370,6 @@ namespace Orleans.Runtime
             AppendIfExists(HeadersContainer.Headers.DIRECTION, sb, (m) => m.Direction);
             AppendIfExists(HeadersContainer.Headers.TIME_TO_LIVE, sb, (m) => m.TimeToLive);
             AppendIfExists(HeadersContainer.Headers.FORWARD_COUNT, sb, (m) => m.ForwardCount);
-            AppendIfExists(HeadersContainer.Headers.GENERIC_GRAIN_TYPE, sb, (m) => m.GenericGrainType);
             AppendIfExists(HeadersContainer.Headers.CORRELATION_ID, sb, (m) => m.Id);
             AppendIfExists(HeadersContainer.Headers.ALWAYS_INTERLEAVE, sb, (m) => m.IsAlwaysInterleave);
             AppendIfExists(HeadersContainer.Headers.IS_NEW_PLACEMENT, sb, (m) => m.IsNewPlacement);
@@ -406,7 +386,6 @@ namespace Orleans.Runtime
             AppendIfExists(HeadersContainer.Headers.SENDING_SILO, sb, (m) => m.SendingSilo);
             AppendIfExists(HeadersContainer.Headers.TARGET_ACTIVATION, sb, (m) => m.TargetActivation);
             AppendIfExists(HeadersContainer.Headers.TARGET_GRAIN, sb, (m) => m.TargetGrain);
-            AppendIfExists(HeadersContainer.Headers.TARGET_OBSERVER, sb, (m) => m.TargetObserverId);
             AppendIfExists(HeadersContainer.Headers.CALL_CHAIN_ID, sb, (m) => m.CallChainId);
             AppendIfExists(HeadersContainer.Headers.TRACE_CONTEXT, sb, (m) => m.TraceContext);
             AppendIfExists(HeadersContainer.Headers.TARGET_SILO, sb, (m) => m.TargetSilo);
@@ -450,7 +429,7 @@ namespace Orleans.Runtime
                 response,  //3
                 Direction, //4
                 String.Format("{0}{1}{2}", SendingSilo, SendingGrain, SendingActivation), //5
-                String.Format("{0}{1}{2}{3}", TargetSilo, TargetGrain, TargetActivation, TargetObserverId), //6
+                String.Format("{0}{1}{2}", TargetSilo, TargetGrain, TargetActivation), //6
                 Id, //7
                 ForwardCount > 0 ? "[ForwardCount=" + ForwardCount + "]" : ""); //8
         }
@@ -466,7 +445,6 @@ namespace Orleans.Runtime
             if (!String.IsNullOrEmpty(value.GrainType))
                 NewGrainType = value.GrainType;
         }
-
 
         public string GetTargetHistory()
         {
@@ -596,7 +574,6 @@ namespace Orleans.Runtime
             private SiloAddress _targetSilo;
             private GrainId _targetGrain;
             private ActivationId _targetActivation;
-            private GuidId _targetObserverId;
             private SiloAddress _sendingSilo;
             private GrainId _sendingGrain;
             private ActivationId _sendingActivation;
@@ -607,7 +584,6 @@ namespace Orleans.Runtime
             private TimeSpan? _timeToLive;
             private List<ActivationAddress> _cacheInvalidationHeader;
             private string _newGrainType;
-            private string _genericGrainType;
             private RejectionTypes _rejectionType;
             private string _rejectionInfo;
             private Dictionary<string, object> _requestContextData;
@@ -734,15 +710,6 @@ namespace Orleans.Runtime
                 }
             }
 
-            public GuidId TargetObserverId
-            {
-                get { return _targetObserverId; }
-                set
-                {
-                    _targetObserverId = value;
-                }
-            }
-
             public SiloAddress SendingSilo
             {
                 get { return _sendingSilo; }
@@ -840,18 +807,6 @@ namespace Orleans.Runtime
                 }
             }
 
-            /// <summary>
-            /// Set by caller's grain reference 
-            /// </summary>
-            public string GenericGrainType
-            {
-                get { return _genericGrainType; }
-                set
-                {
-                    _genericGrainType = value;
-                }
-            }
-
             public RejectionTypes RejectionType
             {
                 get { return _rejectionType; }
@@ -910,7 +865,6 @@ namespace Orleans.Runtime
                 headers = _targetSilo == null ? headers & ~Headers.TARGET_SILO : headers | Headers.TARGET_SILO;
                 headers = _targetGrain.IsDefault ? headers & ~Headers.TARGET_GRAIN : headers | Headers.TARGET_GRAIN;
                 headers = _targetActivation is null ? headers & ~Headers.TARGET_ACTIVATION : headers | Headers.TARGET_ACTIVATION;
-                headers = _targetObserverId is null ? headers & ~Headers.TARGET_OBSERVER : headers | Headers.TARGET_OBSERVER;
                 headers = _sendingSilo is null ? headers & ~Headers.SENDING_SILO : headers | Headers.SENDING_SILO;
                 headers = _sendingGrain.IsDefault ? headers & ~Headers.SENDING_GRAIN : headers | Headers.SENDING_GRAIN;
                 headers = _sendingActivation is null ? headers & ~Headers.SENDING_ACTIVATION : headers | Headers.SENDING_ACTIVATION;
@@ -921,7 +875,6 @@ namespace Orleans.Runtime
                 headers = _timeToLive == null ? headers & ~Headers.TIME_TO_LIVE : headers | Headers.TIME_TO_LIVE;
                 headers = _cacheInvalidationHeader == null || _cacheInvalidationHeader.Count == 0 ? headers & ~Headers.CACHE_INVALIDATION_HEADER : headers | Headers.CACHE_INVALIDATION_HEADER;
                 headers = string.IsNullOrEmpty(_newGrainType) ? headers & ~Headers.NEW_GRAIN_TYPE : headers | Headers.NEW_GRAIN_TYPE;
-                headers = string.IsNullOrEmpty(GenericGrainType) ? headers & ~Headers.GENERIC_GRAIN_TYPE : headers | Headers.GENERIC_GRAIN_TYPE;
                 headers = _rejectionType == default(RejectionTypes) ? headers & ~Headers.REJECTION_TYPE : headers | Headers.REJECTION_TYPE;
                 headers = string.IsNullOrEmpty(_rejectionInfo) ? headers & ~Headers.REJECTION_INFO : headers | Headers.REJECTION_INFO;
                 headers = _requestContextData == null || _requestContextData.Count == 0 ? headers & ~Headers.REQUEST_CONTEXT : headers | Headers.REQUEST_CONTEXT;
@@ -969,9 +922,6 @@ namespace Orleans.Runtime
 
                 if ((headers & Headers.FORWARD_COUNT) != Headers.NONE)
                     writer.Write(input.ForwardCount);
-
-                if ((headers & Headers.GENERIC_GRAIN_TYPE) != Headers.NONE)
-                    writer.Write(input.GenericGrainType);
 
                 if ((headers & Headers.CORRELATION_ID) != Headers.NONE)
                     writer.Write(input.Id);
@@ -1043,11 +993,6 @@ namespace Orleans.Runtime
                     writer.Write(input.TargetGrain);
                 }
 
-                if ((headers & Headers.TARGET_OBSERVER) != Headers.NONE)
-                {
-                    WriteObj(sm, context, typeof(GuidId), input.TargetObserverId);
-                }
-
                 if ((headers & Headers.CALL_CHAIN_ID) != Headers.NONE)
                 {
                     writer.Write(input.CallChainId);
@@ -1105,7 +1050,7 @@ namespace Orleans.Runtime
                     result.ForwardCount = reader.ReadInt();
 
                 if ((headers & Headers.GENERIC_GRAIN_TYPE) != Headers.NONE)
-                    result.GenericGrainType = reader.ReadString();
+                    _ = reader.ReadString();
 
                 if ((headers & Headers.CORRELATION_ID) != Headers.NONE)
                     result.Id = (Orleans.Runtime.CorrelationId)ReadObj(sm, typeof(CorrelationId), context);
@@ -1170,7 +1115,7 @@ namespace Orleans.Runtime
                     result.TargetGrain = reader.ReadGrainId();
 
                 if ((headers & Headers.TARGET_OBSERVER) != Headers.NONE)
-                    result.TargetObserverId = (GuidId)ReadObj(sm, typeof(GuidId), context);
+                    _ = (GuidId)ReadObj(sm, typeof(GuidId), context);
 
                 if ((headers & Headers.CALL_CHAIN_ID) != Headers.NONE)
                     result.CallChainId = reader.ReadCorrelationId();

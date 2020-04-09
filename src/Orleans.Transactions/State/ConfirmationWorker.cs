@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Orleans;
 using Orleans.Configuration;
 using Orleans.Timers;
 using Orleans.Timers.Internal;
@@ -22,6 +23,7 @@ namespace Orleans.Transactions.State
         private readonly ILogger logger;
         private readonly ITimerManager timerManager;
         private readonly IActivationLifetime activationLifetime;
+        private readonly IGrainFactory grainFactory;
         private readonly HashSet<Guid> pending;
 
         public ConfirmationWorker(
@@ -31,7 +33,8 @@ namespace Orleans.Transactions.State
             Func<StorageBatch<TState>> getStorageBatch,
             ILogger logger,
             ITimerManager timerManager,
-            IActivationLifetime activationLifetime)
+            IActivationLifetime activationLifetime,
+            IGrainFactory grainFactory)
         {
             this.options = options.Value;
             this.me = me;
@@ -40,6 +43,7 @@ namespace Orleans.Transactions.State
             this.logger = logger;
             this.timerManager = timerManager;
             this.activationLifetime = activationLifetime;
+            this.grainFactory = grainFactory;
             this.pending = new HashSet<Guid>();
         }
 
@@ -48,7 +52,7 @@ namespace Orleans.Transactions.State
             if (!IsConfirmed(transactionId))
             {
                 this.pending.Add(transactionId);
-                SendConfirmation(transactionId, timestamp, participants).Ignore();
+                this.SendConfirmation(transactionId, timestamp, participants).Ignore();
             }
         }
 
@@ -71,7 +75,7 @@ namespace Orleans.Transactions.State
                         p,
                         transactionId,
                         timestamp,
-                        () => p.Reference.AsReference<ITransactionalResourceExtension>()
+                        () => this.grainFactory.GetGrain<ITransactionalResourceExtension>(p.GrainId)
                             .Confirm(p.Name, transactionId, timestamp),
                         this.logger))
                     .ToList();

@@ -45,28 +45,6 @@ namespace DefaultCluster.Tests.General
             Assert.Equal(1, count);
         }
 
-        [Fact]
-        public async Task MethodsInvokedThroughOneWayExtensionReturnSynchronously()
-        {
-            var grain = this.Client.GetGrain<ICanBeOneWayGrain>(Guid.NewGuid());
-
-            var observer = new SimpleGrainObserver();
-            var observerRef = await Client.CreateObjectReference<ISimpleGrainObserver>(observer);
-            grain.InvokeOneWay(g =>
-            {
-                Assert.False(object.ReferenceEquals(g, grain), "One way call should be executed on copy of grain reference");
-                Assert.Equal(g, grain);
-                return g.Notify(observerRef);
-            });
-
-            await observer.ReceivedValue.WithTimeout(TimeSpan.FromSeconds(10));
-            var count = await grain.GetCount();
-            Assert.Equal(1, count);
-
-            // This should not throw.
-            grain.InvokeOneWay(g => g.Throws());
-        }
-
         private class SimpleGrainObserver : ISimpleGrainObserver
         {
             private readonly TaskCompletionSource<int> completion = new TaskCompletionSource<int>();

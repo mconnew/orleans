@@ -164,10 +164,10 @@ namespace Orleans.Transactions.TestKit
 
         private ParticipantId MakeParticipantId()
         {
+            var grainId = ((GrainReference)grainFactory.GetGrain<ITransactionTestGrain>(Guid.NewGuid(), TransactionTestConstants.SingleStateTransactionalGrain)).GrainId;
             return new ParticipantId(
                                     "tm",
-                                    null,
-                                    // (GrainReference) grainFactory.GetGrain<ITransactionTestGrain>(Guid.NewGuid(), TransactionTestConstants.SingleStateTransactionalGrain),
+                                    grainId,
                                     ParticipantId.Role.Resource | ParticipantId.Role.Manager);
         }
 
