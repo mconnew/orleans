@@ -3,6 +3,9 @@ using System.Runtime.CompilerServices;
 
 namespace Orleans.Runtime
 {
+    /// <summary>
+    /// Identifies a client.
+    /// </summary>
     public static class ClientGrainId
     {
         public static GrainId Create() => GrainId.Create(GrainTypePrefix.ClientGrainType, Guid.NewGuid().ToString("N"));

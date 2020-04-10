@@ -17,12 +17,12 @@ namespace Orleans.Serialization
 {
     internal static class BinaryTokenStreamReaderExtensinons
     {
-        internal static SpanId ReadSpanId<TReader>(this TReader @this) where TReader : IBinaryTokenStreamReader
+        internal static IdSpan ReadSpanId<TReader>(this TReader @this) where TReader : IBinaryTokenStreamReader
         {
             var hashCode = @this.ReadInt();
             var len = @this.ReadUShort();
             var bytes = @this.ReadBytes(len);
-            return new SpanId(bytes, hashCode);
+            return new IdSpan(bytes, hashCode);
         }
 
         /// <summary> Read an <c>GrainId</c> value from the stream. </summary>
