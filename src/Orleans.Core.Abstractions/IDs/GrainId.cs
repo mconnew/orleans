@@ -7,35 +7,38 @@ using Orleans.Concurrency;
 
 namespace Orleans.Runtime
 {
+    /// <summary>
+    /// Uniquely identifies an entity.
+    /// </summary>
     [Immutable]
     [Serializable]
     [StructLayout(LayoutKind.Auto)]
     public readonly struct GrainId : IEquatable<GrainId>, IComparable<GrainId>, ISerializable
     {
         private readonly GrainType _type;
-        private readonly SpanId _key;
+        private readonly IdSpan _key;
 
-        public GrainId(GrainType type, SpanId key)
+        public GrainId(GrainType type, IdSpan key)
         {
             _type = type;
             _key = key;
         }
 
-        public GrainId(byte[] type, byte[] key) : this(new GrainType(type), new SpanId(key))
+        public GrainId(byte[] type, byte[] key) : this(new GrainType(type), new IdSpan(key))
         {
         }
 
-        public GrainId(GrainType type, byte[] key, int keyHashCode) : this(type, new SpanId(key, keyHashCode)) { }
+        public GrainId(GrainType type, byte[] key, int keyHashCode) : this(type, new IdSpan(key, keyHashCode)) { }
 
 
-        public GrainId(GrainType type, byte[] key) : this(type, new SpanId(key))
+        public GrainId(GrainType type, byte[] key) : this(type, new IdSpan(key))
         {
         }
 
         public GrainId(SerializationInfo info, StreamingContext context)
         {
             _type = new GrainType((byte[])info.GetValue("tv", typeof(byte[])), info.GetInt32("th"));
-            _key = new SpanId((byte[])info.GetValue("kv", typeof(byte[])), info.GetInt32("kh"));
+            _key = new IdSpan((byte[])info.GetValue("kv", typeof(byte[])), info.GetInt32("kh"));
         }
 
         // TODO: remove implicit conversion (potentially make explicit to start with)
@@ -47,11 +50,11 @@ namespace Orleans.Runtime
 
         public static GrainId Create(GrainType type, string key) => new GrainId(type, Encoding.UTF8.GetBytes(key));
 
-        public static GrainId Create(GrainType type, SpanId key) => new GrainId(type, key);
+        public static GrainId Create(GrainType type, IdSpan key) => new GrainId(type, key);
 
         public readonly GrainType Type => _type;
 
-        public readonly SpanId Key => _key;
+        public readonly IdSpan Key => _key;
 
         public readonly bool IsDefault => _type.IsDefault && _key.IsDefault;
 
@@ -75,7 +78,7 @@ namespace Orleans.Runtime
         {
             info.AddValue("tv", GrainType.UnsafeGetArray(_type));
             info.AddValue("th", _type.GetHashCode());
-            info.AddValue("kv", SpanId.UnsafeGetArray(_key));
+            info.AddValue("kv", IdSpan.UnsafeGetArray(_key));
             info.AddValue("kh", _key.GetHashCode());
         }
 
@@ -97,9 +100,9 @@ namespace Orleans.Runtime
 
         public override readonly string ToString() => $"{_type.ToStringUtf8()}/{_key.ToStringUtf8()}";
 
-        public static (byte[] Key, int KeyHashCode) UnsafeGetKey(GrainId id) => (SpanId.UnsafeGetArray(id._key), id._key.GetHashCode());
+        public static (byte[] Key, int KeyHashCode) UnsafeGetKey(GrainId id) => (IdSpan.UnsafeGetArray(id._key), id._key.GetHashCode());
 
-        public static SpanId KeyAsSpanId(GrainId id) => id._key;
+        public static IdSpan KeyAsSpanId(GrainId id) => id._key;
 
         public sealed class Comparer : IEqualityComparer<GrainId>, IComparer<GrainId>
         {

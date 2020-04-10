@@ -7,29 +7,32 @@ using Orleans.Concurrency;
 
 namespace Orleans.Runtime
 {
+    /// <summary>
+    /// Uniquely identifies the type of a logical entity.
+    /// </summary>
     [Immutable]
     [Serializable]
     [StructLayout(LayoutKind.Auto)]
     public readonly struct GrainType : IEquatable<GrainType>, IComparable<GrainType>, ISerializable
     {
-        private readonly SpanId _value;
+        private readonly IdSpan _value;
         
-        public GrainType(byte[] value) => _value = new SpanId(value);
+        public GrainType(byte[] value) => _value = new IdSpan(value);
 
-        public GrainType(byte[] value, int hashCode) => _value = new SpanId(value, hashCode);
+        public GrainType(byte[] value, int hashCode) => _value = new IdSpan(value, hashCode);
         
         public GrainType(SerializationInfo info, StreamingContext context)
         {
-            _value = new SpanId((byte[])info.GetValue("v", typeof(byte[])), info.GetInt32("h"));
+            _value = new IdSpan((byte[])info.GetValue("v", typeof(byte[])), info.GetInt32("h"));
         }
 
-        public GrainType(SpanId id) => _value = id;
+        public GrainType(IdSpan id) => _value = id;
 
         public static GrainType Create(string value) => new GrainType(Encoding.UTF8.GetBytes(value));
 
-        public static explicit operator SpanId(GrainType kind) => kind._value;
+        public static explicit operator IdSpan(GrainType kind) => kind._value;
 
-        public static explicit operator GrainType(SpanId id) => new GrainType(id);
+        public static explicit operator GrainType(IdSpan id) => new GrainType(id);
 
         public readonly bool IsDefault => _value.IsDefault;
 
@@ -41,15 +44,15 @@ namespace Orleans.Runtime
 
         public override readonly int GetHashCode() => _value.GetHashCode();
 
-        public static byte[] UnsafeGetArray(GrainType id) => SpanId.UnsafeGetArray(id._value);
+        public static byte[] UnsafeGetArray(GrainType id) => IdSpan.UnsafeGetArray(id._value);
 
-        public static SpanId AsSpanId(GrainType id) => id._value;
+        public static IdSpan AsSpanId(GrainType id) => id._value;
 
         public readonly int CompareTo(GrainType other) => _value.CompareTo(other._value);
 
         public readonly void GetObjectData(SerializationInfo info, StreamingContext context)
         {
-            info.AddValue("v", SpanId.UnsafeGetArray(_value));
+            info.AddValue("v", IdSpan.UnsafeGetArray(_value));
             info.AddValue("h", _value.GetHashCode());
         }
 
