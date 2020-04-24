@@ -1,3 +1,4 @@
+using Orleans.Metadata;
 using Orleans.Placement;
 using Orleans.Runtime;
 using System;
@@ -27,8 +28,12 @@ namespace Orleans.Concurrency
     /// </para>
     /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
-    public sealed class ReentrantAttribute : Attribute
+    public sealed class ReentrantAttribute : Attribute, IGrainPropertiesProviderAttribute
     {
+        public void Populate(IServiceProvider services, Type grainClass, GrainType grainType, Dictionary<string, string> properties)
+        {
+            properties[WellKnownGrainTypeProperties.Reentrant] = "true";
+        }
     }
 
     /// <summary>
@@ -45,7 +50,7 @@ namespace Orleans.Concurrency
     /// of preservation of grain state between requests and where multiple activations of the same grain are allowed to be created by the runtime.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
-    public sealed class StatelessWorkerAttribute : PlacementAttribute
+    public sealed class StatelessWorkerAttribute : PlacementAttribute, IGrainPropertiesProviderAttribute
     {
         public StatelessWorkerAttribute(int maxLocalWorkers)
             : base(new StatelessWorkerPlacement(maxLocalWorkers))
@@ -55,6 +60,12 @@ namespace Orleans.Concurrency
         public StatelessWorkerAttribute()
             : base(new StatelessWorkerPlacement())
         {
+        }
+
+        public override void Populate(IServiceProvider services, Type grainClass, GrainType grainType, Dictionary<string, string> properties)
+        {
+            base.Populate(services, grainClass, grainType, properties);
+            properties[WellKnownGrainTypeProperties.Unordered] = "true";
         }
     }
 
@@ -79,7 +90,7 @@ namespace Orleans.Concurrency
     /// and having the following signature: <c>public static bool MayInterleave(InvokeMethodRequest req)</c>
     /// </remarks>
     [AttributeUsage(AttributeTargets.Class)]
-    public sealed class MayInterleaveAttribute : Attribute
+    public sealed class MayInterleaveAttribute : Attribute, IGrainPropertiesProviderAttribute
     {
         /// <summary>
         /// The name of the callback method
@@ -89,6 +100,11 @@ namespace Orleans.Concurrency
         public MayInterleaveAttribute(string callbackMethodName)
         {
             this.CallbackMethodName = callbackMethodName;
+        }
+
+        public void Populate(IServiceProvider services, Type grainClass, GrainType grainType, Dictionary<string, string> properties)
+        {
+            properties[WellKnownGrainTypeProperties.MayInterleavePredicate] = this.CallbackMethodName;
         }
     }
 

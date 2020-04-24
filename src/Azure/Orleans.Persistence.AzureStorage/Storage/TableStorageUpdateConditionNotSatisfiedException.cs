@@ -18,7 +18,7 @@ namespace Orleans.Storage
         public TableStorageUpdateConditionNotSatisfiedException(
             string errorMsg,
             string grainType,
-            GrainReference grainId,
+            string grainId,
             string tableName,
             string storedEtag,
             string currentEtag,
@@ -26,7 +26,7 @@ namespace Orleans.Storage
             : base(errorMsg, storedEtag, currentEtag, storageException)
         {
             this.GrainType = grainType;
-            this.GrainId = grainId.ToKeyString();
+            this.GrainId = grainId.ToString();
             this.TableName = tableName;
         }
 
@@ -35,7 +35,7 @@ namespace Orleans.Storage
         /// </summary>
         public TableStorageUpdateConditionNotSatisfiedException(
             string grainType,
-            GrainReference grainId,
+            string grainId,
             string tableName,
             string storedEtag,
             string currentEtag,
@@ -84,7 +84,7 @@ namespace Orleans.Storage
 
         private static string CreateDefaultMessage(
             string grainType,
-            GrainReference grainId,
+            string grainId,
             string tableName,
             string storedEtag,
             string currentEtag)

@@ -200,7 +200,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Orleans.Connections.Securit
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Orleans.Connections.Security.Tests", "test\Orleans.Connections.Security.Tests\Orleans.Connections.Security.Tests.csproj", "{D53D80CC-3E14-4499-B03F-610A5D3F6359}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orleans.GrainDirectory.AzureStorage", "src\Azure\Orleans.GrainDirectory.AzureStorage\Orleans.GrainDirectory.AzureStorage.csproj", "{16B9B850-ED3B-4B45-B0F2-3F802D44F382}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Orleans.GrainDirectory.AzureStorage", "src\Azure\Orleans.GrainDirectory.AzureStorage\Orleans.GrainDirectory.AzureStorage.csproj", "{16B9B850-ED3B-4B45-B0F2-3F802D44F382}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

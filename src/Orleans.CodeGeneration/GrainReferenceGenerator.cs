@@ -83,7 +83,6 @@ namespace Orleans.CodeGenerator
                         GenerateInterfaceIdProperty(grainType),
                         GenerateInterfaceVersionProperty(grainType),
                         GenerateInterfaceNameProperty(grainType),
-                        GenerateIsCompatibleMethod(grainType),
                         GenerateGetMethodNameMethod(grainType))
                     .AddMembers(GenerateInvokeMethods(grainType, onEncounteredType))
                     .AddAttributeLists(attributes);
@@ -352,7 +351,7 @@ namespace Orleans.CodeGenerator
 
         private static MemberDeclarationSyntax GenerateInterfaceIdProperty(Type grainType)
         {
-            var property = TypeUtils.Member((GrainReference _) => _.InterfaceId);
+            var property = TypeUtils.Member((GrainReference _) => _.InterfaceTypeCode);
             var returnValue = SF.LiteralExpression(
                 SyntaxKind.NumericLiteralExpression,
                 SF.Literal(GrainInterfaceUtils.GetGrainInterfaceId(grainType)));
@@ -376,36 +375,6 @@ namespace Orleans.CodeGenerator
                         SF.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
                             .AddBodyStatements(SF.ReturnStatement(returnValue)))
                     .AddModifiers(SF.Token(SyntaxKind.PublicKeyword), SF.Token(SyntaxKind.OverrideKeyword));
-        }
-
-        private static MemberDeclarationSyntax GenerateIsCompatibleMethod(Type grainType)
-        {
-            var method = TypeUtils.Method((GrainReference _) => _.IsCompatible(default(int)));
-            var methodDeclaration = method.GetDeclarationSyntax();
-            var interfaceIdParameter = method.GetParameters()[0].Name.ToIdentifierName();
-
-            var interfaceIds =
-                new HashSet<int>(
-                    new[] { GrainInterfaceUtils.GetGrainInterfaceId(grainType) }.Concat(
-                        GrainInterfaceUtils.GetRemoteInterfaces(grainType).Keys));
-
-            var returnValue = default(BinaryExpressionSyntax);
-            foreach (var interfaceId in interfaceIds)
-            {
-                var check = SF.BinaryExpression(
-                    SyntaxKind.EqualsExpression,
-                    interfaceIdParameter,
-                    SF.LiteralExpression(SyntaxKind.NumericLiteralExpression, SF.Literal(interfaceId)));
-
-                // If this is the first check, assign it, otherwise OR this check with the previous checks.
-                returnValue = returnValue == null
-                                  ? check
-                                  : SF.BinaryExpression(SyntaxKind.LogicalOrExpression, returnValue, check);
-            }
-
-            return
-                methodDeclaration.AddBodyStatements(SF.ReturnStatement(returnValue))
-                    .AddModifiers(SF.Token(SyntaxKind.OverrideKeyword));
         }
 
         private static MemberDeclarationSyntax GenerateInterfaceNameProperty(Type grainType)

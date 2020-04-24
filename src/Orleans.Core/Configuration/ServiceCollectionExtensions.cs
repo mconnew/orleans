@@ -33,7 +33,12 @@ namespace Orleans.Configuration.Internal
             {
                 var newRegistration = new ServiceDescriptor(
                     service,
-                    sp => sp.GetRequiredService(implementation),
+                    sp =>
+                    {
+                        var s = service.FullName;
+                        var i = implementation.FullName;
+                        return sp.GetRequiredService(implementation);
+                    },
                     registration.Lifetime);
                 services.Add(newRegistration);
             }

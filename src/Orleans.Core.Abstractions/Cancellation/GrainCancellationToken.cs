@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
@@ -37,7 +37,6 @@ namespace Orleans
             _targetGrainReferences = new ConcurrentDictionary<GrainId, GrainReference>();
         }
 
-
         /// <summary>
         /// Initializes the <see cref="T:Orleans.GrainCancellationToken"/>.
         /// </summary>
@@ -75,9 +74,7 @@ namespace Orleans
                 }
                 catch (Exception exception)
                 {
-                    var completion = new TaskCompletionSource<object>();
-                    completion.TrySetException(exception);
-                    return completion.Task;
+                    return Task.FromException(exception);
                 }
             }
 
