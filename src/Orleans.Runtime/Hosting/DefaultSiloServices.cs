@@ -115,7 +115,8 @@ namespace Orleans.Hosting
             services.TryAddSingleton<IGrainReferenceRuntime, GrainReferenceRuntime>();
             services.TryAddSingleton<TypeMetadataCache>();
             services.TryAddSingleton<ActivationDirectory>();
-            services.TryAddSingleton<ActivationCollector>();
+            services.AddSingleton<ActivationCollector>();
+            services.AddFromExisting<IActivationCollector, ActivationCollector>();
 
             // Directory
             services.TryAddSingleton<LocalGrainDirectory>();
@@ -124,6 +125,7 @@ namespace Orleans.Hosting
             services.AddSingleton<GrainLocatorResolver>();
             services.AddSingleton<DhtGrainLocator>();
             services.AddSingleton<GrainDirectoryResolver>();
+            services.AddSingleton<IGrainDirectoryResolver, GenericGrainDirectoryResolver>();
             services.AddSingleton<CachedGrainLocator>();
             services.AddFromExisting<ILifecycleParticipant<ISiloLifecycle>, CachedGrainLocator>();
             services.AddSingleton<ClientGrainLocator>();
@@ -174,6 +176,7 @@ namespace Orleans.Hosting
             services.TryAddFromExisting<IStreamProviderRuntime, SiloProviderRuntime>();
             services.TryAddFromExisting<IProviderRuntime, SiloProviderRuntime>();
             services.TryAddSingleton<ImplicitStreamSubscriberTable>();
+            services.AddSingleton<IConfigureGrain, StreamConsumerGrainContextAction>();
             services.TryAddSingleton<MessageFactory>();
 
             services.TryAddSingleton<Factory<Grain, ILogConsistencyProtocolServices>>(FactoryUtility.Create<Grain, ProtocolServices>);
@@ -185,6 +188,7 @@ namespace Orleans.Hosting
             services.AddSingleton<PlacementStrategyResolver>();
             services.AddSingleton<PlacementDirectorResolver>();
             services.AddSingleton<IPlacementStrategyResolver, ClientObserverPlacementStrategyResolver>();
+            services.AddSingleton<IPlacementStrategyResolver, GenericTypePlacementStrategyResolver>();
 
             // Configure the default placement strategy.
             services.TryAddSingleton<PlacementStrategy, RandomPlacement>();
@@ -236,10 +240,9 @@ namespace Orleans.Hosting
             // Grain activation
             services.TryAddSingleton<Catalog>();
             services.AddFromExisting<IHealthCheckParticipant, Catalog>();
-            services.TryAddSingleton<GrainCreator>();
-            services.TryAddSingleton<IGrainActivator, DefaultGrainActivator>();
-            services.TryAddScoped<ActivationData.GrainActivationContextFactory>();
-            services.TryAddScoped<IGrainActivationContext>(sp => sp.GetRequiredService<ActivationData.GrainActivationContextFactory>().Context);
+            services.TryAddSingleton<GrainActivator>();
+            services.TryAddSingleton<IGrainActivatorProvider, ActivationDataActivatorProvider>();
+            services.TryAddSingleton<IGrainContextAccessor, GrainContextAccessor>();
 
             services.TryAddSingleton<IStreamSubscriptionManagerAdmin>(sp => new StreamSubscriptionManagerAdmin(sp.GetRequiredService<IStreamProviderRuntime>()));
             services.TryAddSingleton<IConsistentRingProvider>(
@@ -288,6 +291,7 @@ namespace Orleans.Hosting
             // Type metadata
             services.AddSingleton<SiloManifestProvider>();
             services.AddSingleton<SiloManifest>(sp => sp.GetRequiredService<SiloManifestProvider>().SiloManifest);
+            services.AddSingleton<GrainClassMap>(sp => sp.GetRequiredService<SiloManifestProvider>().GrainTypeMap);
             services.AddSingleton<Metadata.GrainTypeResolver>();
             services.AddSingleton<Metadata.IGrainTypeProvider, LegacyGrainTypeResolver>();
             services.AddSingleton<GrainPropertiesResolver>();
@@ -301,6 +305,7 @@ namespace Orleans.Hosting
             services.AddSingleton<ClusterManifestProvider>();
             services.AddFromExisting<IClusterManifestProvider, ClusterManifestProvider>();
             services.AddFromExisting<ILifecycleParticipant<ISiloLifecycle>, ClusterManifestProvider>();
+            services.AddSingleton<TypeConverter>();
 
             //Add default option formatter if none is configured, for options which are required to be configured
             services.ConfigureFormatter<SiloOptions>();

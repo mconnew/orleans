@@ -25,11 +25,6 @@ namespace Orleans.Serialization
                 writer.Write((byte)0);
             }
 
-            if (input.IsObserverReference)
-            {
-                GuidId.Default.SerializeToStream(writer);
-            }
-
             // store as null, serialize as empty.
             var genericArg = string.Empty;
             if (input.HasGenericArgument)

@@ -214,7 +214,7 @@ namespace Orleans.Runtime
             }
         }
 
-        private async Task<Dictionary<int, CompatibilityStrategy>> GetStoredCompatibilityStrategies()
+        private async Task<Dictionary<GrainInterfaceId, CompatibilityStrategy>> GetStoredCompatibilityStrategies()
         {
             try
             {
@@ -223,11 +223,11 @@ namespace Orleans.Runtime
             catch (Exception)
             {
                 hasToRefreshClusterGrainInterfaceMap = true;
-                return new Dictionary<int, CompatibilityStrategy>();
+                return new Dictionary<GrainInterfaceId, CompatibilityStrategy>();
             }
         }
 
-        private async Task<Dictionary<int, VersionSelectorStrategy>> GetSelectorStrategies()
+        private async Task<Dictionary<GrainInterfaceId, VersionSelectorStrategy>> GetSelectorStrategies()
         {
             try
             {
@@ -236,7 +236,7 @@ namespace Orleans.Runtime
             catch (Exception)
             {
                 hasToRefreshClusterGrainInterfaceMap = true;
-                return new Dictionary<int, VersionSelectorStrategy>();
+                return new Dictionary<GrainInterfaceId, VersionSelectorStrategy>();
             }
         }
 

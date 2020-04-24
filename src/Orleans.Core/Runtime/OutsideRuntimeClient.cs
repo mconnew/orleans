@@ -483,29 +483,19 @@ namespace Orleans
         {
             if (this.disposing) return;
             this.disposing = true;
-            
-            Utils.SafeExecute(() => this.callbackTimer?.Dispose());
-            Utils.SafeExecute(() =>
-            {
-                if (typeMapRefreshTimer != null)
-                {
-                    typeMapRefreshTimer.Dispose();
-                    typeMapRefreshTimer = null;
-                }
-            });
-            
-            Utils.SafeExecute(() => MessageCenter?.Dispose());
-            if (ClientStatistics != null)
-            {
-                Utils.SafeExecute(() => ClientStatistics.Dispose());
-            }
 
-            Utils.SafeExecute(() => (this.ServiceProvider as IDisposable)?.Dispose());
+            this.callbackTimer?.Dispose();
 
-            Utils.SafeExecute(() => this.ClusterConnectionLost = null);
-            Utils.SafeExecute(() => this.GatewayCountChanged = null);
+            this.typeMapRefreshTimer?.Dispose();
+            this.typeMapRefreshTimer = null;
 
+            MessageCenter?.Dispose();
+            ClientStatistics?.Dispose();
+
+            this.ClusterConnectionLost = null;
+            this.GatewayCountChanged = null;
             this.ServiceProvider = null;
+
             GC.SuppressFinalize(this);
         }
 

@@ -19,7 +19,7 @@ namespace Orleans
     /// </summary>
     internal class ClusterClient : IInternalClusterClient
     {
-        private readonly IRuntimeClient runtimeClient;
+        private readonly OutsideRuntimeClient runtimeClient;
         private readonly ClusterClientLifecycle clusterClientLifecycle;
         private readonly AsyncLock initLock = new AsyncLock();
         private readonly ClientApplicationLifetime applicationLifetime;
@@ -41,12 +41,12 @@ namespace Orleans
         /// <param name="runtimeClient">The runtime client.</param>
         /// <param name="loggerFactory">Logger factory used to create loggers</param>
         /// <param name="clientMessagingOptions">Messaging parameters</param>
-        public ClusterClient(IRuntimeClient runtimeClient, ILoggerFactory loggerFactory, IOptions<ClientMessagingOptions> clientMessagingOptions)
+        public ClusterClient(OutsideRuntimeClient runtimeClient, ILoggerFactory loggerFactory, IOptions<ClientMessagingOptions> clientMessagingOptions)
         {
             this.runtimeClient = runtimeClient;
             this.clusterClientLifecycle = new ClusterClientLifecycle(loggerFactory.CreateLogger<LifecycleSubject>());
 
-            //set PropagateActivityId flag from node cofnig
+            //set PropagateActivityId flag from node config
             RequestContext.PropagateActivityId |= clientMessagingOptions.Value.PropagateActivityId;
 
             // register all lifecycle participants
@@ -120,9 +120,9 @@ namespace Orleans
                 {
                     throw new InvalidOperationException("A prior connection attempt failed. This instance must be disposed.");
                 }
-                
+
                 this.state = LifecycleState.Starting;
-                if (this.runtimeClient is OutsideRuntimeClient orc) await orc.Start(retryFilter).ConfigureAwait(false);
+                await this.runtimeClient.Start(retryFilter).ConfigureAwait(false);
                 await this.clusterClientLifecycle.OnStart().ConfigureAwait(false);
                 this.state = LifecycleState.Started;
             }
@@ -156,8 +156,7 @@ namespace Orleans
 
                     await this.clusterClientLifecycle.OnStop(canceled);
 
-                    Utils.SafeExecute(() => (this.runtimeClient as OutsideRuntimeClient)?.Reset(gracefully));
-                    this.Dispose(true);
+                    Utils.SafeExecute(() => this.runtimeClient?.Reset(gracefully));
                 }
                 finally
                 {
@@ -170,7 +169,42 @@ namespace Orleans
         }
 
         /// <inheritdoc />
-        void IDisposable.Dispose() => this.AbortAsync().GetAwaiter().GetResult();
+        void IDisposable.Dispose()
+        {
+            Utils.SafeExecute(() => this.AbortAsync().GetAwaiter().GetResult());
+            this.runtimeClient.Dispose();
+
+            switch (this.ServiceProvider)
+            {
+                case IAsyncDisposable asyncDisposable:
+                    asyncDisposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
+                    break;
+                case IDisposable disposabe:
+                    disposabe.Dispose();
+                    break;
+            }
+
+            this.state = LifecycleState.Disposed;
+        }
+
+        /// <inheritdoc />
+        public async ValueTask DisposeAsync()
+        {
+            await this.AbortAsync();
+            this.runtimeClient.Dispose();
+
+            switch (this.ServiceProvider)
+            {
+                case IAsyncDisposable asyncDisposable:
+                    await asyncDisposable.DisposeAsync();
+                    break;
+                case IDisposable disposabe:
+                    disposabe.Dispose();
+                    break;
+            }
+
+            this.state = LifecycleState.Disposed;
+        }
 
         /// <inheritdoc />
         public TGrainInterface GetGrain<TGrainInterface>(Guid primaryKey, string grainClassNamePrefix = null)
@@ -262,16 +296,6 @@ namespace Orleans
             return this.InternalGrainFactory.GetGrain(grainId, genericArguments);
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed")]
-        private void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                Utils.SafeExecute(() => (this.runtimeClient as OutsideRuntimeClient)?.Dispose());
-                this.state = LifecycleState.Disposed;
-            }
-        }
-
         private void ThrowIfDisposedOrNotInitialized()
         {
             this.ThrowIfDisposed();
@@ -287,9 +311,9 @@ namespace Orleans
         private void ThrowIfDisposed()
         {
             if (this.IsDisposing)
-                throw new ObjectDisposedException(
-                    nameof(ClusterClient),
-                    $"Client has been disposed either by a call to {nameof(Dispose)} or because it has been stopped.");
+            {
+                throw new ObjectDisposedException(nameof(ClusterClient), "Client has been disposed.");
+            }
         }
 
         /// <inheritdoc />

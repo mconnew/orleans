@@ -45,8 +45,8 @@ namespace Tester.StorageFacet.Implementations
 
     public class TableExampleStorageFactory : IExampleStorageFactory
     {
-        private readonly IGrainActivationContext context;
-        public TableExampleStorageFactory(IGrainActivationContext context)
+        private readonly IGrainContext context;
+        public TableExampleStorageFactory(IGrainContext context)
         {
             this.context = context;
         }

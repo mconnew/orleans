@@ -182,7 +182,7 @@ namespace Orleans.Runtime.Management
                 siloControl => siloControl.SetSelectorStrategy(strategy));
         }
 
-        public async Task SetCompatibilityStrategy(int interfaceId, CompatibilityStrategy strategy)
+        public async Task SetCompatibilityStrategy(GrainInterfaceId interfaceId, CompatibilityStrategy strategy)
         {
             CheckIfIsExistingInterface(interfaceId);
             await SetStrategy(
@@ -190,7 +190,7 @@ namespace Orleans.Runtime.Management
                 siloControl => siloControl.SetCompatibilityStrategy(interfaceId, strategy));
         }
 
-        public async Task SetSelectorStrategy(int interfaceId, VersionSelectorStrategy strategy)
+        public async Task SetSelectorStrategy(GrainInterfaceId interfaceId, VersionSelectorStrategy strategy)
         {
             CheckIfIsExistingInterface(interfaceId);
             await SetStrategy(
@@ -220,14 +220,15 @@ namespace Orleans.Runtime.Management
                 String.Format("SendControlCommandToProvider of type {0} and name {1} command {2}.", providerTypeFullName, providerName, command));
         }
 
-        private void CheckIfIsExistingInterface(int interfaceId)
+        private void CheckIfIsExistingInterface(GrainInterfaceId interfaceId)
         {
-            Type unused;
+            //Type unused;
             var interfaceMap = this.grainTypeManager.ClusterGrainInterfaceMap;
-            if (!interfaceMap.TryGetServiceInterface(interfaceId, out unused))
+            throw new NotImplementedException("FIX THIS");
+            /*if (!interfaceMap.TryGetServiceInterface(interfaceId, out unused))
             {
                 throw new ArgumentException($"Interface code '{interfaceId} not found", nameof(interfaceId));
-            }
+            }*/
         }
 
         private async Task SetStrategy(Func<IVersionStore, Task> storeFunc, Func<ISiloControl, Task> applyFunc)

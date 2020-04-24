@@ -755,8 +755,8 @@ namespace Orleans.Runtime
                     throw new OrleansException("Failed to register " + typeof(TExtension).Name);
             }
 
-            IAddressable currentGrain = RuntimeContext.CurrentGrainContext?.GrainInstance;
-            var currentTypedGrain = currentGrain.AsReference<TExtensionInterface>();
+            IGrainContext context = RuntimeContext.CurrentGrainContext;
+            var currentTypedGrain = context.GrainReference.Cast<TExtensionInterface>();
 
             return Task.FromResult(Tuple.Create(extension, currentTypedGrain));
         }

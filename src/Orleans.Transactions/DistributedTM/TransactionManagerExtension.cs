@@ -12,7 +12,7 @@ namespace Orleans.Transactions
         private readonly ResourceFactoryRegistry<ITransactionManager> factories;
         private readonly Dictionary<string, ITransactionManager> managers;
 
-        public TransactionManagerExtension(IGrainActivationContext context)
+        public TransactionManagerExtension(IGrainContext context)
         {
             this.factories = context.GetResourceFactoryRegistry<ITransactionManager>();
             this.managers = new Dictionary<string, ITransactionManager>();

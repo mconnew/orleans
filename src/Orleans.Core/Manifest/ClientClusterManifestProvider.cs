@@ -12,7 +12,7 @@ using Orleans.Runtime.Utilities;
 
 namespace Orleans.Runtime
 {
-    internal class ClientClusterManifestProvider : IClusterManifestProvider, IAsyncDisposable
+    internal class ClientClusterManifestProvider : IClusterManifestProvider, IAsyncDisposable, IDisposable
     {
         private readonly TaskCompletionSource<bool> _initialized = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly IInternalGrainFactory _grainFactory;
@@ -108,6 +108,12 @@ namespace Orleans.Runtime
         {
             _cancellation.Cancel();
             return _runTask is Task task ? new ValueTask(task) : default;
+        }
+
+        public void Dispose()
+        {
+            _cancellation.Cancel();
+            if (_runTask is Task task) task.GetAwaiter().GetResult();
         }
     }
 }

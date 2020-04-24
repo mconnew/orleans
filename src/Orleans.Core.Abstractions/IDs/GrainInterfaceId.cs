@@ -1,21 +1,34 @@
 using System;
-using System.Diagnostics;
 
-namespace Orleans.Metadata
+namespace Orleans.Runtime
 {
     /// <summary>
     /// Uniquely identifies a grain interface.
     /// </summary>
     [Serializable]
-    [DebuggerDisplay("{Value}")]
     public readonly struct GrainInterfaceId : IEquatable<GrainInterfaceId>
     {
-        public readonly string Value;
+        private readonly IdSpan _value;
 
         /// <summary>
         /// Creates a <see cref="GrainInterfaceId"/> instance.
         /// </summary>
-        public GrainInterfaceId(string value) => this.Value = value;
+        public GrainInterfaceId(string value) => _value = IdSpan.Create(value);
+
+        /// <summary>
+        /// Creates a <see cref="GrainInterfaceId"/> instance.
+        /// </summary>
+        public GrainInterfaceId(IdSpan value) => _value = value;
+
+        /// <summary>
+        /// Returns the <see cref="IdSpan"/> value underlying this instance.
+        /// </summary>
+        public IdSpan Value => _value;
+
+        /// <summary>
+        /// Returns true if this value is equal to the <see langword="default"/> instance.
+        /// </summary>
+        public bool IsDefault => _value.IsDefault;
 
         /// <summary>
         /// Creates a <see cref="GrainInterfaceId"/> instance.
@@ -25,13 +38,15 @@ namespace Orleans.Metadata
         /// <inheritdoc />
         public override bool Equals(object obj) => obj is GrainInterfaceId id && this.Equals(id);
 
-        public bool Equals(GrainInterfaceId other) => string.Equals(this.Value, other.Value, StringComparison.Ordinal);
+        public bool Equals(GrainInterfaceId other) => _value.Equals(other._value);
 
         /// <inheritdoc />
-        public override int GetHashCode() => HashCode.Combine(this.Value);
+        public override int GetHashCode() => _value.GetHashCode();
 
         /// <inheritdoc />
-        public override string ToString() => this.Value;
+        public override string ToString() => _value.ToStringUtf8();
+
+        public string ToStringUtf8() => _value.ToString();
     }
 
     /// <summary>
@@ -46,7 +61,7 @@ namespace Orleans.Metadata
     }
 
     /// <summary>
-    /// Gets a <see cref="GrainInterfaceId"/> from attributes implementing <see cref="IGrainInterfacePropertiesProviderAttribute"/>.
+    /// Gets a <see cref="GrainInterfaceId"/> from attributes implementing <see cref="IGrainInterfaceIdProviderAttribute"/>.
     /// </summary>
     public class AttributeGrainInterfaceIdProvider : IGrainInterfaceIdProvider
     {
@@ -61,13 +76,13 @@ namespace Orleans.Metadata
         }
 
         /// <inheritdoc />
-        public bool TryGetGrainInterfaceId(Type grainClass, out GrainInterfaceId grainInterfaceId)
+        public bool TryGetGrainInterfaceId(Type type, out GrainInterfaceId grainInterfaceId)
         {
-            foreach (var attr in grainClass.GetCustomAttributes(inherit: true))
+            foreach (var attr in type.GetCustomAttributes(inherit: true))
             {
-                if (attr is IGrainInterfaceIdProviderAttribute typeProviderAttribute)
+                if (attr is IGrainInterfaceIdProviderAttribute provider)
                 {
-                    grainInterfaceId = typeProviderAttribute.GetGrainInterfaceId(this.serviceProvider, grainClass);
+                    grainInterfaceId = provider.GetGrainInterfaceId(this.serviceProvider, type);
                     return true;
                 }
             }

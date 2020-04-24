@@ -9,10 +9,10 @@ namespace Orleans.Transactions
 {
     public class NamedTransactionalStateStorageFactory : INamedTransactionalStateStorageFactory
     {
-        private readonly IGrainActivationContext context;
+        private readonly IGrainContext context;
         private readonly ILoggerFactory loggerFactory;
 
-        public NamedTransactionalStateStorageFactory(IGrainActivationContext context, ILoggerFactory loggerFactory)
+        public NamedTransactionalStateStorageFactory(IGrainContext context, ILoggerFactory loggerFactory)
         {
             this.context = context;
             this.loggerFactory = loggerFactory;

@@ -7,123 +7,96 @@ using Orleans.Serialization;
 
 namespace Orleans.Runtime
 {
+    public abstract class InvokeMethodRequestGrainReference : GrainReference
+    {
+        /// <summary>
+        /// Implemented by generated subclasses to return a constant.
+        /// </summary>
+        public virtual int InterfaceId
+        {
+            get
+            {
+                throw new InvalidOperationException("Should be overridden by subclass");
+            }
+        }
+
+        /// <summary>
+        /// Return the method name associated with the specified interfaceId and methodId values.
+        /// </summary>
+        /// <param name="interfaceId">Interface Id</param>
+        /// <param name="methodId">Method Id</param>
+        /// <returns>Method name string.</returns>
+        public virtual string GetMethodName(int interfaceId, int methodId)
+        {
+            throw new InvalidOperationException("Should be overridden by subclass");
+        }
+
+        /// <summary>
+        /// Called from generated code.
+        /// </summary>
+        protected void InvokeOneWayMethod(int methodId, object[] arguments, InvokeMethodOptions options = InvokeMethodOptions.None, SiloAddress silo = null)
+        {
+            this.Runtime.InvokeOneWayMethod(this, methodId, arguments, options, silo);
+        }
+
+        /// <summary>
+        /// Called from generated code.
+        /// </summary>
+        protected Task<T> InvokeMethodAsync<T>(int methodId, object[] arguments, InvokeMethodOptions options = InvokeMethodOptions.None, SiloAddress silo = null)
+        {
+            return this.Runtime.InvokeMethodAsync<T>(this, methodId, arguments, options, silo);
+        }
+    }
+
+    internal class GrainReferenceBase
+    {
+        public GrainType GrainType { get; }
+
+        public GrainInterfaceId InterfaceId { get; }
+    }
+
     /// <summary>
     /// This is the base class for all typed grain references.
     /// </summary>
     [Serializable]
     public class GrainReference : IAddressable, IEquatable<GrainReference>, ISerializable
     {
-        private readonly string genericArguments;
-
-        /// <summary>
-        /// Invoke method options specific to this grain reference instance
-        /// </summary>
-        [NonSerialized]
-        private readonly InvokeMethodOptions invokeMethodOptions;
-
-        internal bool IsSystemTarget { get { return GrainId.IsSystemTarget(); } }
-
-        public bool IsGrainService => this.IsSystemTarget;  // TODO make this distinct
-
-        internal bool IsObserverReference { get { return ObserverGrainId.TryParse(GrainId, out _); } }
-
-        internal bool HasGenericArgument { get { return !String.IsNullOrEmpty(genericArguments); } }
-
-        internal IGrainReferenceRuntime Runtime
-        {
-            get
-            {
-                if (this.runtime == null) throw new GrainReferenceNotBoundException(this);
-                return this.runtime;
-            }
-        }
+        internal IGrainReferenceRuntime Runtime => this.runtime ?? throw new GrainReferenceNotBoundException(this);
 
         /// <summary>
         /// Gets a value indicating whether this instance is bound to a runtime and hence valid for making requests.
         /// </summary>
         internal bool IsBound => this.runtime != null;
 
-        public GrainId GrainId { get; private set; }
+        public GrainId GrainId { get; }
+
+        public GrainInterfaceId InterfaceId { get; }
 
         /// <summary>
         /// Called from generated code.
         /// </summary>
         protected internal readonly SiloAddress SystemTargetSilo;
 
-        public SiloAddress GrainServiceSiloAddress => this.SystemTargetSilo;    // TODO make this distinct
-
         [NonSerialized]
         private IGrainReferenceRuntime runtime;
 
-        /// <summary>
-        /// Whether the runtime environment for system targets has been initialized yet.
-        /// Called from generated code.
-        /// </summary>
-        protected internal bool IsInitializedSystemTarget { get { return SystemTargetSilo != null; } }
-
-        internal string GenericArguments => this.genericArguments;
-
         /// <summary>Constructs a reference to the grain with the specified Id.</summary>
         /// <param name="grainId">The Id of the grain to refer to.</param>
-        /// <param name="genericArgument">Type arguments in case of a generic grain.</param>
+        /// <param name="interfaceId">The interface which this grain reference represents.</param>
         /// <param name="runtime">The runtime which this grain reference is bound to.</param>
-        private GrainReference(GrainId grainId, string genericArgument, IGrainReferenceRuntime runtime)
+        private GrainReference(GrainId grainId, GrainInterfaceId interfaceId, IGrainReferenceRuntime runtime)
         {
             GrainId = grainId;
-            this.genericArguments = genericArgument;
+            InterfaceId = interfaceId;
             this.runtime = runtime;
-            if (string.IsNullOrEmpty(genericArgument))
-            {
-                genericArguments = null; // always keep it null instead of empty.
-            }
-
-            // SystemTarget checks
-            var isSystemTarget = grainId.IsSystemTarget();
-            if (SystemTargetGrainId.TryParse(grainId, out var systemTargetId))
-            {
-                this.SystemTargetSilo = systemTargetId.GetSiloAddress();
-                if (SystemTargetSilo == null)
-                {
-                    throw new ArgumentNullException("systemTargetSilo", String.Format("Trying to create a GrainReference for SystemTarget grain id {0}, but passing null systemTargetSilo.", grainId));
-                }
-
-                if (genericArguments != null)
-                {
-                    throw new ArgumentException(String.Format("Trying to create a GrainReference for SystemTarget grain id {0}, and also passing non-null genericArguments {1}.", grainId, genericArguments), "genericArgument");
-                }
-            }
-
-            // ObserverId checks
-            var isClient = grainId.IsClient();
-            if (isClient)
-            {
-                // Note: we can probably just remove this check - it serves little purpose.
-                if (!ObserverGrainId.TryParse(grainId, out _))
-                {
-                    throw new ArgumentNullException("observerId", String.Format("Trying to create a GrainReference for Observer with Client grain id {0}, but passing null observerId.", grainId));
-                }
-
-                if (genericArguments != null)
-                {
-                    throw new ArgumentException(String.Format("Trying to create a GrainReference for Client grain id {0}, and also passing non-null genericArguments {1}.", grainId, genericArguments), "genericArgument");
-                }
-            }
         }
 
         /// <summary>
         /// Constructs a copy of a grain reference.
         /// </summary>
         /// <param name="other">The reference to copy.</param>
-        protected GrainReference(GrainReference other)
-            : this(other.GrainId, other.genericArguments, other.runtime)
+        protected GrainReference(GrainReference other) : this(other.GrainId, other.InterfaceId, other.runtime)
         {
-            this.invokeMethodOptions = other.invokeMethodOptions;
-        }
-
-        protected internal GrainReference(GrainReference other, InvokeMethodOptions invokeMethodOptions)
-            : this(other)
-        {
-            this.invokeMethodOptions = invokeMethodOptions;
         }
 
         /// <summary>Constructs a reference to the grain with the specified ID.</summary>
@@ -135,9 +108,9 @@ namespace Orleans.Runtime
             return new GrainReference(grainId, genericArguments, runtime);
         }
 
-        internal static GrainReference NewObserverGrainReference(ObserverGrainId observerId, IGrainReferenceRuntime runtime)
+        internal static GrainReference NewObserverGrainReference(ObserverGrainId observerId, GrainInterfaceId interfaceId, IGrainReferenceRuntime runtime)
         {
-            return new GrainReference(observerId.GrainId, null, runtime);
+            return new GrainReference(observerId.GrainId, interfaceId, runtime);
         }
 
         /// <summary>
@@ -201,18 +174,6 @@ namespace Orleans.Runtime
         }
 
         /// <summary>
-        /// Implemented by generated subclasses to return a constant
-        /// Implemented in generated code.
-        /// </summary>
-        public virtual int InterfaceId
-        {
-            get
-            {
-                throw new InvalidOperationException("Should be overridden by subclass");
-            }
-        }
-
-        /// <summary>
         /// Implemented in generated code.
         /// </summary>
         public virtual ushort InterfaceVersion
@@ -224,51 +185,10 @@ namespace Orleans.Runtime
         }
 
         /// <summary>
-        /// Implemented in generated code.
-        /// </summary>
-        public virtual bool IsCompatible(int interfaceId)
-        {
-            throw new InvalidOperationException("Should be overridden by subclass");
-        }
-
-        /// <summary>
         /// Return the name of the interface for this GrainReference. 
         /// Implemented in Orleans generated code.
         /// </summary>
-        public virtual string InterfaceName
-        {
-            get
-            {
-                throw new InvalidOperationException("Should be overridden by subclass");
-            }
-        }
-
-        /// <summary>
-        /// Return the method name associated with the specified interfaceId and methodId values.
-        /// </summary>
-        /// <param name="interfaceId">Interface Id</param>
-        /// <param name="methodId">Method Id</param>
-        /// <returns>Method name string.</returns>
-        public virtual string GetMethodName(int interfaceId, int methodId)
-        {
-            throw new InvalidOperationException("Should be overridden by subclass");
-        }
-
-        /// <summary>
-        /// Called from generated code.
-        /// </summary>
-        protected void InvokeOneWayMethod(int methodId, object[] arguments, InvokeMethodOptions options = InvokeMethodOptions.None, SiloAddress silo = null)
-        {
-            this.Runtime.InvokeOneWayMethod(this, methodId, arguments, options | invokeMethodOptions, silo);
-        }
-
-        /// <summary>
-        /// Called from generated code.
-        /// </summary>
-        protected Task<T> InvokeMethodAsync<T>(int methodId, object[] arguments, InvokeMethodOptions options = InvokeMethodOptions.None, SiloAddress silo = null)
-        {
-            return this.Runtime.InvokeMethodAsync<T>(this, methodId, arguments, options | invokeMethodOptions, silo);
-        }
+        public virtual string InterfaceName => InterfaceId.ToStringUtf8();
 
         private const string GRAIN_REFERENCE_STR = "GrainReference";
 

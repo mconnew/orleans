@@ -8,8 +8,8 @@ namespace Orleans.Transactions
 {
     public class TransactionalStateFactory : ITransactionalStateFactory
     {
-        private IGrainActivationContext context;
-        public TransactionalStateFactory(IGrainActivationContext context)
+        private IGrainContext context;
+        public TransactionalStateFactory(IGrainContext context)
         {
             this.context = context;
         }

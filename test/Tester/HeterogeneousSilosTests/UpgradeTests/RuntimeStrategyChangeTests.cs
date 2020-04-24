@@ -2,9 +2,11 @@
 using System;
 using System.Threading.Tasks;
 using Orleans.CodeGeneration;
+using Orleans.Metadata;
 using Orleans.Versions.Compatibility;
 using Orleans.Versions.Selector;
 using TestVersionGrainInterfaces;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Tester.HeterogeneousSilosTests.UpgradeTests
@@ -18,7 +20,8 @@ namespace Tester.HeterogeneousSilosTests.UpgradeTests
         [Fact]
         public async Task ChangeCompatibilityStrategy()
         {
-            var ifaceId = GrainInterfaceUtils.GetGrainInterfaceId(typeof(IVersionUpgradeTestGrain));
+            var resolver = this.Client.ServiceProvider.GetService<GrainInterfaceIdResolver>();
+            var ifaceId = resolver.GetGrainInterfaceId(typeof(IVersionUpgradeTestGrain));
 
             await StartSiloV1();
 
@@ -63,7 +66,8 @@ namespace Tester.HeterogeneousSilosTests.UpgradeTests
         [Fact]
         public async Task ChangeVersionSelectorStrategy()
         {
-            var ifaceId = GrainInterfaceUtils.GetGrainInterfaceId(typeof(IVersionUpgradeTestGrain));
+            var resolver = this.Client.ServiceProvider.GetService<GrainInterfaceIdResolver>();
+            var ifaceId = resolver.GetGrainInterfaceId(typeof(IVersionUpgradeTestGrain));
 
             await StartSiloV1();
 

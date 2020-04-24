@@ -193,14 +193,14 @@ namespace Orleans.Runtime
             return Task.CompletedTask;
         }
 
-        public Task SetCompatibilityStrategy(int interfaceId, CompatibilityStrategy strategy)
+        public Task SetCompatibilityStrategy(GrainInterfaceId interfaceId, CompatibilityStrategy strategy)
         {
             this.compatibilityDirectorManager.SetStrategy(interfaceId, strategy);
             this.cachedVersionSelectorManager.ResetCache();
             return Task.CompletedTask;
         }
 
-        public Task SetSelectorStrategy(int interfaceId, VersionSelectorStrategy strategy)
+        public Task SetSelectorStrategy(GrainInterfaceId interfaceId, VersionSelectorStrategy strategy)
         {
             this.selectorManager.SetSelector(interfaceId, strategy);
             this.cachedVersionSelectorManager.ResetCache();

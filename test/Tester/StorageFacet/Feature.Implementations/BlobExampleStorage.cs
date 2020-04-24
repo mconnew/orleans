@@ -31,8 +31,8 @@ namespace Tester.StorageFacet.Implementations
 
     public class BlobExampleStorageFactory : IExampleStorageFactory
     {
-        private readonly IGrainActivationContext context;
-        public BlobExampleStorageFactory(IGrainActivationContext context)
+        private readonly IGrainContext context;
+        public BlobExampleStorageFactory(IGrainContext context)
         {
             this.context = context;
         }

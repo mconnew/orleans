@@ -18,12 +18,15 @@ namespace Orleans.Metadata
             GrainTypeResolver typeProvider,
             GrainInterfaceIdResolver interfaceIdProvider)
         {
-            var grains = CreateGrainManifest(grainPropertiesProviders, applicationPartManager, typeProvider);
+            var (grainProperties, grainTypes) = CreateGrainManifest(grainPropertiesProviders, applicationPartManager, typeProvider);
             var interfaces = CreateInterfaceManifest(grainInterfacePropertiesProviders, applicationPartManager, interfaceIdProvider);
-            this.SiloManifest = new SiloManifest(grains, interfaces);
+            this.SiloManifest = new SiloManifest(grainProperties, interfaces);
+            this.GrainTypeMap = new GrainClassMap(grainTypes);
         }
 
         public SiloManifest SiloManifest { get; }
+
+        public GrainClassMap GrainTypeMap { get; }
 
         private static ImmutableDictionary<GrainInterfaceId, GrainInterfaceProperties> CreateInterfaceManifest(
             IEnumerable<IGrainInterfacePropertiesProvider> propertyProviders,
@@ -55,13 +58,14 @@ namespace Orleans.Metadata
             return builder.ToImmutable();
         }
 
-        private static ImmutableDictionary<GrainType, GrainProperties> CreateGrainManifest(
+        private static (ImmutableDictionary<GrainType, GrainProperties>, ImmutableDictionary<GrainType, Type>) CreateGrainManifest(
             IEnumerable<IGrainPropertiesProvider> grainMetadataProviders,
             IApplicationPartManager applicationPartManager,
             GrainTypeResolver grainTypeProvider)
         {
             var feature = applicationPartManager.CreateAndPopulateFeature<GrainClassFeature>();
-            var builder = ImmutableDictionary.CreateBuilder<GrainType, GrainProperties>();
+            var propertiesMap = ImmutableDictionary.CreateBuilder<GrainType, GrainProperties>();
+            var typeMap = ImmutableDictionary.CreateBuilder<GrainType, Type>();
             foreach (var value in feature.Classes)
             {
                 var grainClass = value.ClassType;
@@ -73,17 +77,18 @@ namespace Orleans.Metadata
                 }
 
                 var result = new GrainProperties(properties.ToImmutableDictionary());
-                if (builder.ContainsKey(grainType))
+                if (propertiesMap.ContainsKey(grainType))
                 {
                     throw new InvalidOperationException($"An entry with the key {grainType} is already present."
-                        + $"\nExisting: {builder[grainType].ToDetailedString()}\nTrying to add: {result.ToDetailedString()}"
+                        + $"\nExisting: {propertiesMap[grainType].ToDetailedString()}\nTrying to add: {result.ToDetailedString()}"
                         + "\nConsider using the [GrainType(\"name\")] attribute to give these classes unique names.");
                 }
 
-                builder.Add(grainType, result);
+                propertiesMap.Add(grainType, result);
+                typeMap.Add(grainType, grainClass);
             }
 
-            return builder.ToImmutable();
+            return (propertiesMap.ToImmutable(), typeMap.ToImmutable());
         }
     }
 }

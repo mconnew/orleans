@@ -49,14 +49,18 @@ namespace Orleans.Runtime.GrainDirectory
 
         private IGrainDirectory GetGrainDirectoryPerType(GrainType grainType)
         {
-            IGrainDirectory directory;
+            return this.DefaultGrainDirectory;
+        }
+
+        internal bool TryGetNonDefaultGrainDirectory(GrainType grainType, out IGrainDirectory directory)
+        {
             this.grainPropertiesResolver.TryGetGrainProperties(grainType, out var properties);
 
             foreach (var resolver in this.resolvers)
             {
                 if (resolver.TryResolveGrainDirectory(grainType, properties, out directory))
                 {
-                    return directory;
+                    return true;
                 }
             }
 
@@ -66,7 +70,7 @@ namespace Orleans.Runtime.GrainDirectory
             {
                 if (this.directoryPerName.TryGetValue(directoryName, out directory))
                 {
-                    return directory;
+                    return true;
                 }
                 else
                 {
@@ -74,7 +78,8 @@ namespace Orleans.Runtime.GrainDirectory
                 }
             }
 
-            return this.DefaultGrainDirectory;
+            directory = null;
+            return false;
         }
     }
 }

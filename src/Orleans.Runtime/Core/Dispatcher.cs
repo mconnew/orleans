@@ -408,10 +408,10 @@ namespace Orleans.Runtime
                     return;
                 }
 
-                if (targetActivation.GrainId.IsLegacyGrain() && message.IsUsingInterfaceVersions)
+                if (message.InterfaceVersion)
                 {
                     var request = (InvokeMethodRequest)message.BodyObject;
-                    var compatibilityDirector = compatibilityDirectorManager.GetDirector(request.InterfaceId);
+                    var compatibilityDirector = compatibilityDirectorManager.GetDirector(message.InterfaceId);
                     var currentVersion = this.grainTypeManager.GetLocalSupportedVersion(request.InterfaceId);
                     if (!compatibilityDirector.IsCompatible(request.InterfaceVersion, currentVersion))
                     {
@@ -727,7 +727,7 @@ namespace Orleans.Runtime
             var targetAddress = message.TargetAddress;
             if (targetAddress.IsComplete) return Task.CompletedTask;
 
-            var request = message.IsUsingInterfaceVersions
+            var request = message.InterfaceVersion
                 ? message.BodyObject as InvokeMethodRequest
                 : null;
             var target = new PlacementTarget(

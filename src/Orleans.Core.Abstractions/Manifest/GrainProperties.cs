@@ -74,6 +74,16 @@ namespace Orleans.Metadata
         /// Prefix for keys which indicate <see cref="GrainInterfaceId"/> of interfaces which a grain class implements.
         /// </summary>
         public const string ImplementedInterfacePrefix = "interface.";
+
+        /// <summary>
+        /// The period after which an idle grain will be deactivated.
+        /// </summary>
+        public const string IdleDeactivationPeriod = "idle-duration";
+
+        /// <summary>
+        /// The value for <see cref="IdleDeactivationPeriod"/> used to specify that the grain should not be deactivated due to idleness.
+        /// </summary>
+        public const string IndefiniteIdleDeactivationPeriodValue = "indefinite";
     }
 
     /// <summary>

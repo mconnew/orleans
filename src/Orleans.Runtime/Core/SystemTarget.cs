@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Orleans.CodeGeneration;
@@ -88,6 +89,12 @@ namespace Orleans.Runtime
         public bool IsLowPriority { get; }
 
         internal WorkItemGroup WorkItemGroup { get; set; }
+
+        IServiceProvider IGrainContext.ActivationServices => null;
+
+        IDictionary<object, object> IGrainContext.Items => throw new NotImplementedException("IGrainContext.Items is not implemented by SystemTarget");
+
+        IGrainLifecycle IGrainContext.ObservableLifecycle => throw new NotImplementedException("IGrainContext.ObservableLifecycle is not implemented by SystemTarget");
 
         IGrainMethodInvoker IInvokable.GetInvoker(GrainTypeManager typeManager, int interfaceId, string genericGrainType)
         {

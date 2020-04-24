@@ -36,8 +36,8 @@ namespace Orleans.Transactions.TestKit
 
     public class FaultInjectionTransactionalStateFactory : IFaultInjectionTransactionalStateFactory
     {
-        private IGrainActivationContext context;
-        public FaultInjectionTransactionalStateFactory(IGrainActivationContext context)
+        private IGrainContext context;
+        public FaultInjectionTransactionalStateFactory(IGrainContext context)
         {
             this.context = context;
         }
@@ -55,7 +55,7 @@ namespace Orleans.Transactions.TestKit
     {
         private static readonly MethodInfo create =
             typeof(IFaultInjectionTransactionalStateFactory).GetMethod("Create");
-        public Factory<IGrainActivationContext, object> GetFactory(ParameterInfo parameter, FaultInjectionTransactionalStateAttribute attribute)
+        public Factory<IGrainContext, object> GetFactory(ParameterInfo parameter, FaultInjectionTransactionalStateAttribute attribute)
         {
             IFaultInjectionTransactionalStateConfiguration config = attribute;
             // use generic type args to define collection type.
@@ -64,7 +64,7 @@ namespace Orleans.Transactions.TestKit
             return context => Create(context, genericCreate, args);
         }
 
-        private object Create(IGrainActivationContext context, MethodInfo genericCreate, object[] args)
+        private object Create(IGrainContext context, MethodInfo genericCreate, object[] args)
         {
             IFaultInjectionTransactionalStateFactory factory = context.ActivationServices.GetRequiredService<IFaultInjectionTransactionalStateFactory>();
             return genericCreate.Invoke(factory, args);

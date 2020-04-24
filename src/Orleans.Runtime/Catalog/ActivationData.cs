@@ -20,21 +20,16 @@ namespace Orleans.Runtime
     /// MUST lock this object for any concurrent access
     /// Consider: compartmentalize by usage, e.g., using separate interfaces for data for catalog, etc.
     /// </summary>
-    internal class ActivationData : IGrainActivationContext, IActivationData, IInvokable, IDisposable
+    internal class ActivationData : IActivationData, IInvokable, IAsyncDisposable
     {
-        internal class GrainActivationContextFactory
-        {
-            public IGrainActivationContext Context { get; set; }
-        }
-
         // This is the maximum amount of time we expect a request to continue processing
         private readonly TimeSpan maxRequestProcessingTime;
         private readonly TimeSpan maxWarningRequestProcessingTime;
         private readonly SiloMessagingOptions messagingOptions;
-        public readonly TimeSpan CollectionAgeLimit;
         private readonly ILogger logger;
+        private readonly IServiceScope serviceScope;
+        public readonly TimeSpan CollectionAgeLimit;
         private IGrainMethodInvoker lastInvoker;
-        private IServiceScope serviceScope;
         private HashSet<IGrainTimer> timers;
         
         public ActivationData(
@@ -47,7 +42,9 @@ namespace Orleans.Runtime
             TimeSpan maxWarningRequestProcessingTime,
 			TimeSpan maxRequestProcessingTime,
             IRuntimeClient runtimeClient,
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory,
+            IServiceProvider applicationServices,
+            IGrainRuntime grainRuntime)
         {
             if (null == addr) throw new ArgumentNullException(nameof(addr));
             if (null == placedUsing) throw new ArgumentNullException(nameof(placedUsing));
@@ -62,17 +59,20 @@ namespace Orleans.Runtime
             Address = addr;
             State = ActivationState.Create;
             PlacedUsing = placedUsing;
-            if (!GrainId.IsSystemTarget())
+            if (!this.GrainId.IsSystemTarget())
             {
                 this.collector = collector;
             }
 
             CollectionAgeLimit = ageLimit;
 
-            GrainReference = GrainReference.FromGrainId(addr.Grain, runtimeClient.GrainReferenceRuntime, genericArguments);
+            this.GrainReference = GrainReference.FromGrainId(addr.Grain, runtimeClient.GrainReferenceRuntime, genericArguments);
+            this.Items = new Dictionary<object, object>();
+            this.serviceScope = applicationServices.CreateScope();
+            this.Runtime = grainRuntime;
         }
 
-        public Type GrainType => GrainTypeData.Type;
+        public IGrainRuntime Runtime { get; }
 
         public IServiceProvider ActivationServices => this.serviceScope.ServiceProvider;
 
@@ -110,38 +110,9 @@ namespace Orleans.Runtime
 
         public HashSet<ActivationId> RunningRequestsSenders { get; } = new HashSet<ActivationId>();
 
-        internal Type GrainInstanceType => GrainTypeData?.Type;
-
         internal void SetGrainInstance(Grain grainInstance)
         {
             GrainInstance = grainInstance;
-        }
-
-        internal void SetupContext(GrainTypeData typeData, IServiceProvider grainServices)
-        {
-            this.GrainTypeData = typeData;
-            this.Items = new Dictionary<object, object>();
-            this.serviceScope = grainServices.CreateScope();
-
-            SetGrainActivationContextInScopedServices(this.ActivationServices, this);
-
-            if (typeData != null)
-            {
-                var grainType = typeData.Type;
-
-                // Don't ever collect system grains or reminder table grain or memory store grains.
-                bool doNotCollect = typeof(IReminderTableGrain).IsAssignableFrom(grainType) || typeof(IMemoryStorageGrain).IsAssignableFrom(grainType);
-                if (doNotCollect)
-                {
-                    this.collector = null;
-                }
-            }
-        }
-
-        private static void SetGrainActivationContextInScopedServices(IServiceProvider sp, IGrainActivationContext context)
-        {
-            var contextFactory = sp.GetRequiredService<GrainActivationContextFactory>();
-            contextFactory.Context = context;
         }
         
         private Streams.StreamDirectory streamDirectory;
@@ -169,11 +140,7 @@ namespace Orleans.Runtime
             await streamDirectory.Cleanup(true, false);
         }
 
-        public GrainTypeData GrainTypeData { get; private set; }
-
-        public Grain GrainInstance { get; private set; }
-
-        IAddressable IGrainContext.GrainInstance => this.GrainInstance;
+        public IAddressable GrainInstance { get; private set; }
 
         public ActivationId ActivationId { get { return Address.Activation; } }
 
@@ -626,7 +593,7 @@ namespace Orleans.Runtime
 
         public void OnTimerDisposed(IGrainTimer orleansTimerInsideGrain)
         {
-            lock (this) // need to lock since dispose can be called on finalizer thread, outside garin context (not single threaded).
+            lock (this) // need to lock since dispose can be called on finalizer thread, outside grain context (not single threaded).
             {
                 timers.Remove(orleansTimerInsideGrain);
             }
@@ -675,7 +642,7 @@ namespace Orleans.Runtime
         {
             return String.Format("[Activation: {0}{1}{2}{3} State={4}]",
                  Silo,
-                 GrainId,
+                 this.GrainId,
                  this.ActivationId,
                  GetActivationInfoString(),
                  State);
@@ -685,9 +652,9 @@ namespace Orleans.Runtime
         {
             return
                 String.Format(
-                    "[Activation: {0}{1}{2}{3} State={4} NonReentrancyQueueSize={5} EnqueuedOnDispatcher={6} InFlightCount={7} NumRunning={8} IdlenessTimeSpan={9} CollectionAgeLimit={10}{11}]",
+                    "[Activation: {0}{1}{2} {3} State={4} NonReentrancyQueueSize={5} EnqueuedOnDispatcher={6} InFlightCount={7} NumRunning={8} IdlenessTimeSpan={9} CollectionAgeLimit={10}{11}]",
                     Silo.ToLongString(),
-                    GrainId.ToString(),
+                    this.GrainId.ToString(),
                     this.ActivationId,
                     GetActivationInfoString(),
                     State,                          // 4
@@ -706,7 +673,7 @@ namespace Orleans.Runtime
             {
                 return String.Format("[Activation: {0}{1}{2}{3}]",
                      Silo,
-                     GrainId,
+                     this.GrainId,
                      this.ActivationId,
                      GetActivationInfoString());
             }
@@ -725,15 +692,30 @@ namespace Orleans.Runtime
         private string GetActivationInfoString()
         {
             var placement = PlacedUsing != null ? PlacedUsing.GetType().Name : String.Empty;
-            return GrainInstanceType == null ? placement :
-                String.Format(" #GrainType={0} Placement={1}", GrainInstanceType.FullName, placement);
+            return GrainInstance is null ? placement : $"#GrainType={GrainInstance.GetType().FullName} Placement={placement}";
         }
 
-        public void Dispose()
+        public async ValueTask DisposeAsync()
         {
-            IDisposable disposable = serviceScope;
-            if (disposable != null) disposable.Dispose();
-            this.serviceScope = null;
+            switch (this.GrainInstance)
+            {
+                case IAsyncDisposable asyncDisposable:
+                    await asyncDisposable.DisposeAsync();
+                    break;
+                case IDisposable disposable:
+                    disposable.Dispose();
+                    break;
+            }
+
+            switch (this.serviceScope)
+            {
+                case IAsyncDisposable asyncDisposable:
+                    await asyncDisposable.DisposeAsync();
+                    break;
+                case IDisposable disposable:
+                    disposable.Dispose();
+                    break;
+            }
         }
 
         bool IEquatable<IGrainContext>.Equals(IGrainContext other) => ReferenceEquals(this, other);

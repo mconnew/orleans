@@ -30,8 +30,7 @@ namespace UnitTests.General
             {
                 public void Configure(ISiloBuilder hostBuilder)
                 {
-                    hostBuilder.ConfigureServices(services =>
-                        services.Replace(ServiceDescriptor.Singleton(typeof(IGrainActivator), typeof(HardcodedGrainActivator))));
+                    hostBuilder.ConfigureServices(services => services.AddSingleton<IGrainActivator, HardcodedGrainActivator>());
                 }
             }
         }
@@ -68,35 +67,16 @@ namespace UnitTests.General
             Assert.Equal(initialReleasedInstances + 1, finalReleasedInstances);
         }
 
-        private class HardcodedGrainActivator : DefaultGrainActivator, IGrainActivator
+        private class HardcodedGrainActivator : IGrainActivator
         {
             public const string HardcodedValue = "Hardcoded Test Value";
-            private int numberOfReleasedInstances;
+            
+            public bool CanCreate(GrainType grainType) => true;
 
-            public HardcodedGrainActivator(IServiceProvider service) : base(service)
+            public IGrainContext CreateContext(ActivationAddress activationAddress)
             {
-            }
-
-            public override object Create(IGrainActivationContext context)
-            {
-                if (context.GrainType == typeof(ExplicitlyRegisteredSimpleDIGrain))
-                {
-                    return new ExplicitlyRegisteredSimpleDIGrain(new InjectedService(NullLoggerFactory.Instance), HardcodedValue, numberOfReleasedInstances);
-                }
-
-                return base.Create(context);
-            }
-
-            public override void Release(IGrainActivationContext context, object grain)
-            {
-                if (context.GrainType == typeof(ExplicitlyRegisteredSimpleDIGrain))
-                {
-                    numberOfReleasedInstances++;
-                }
-                else
-                {
-                    base.Release(context, grain);
-                }
+                var result = new ExplicitlyRegisteredSimpleDIGrain(new InjectedService(NullLoggerFactory.Instance), HardcodedValue, 0);
+                throw new NotImplementedException("FIX THIS FIX THIS FIX THIS");
             }
         }
     }

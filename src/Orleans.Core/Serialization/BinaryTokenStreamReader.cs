@@ -33,6 +33,12 @@ namespace Orleans.Serialization
             return new GrainId(new GrainType(type), key);
         }
 
+        internal static GrainInterfaceId ReadGrainInterfaceId<TReader>(this TReader @this) where TReader : IBinaryTokenStreamReader
+        {
+            var id = @this.ReadIdSpan();
+            return new GrainInterfaceId(id);
+        }
+
         /// <summary> Read an <c>ActivationId</c> value from the stream. </summary>
         /// <returns>Data from current position in stream, converted to the appropriate output type.</returns>
         internal static ActivationId ReadActivationId<TReader>(this TReader @this) where TReader : IBinaryTokenStreamReader

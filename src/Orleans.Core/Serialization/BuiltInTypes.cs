@@ -1912,7 +1912,7 @@ namespace Orleans.Serialization
         }
 
         [ThreadStatic]
-        static private TypeConverter uriConverter;
+        static private System.ComponentModel.TypeConverter uriConverter;
 
         internal static void SerializeUri(object obj, ISerializationContext context, Type expected)
         {

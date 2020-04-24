@@ -9,13 +9,13 @@ namespace Orleans.Transactions
 
     internal static class ContextResourceFactoryExtensions
     {
-        public static void RegisterResourceFactory<T>(this IGrainActivationContext context, string name, Func<T> factory)
+        public static void RegisterResourceFactory<T>(this IGrainContext context, string name, Func<T> factory)
         {
             ResourceFactoryRegistry<T> registry = context.GetResourceFactoryRegistry<T>(true);
             registry[name] = factory;
         }
 
-        public static ResourceFactoryRegistry<T> GetResourceFactoryRegistry<T>(this IGrainActivationContext context, bool createIfNotExists = false)
+        public static ResourceFactoryRegistry<T> GetResourceFactoryRegistry<T>(this IGrainContext context, bool createIfNotExists = false)
         {
             string resourceFactoryRegistryName = ResourceFactoryRegistryName<T>();
             ResourceFactoryRegistry<T> result = (context.Items.TryGetValue(resourceFactoryRegistryName, out object resourceFactoryRegistryObj))

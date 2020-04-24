@@ -250,12 +250,21 @@ namespace Orleans.Runtime
             }
         }
 
-        public bool IsUsingInterfaceVersions
+        public ushort InterfaceVersion
         {
-            get { return Headers.IsUsingIfaceVersion; }
+            get { return Headers.InterfaceVersion; }
             set
             {
-                Headers.IsUsingIfaceVersion = value;
+                Headers.InterfaceVersion = value;
+            }
+        }
+
+        public GrainInterfaceId InterfaceId
+        {
+            get { return Headers.InterfaceId; }
+            set
+            {
+                Headers.InterfaceId = value;
             }
         }
 
@@ -572,7 +581,7 @@ namespace Orleans.Runtime
                 IS_UNORDERED = 1 << 23,
                 REQUEST_CONTEXT = 1 << 24,
                 IS_RETURNED_FROM_REMOTE_CLUSTER = 1 << 25,
-                IS_USING_INTERFACE_VERSION = 1 << 26,
+                INTERFACE_VERSION = 1 << 26,
 
                 // transactions
                 TRANSACTION_INFO = 1 << 27,
@@ -580,7 +589,9 @@ namespace Orleans.Runtime
 
                 CALL_CHAIN_ID = 1 << 29,
 
-                TRACE_CONTEXT = 1 << 30
+                TRACE_CONTEXT = 1 << 30,
+
+                INTERFACE_ID = 1 << 31
                 // Do not add over int.MaxValue of these.
             }
 
@@ -601,7 +612,7 @@ namespace Orleans.Runtime
             private GrainId _sendingGrain;
             private ActivationId _sendingActivation;
             private bool _isNewPlacement;
-            private bool _isUsingIfaceVersion;
+            private ushort _interfaceVersion;
             private ResponseTypes _result;
             private ITransactionInfo _transactionInfo;
             private TimeSpan? _timeToLive;
@@ -613,7 +624,8 @@ namespace Orleans.Runtime
             private Dictionary<string, object> _requestContextData;
             private CorrelationId _callChainId;
             private readonly DateTime _localCreationTime;
-            private TraceContext traceContext;
+            private TraceContext _traceContext;
+            private GrainInterfaceId _interfaceId;
 
             public HeadersContainer()
             {
@@ -622,8 +634,8 @@ namespace Orleans.Runtime
 
             public TraceContext TraceContext
             {
-                get { return traceContext; }
-                set { traceContext = value; }
+                get { return _traceContext; }
+                set { _traceContext = value; }
             }
 
             public Categories Category
@@ -779,12 +791,12 @@ namespace Orleans.Runtime
                 }
             }
 
-            public bool IsUsingIfaceVersion
+            public ushort InterfaceVersion
             {
-                get { return _isUsingIfaceVersion; }
+                get { return _interfaceVersion; }
                 set
                 {
-                    _isUsingIfaceVersion = value;
+                    _interfaceVersion = value;
                 }
             }
 
@@ -888,6 +900,15 @@ namespace Orleans.Runtime
                 }
             }
 
+            public GrainInterfaceId InterfaceId
+            {
+                get { return _interfaceId; }
+                set
+                {
+                    _interfaceId = value;
+                }
+            }
+
             internal Headers GetHeadersMask()
             {
                 Headers headers = Headers.NONE;
@@ -916,7 +937,7 @@ namespace Orleans.Runtime
                 headers = _sendingActivation is null ? headers & ~Headers.SENDING_ACTIVATION : headers | Headers.SENDING_ACTIVATION;
                 headers = _isNewPlacement == default(bool) ? headers & ~Headers.IS_NEW_PLACEMENT : headers | Headers.IS_NEW_PLACEMENT;
                 headers = _isReturnedFromRemoteCluster == default(bool) ? headers & ~Headers.IS_RETURNED_FROM_REMOTE_CLUSTER : headers | Headers.IS_RETURNED_FROM_REMOTE_CLUSTER;
-                headers = _isUsingIfaceVersion == default(bool) ? headers & ~Headers.IS_USING_INTERFACE_VERSION : headers | Headers.IS_USING_INTERFACE_VERSION;
+                headers = _interfaceVersion != 0 ? headers & ~Headers.INTERFACE_VERSION : headers | Headers.INTERFACE_VERSION;
                 headers = _result == default(ResponseTypes)? headers & ~Headers.RESULT : headers | Headers.RESULT;
                 headers = _timeToLive == null ? headers & ~Headers.TIME_TO_LIVE : headers | Headers.TIME_TO_LIVE;
                 headers = _cacheInvalidationHeader == null || _cacheInvalidationHeader.Count == 0 ? headers & ~Headers.CACHE_INVALIDATION_HEADER : headers | Headers.CACHE_INVALIDATION_HEADER;
@@ -926,9 +947,10 @@ namespace Orleans.Runtime
                 headers = string.IsNullOrEmpty(_rejectionInfo) ? headers & ~Headers.REJECTION_INFO : headers | Headers.REJECTION_INFO;
                 headers = _requestContextData == null || _requestContextData.Count == 0 ? headers & ~Headers.REQUEST_CONTEXT : headers | Headers.REQUEST_CONTEXT;
                 headers = _callChainId == null ? headers & ~Headers.CALL_CHAIN_ID : headers | Headers.CALL_CHAIN_ID;
-                headers = traceContext == null? headers & ~Headers.TRACE_CONTEXT : headers | Headers.TRACE_CONTEXT;
+                headers = _traceContext == null? headers & ~Headers.TRACE_CONTEXT : headers | Headers.TRACE_CONTEXT;
                 headers = IsTransactionRequired ? headers | Headers.IS_TRANSACTION_REQUIRED : headers & ~Headers.IS_TRANSACTION_REQUIRED;
                 headers = _transactionInfo == null ? headers & ~Headers.TRANSACTION_INFO : headers | Headers.TRANSACTION_INFO;
+                headers = _interfaceId.IsDefault ? headers & ~Headers.INTERFACE_ID : headers | Headers.INTERFACE_ID;
                 return headers;
             }
 
@@ -985,8 +1007,8 @@ namespace Orleans.Runtime
                 if ((headers & Headers.IS_RETURNED_FROM_REMOTE_CLUSTER) != Headers.NONE)
                     writer.Write(input.IsReturnedFromRemoteCluster);
 
-                // Nothing to do with Headers.IS_USING_INTERFACE_VERSION since the value in
-                // the header is sufficient
+                if ((headers & Headers.INTERFACE_VERSION) != Headers.NONE)
+                    writer.Write(input.InterfaceVersion);
 
                 if ((headers & Headers.READ_ONLY) != Headers.NONE)
                     writer.Write(input.IsReadOnly);
@@ -1063,7 +1085,12 @@ namespace Orleans.Runtime
 
                 if ((headers & Headers.TRACE_CONTEXT) != Headers.NONE)
                 {
-                    SerializationManager.SerializeInner(input.traceContext, context, typeof(TraceContext));
+                    SerializationManager.SerializeInner(input._traceContext, context, typeof(TraceContext));
+                }
+
+                if ((headers & Headers.INTERFACE_ID) != Headers.NONE)
+                {
+                    writer.Write(input._interfaceId);
                 }
             }
 
@@ -1119,8 +1146,8 @@ namespace Orleans.Runtime
                 if ((headers & Headers.IS_RETURNED_FROM_REMOTE_CLUSTER) != Headers.NONE)
                     result.IsReturnedFromRemoteCluster = ReadBool(reader);
 
-                if ((headers & Headers.IS_USING_INTERFACE_VERSION) != Headers.NONE)
-                    result.IsUsingIfaceVersion = true;
+                if ((headers & Headers.INTERFACE_VERSION) != Headers.NONE)
+                    result.InterfaceVersion = reader.ReadUShort();
 
                 if ((headers & Headers.READ_ONLY) != Headers.NONE)
                     result.IsReadOnly = ReadBool(reader);
@@ -1185,6 +1212,9 @@ namespace Orleans.Runtime
 
                 if ((headers & Headers.TRACE_CONTEXT) != Headers.NONE)
                     result.TraceContext = SerializationManager.DeserializeInner<TraceContext>(context);
+
+                if ((headers & Headers.INTERFACE_ID) != Headers.NONE)
+                    result.InterfaceId = reader.ReadGrainInterfaceId();
 
                 return result;
             }

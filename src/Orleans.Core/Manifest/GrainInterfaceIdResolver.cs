@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Orleans.Utilities;
+using Orleans.Runtime;
 
 namespace Orleans.Metadata
 {
@@ -10,15 +10,18 @@ namespace Orleans.Metadata
     /// </summary>
     public class GrainInterfaceIdResolver
     {
-        private readonly IGrainInterfaceIdProvider[] providers;
+        private readonly IGrainInterfaceIdProvider[] _providers;
+        private readonly TypeConverter _typeConverter;
 
         /// <summary>
         /// Creates a <see cref="GrainInterfaceIdResolver"/> instance.
         /// </summary>
-        /// <param name="providers"></param>
-        public GrainInterfaceIdResolver(IEnumerable<IGrainInterfaceIdProvider> providers)
+        public GrainInterfaceIdResolver(
+            IEnumerable<IGrainInterfaceIdProvider> providers,
+            TypeConverter typeConverter)
         {
-            this.providers = providers.ToArray();
+            _providers = providers.ToArray();
+            _typeConverter = typeConverter;
         }
 
         /// <summary>
@@ -39,10 +42,11 @@ namespace Orleans.Metadata
             }
 
             // Configured providers take precedence
-            foreach (var provider in this.providers)
+            foreach (var provider in this._providers)
             {
                 if (provider.TryGetGrainInterfaceId(type, out var interfaceId))
                 {
+                    interfaceId = AddGenericParameters(interfaceId, type);
                     return interfaceId;
                 }
             }
@@ -51,6 +55,20 @@ namespace Orleans.Metadata
             return GetGrainInterfaceIdByConvention(type);
         }
 
-        public static GrainInterfaceId GetGrainInterfaceIdByConvention(Type type) => GrainInterfaceId.Create(RuntimeTypeNameFormatter.Format(type));
+        public GrainInterfaceId GetGrainInterfaceIdByConvention(Type type)
+        {
+            var result = GrainInterfaceId.Create(_typeConverter.Format(type));
+            return result;
+        }
+
+        private GrainInterfaceId AddGenericParameters(GrainInterfaceId result, Type type)
+        {
+            if (GenericGrainInterfaceId.TryParse(result, out var genericGrainType) && type.IsConstructedGenericType && !genericGrainType.IsConstructed)
+            {
+                result = genericGrainType.Construct(_typeConverter, type.GetGenericArguments()).Value;
+            }
+
+            return result;
+        }
     }
 }

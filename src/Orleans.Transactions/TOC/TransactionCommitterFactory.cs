@@ -7,9 +7,9 @@ namespace Orleans.Transactions
 {
     public class TransactionCommitterFactory : ITransactionCommitterFactory
     {
-        private IGrainActivationContext context;
+        private IGrainContext context;
 
-        public TransactionCommitterFactory(IGrainActivationContext context)
+        public TransactionCommitterFactory(IGrainContext context)
         {
             this.context = context;
         }

@@ -38,7 +38,7 @@ namespace Orleans.Transactions.AzureStorage
             this.loggerFactory = loggerFactory;
         }
 
-        public ITransactionalStateStorage<TState> Create<TState>(string stateName, IGrainActivationContext context) where TState : class, new()
+        public ITransactionalStateStorage<TState> Create<TState>(string stateName, IGrainContext context) where TState : class, new()
         {
             string partitionKey = MakePartitionKey(context, stateName);
             return ActivatorUtilities.CreateInstance<AzureTableTransactionalStateStorage<TState>>(context.ActivationServices, this.table, partitionKey, this.jsonSettings);
@@ -49,9 +49,9 @@ namespace Orleans.Transactions.AzureStorage
             lifecycle.Subscribe(OptionFormattingUtilities.Name<AzureTableTransactionalStateStorageFactory>(this.name), this.options.InitStage, Init);
         }
 
-        private string MakePartitionKey(IGrainActivationContext context, string stateName)
+        private string MakePartitionKey(IGrainContext context, string stateName)
         {
-            string grainKey = context.GrainInstance.GrainReference.ToShortKeyString();
+            string grainKey = context.GrainReference.ToShortKeyString();
             var key = $"{grainKey}_{this.clusterOptions.ServiceId}_{stateName}";
             return AzureTableUtils.SanitizeTableProperty(key);
         }
