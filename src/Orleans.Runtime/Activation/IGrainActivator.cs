@@ -2,11 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Orleans.ApplicationParts;
-using Orleans.Configuration;
-using Orleans.Metadata;
 
 namespace Orleans.Runtime
 {

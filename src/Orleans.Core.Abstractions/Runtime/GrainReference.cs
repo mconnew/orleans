@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using Orleans.CodeGeneration;
@@ -7,12 +8,14 @@ using Orleans.Serialization;
 
 namespace Orleans.Runtime
 {
-    public abstract class InvokeMethodRequestGrainReference : GrainReference
+    public abstract class ImrGrainReference : GrainReference
     {
+        protected ImrGrainReference(GrainReferenceShared prototype, IdSpan key) : base(prototype, key) { }
+
         /// <summary>
         /// Implemented by generated subclasses to return a constant.
         /// </summary>
-        public virtual int InterfaceId
+        public virtual int InterfaceTypeCode
         {
             get
             {
@@ -44,12 +47,34 @@ namespace Orleans.Runtime
         /// </summary>
         protected Task<T> InvokeMethodAsync<T>(int methodId, object[] arguments, InvokeMethodOptions options = InvokeMethodOptions.None, SiloAddress silo = null)
         {
+            if (arguments != null)
+            {
+                CheckForGrainArguments(arguments);
+                SetGrainCancellationTokensTarget(arguments, reference);
+                this.serializationManager.DeepCopyElementsInPlace(arguments);
+            }
+
             return this.Runtime.InvokeMethodAsync<T>(this, methodId, arguments, options, silo);
         }
     }
 
-    internal class GrainReferenceBase
+    /// <summary>
+    /// Properties common to <see cref="GrainReference"/> instances with the same <see cref="Orleans.Runtime.GrainType"/> and <see cref="GrainInterfaceId"/>.
+    /// </summary>
+    public class GrainReferenceShared
     {
+        public GrainReferenceShared(
+            GrainType graintype,
+            GrainInterfaceId grainInterfaceId,
+            IGrainReferenceRuntime runtime)
+        {
+            this.GrainType = graintype;
+            this.InterfaceId = grainInterfaceId;
+            this.Runtime = runtime;
+        }
+
+        public IGrainReferenceRuntime Runtime { get; }
+
         public GrainType GrainType { get; }
 
         public GrainInterfaceId InterfaceId { get; }
@@ -58,68 +83,50 @@ namespace Orleans.Runtime
     /// <summary>
     /// This is the base class for all typed grain references.
     /// </summary>
-    [Serializable]
-    public class GrainReference : IAddressable, IEquatable<GrainReference>, ISerializable
+    public class GrainReference : IAddressable, IEquatable<GrainReference>
     {
-        internal IGrainReferenceRuntime Runtime => this.runtime ?? throw new GrainReferenceNotBoundException(this);
+        [NonSerialized]
+        private GrainReferenceShared _shared;
+
+        [NonSerialized]
+        private IdSpan _key;
+
+        internal GrainReferenceShared Shared => _shared ?? throw new GrainReferenceNotBoundException(this);
+
+        internal IGrainReferenceRuntime Runtime => Shared.Runtime;
 
         /// <summary>
         /// Gets a value indicating whether this instance is bound to a runtime and hence valid for making requests.
         /// </summary>
-        internal bool IsBound => this.runtime != null;
+        internal bool IsBound => _shared is object;
 
-        public GrainId GrainId { get; }
+        public GrainId GrainId => GrainId.Create(_shared.GrainType, _key);
 
-        public GrainInterfaceId InterfaceId { get; }
-
-        /// <summary>
-        /// Called from generated code.
-        /// </summary>
-        protected internal readonly SiloAddress SystemTargetSilo;
-
-        [NonSerialized]
-        private IGrainReferenceRuntime runtime;
+        public GrainInterfaceId InterfaceId => _shared.InterfaceId;
 
         /// <summary>Constructs a reference to the grain with the specified Id.</summary>
-        /// <param name="grainId">The Id of the grain to refer to.</param>
-        /// <param name="interfaceId">The interface which this grain reference represents.</param>
-        /// <param name="runtime">The runtime which this grain reference is bound to.</param>
-        private GrainReference(GrainId grainId, GrainInterfaceId interfaceId, IGrainReferenceRuntime runtime)
+        protected GrainReference(GrainReferenceShared shared, IdSpan key)
         {
-            GrainId = grainId;
-            InterfaceId = interfaceId;
-            this.runtime = runtime;
-        }
-
-        /// <summary>
-        /// Constructs a copy of a grain reference.
-        /// </summary>
-        /// <param name="other">The reference to copy.</param>
-        protected GrainReference(GrainReference other) : this(other.GrainId, other.InterfaceId, other.runtime)
-        {
+            _shared = shared;
+            _key = key;
         }
 
         /// <summary>Constructs a reference to the grain with the specified ID.</summary>
-        /// <param name="grainId">The ID of the grain to refer to.</param>
-        /// <param name="runtime">The runtime client</param>
-        /// <param name="genericArguments">Type arguments in case of a generic grain.</param>
-        internal static GrainReference FromGrainId(GrainId grainId, IGrainReferenceRuntime runtime, string genericArguments = null)
+        internal static GrainReference FromGrainId(GrainReferenceShared shared, GrainId grainId)
         {
-            return new GrainReference(grainId, genericArguments, runtime);
+            // TODO: delete this constructor.
+            return new GrainReference(shared, grainId.Key);
         }
 
-        internal static GrainReference NewObserverGrainReference(ObserverGrainId observerId, GrainInterfaceId interfaceId, IGrainReferenceRuntime runtime)
+        internal static GrainReference NewObserverGrainReference(GrainReferenceShared prototype, ObserverGrainId observerId)
         {
-            return new GrainReference(observerId.GrainId, interfaceId, runtime);
+            // TODO: delete this constructor
+            return new GrainReference(prototype, observerId.GrainId.Key);
         }
 
-        /// <summary>
-        /// Binds this instance to a runtime.
-        /// </summary>
-        /// <param name="runtime">The runtime.</param>
-        internal void Bind(IGrainReferenceRuntime runtime)
+        public virtual T Cast<T>() where T : IAddressable
         {
-            this.runtime = runtime;
+            throw new NotImplementedException("Should be implemented by a subclass");
         }
 
         /// <summary>
@@ -190,76 +197,7 @@ namespace Orleans.Runtime
         /// </summary>
         public virtual string InterfaceName => InterfaceId.ToStringUtf8();
 
-        private const string GRAIN_REFERENCE_STR = "GrainReference";
-
         /// <summary>Returns a string representation of this reference.</summary>
-        public override string ToString()
-        {
-            return $"{GRAIN_REFERENCE_STR}:{GrainId}{(!HasGenericArgument ? String.Empty : String.Format("<{0}>", genericArguments))}"; 
-        }
-
-        /// <summary> Get the key value for this grain, as a string. </summary>
-        public string ToKeyString() => GrainId.ToString();
-
-        internal static GrainReference FromKeyString(string key, IGrainReferenceRuntime runtime)
-        {
-            if (string.IsNullOrWhiteSpace(key)) throw new ArgumentNullException(nameof(key), "GrainReference.FromKeyString cannot parse null key");
-
-            return FromGrainId(GrainId.Parse(key), runtime);
-        }
-
-        internal static GrainReference FromKeyInfo(GrainReferenceKeyInfo keyInfo, IGrainReferenceRuntime runtime)
-        {
-            if (keyInfo.HasGenericArgument)
-            {
-                return FromGrainId(LegacyGrainId.FromKeyInfo(keyInfo.Key), runtime, keyInfo.GenericArgument);
-            }
-            else if (keyInfo.HasTargetSilo)
-            {
-                // TODO: Incorporate SiloAddress into GrainId - perhaps shift to a legacy/compat library
-                _ = SiloAddress.New(keyInfo.TargetSilo.endpoint, keyInfo.TargetSilo.generation);
-                return FromGrainId(LegacyGrainId.FromKeyInfo(keyInfo.Key), runtime, null);
-            }
-            else
-            {
-                return FromGrainId(LegacyGrainId.FromKeyInfo(keyInfo.Key), runtime);
-            }
-        }
-
-
-        public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
-        {
-            // Use the AddValue method to specify serialized values.
-            info.AddValue("GrainId", GrainId, typeof(GrainId));
-            if (IsSystemTarget)
-            {
-                info.AddValue("SystemTargetSilo", SystemTargetSilo.ToParsableString(), typeof(string));
-            }
-            string genericArg = String.Empty;
-            if (HasGenericArgument)
-                genericArg = genericArguments;
-            info.AddValue("GenericArguments", genericArg, typeof(string));
-        }
-
-        // The special constructor is used to deserialize values. 
-        protected GrainReference(SerializationInfo info, StreamingContext context)
-        {
-            // Reset the property value using the GetValue method.
-            GrainId = (GrainId)info.GetValue("GrainId", typeof(GrainId));
-
-            if (IsSystemTarget)
-            {
-                var siloAddressStr = info.GetString("SystemTargetSilo");
-                SystemTargetSilo = SiloAddress.FromParsableString(siloAddressStr);
-            }
-
-            var genericArg = info.GetString("GenericArguments");
-            if (String.IsNullOrEmpty(genericArg))
-                genericArg = null;
-            genericArguments = genericArg;
-
-            var serializerContext = context.Context as ISerializerContext;
-            this.runtime = serializerContext?.ServiceProvider.GetService(typeof(IGrainReferenceRuntime)) as IGrainReferenceRuntime;
-        }
+        public override string ToString() => $"GrainReference:{GrainId}:{InterfaceId}";
     }
 }
