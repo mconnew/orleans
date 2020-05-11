@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Orleans.CodeGeneration;
 using Orleans.GrainReferences;
+using Orleans.Metadata;
 using Orleans.Runtime;
 using Orleans.Serialization;
 
@@ -31,16 +32,19 @@ namespace Orleans
         /// </summary>
         private readonly TypeMetadataCache typeCache;
         private readonly GrainReferenceActivator referenceActivator;
+        private readonly GrainInterfaceIdResolver interfaceIdResolver;
         private readonly IRuntimeClient runtimeClient;
 
         public GrainFactory(
             IRuntimeClient runtimeClient,
             TypeMetadataCache typeCache,
-            GrainReferenceActivator referenceActivator)
+            GrainReferenceActivator referenceActivator,
+            GrainInterfaceIdResolver interfaceIdResolver)
         {
             this.runtimeClient = runtimeClient;
             this.typeCache = typeCache;
             this.referenceActivator = referenceActivator;
+            this.interfaceIdResolver = interfaceIdResolver;
         }
 
         private GrainReferenceRuntime GrainReferenceRuntime => this.grainReferenceRuntime ??= (GrainReferenceRuntime)this.runtimeClient.GrainReferenceRuntime;
@@ -268,7 +272,11 @@ namespace Orleans
             return implementation.GetTypeCode(interfaceType);
         }
 
-        private object CreateGrainReference(Type interfaceType, GrainId grainId) => GrainReferenceRuntime.GrainReferenceFactory.CreateGrainReference(interfaceType, grainId);
+        private object CreateGrainReference(Type interfaceType, GrainId grainId)
+        {
+            var interfaceId = this.interfaceIdResolver.GetGrainInterfaceId(interfaceType);
+            return this.referenceActivator.CreateReference(grainId, interfaceId);
+        }
 
         private object CreateObjectReference(Type interfaceType, IAddressable obj)
         {

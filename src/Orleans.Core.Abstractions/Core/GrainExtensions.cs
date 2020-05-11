@@ -73,11 +73,10 @@ namespace Orleans
         /// <returns>A reference to <paramref name="grain"/> which implements <paramref name="interfaceType"/>.</returns>
         public static object Cast(this IAddressable grain, Type interfaceType)
         {
-
             return grain.AsWeaklyTypedReference().Runtime.Convert(grain, interfaceType);
         }
 
-        internal static GrainId GetGrainId(IAddressable grain)
+        public static GrainId GetGrainId(this IAddressable grain)
         {
             switch (grain)
             {
@@ -94,32 +93,7 @@ namespace Orleans
                     }
                     return grainReference.GrainId;
                 case ISystemTargetBase systemTarget:
-                    if (systemTarget.GrainId.IsDefault)
-                    {
-                        throw new ArgumentException(WRONG_GRAIN_ERROR_MSG, "grain");
-                    }
                     return systemTarget.GrainId;
-                default:
-                    throw new ArgumentException(String.Format("GetGrainId has been called on an unexpected type: {0}.", grain.GetType().FullName), "grain");
-            }
-        }
-
-        public static GrainId GetGrainIdentity(this IGrain grain)
-        {
-            switch (grain)
-            {
-                case Grain grainBase:
-                    if (grainBase.GrainId.IsDefault)
-                    {
-                        throw new ArgumentException(WRONG_GRAIN_ERROR_MSG, "grain");
-                    }
-                    return grainBase.GrainId;
-                case GrainReference grainReference:
-                    if (grainReference.GrainId.IsDefault)
-                    {
-                        throw new ArgumentException(WRONG_GRAIN_ERROR_MSG, "grain");
-                    }
-                    return grainReference.GrainId;
                 default:
                     throw new ArgumentException(String.Format("GetGrainIdentity has been called on an unexpected type: {0}.", grain.GetType().FullName), "grain");
             }

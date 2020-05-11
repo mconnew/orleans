@@ -136,8 +136,7 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("Serialization"), TestCategory("JSON")]
         public async Task GrainReference_Json_Serialization_Nested()
         {
-            var typeResolver = this.HostedCluster.Client.ServiceProvider.GetRequiredService<ITypeResolver>();
-            var settings = OrleansJsonSerializer.GetDefaultSerializerSettings(typeResolver, HostedCluster.GrainFactory);
+            var settings = OrleansJsonSerializer.GetDefaultSerializerSettings(this.HostedCluster.Client.ServiceProvider);
             
             var grain = HostedCluster.GrainFactory.GetGrain<ISimpleGrain>(GetRandomGrainId());
             await grain.SetA(56820);
@@ -237,8 +236,7 @@ namespace DefaultCluster.Tests.General
 
         private T NewtonsoftJsonSerializeRoundtrip<T>(T obj)
         {
-            var typeResolver = this.HostedCluster.Client.ServiceProvider.GetRequiredService<ITypeResolver>();
-            var settings = OrleansJsonSerializer.GetDefaultSerializerSettings(typeResolver, this.GrainFactory);
+            var settings = OrleansJsonSerializer.GetDefaultSerializerSettings(this.HostedCluster.Client.ServiceProvider);
             // http://james.newtonking.com/json/help/index.html?topic=html/T_Newtonsoft_Json_JsonConvert.htm
             string json = JsonConvert.SerializeObject(obj, settings);
             object other = JsonConvert.DeserializeObject(json, typeof(T), settings);

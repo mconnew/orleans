@@ -1,5 +1,7 @@
 using Orleans.CodeGeneration;
+using Orleans.GrainReferences;
 using Orleans.Internal;
+using Orleans.Metadata;
 using Orleans.Serialization;
 using System;
 using System.Collections.Generic;
@@ -12,6 +14,8 @@ namespace Orleans.Runtime
     {
         private readonly Func<GrainReference, InvokeMethodRequest, InvokeMethodOptions, Task<object>> sendRequestDelegate;
         private readonly SerializationManager serializationManager;
+        private readonly GrainReferenceActivator referenceActivator;
+        private readonly GrainInterfaceIdResolver interfaceIdResolver;
         private readonly IGrainCancellationTokenRuntime cancellationTokenRuntime;
         private readonly IOutgoingGrainCallFilter[] filters;
         private readonly InterfaceToImplementationMappingCache grainReferenceMethodCache;
@@ -21,20 +25,21 @@ namespace Orleans.Runtime
             IGrainCancellationTokenRuntime cancellationTokenRuntime,
             SerializationManager serializationManager,
             IEnumerable<IOutgoingGrainCallFilter> outgoingCallFilters,
-            TypeMetadataCache typeMetadataCache)
+            TypeMetadataCache typeMetadataCache,
+            GrainReferenceActivator referenceActivator,
+            GrainInterfaceIdResolver interfaceIdResolver)
         {
             this.grainReferenceMethodCache = new InterfaceToImplementationMappingCache();
             this.sendRequestDelegate = SendRequest;
             this.RuntimeClient = runtimeClient;
             this.cancellationTokenRuntime = cancellationTokenRuntime;
-            this.GrainReferenceFactory = new GrainReferenceFactory(typeMetadataCache, this);
             this.serializationManager = serializationManager;
+            this.referenceActivator = referenceActivator;
+            this.interfaceIdResolver = interfaceIdResolver;
             this.filters = outgoingCallFilters.ToArray();
         }
 
         public IRuntimeClient RuntimeClient { get; private set; }
-
-        public GrainReferenceFactory GrainReferenceFactory { get; }
 
         /// <inheritdoc />
         public void InvokeOneWayMethod(GrainReference reference, int methodId, object[] arguments, InvokeMethodOptions options, SiloAddress silo)
@@ -79,11 +84,14 @@ namespace Orleans.Runtime
             return resultTask.ToTypedTask<T>();
         }
 
-        public TGrainInterface Convert<TGrainInterface>(IAddressable grain)
-            => (TGrainInterface)this.GrainReferenceFactory.Cast(grain, typeof(TGrainInterface));
+        public TGrainInterface Convert<TGrainInterface>(IAddressable grain) => (TGrainInterface)this.Convert(grain, typeof(TGrainInterface));
 
         public object Convert(IAddressable grain, Type interfaceType)
-            => this.GrainReferenceFactory.Cast(grain, interfaceType);
+        {
+            var grainId = grain.GetGrainId();
+            var interfaceId = this.interfaceIdResolver.GetGrainInterfaceId(interfaceType);
+            return this.referenceActivator.CreateReference(grainId, interfaceId);
+        }
 
         private Task<object> InvokeMethod_Impl(GrainReference reference, InvokeMethodRequest request, InvokeMethodOptions options)
         {
