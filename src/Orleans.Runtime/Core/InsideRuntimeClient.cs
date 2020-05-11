@@ -20,6 +20,7 @@ using Microsoft.Extensions.Options;
 using System.Threading;
 using Orleans.Configuration;
 using Orleans.GrainReferences;
+using Orleans.Metadata;
 
 namespace Orleans.Runtime
 {
@@ -70,7 +71,8 @@ namespace Orleans.Runtime
             IOptions<SchedulingOptions> schedulerOptions,
             ApplicationRequestsStatisticsGroup appRequestStatistics,
             MessagingTrace messagingTrace,
-            GrainReferenceActivator referenceActivator)
+            GrainReferenceActivator referenceActivator,
+            GrainInterfaceIdResolver interfaceIdResolver)
         {
             this.ServiceProvider = serviceProvider;
             this.MySilo = siloDetails.SiloAddress;
@@ -80,7 +82,7 @@ namespace Orleans.Runtime
             this.messageFactory = messageFactory;
             this.transactionAgent = transactionAgent;
             this.Scheduler = scheduler;
-            this.ConcreteGrainFactory = new GrainFactory(this, typeMetadataCache, referenceActivator);
+            this.ConcreteGrainFactory = new GrainFactory(this, typeMetadataCache, referenceActivator, interfaceIdResolver);
             this.logger = loggerFactory.CreateLogger<InsideRuntimeClient>();
             this.invokeExceptionLogger = loggerFactory.CreateLogger($"{typeof(Grain).FullName}.InvokeException");
             this.loggerFactory = loggerFactory;

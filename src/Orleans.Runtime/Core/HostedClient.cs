@@ -81,7 +81,7 @@ namespace Orleans.Runtime
             if (obj is GrainReference) throw new ArgumentException("Argument obj is already a grain reference.");
 
             var observerId = ObserverGrainId.Create(this.ClientId);
-            var grainReference = GrainReference.NewObserverGrainReference(observerId, this.grainReferenceRuntime);
+            var grainReference = this.grainFactory.GetGrain(observerId.GrainId);
             if (!this.invokableObjects.TryRegister(obj, observerId, invoker))
             {
                 throw new ArgumentException(

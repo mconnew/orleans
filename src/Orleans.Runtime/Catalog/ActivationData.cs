@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Orleans.CodeGeneration;
 using Orleans.Configuration;
+using Orleans.GrainReferences;
 using Orleans.Runtime.Configuration;
 using Orleans.Runtime.Scheduler;
 using Orleans.Storage;
@@ -24,6 +25,7 @@ namespace Orleans.Runtime
     {
         // This is the maximum amount of time we expect a request to continue processing
         private readonly TimeSpan maxRequestProcessingTime;
+        private readonly GrainReferenceActivator referenceActivator;
         private readonly TimeSpan maxWarningRequestProcessingTime;
         private readonly SiloMessagingOptions messagingOptions;
         private readonly ILogger logger;
@@ -44,7 +46,8 @@ namespace Orleans.Runtime
             IRuntimeClient runtimeClient,
             ILoggerFactory loggerFactory,
             IServiceProvider applicationServices,
-            IGrainRuntime grainRuntime)
+            IGrainRuntime grainRuntime,
+            GrainReferenceActivator referenceActivator)
         {
             if (null == addr) throw new ArgumentNullException(nameof(addr));
             if (null == placedUsing) throw new ArgumentNullException(nameof(placedUsing));
@@ -55,6 +58,7 @@ namespace Orleans.Runtime
             this.maxRequestProcessingTime = maxRequestProcessingTime;
             this.maxWarningRequestProcessingTime = maxWarningRequestProcessingTime;
             this.messagingOptions = messagingOptions.Value;
+            this.referenceActivator = referenceActivator;
             ResetKeepAliveRequest();
             Address = addr;
             State = ActivationState.Create;
@@ -66,7 +70,7 @@ namespace Orleans.Runtime
 
             CollectionAgeLimit = ageLimit;
 
-            this.GrainReference = GrainReference.FromGrainId(addr.Grain, runtimeClient.GrainReferenceRuntime, genericArguments);
+            this.GrainReference = referenceActivator.CreateReference(addr.Grain, default);
             this.Items = new Dictionary<object, object>();
             this.serviceScope = applicationServices.CreateScope();
             this.Runtime = grainRuntime;
