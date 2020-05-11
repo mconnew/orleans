@@ -56,7 +56,7 @@ namespace Orleans.Runtime
                 // Get or create the implementation map for this object.
                 var implementationMap = mapping.GetOrCreate(
                     implementationType,
-                    request.InterfaceId);
+                    request.InterfaceTypeCode);
 
                 // Get the method info for the method being invoked.
                 implementationMap.TryGetValue(request.MethodId, out var method);

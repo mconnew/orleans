@@ -15,6 +15,7 @@ using Microsoft.Extensions.Options;
 using Orleans.ApplicationParts;
 using Orleans.CodeGeneration;
 using Orleans.Configuration;
+using Orleans.GrainReferences;
 using Orleans.Metadata;
 using Orleans.Runtime;
 using Orleans.Utilities;
@@ -425,29 +426,18 @@ namespace Orleans.Serialization
                 return;
             }
 
+            var serializer = this.serviceProvider.GetRequiredService<GrainReferenceSerializer>();
+
             var defaultCtorDelegate = CreateGrainRefConstructorDelegate(type, null);
 
             // Register GrainReference serialization methods.
             Register(
                 type,
-                GrainReferenceSerializer.CopyGrainReference,
-                GrainReferenceSerializer.SerializeGrainReference,
+                serializer.CopyGrainReference,
+                serializer.SerializeGrainReference,
                 (expected, context) =>
                 {
-                    Func<GrainReference, GrainReference> ctorDelegate;
-                    var deserialized = (GrainReference)GrainReferenceSerializer.DeserializeGrainReference(expected, context);
-                    if (expected.IsConstructedGenericType == false)
-                    {
-                        return defaultCtorDelegate(deserialized);
-                    }
-
-                    if (!grainRefConstructorDictionary.TryGetValue(expected, out ctorDelegate))
-                    {
-                        ctorDelegate = CreateGrainRefConstructorDelegate(type, expected.GenericTypeArguments);
-                        grainRefConstructorDictionary.TryAdd(expected, ctorDelegate);
-                    }
-
-                    return ctorDelegate(deserialized);
+                   return serializer.DeserializeGrainReference(expected, context);
                 });
         }
 

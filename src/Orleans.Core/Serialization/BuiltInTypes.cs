@@ -2069,7 +2069,7 @@ namespace Orleans.Serialization
         {
             var request = (InvokeMethodRequest)obj;
 
-            context.StreamWriter.Write(request.InterfaceId);
+            context.StreamWriter.Write(request.InterfaceTypeCode);
             context.StreamWriter.Write(request.InterfaceVersion);
             context.StreamWriter.Write(request.MethodId);
             context.StreamWriter.Write(request.Arguments != null ? request.Arguments.Length : 0);
@@ -2118,7 +2118,7 @@ namespace Orleans.Serialization
                 }
             }
 
-            var result = new InvokeMethodRequest(request.InterfaceId, request.InterfaceVersion, request.MethodId, args);
+            var result = new InvokeMethodRequest(request.InterfaceTypeCode, request.InterfaceVersion, request.MethodId, args);
             context.RecordCopy(original, result);
             return result;
         }

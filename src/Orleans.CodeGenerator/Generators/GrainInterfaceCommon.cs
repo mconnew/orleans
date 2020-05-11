@@ -87,7 +87,7 @@ namespace Orleans.CodeGenerator.Generators
 
         public static PropertyDeclarationSyntax GenerateInterfaceIdProperty(WellKnownTypes wellKnownTypes, GrainInterfaceDescription description)
         {
-            var property = wellKnownTypes.IGrainMethodInvoker.Property("InterfaceId");
+            var property = wellKnownTypes.IGrainMethodInvoker.Property("InterfaceTypeCode");
             var returnValue = description.InterfaceId.ToHexLiteral();
             return
                 PropertyDeclaration(wellKnownTypes.Int32.ToTypeSyntax(), property.Name)

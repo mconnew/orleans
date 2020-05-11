@@ -189,9 +189,9 @@ namespace Orleans.CodeGenerator
                 SF.LocalDeclarationStatement(
                     SF.VariableDeclaration(typeof(int).GetTypeSyntax())
                         .AddVariables(
-                            SF.VariableDeclarator("interfaceId")
-                                .WithInitializer(SF.EqualsValueClause(requestArgument.Member((InvokeMethodRequest _) => _.InterfaceId)))));
-            var interfaceIdVariable = SF.IdentifierName("interfaceId");
+                            SF.VariableDeclarator("interfaceTypeCode")
+                                .WithInitializer(SF.EqualsValueClause(requestArgument.Member((InvokeMethodRequest _) => _.InterfaceTypeCode)))));
+            var interfaceIdVariable = SF.IdentifierName("interfaceTypeCode");
 
             var methodIdDeclaration =
                 SF.LocalDeclarationStatement(
@@ -221,7 +221,7 @@ namespace Orleans.CodeGenerator
             // Generate the default case, which will throw a NotImplementedException.
             var errorMessage = SF.BinaryExpression(
                 SyntaxKind.AddExpression,
-                "interfaceId=".GetLiteralExpression(),
+                "interfaceTypeCode=".GetLiteralExpression(),
                 interfaceIdVariable);
             var throwStatement =
                 SF.ThrowStatement(

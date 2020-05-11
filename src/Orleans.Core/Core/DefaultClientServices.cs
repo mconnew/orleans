@@ -50,7 +50,6 @@ namespace Orleans
             services.TryAddSingleton<IGrainCancellationTokenRuntime, GrainCancellationTokenRuntime>();
             services.TryAddFromExisting<IGrainFactory, GrainFactory>();
             services.TryAddFromExisting<IInternalGrainFactory, GrainFactory>();
-            services.TryAddFromExisting<IGrainReferenceConverter, GrainFactory>();
             services.TryAddSingleton<ClientProviderRuntime>();
             services.TryAddSingleton<MessageFactory>();
             services.TryAddFromExisting<IStreamProviderRuntime, ClientProviderRuntime>();

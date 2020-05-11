@@ -42,6 +42,7 @@ using Microsoft.AspNetCore.Connections;
 using Orleans.Networking.Shared;
 using Orleans.Configuration.Internal;
 using Orleans.Runtime.Metadata;
+using Orleans.GrainReferences;
 
 namespace Orleans.Hosting
 {
@@ -111,7 +112,6 @@ namespace Orleans.Hosting
             services.TryAddSingleton<GrainFactory>(sp => sp.GetService<InsideRuntimeClient>().ConcreteGrainFactory);
             services.TryAddFromExisting<IGrainFactory, GrainFactory>();
             services.TryAddFromExisting<IInternalGrainFactory, GrainFactory>();
-            services.TryAddFromExisting<IGrainReferenceConverter, GrainFactory>();
             services.TryAddSingleton<IGrainReferenceRuntime, GrainReferenceRuntime>();
             services.TryAddSingleton<TypeMetadataCache>();
             services.TryAddSingleton<ActivationDirectory>();

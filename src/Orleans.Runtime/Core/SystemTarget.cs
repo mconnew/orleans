@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Orleans.CodeGeneration;
+using Orleans.GrainReferences;
 using Orleans.Runtime.Scheduler;
 
 namespace Orleans.Runtime
@@ -51,7 +53,7 @@ namespace Orleans.Runtime
 
         IGrainReferenceRuntime ISystemTargetBase.GrainReferenceRuntime => this.RuntimeClient.GrainReferenceRuntime;
 
-        GrainReference IGrainContext.GrainReference => selfReference ??= GrainReference.FromGrainId(this.id.GrainId, this.RuntimeClient.GrainReferenceRuntime);
+        public GrainReference GrainReference => selfReference ??= this.RuntimeClient.ServiceProvider.GetRequiredService<GrainReferenceActivator>().CreateReference(this.id.GrainId, default);
 
         GrainId IGrainContext.GrainId => this.id.GrainId;
 

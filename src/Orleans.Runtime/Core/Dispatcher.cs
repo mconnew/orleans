@@ -408,12 +408,12 @@ namespace Orleans.Runtime
                     return;
                 }
 
-                if (message.InterfaceVersion)
+                if (message.InterfaceVersion > 0)
                 {
                     var request = (InvokeMethodRequest)message.BodyObject;
                     var compatibilityDirector = compatibilityDirectorManager.GetDirector(message.InterfaceId);
-                    var currentVersion = this.grainTypeManager.GetLocalSupportedVersion(request.InterfaceId);
-                    if (!compatibilityDirector.IsCompatible(request.InterfaceVersion, currentVersion))
+                    var currentVersion = this.grainTypeManager.GetLocalSupportedVersion(request.InterfaceTypeCode);
+                    if (!compatibilityDirector.IsCompatible(message.InterfaceVersion, currentVersion))
                     {
                         catalog.DeactivateActivationOnIdle(targetActivation);
                         ProcessRequestToInvalidActivation(
@@ -727,14 +727,11 @@ namespace Orleans.Runtime
             var targetAddress = message.TargetAddress;
             if (targetAddress.IsComplete) return Task.CompletedTask;
 
-            var request = message.InterfaceVersion
-                ? message.BodyObject as InvokeMethodRequest
-                : null;
             var target = new PlacementTarget(
                 message.TargetGrain,
                 message.RequestContextData,
-                request?.InterfaceId ?? 0,
-                request?.InterfaceVersion ?? 0);
+                message.InterfaceId,
+                message.InterfaceVersion);
 
             var placementTask = placementService.GetOrPlaceActivation(target, this.catalog);
 

@@ -74,12 +74,6 @@ namespace Orleans
         Task DeleteObjectReference<TGrainObserverInterface>(IGrainObserver obj) where TGrainObserverInterface : IGrainObserver;
 
         /// <summary>
-        /// Binds the provided grain reference to this instance.
-        /// </summary>
-        /// <param name="grain">The grain reference.</param>
-        void BindGrainReference(IAddressable grain);
-
-        /// <summary>
         /// A GetGrain overload that returns the runtime type of the grain interface and returns the grain cast to
         /// TGrainInterface.
         /// 

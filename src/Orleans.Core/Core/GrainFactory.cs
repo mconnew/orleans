@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Orleans.CodeGeneration;
+using Orleans.GrainReferences;
 using Orleans.Runtime;
 using Orleans.Serialization;
 
@@ -11,7 +12,7 @@ namespace Orleans
     /// <summary>
     /// Factory for accessing grains.
     /// </summary>
-    internal class GrainFactory : IInternalGrainFactory, IGrainReferenceConverter
+    internal class GrainFactory : IInternalGrainFactory
     {
         private GrainReferenceRuntime grainReferenceRuntime;
 
@@ -23,21 +24,23 @@ namespace Orleans
         /// <summary>
         /// The cache of typed system target references.
         /// </summary>
-        private readonly Dictionary<Tuple<GrainId, Type>, ISystemTarget> typedSystemTargetReferenceCache = new Dictionary<Tuple<GrainId, Type>, ISystemTarget>();
+        private readonly Dictionary<(GrainId, Type), ISystemTarget> typedSystemTargetReferenceCache = new Dictionary<(GrainId, Type), ISystemTarget>();
 
         /// <summary>
         /// The cache of type metadata.
         /// </summary>
         private readonly TypeMetadataCache typeCache;
-
+        private readonly GrainReferenceActivator referenceActivator;
         private readonly IRuntimeClient runtimeClient;
 
         public GrainFactory(
             IRuntimeClient runtimeClient,
-            TypeMetadataCache typeCache)
+            TypeMetadataCache typeCache,
+            GrainReferenceActivator referenceActivator)
         {
             this.runtimeClient = runtimeClient;
             this.typeCache = typeCache;
+            this.referenceActivator = referenceActivator;
         }
 
         private GrainReferenceRuntime GrainReferenceRuntime => this.grainReferenceRuntime ??= (GrainReferenceRuntime)this.runtimeClient.GrainReferenceRuntime;
@@ -78,21 +81,6 @@ namespace Orleans
 
             return (TGrainInterface)CreateGrainReference(typeof(TGrainInterface), GetGrainId(typeof(TGrainInterface), primaryKey, keyExtension: keyExtension, grainClassNamePrefix: grainClassNamePrefix));
         }
-
-        /// <inheritdoc />
-        public void BindGrainReference(IAddressable grain)
-        {
-            if (grain == null) throw new ArgumentNullException(nameof(grain));
-            var reference = grain as GrainReference;
-            if (reference == null) throw new ArgumentException("Provided grain must be a GrainReference.", nameof(grain));
-            reference.Bind(this.GrainReferenceRuntime);
-        }
-
-        /// <inheritdoc />
-        public GrainReference GetGrainFromKeyString(string key) => GrainReference.FromKeyString(key, this.GrainReferenceRuntime);
-
-        /// <inheritdoc />
-        public GrainReference GetGrainFromKeyInfo(GrainReferenceKeyInfo keyInfo) => GrainReference.FromKeyInfo(keyInfo, this.GrainReferenceRuntime);
 
         /// <inheritdoc />
         public Task<TGrainObserverInterface> CreateObjectReference<TGrainObserverInterface>(IGrainObserver obj)
@@ -155,7 +143,7 @@ namespace Orleans
             where TGrainInterface : ISystemTarget
         {
             ISystemTarget reference;
-            Tuple<GrainId, Type> key = Tuple.Create(grainId, typeof(TGrainInterface));
+            ValueTuple<GrainId, Type> key = ValueTuple.Create(grainId, typeof(TGrainInterface));
 
             lock (this.typedSystemTargetReferenceCache)
             {
@@ -164,7 +152,7 @@ namespace Orleans
                     return (TGrainInterface)reference;
                 }
 
-                reference = this.Cast<TGrainInterface>(GrainReference.FromGrainId(grainId, this.GrainReferenceRuntime, null));
+                reference = this.GetGrain<TGrainInterface>(grainId);
                 this.typedSystemTargetReferenceCache[key] = reference;
                 return (TGrainInterface)reference;
             }
@@ -177,7 +165,7 @@ namespace Orleans
         }
 
         /// <inheritdoc />
-        public GrainReference GetGrain(GrainId grainId, string genericArguments) => GrainReference.FromGrainId(grainId, this.GrainReferenceRuntime, genericArguments);
+        public GrainReference GetGrain(GrainId grainId) => this.referenceActivator.CreateReference(grainId, default);
 
         /// <inheritdoc />
         public TGrainInterface GetGrain<TGrainInterface>(Type grainInterfaceType, Guid grainPrimaryKey)

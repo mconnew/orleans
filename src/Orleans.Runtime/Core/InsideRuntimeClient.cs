@@ -19,6 +19,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Threading;
 using Orleans.Configuration;
+using Orleans.GrainReferences;
 
 namespace Orleans.Runtime
 {
@@ -68,7 +69,8 @@ namespace Orleans.Runtime
             IGrainCancellationTokenRuntime cancellationTokenRuntime,
             IOptions<SchedulingOptions> schedulerOptions,
             ApplicationRequestsStatisticsGroup appRequestStatistics,
-            MessagingTrace messagingTrace)
+            MessagingTrace messagingTrace,
+            GrainReferenceActivator referenceActivator)
         {
             this.ServiceProvider = serviceProvider;
             this.MySilo = siloDetails.SiloAddress;
@@ -78,7 +80,7 @@ namespace Orleans.Runtime
             this.messageFactory = messageFactory;
             this.transactionAgent = transactionAgent;
             this.Scheduler = scheduler;
-            this.ConcreteGrainFactory = new GrainFactory(this, typeMetadataCache);
+            this.ConcreteGrainFactory = new GrainFactory(this, typeMetadataCache, referenceActivator);
             this.logger = loggerFactory.CreateLogger<InsideRuntimeClient>();
             this.invokeExceptionLogger = loggerFactory.CreateLogger($"{typeof(Grain).FullName}.InvokeException");
             this.loggerFactory = loggerFactory;
@@ -131,16 +133,13 @@ namespace Orleans.Runtime
             GrainReference target,
             InvokeMethodRequest request,
             TaskCompletionSource<object> context,
-            InvokeMethodOptions options,
-            string genericArguments)
+            InvokeMethodOptions options)
         {
             var message = this.messageFactory.CreateMessage(request, options);
 
             // fill in sender
             if (message.SendingSilo == null)
                 message.SendingSilo = MySilo;
-            if (!String.IsNullOrEmpty(genericArguments))
-                message.GenericGrainType = genericArguments;
 
             IGrainContext sendingActivation = RuntimeContext.CurrentGrainContext;
 
@@ -160,10 +159,9 @@ namespace Orleans.Runtime
             var targetGrainId = target.GrainId;
             message.TargetGrain = targetGrainId;
             SharedCallbackData sharedData;
-            if (targetGrainId.IsSystemTarget())
+            if (SystemTargetGrainId.TryParse(targetGrainId, out var systemTargetGrainId))
             {
-                SiloAddress targetSilo = (target.SystemTargetSilo ?? MySilo);
-                message.TargetSilo = targetSilo;
+                message.TargetSilo = systemTargetGrainId.GetSiloAddress();
                 message.TargetActivation = ActivationId.GetDeterministic(targetGrainId);
                 message.Category = targetGrainId.Type.Equals(Constants.MembershipOracleType) ?
                     Message.Categories.Ping : Message.Categories.System;
@@ -315,11 +313,11 @@ namespace Orleans.Runtime
                         CancellationSourcesExtension.RegisterCancellationTokens(target, request, this.loggerFactory, logger, this, this.cancellationTokenRuntime);
                     }
 
-                    var invoker = invokable.GetInvoker(typeManager, request.InterfaceId, message.GenericGrainType);
+                    var invoker = invokable.GetInvoker(typeManager, request.InterfaceTypeCode, message.GenericGrainType);
 
                     if (invoker is IGrainExtensionMethodInvoker &&
                         !(target is IGrainExtension) &&
-                        !TryInstallExtension(request.InterfaceId, invokable, message.GenericGrainType, ref invoker))
+                        !TryInstallExtension(request.InterfaceTypeCode, invokable, message.GenericGrainType, ref invoker))
                     {
                         // We are trying the invoke a grain extension method on a grain 
                         // -- most likely reason is that the dynamic extension is not installed for this grain

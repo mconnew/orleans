@@ -108,12 +108,6 @@ namespace Orleans.Runtime
         }
 
         /// <inheritdoc />
-        public void BindGrainReference(IAddressable grain)
-        {
-            this.grainFactory.BindGrainReference(grain);
-        }
-
-        /// <inheritdoc />
         public TGrainObserverInterface CreateObjectReference<TGrainObserverInterface>(IAddressable obj)
             where TGrainObserverInterface : IAddressable
         {
@@ -151,9 +145,9 @@ namespace Orleans.Runtime
         }
 
         /// <inheritdoc />
-        GrainReference IInternalGrainFactory.GetGrain(GrainId grainId, string genericArguments)
+        GrainReference IInternalGrainFactory.GetGrain(GrainId grainId)
         {
-            return this.grainFactory.GetGrain(grainId, genericArguments);
+            return this.grainFactory.GetGrain(grainId);
         }
 
         /// <inheritdoc />

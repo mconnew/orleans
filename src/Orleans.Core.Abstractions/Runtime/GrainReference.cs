@@ -8,56 +8,6 @@ using Orleans.Serialization;
 
 namespace Orleans.Runtime
 {
-    public abstract class ImrGrainReference : GrainReference
-    {
-        protected ImrGrainReference(GrainReferenceShared prototype, IdSpan key) : base(prototype, key) { }
-
-        /// <summary>
-        /// Implemented by generated subclasses to return a constant.
-        /// </summary>
-        public virtual int InterfaceTypeCode
-        {
-            get
-            {
-                throw new InvalidOperationException("Should be overridden by subclass");
-            }
-        }
-
-        /// <summary>
-        /// Return the method name associated with the specified interfaceId and methodId values.
-        /// </summary>
-        /// <param name="interfaceId">Interface Id</param>
-        /// <param name="methodId">Method Id</param>
-        /// <returns>Method name string.</returns>
-        public virtual string GetMethodName(int interfaceId, int methodId)
-        {
-            throw new InvalidOperationException("Should be overridden by subclass");
-        }
-
-        /// <summary>
-        /// Called from generated code.
-        /// </summary>
-        protected void InvokeOneWayMethod(int methodId, object[] arguments, InvokeMethodOptions options = InvokeMethodOptions.None, SiloAddress silo = null)
-        {
-            this.Runtime.InvokeOneWayMethod(this, methodId, arguments, options, silo);
-        }
-
-        /// <summary>
-        /// Called from generated code.
-        /// </summary>
-        protected Task<T> InvokeMethodAsync<T>(int methodId, object[] arguments, InvokeMethodOptions options = InvokeMethodOptions.None, SiloAddress silo = null)
-        {
-            if (arguments != null)
-            {
-                CheckForGrainArguments(arguments);
-                SetGrainCancellationTokensTarget(arguments, reference);
-                this.serializationManager.DeepCopyElementsInPlace(arguments);
-            }
-
-            return this.Runtime.InvokeMethodAsync<T>(this, methodId, arguments, options, silo);
-        }
-    }
-
     /// <summary>
     /// Properties common to <see cref="GrainReference"/> instances with the same <see cref="Orleans.Runtime.GrainType"/> and <see cref="GrainInterfaceId"/>.
     /// </summary>
@@ -181,6 +131,28 @@ namespace Orleans.Runtime
         }
 
         /// <summary>
+        /// Implemented by generated subclasses to return a constant.
+        /// </summary>
+        public virtual int InterfaceTypeCode
+        {
+            get
+            {
+                throw new InvalidOperationException("Should be overridden by subclass");
+            }
+        }
+
+        /// <summary>
+        /// Return the method name associated with the specified interfaceId and methodId values.
+        /// </summary>
+        /// <param name="interfaceId">Interface Id</param>
+        /// <param name="methodId">Method Id</param>
+        /// <returns>Method name string.</returns>
+        public virtual string GetMethodName(int interfaceId, int methodId)
+        {
+            throw new InvalidOperationException("Should be overridden by subclass");
+        }
+
+        /// <summary>
         /// Implemented in generated code.
         /// </summary>
         public virtual ushort InterfaceVersion
@@ -199,5 +171,21 @@ namespace Orleans.Runtime
 
         /// <summary>Returns a string representation of this reference.</summary>
         public override string ToString() => $"GrainReference:{GrainId}:{InterfaceId}";
+
+        /// <summary>
+        /// Called from generated code.
+        /// </summary>
+        protected void InvokeOneWayMethod(int methodId, object[] arguments, InvokeMethodOptions options = InvokeMethodOptions.None, SiloAddress silo = null)
+        {
+            this.Runtime.InvokeOneWayMethod(this, methodId, arguments, options, silo);
+        }
+
+        /// <summary>
+        /// Called from generated code.
+        /// </summary>
+        protected Task<T> InvokeMethodAsync<T>(int methodId, object[] arguments, InvokeMethodOptions options = InvokeMethodOptions.None, SiloAddress silo = null)
+        {
+            return this.Runtime.InvokeMethodAsync<T>(this, methodId, arguments, options, silo);
+        }
     }
 }

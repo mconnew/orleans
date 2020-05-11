@@ -253,7 +253,7 @@ namespace Orleans
                         String.Format(
                             "Exception during invocation of notification method {0}, interface {1}. Ignoring exception because this is a one way request.",
                             request.MethodId,
-                            request.InterfaceId),
+                            request.InterfaceTypeCode),
                         exception);
                     break;
                 }

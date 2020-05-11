@@ -122,15 +122,6 @@ namespace DefaultCluster.Tests
         }
 
         [Fact, TestCategory("BVT"), TestCategory("Cast")]
-        public void CastCheckExpectedCompatIds()
-        {
-            Type t = typeof(ISimpleGrain);
-            int expectedInterfaceId = GrainInterfaceUtils.GetGrainInterfaceId(t);
-            GrainReference grain = (GrainReference)this.GrainFactory.GetGrain<ISimpleGrain>(random.Next(), SimpleGrain.SimpleGrainNamePrefix);
-            Assert.True(grain.IsCompatible(expectedInterfaceId));
-        }
-
-        [Fact, TestCategory("BVT"), TestCategory("Cast")]
         public void CastCheckExpectedCompatIds2()
         {
             // GeneratorTestDerivedDerivedGrainReference extends GeneratorTestDerivedGrain2Reference
@@ -142,9 +133,6 @@ namespace DefaultCluster.Tests
             int id2 = GrainInterfaceUtils.GetGrainInterfaceId(t2);
             int id3 = GrainInterfaceUtils.GetGrainInterfaceId(t3);
             GrainReference grain = (GrainReference) this.GrainFactory.GetGrain<IGeneratorTestDerivedDerivedGrain>(GetRandomGrainId());
-            Assert.True(grain.IsCompatible(id1));
-            Assert.True(grain.IsCompatible(id2));
-            Assert.True(grain.IsCompatible(id3));
         }
 
         [Fact, TestCategory("BVT"), TestCategory("Cast")]

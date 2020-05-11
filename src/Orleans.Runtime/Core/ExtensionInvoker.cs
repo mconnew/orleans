@@ -90,9 +90,9 @@ namespace Orleans.Runtime
         /// <returns></returns>
         public Task<object> Invoke(IAddressable grain, InvokeMethodRequest request)
         {
-            if (extensionMap == null || !extensionMap.TryGetValue(request.InterfaceId, out var value))
+            if (extensionMap == null || !extensionMap.TryGetValue(request.InterfaceTypeCode, out var value))
                 throw new InvalidOperationException(
-                    String.Format("Extension invoker invoked with an unknown interface ID:{0}.", request.InterfaceId));
+                    String.Format("Extension invoker invoked with an unknown interface ID:{0}.", request.InterfaceTypeCode));
 
             var invoker = value.Item2;
             var extension = value.Item1;

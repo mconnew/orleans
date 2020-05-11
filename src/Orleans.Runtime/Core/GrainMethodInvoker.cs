@@ -118,7 +118,7 @@ namespace Orleans.Runtime
         {
             // Determine if the object being invoked is a grain or a grain extension.
             Type implementationType;
-            if (this.rootInvoker is IGrainExtensionMap extensionMap && extensionMap.TryGetExtension(request.InterfaceId, out var extension))
+            if (this.rootInvoker is IGrainExtensionMap extensionMap && extensionMap.TryGetExtension(request.InterfaceTypeCode, out var extension))
             {
                 implementationType = extension.GetType();
             }
@@ -130,7 +130,7 @@ namespace Orleans.Runtime
             // Get or create the implementation map for this object.
             var implementationMap = interfaceToImplementationMapping.GetOrCreate(
                 implementationType,
-                request.InterfaceId);
+                request.InterfaceTypeCode);
 
             // Get the method info for the method being invoked.
             implementationMap.TryGetValue(request.MethodId, out var method);

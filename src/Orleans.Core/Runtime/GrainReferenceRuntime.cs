@@ -56,7 +56,7 @@ namespace Orleans.Runtime
                 this.serializationManager.DeepCopyElementsInPlace(arguments);
             }
 
-            var request = new InvokeMethodRequest(reference.InterfaceId, reference.InterfaceVersion, methodId, arguments);
+            var request = new InvokeMethodRequest(reference.InterfaceTypeCode, methodId, arguments);
 
             if (IsUnordered(reference))
                 options |= InvokeMethodOptions.Unordered;
@@ -100,7 +100,7 @@ namespace Orleans.Runtime
             bool isOneWayCall = (options & InvokeMethodOptions.OneWay) != 0;
 
             var resolver = isOneWayCall ? null : new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
-            this.RuntimeClient.SendRequest(reference, request, resolver, options, reference.GenericArguments);
+            this.RuntimeClient.SendRequest(reference, request, resolver, options);
             return isOneWayCall ? null : resolver.Task;
         }
 

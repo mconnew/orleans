@@ -50,9 +50,8 @@ namespace Orleans
         /// Gets a reference to the grain with the provided id.
         /// </summary>
         /// <param name="grainId">The grain id.</param>
-        /// <param name="genericArguments">The generic type arguments.</param>
         /// <returns>A reference to the grain with the provided id.</returns>
-        GrainReference GetGrain(GrainId grainId, string genericArguments = null);
+        GrainReference GetGrain(GrainId grainId);
 
         /// <summary>
         /// Casts the provided <paramref name="grain"/> to the provided <paramref name="interfaceType"/>.

@@ -255,12 +255,6 @@ namespace Orleans
         }
 
         /// <inheritdoc />
-        public void BindGrainReference(IAddressable grain)
-        {
-            this.InternalGrainFactory.BindGrainReference(grain);
-        }
-
-        /// <inheritdoc />
         public TGrainObserverInterface CreateObjectReference<TGrainObserverInterface>(IAddressable obj)
             where TGrainObserverInterface : IAddressable
         {
@@ -291,9 +285,9 @@ namespace Orleans
         }
 
         /// <inheritdoc />
-        GrainReference IInternalGrainFactory.GetGrain(GrainId grainId, string genericArguments)
+        GrainReference IInternalGrainFactory.GetGrain(GrainId grainId)
         {
-            return this.InternalGrainFactory.GetGrain(grainId, genericArguments);
+            return this.InternalGrainFactory.GetGrain(grainId);
         }
 
         private void ThrowIfDisposedOrNotInitialized()
