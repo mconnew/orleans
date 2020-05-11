@@ -99,7 +99,7 @@ namespace Orleans.CodeGenerator
         /// <returns>Method declaration syntax for the InterfaceId property.</returns>
         private static MemberDeclarationSyntax GenerateInterfaceIdProperty(Type grainType)
         {
-            var property = TypeUtils.Member((IGrainMethodInvoker _) => _.InterfaceId);
+            var property = TypeUtils.Member((IGrainMethodInvoker _) => _.InterfaceTypeCode);
             var returnValue = SF.LiteralExpression(
                 SyntaxKind.NumericLiteralExpression,
                 SF.Literal(GrainInterfaceUtils.GetGrainInterfaceId(grainType)));

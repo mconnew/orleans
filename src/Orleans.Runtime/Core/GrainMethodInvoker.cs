@@ -103,7 +103,7 @@ namespace Orleans.Runtime
             ThrowInvalidCall();
         }
         
-        int IGrainMethodInvoker.InterfaceId => this.rootInvoker.InterfaceId;
+        int IGrainMethodInvoker.InterfaceTypeCode => this.rootInvoker.InterfaceTypeCode;
 
         ushort IGrainMethodInvoker.InterfaceVersion => this.rootInvoker.InterfaceVersion;
 

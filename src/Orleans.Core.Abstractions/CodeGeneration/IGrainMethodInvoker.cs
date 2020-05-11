@@ -9,7 +9,7 @@ namespace Orleans.CodeGeneration
     public interface IGrainMethodInvoker
     {
         /// <summary> The interface id that this invoker supports. </summary>
-        int InterfaceId { get; }
+        int InterfaceTypeCode { get; }
 
         ushort InterfaceVersion { get; }
 

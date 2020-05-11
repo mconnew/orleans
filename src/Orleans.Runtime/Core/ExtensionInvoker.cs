@@ -32,9 +32,9 @@ namespace Orleans.Runtime
                 extensionMap = new Dictionary<int, Tuple<IGrainExtension, IGrainExtensionMethodInvoker>>(1);
             }
 
-            if (extensionMap.ContainsKey(invoker.InterfaceId)) return false;
+            if (extensionMap.ContainsKey(invoker.InterfaceTypeCode)) return false;
 
-            extensionMap.Add(invoker.InterfaceId, new Tuple<IGrainExtension, IGrainExtensionMethodInvoker>(handler, invoker));
+            extensionMap.Add(invoker.InterfaceTypeCode, new Tuple<IGrainExtension, IGrainExtensionMethodInvoker>(handler, invoker));
             return true;
         }
 
@@ -104,7 +104,7 @@ namespace Orleans.Runtime
             return extensionMap != null && extensionMap.ContainsKey(interfaceId);
         }
 
-        public int InterfaceId
+        public int InterfaceTypeCode
         {
             get { return 0; } // 0 indicates an extension invoker that may have multiple intefaces inplemented by extensions.
         }

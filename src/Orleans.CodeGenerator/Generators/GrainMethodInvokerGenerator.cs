@@ -139,7 +139,7 @@ namespace Orleans.CodeGenerator.Generators
             var grainArgument = parameters[0].Name.ToIdentifierName();
             var requestArgument = parameters[1].Name.ToIdentifierName();
 
-            var interfaceIdProperty = wellKnownTypes.InvokeMethodRequest.Property("InterfaceId");
+            var interfaceIdProperty = wellKnownTypes.InvokeMethodRequest.Property("InterfaceTypeCode");
             var methodIdProperty = wellKnownTypes.InvokeMethodRequest.Property("MethodId");
             var argumentsProperty = wellKnownTypes.InvokeMethodRequest.Property("Arguments");
 
@@ -148,9 +148,9 @@ namespace Orleans.CodeGenerator.Generators
                 LocalDeclarationStatement(
                     VariableDeclaration(wellKnownTypes.Int32.ToTypeSyntax())
                         .AddVariables(
-                            VariableDeclarator("interfaceId")
+                            VariableDeclarator("interfaceTypeCode")
                                 .WithInitializer(EqualsValueClause(requestArgument.Member(interfaceIdProperty.Name)))));
-            var interfaceIdVariable = IdentifierName("interfaceId");
+            var interfaceIdVariable = IdentifierName("interfaceTypeCode");
 
             var methodIdDeclaration =
                 LocalDeclarationStatement(

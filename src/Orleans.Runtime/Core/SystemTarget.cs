@@ -101,7 +101,7 @@ namespace Orleans.Runtime
         IGrainMethodInvoker IInvokable.GetInvoker(GrainTypeManager typeManager, int interfaceId, string genericGrainType)
         {
             // Return previous cached invoker, if applicable
-            if (lastInvoker != null && interfaceId == lastInvoker.InterfaceId) // extension invoker returns InterfaceId==0, so this condition will never be true if an extension is installed
+            if (lastInvoker != null && interfaceId == lastInvoker.InterfaceTypeCode) // extension invoker returns InterfaceId==0, so this condition will never be true if an extension is installed
                 return lastInvoker;
 
             if (extensionInvoker != null && extensionInvoker.IsExtensionInstalled(interfaceId))
