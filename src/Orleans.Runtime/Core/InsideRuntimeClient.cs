@@ -72,7 +72,8 @@ namespace Orleans.Runtime
             ApplicationRequestsStatisticsGroup appRequestStatistics,
             MessagingTrace messagingTrace,
             GrainReferenceActivator referenceActivator,
-            GrainInterfaceIdResolver interfaceIdResolver)
+            GrainInterfaceIdResolver interfaceIdResolver,
+            GrainInterfaceToTypeResolver interfaceToTypeResolver)
         {
             this.ServiceProvider = serviceProvider;
             this.MySilo = siloDetails.SiloAddress;
@@ -82,7 +83,7 @@ namespace Orleans.Runtime
             this.messageFactory = messageFactory;
             this.transactionAgent = transactionAgent;
             this.Scheduler = scheduler;
-            this.ConcreteGrainFactory = new GrainFactory(this, typeMetadataCache, referenceActivator, interfaceIdResolver);
+            this.ConcreteGrainFactory = new GrainFactory(this, typeMetadataCache, referenceActivator, interfaceIdResolver, interfaceToTypeResolver);
             this.logger = loggerFactory.CreateLogger<InsideRuntimeClient>();
             this.invokeExceptionLogger = loggerFactory.CreateLogger($"{typeof(Grain).FullName}.InvokeException");
             this.loggerFactory = loggerFactory;

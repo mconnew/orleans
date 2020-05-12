@@ -25,7 +25,6 @@ namespace Orleans.Runtime
             IGrainCancellationTokenRuntime cancellationTokenRuntime,
             SerializationManager serializationManager,
             IEnumerable<IOutgoingGrainCallFilter> outgoingCallFilters,
-            TypeMetadataCache typeMetadataCache,
             GrainReferenceActivator referenceActivator,
             GrainInterfaceIdResolver interfaceIdResolver)
         {

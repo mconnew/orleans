@@ -178,6 +178,19 @@ namespace Orleans.Runtime
             return constructed;
         }
 
+        public static string GetArgumentsString(string type)
+        {
+            if (string.IsNullOrWhiteSpace(type)) return null;
+            var index = type.IndexOf(StartArgument);
+
+            if (index <= 0)
+            {
+                return null;
+            }
+
+            return type.Substring(index);
+        }
+
         public static Type[] GetArguments(this TypeConverter formatter, string constructed)
         {
             var str = constructed;

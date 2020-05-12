@@ -40,6 +40,8 @@ namespace Orleans.Runtime
 
         public Type[] GetArguments(TypeConverter formatter) => formatter.GetArguments(this.Value.ToStringUtf8());
 
+        public string GetArgumentsString() => TypeConverterExtensions.GetArgumentsString(this.Value.ToStringUtf8());
+
         public override string ToString() => this.Value.ToString();
     }
 }
