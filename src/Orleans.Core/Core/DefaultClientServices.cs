@@ -6,6 +6,7 @@ using Orleans.ApplicationParts;
 using Orleans.Configuration;
 using Orleans.Configuration.Internal;
 using Orleans.Configuration.Validators;
+using Orleans.GrainReferences;
 using Orleans.Hosting;
 using Orleans.Messaging;
 using Orleans.Metadata;
@@ -46,6 +47,8 @@ namespace Orleans
             services.TryAddFromExisting<IRuntimeClient, OutsideRuntimeClient>();
             services.TryAddFromExisting<IClusterConnectionStatusListener, OutsideRuntimeClient>();
             services.TryAddSingleton<GrainFactory>();
+            services.TryAddSingleton<GrainReferenceActivator>();
+            services.TryAddSingleton<GrainReferenceSerializer>();
             services.TryAddSingleton<IGrainReferenceRuntime, GrainReferenceRuntime>();
             services.TryAddSingleton<IGrainCancellationTokenRuntime, GrainCancellationTokenRuntime>();
             services.TryAddFromExisting<IGrainFactory, GrainFactory>();

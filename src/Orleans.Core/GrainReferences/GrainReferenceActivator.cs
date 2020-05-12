@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
 using Orleans.Runtime;
 
 namespace Orleans.GrainReferences
@@ -12,15 +13,16 @@ namespace Orleans.GrainReferences
     public sealed class GrainReferenceActivator
     {
         private readonly object _lockObj = new object();
-        private readonly IGrainReferenceRuntime _grainReferenceRuntime;
+        private readonly IServiceProvider _serviceProvider;
+        private IGrainReferenceRuntime _grainReferenceRuntime;
         private readonly IGrainReferenceActivatorProvider[] _providers;
         private Dictionary<(GrainType, GrainInterfaceId), Entry> _activators = new Dictionary<(GrainType, GrainInterfaceId), Entry>();
 
         public GrainReferenceActivator(
-            IGrainReferenceRuntime grainReferenceRuntime,
+            IServiceProvider serviceProvider,
             IEnumerable<IGrainReferenceActivatorProvider> providers)
         {
-            _grainReferenceRuntime = grainReferenceRuntime;
+            _serviceProvider = serviceProvider;
             _providers = providers.ToArray();
         }
 
@@ -55,6 +57,7 @@ namespace Orleans.GrainReferences
                         throw new InvalidOperationException($"Unable to find an {nameof(IGrainReferenceActivatorProvider)} for grain type {grainType}");
                     }
 
+                    var runtime = _grainReferenceRuntime ??= _serviceProvider.GetRequiredService<IGrainReferenceRuntime>();
                     var prototype = new GrainReferenceShared(grainType, interfaceId, _grainReferenceRuntime);
                     entry = new Entry(prototype, activator);
                     _activators = new Dictionary<(GrainType, GrainInterfaceId), Entry>(_activators) { [(grainType, interfaceId)] = entry };

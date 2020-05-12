@@ -428,8 +428,6 @@ namespace Orleans.Serialization
 
             var serializer = this.serviceProvider.GetRequiredService<GrainReferenceSerializer>();
 
-            var defaultCtorDelegate = CreateGrainRefConstructorDelegate(type, null);
-
             // Register GrainReference serialization methods.
             Register(
                 type,
@@ -440,35 +438,6 @@ namespace Orleans.Serialization
                    return serializer.DeserializeGrainReference(expected, context);
                 });
         }
-
-        private static Func<GrainReference, GrainReference> CreateGrainRefConstructorDelegate(Type type, Type[] genericArgs)
-        {
-            if (type.IsGenericType)
-            {
-                if (type.IsConstructedGenericType == false && genericArgs == null)
-                {
-                    return null;
-                }
-
-                type = type.MakeGenericType(genericArgs);
-            }
-
-            var constructor = TypeUtils.GetConstructorThatMatches(type, new[] { typeof(GrainReference) });
-            var method = new DynamicMethod(
-                ".ctor_" + type.Name,
-                typeof(GrainReference),
-                new[] { typeof(GrainReference) },
-                typeof(SerializationManager).Module,
-                true);
-            var il = method.GetILGenerator();
-            il.Emit(OpCodes.Ldarg_0);
-            il.Emit(OpCodes.Newobj, constructor);
-            il.Emit(OpCodes.Ret);
-            return
-                (Func<GrainReference, GrainReference>)
-                method.CreateDelegate(typeof(Func<GrainReference, GrainReference>));
-        }
-
 
         private SerializerMethods RegisterConcreteSerializer(Type concreteType, Type genericSerializerType)
         {
