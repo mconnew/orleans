@@ -90,11 +90,13 @@ namespace Orleans.Runtime
 
         public static bool IsGenericType(string type)
         {
+            if (string.IsNullOrWhiteSpace(type)) return false;
             return type.IndexOf(GenericTypeIndicator) >= 0;
         }
 
         public static bool IsConstructed(string type)
         {
+            if (string.IsNullOrWhiteSpace(type)) return false;
             var index = type.IndexOf(StartArgument);
             return index > 0;
         }

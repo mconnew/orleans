@@ -81,6 +81,46 @@ namespace Orleans.GrainReferences
         }
     }
 
+    internal class UntypedGrainReferenceActivatorProvider : IGrainReferenceActivatorProvider
+    {
+        private readonly IServiceProvider _serviceProvider;
+        private IGrainReferenceRuntime _grainReferenceRuntime;
+
+        public UntypedGrainReferenceActivatorProvider(IServiceProvider serviceProvider)
+        {
+            _serviceProvider = serviceProvider;
+        }
+
+        public bool TryGet(GrainType grainType, GrainInterfaceId interfaceId, out IGrainReferenceActivator activator)
+        {
+            if (!interfaceId.IsDefault)
+            {
+                activator = default;
+                return false;
+            }
+       
+            var runtime = _grainReferenceRuntime ??= _serviceProvider.GetRequiredService<IGrainReferenceRuntime>();
+            var shared = new GrainReferenceShared(grainType, interfaceId, runtime);
+            activator = new UntypedGrainReferenceActivator(shared);
+            return true;
+        }
+
+        private class UntypedGrainReferenceActivator : IGrainReferenceActivator
+        {
+            private readonly GrainReferenceShared _shared;
+
+            public UntypedGrainReferenceActivator(GrainReferenceShared shared)
+            {
+                _shared = shared;
+            }
+
+            public GrainReference CreateReference(GrainId grainId)
+            {
+                return GrainReference.FromGrainId(_shared, grainId);
+            }
+        }
+    }
+
     internal class ImrGrainReferenceActivatorProvider : IGrainReferenceActivatorProvider
     {
         private readonly IServiceProvider _serviceProvider;

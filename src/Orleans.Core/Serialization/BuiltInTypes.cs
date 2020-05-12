@@ -2085,7 +2085,6 @@ namespace Orleans.Serialization
         internal static object DeserializeInvokeMethodRequest(Type expected, IDeserializationContext context)
         {
             int iid = context.StreamReader.ReadInt();
-            ushort iVersion = context.StreamReader.ReadUShort();
             int mid = context.StreamReader.ReadInt();
 
             int argCount = context.StreamReader.ReadInt();

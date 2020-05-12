@@ -115,6 +115,7 @@ namespace Orleans.Hosting
             services.TryAddSingleton<IGrainReferenceRuntime, GrainReferenceRuntime>();
             services.TryAddSingleton<GrainReferenceActivator>();
             services.AddSingleton<IGrainReferenceActivatorProvider, ImrGrainReferenceActivatorProvider>();
+            services.AddSingleton<IGrainReferenceActivatorProvider, UntypedGrainReferenceActivatorProvider>();
             services.TryAddSingleton<GrainReferenceSerializer>();
             services.TryAddSingleton<GrainVersionManifest>();
             services.TryAddSingleton<TypeMetadataCache>();

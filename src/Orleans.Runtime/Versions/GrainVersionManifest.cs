@@ -20,7 +20,8 @@ namespace Orleans.Runtime.Versions
 
         public GrainVersionManifest(IClusterManifestProvider clusterManifestProvider)
         {
-            this._clusterManifestProvider = clusterManifestProvider;
+            _clusterManifestProvider = clusterManifestProvider;
+            _cache = BuildCachedVersionMap(clusterManifestProvider.Current);
         }
 
         public ushort[] GetAvailableVersions(GrainInterfaceId interfaceId)

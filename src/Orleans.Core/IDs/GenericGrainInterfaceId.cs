@@ -15,7 +15,7 @@ namespace Orleans.Runtime
 
         public static bool TryParse(GrainInterfaceId grainType, out GenericGrainInterfaceId result)
         {
-            if (TypeConverterExtensions.IsGenericType(grainType.ToStringUtf8()))
+            if (!grainType.IsDefault && TypeConverterExtensions.IsGenericType(grainType.ToStringUtf8()))
             {
                 result = new GenericGrainInterfaceId(grainType);
                 return true;
