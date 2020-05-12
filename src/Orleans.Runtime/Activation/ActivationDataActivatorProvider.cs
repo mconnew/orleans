@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Orleans.Configuration;
+using Orleans.GrainReferences;
 using Orleans.Internal;
 using Orleans.Metadata;
 using Orleans.Runtime.Placement;
@@ -23,6 +24,7 @@ namespace Orleans.Runtime
         private readonly TimeSpan _maxRequestProcessingTime;
         private readonly IRuntimeClient _runtimeClient;
         private readonly ILoggerFactory _loggerFactory;
+        private readonly GrainReferenceActivator _grainReferenceActivator;
         private IGrainRuntime _grainRuntime;
 
         public ActivationDataActivatorProvider(
@@ -34,7 +36,8 @@ namespace Orleans.Runtime
             IOptions<SiloMessagingOptions> messagingOptions,
             IOptions<GrainCollectionOptions> collectionOptions,
             IRuntimeClient runtimeClient,
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory,
+            GrainReferenceActivator grainReferenceActivator)
         {
             _grainClassMap = grainClassMap;
             _argumentFactory = new ConstructorArgumentFactory(serviceProvider);
@@ -48,6 +51,7 @@ namespace Orleans.Runtime
             _maxRequestProcessingTime = messagingOptions.Value.MaxRequestProcessingTime;
             _runtimeClient = runtimeClient;
             _loggerFactory = loggerFactory;
+            _grainReferenceActivator = grainReferenceActivator;
         }
 
         public bool TryGet(GrainType grainType, out IGrainActivator activator)
@@ -80,7 +84,8 @@ namespace Orleans.Runtime
                 genericArguments,
                 argumentFactory,
                 _serviceProvider,
-                _grainRuntime ??= _serviceProvider.GetRequiredService<IGrainRuntime>());
+                _grainRuntime ??= _serviceProvider.GetRequiredService<IGrainRuntime>(),
+                _grainReferenceActivator);
             return true;
         }
 
@@ -118,6 +123,7 @@ namespace Orleans.Runtime
             private readonly ConstructorArgumentFactory.ArgumentFactory _argumentFactory;
             private readonly IServiceProvider _serviceProvider;
             private readonly IGrainRuntime _grainRuntime;
+            private readonly GrainReferenceActivator _grainReferenceActivator;
 
             public ActivationDataActivator(
                 ObjectFactory createGrainInstance,
@@ -132,7 +138,8 @@ namespace Orleans.Runtime
                 string genericArguments,
                 ConstructorArgumentFactory.ArgumentFactory argumentFactory,
                 IServiceProvider serviceProvider,
-                IGrainRuntime grainRuntime)
+                IGrainRuntime grainRuntime,
+                GrainReferenceActivator grainReferenceActivator)
             {
                 _createGrainInstance = createGrainInstance;
                 _placementStrategy = placementStrategy;
@@ -147,6 +154,7 @@ namespace Orleans.Runtime
                 _argumentFactory = argumentFactory;
                 _serviceProvider = serviceProvider;
                 _grainRuntime = grainRuntime;
+                _grainReferenceActivator = grainReferenceActivator;
             }
 
             public IGrainContext CreateContext(ActivationAddress activationAddress)
@@ -163,7 +171,8 @@ namespace Orleans.Runtime
                     _runtimeClient,
                     _loggerFactory,
                     _serviceProvider,
-                    _grainRuntime);
+                    _grainRuntime,
+                    _grainReferenceActivator);
 
                 RuntimeContext.SetExecutionContext(context, out var existingContext);
 

@@ -30,8 +30,7 @@ namespace Orleans.Storage
         private readonly AzureTableStorageOptions options;
         private readonly ClusterOptions clusterOptions;
         private readonly SerializationManager serializationManager;
-        private readonly IGrainFactory grainFactory;
-        private readonly ITypeResolver typeResolver;
+        private readonly IServiceProvider services;
         private readonly ILogger logger;
 
         private GrainStateTableDataManager tableDataManager;
@@ -53,16 +52,14 @@ namespace Orleans.Storage
             AzureTableStorageOptions options,
             IOptions<ClusterOptions> clusterOptions,
             SerializationManager serializationManager,
-            IGrainFactory grainFactory,
-            ITypeResolver typeResolver,
+            IServiceProvider services,
             ILogger<AzureTableGrainStorage> logger)
         {
             this.options = options;
             this.clusterOptions = clusterOptions.Value;
             this.name = name;
             this.serializationManager = serializationManager;
-            this.grainFactory = grainFactory;
-            this.typeResolver = typeResolver;
+            this.services = services;
             this.logger = logger;
         }
 
@@ -384,7 +381,7 @@ namespace Orleans.Storage
 
         private string GetKeyString(GrainReference grainReference)
         {
-            var key = String.Format("{0}_{1}", this.clusterOptions.ServiceId, grainReference.ToKeyString());
+            var key = string.Format("{0}_{1}_{2}", this.clusterOptions.ServiceId, grainReference.GrainId.Type.ToStringUtf8(), grainReference.GrainId.Key.ToStringUtf8());
             return AzureTableUtils.SanitizeTableProperty(key);
         }
 
@@ -478,7 +475,7 @@ namespace Orleans.Storage
             {
                 this.logger.LogInformation((int)AzureProviderErrorCode.AzureTableProvider_InitProvider, $"AzureTableGrainStorage {name} initializing: {this.options.ToString()}");
                 this.logger.LogInformation((int)AzureProviderErrorCode.AzureTableProvider_ParamConnectionString, $"AzureTableGrainStorage {name} is using DataConnectionString: {ConfigUtilities.RedactConnectionStringInfo(this.options.ConnectionString)}");
-                this.JsonSettings = OrleansJsonSerializer.UpdateSerializerSettings(OrleansJsonSerializer.GetDefaultSerializerSettings(this.typeResolver, this.grainFactory), this.options.UseFullAssemblyNames, this.options.IndentJson, this.options.TypeNameHandling);
+                this.JsonSettings = OrleansJsonSerializer.UpdateSerializerSettings(OrleansJsonSerializer.GetDefaultSerializerSettings(this.services), this.options.UseFullAssemblyNames, this.options.IndentJson, this.options.TypeNameHandling);
                 this.options.ConfigureJsonSerializerSettings?.Invoke(this.JsonSettings);
                 this.tableDataManager = new GrainStateTableDataManager(this.options.TableName, this.options.ConnectionString, this.logger, this.options.StoragePolicyOptions);
                 await this.tableDataManager.InitTableAsync();

@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Orleans.Runtime;
@@ -21,9 +22,9 @@ namespace Orleans.Transactions
             return transactionalState;
         }
 
-        public static JsonSerializerSettings GetJsonSerializerSettings(ITypeResolver typeResolver, IGrainFactory grainFactory)
+        public static JsonSerializerSettings GetJsonSerializerSettings(IServiceProvider serviceProvider)
         {
-            var serializerSettings = OrleansJsonSerializer.GetDefaultSerializerSettings(typeResolver, grainFactory);
+            var serializerSettings = OrleansJsonSerializer.GetDefaultSerializerSettings(serviceProvider);
             serializerSettings.PreserveReferencesHandling = PreserveReferencesHandling.None;
             return serializerSettings;
         }

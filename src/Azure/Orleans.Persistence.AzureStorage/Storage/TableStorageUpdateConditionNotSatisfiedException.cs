@@ -26,7 +26,7 @@ namespace Orleans.Storage
             : base(errorMsg, storedEtag, currentEtag, storageException)
         {
             this.GrainType = grainType;
-            this.GrainId = grainId.ToKeyString();
+            this.GrainId = grainId.GrainId.ToString();
             this.TableName = tableName;
         }
 
