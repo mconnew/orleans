@@ -456,16 +456,12 @@ namespace Orleans.Runtime
         /// </summary>
         /// <param name="address">Grain's activation address</param>
         /// <param name="newPlacement">Creation of new activation was requested by the placement director.</param>
-        /// <param name="grainType">The type of grain to be activated or created</param>
-        /// <param name="genericArguments">Specific generic type of grain to be activated or created</param>
         /// <param name="requestContextData">Request context data.</param>
         /// <param name="activatedPromise"></param>
         /// <returns></returns>
         public ActivationData GetOrCreateActivation(
             ActivationAddress address,
             bool newPlacement,
-            string grainType,
-            string genericArguments,
             Dictionary<string, object> requestContextData,
             out Task activatedPromise)
         {
@@ -480,14 +476,6 @@ namespace Orleans.Runtime
                     return result;
                 }
 
-                int typeCode = LegacyGrainId.FromGrainId(address.Grain).TypeCode;
-
-                GetGrainTypeInfo(typeCode, out var actualGrainType, genericArguments);
-                if (string.IsNullOrEmpty(grainType))
-                {
-                    grainType = actualGrainType;
-                }
-
                 if (newPlacement && !SiloStatusOracle.CurrentStatus.IsTerminating())
                 {
                     result = (ActivationData)this.grainActivator.CreateInstance(address);
@@ -499,8 +487,7 @@ namespace Orleans.Runtime
             // Did not find and did not start placing new
             if (result is null)
             {
-                var msg = String.Format("Non-existent activation: {0}, grain type: {1}.",
-                                           address.ToFullString(), grainType);
+                var msg = $"Non-existent activation: {address.ToFullString()}";
                 if (logger.IsEnabled(LogLevel.Debug)) logger.Debug(ErrorCode.CatalogNonExistingActivation2, msg);
                 CounterStatistic.FindOrCreate(StatisticNames.CATALOG_ACTIVATION_NON_EXISTENT_ACTIVATIONS).Increment();
                 throw new NonExistentActivationException(msg, address, placement is StatelessWorkerPlacement);

@@ -4,31 +4,52 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Orleans.Internal;
 using Orleans.Metadata;
 using Orleans.Runtime;
 
 namespace Orleans
 {
+    internal class GrainInterfaceToTypeResolverLifecycle<TLifecycle> : ILifecycleParticipant<TLifecycle>
+        where TLifecycle : ILifecycleObservable
+    {
+        private readonly GrainInterfaceToTypeResolver _resolver;
+
+        public GrainInterfaceToTypeResolverLifecycle(GrainInterfaceToTypeResolver resolver)
+        {
+            _resolver = resolver;
+        }
+
+        public void Participate(TLifecycle lifecycle)
+        {
+            lifecycle.Subscribe(nameof(GrainInterfaceToTypeResolver),
+                ServiceLifecycleStage.RuntimeInitialize,
+                ct => _resolver.StartAsync(ct),
+                ct => _resolver.StopAsync(ct));
+        }
+    }
+
     public class GrainInterfaceToTypeResolver : IDisposable, IAsyncDisposable
     {
+        private readonly object _lockObj = new object();
+        private readonly IServiceProvider _serviceProvider;
         private readonly CancellationTokenSource _cancellation = new CancellationTokenSource();
         private readonly ConcurrentDictionary<GrainInterfaceId, GrainType> _genericMapping = new ConcurrentDictionary<GrainInterfaceId, GrainType>();
-        private readonly IClusterManifestProvider _clusterManifestProvider;
-        private Dictionary<GrainInterfaceId, GrainType> _cache;
+        private IClusterManifestProvider _clusterManifestProvider;
+        private Cache _cache;
         private Task _processUpdatesTask;
 
-        public GrainInterfaceToTypeResolver(IClusterManifestProvider clusterManifestProvider)
+        public GrainInterfaceToTypeResolver(IServiceProvider serviceProvider)
         {
-            _clusterManifestProvider = clusterManifestProvider;
-            _cache = BuildCache(clusterManifestProvider.Current);
-            _ = StartAsync();
+            _serviceProvider = serviceProvider;
+            _cache = new Cache(MajorMinorVersion.Zero, new Dictionary<GrainInterfaceId, GrainType>());
         }
 
         public GrainType GetGrainType(GrainInterfaceId interfaceId)
         {
             var cache = _cache;
-            if (cache.TryGetValue(interfaceId, out var result))
+            if (cache.Map.TryGetValue(interfaceId, out var result))
             {
                 return result;
             }
@@ -51,8 +72,8 @@ namespace Orleans
                     }
                     else
                     {
-                        var str = unconstructedInterface.GetArgumentsString();
-                        var constructed = GrainType.Create(genericGrainType.GrainType.ToStringUtf8() + str);
+                        var args = genericInterface.GetArgumentsString();
+                        var constructed = GrainType.Create(genericGrainType.GrainType.ToStringUtf8() + args);
                         _genericMapping[interfaceId] = constructed;
                         return constructed;
                     }
@@ -61,6 +82,15 @@ namespace Orleans
 
                 _genericMapping[interfaceId] = unconstructed;
                 return unconstructed;
+            }
+
+            if (_clusterManifestProvider is null)
+            {
+                EnsureInitialized();
+                if (_clusterManifestProvider is object)
+                {
+                    return GetGrainType(interfaceId);
+                }
             }
 
             throw new KeyNotFoundException($"Could not find an implementation for interface {interfaceId}");
@@ -75,10 +105,20 @@ namespace Orleans
             }
         }
 
-        public Task StartAsync()
+        private void EnsureInitialized()
         {
-            if (_processUpdatesTask is object) throw new InvalidOperationException("This instance has already been started.");
-            _processUpdatesTask = Task.Run(ProcessClusterManifestUpdates);
+            if (_processUpdatesTask is object) return;
+            lock (_lockObj)
+            {
+                _clusterManifestProvider = _serviceProvider.GetRequiredService<IClusterManifestProvider>();
+                _cache = BuildCache(_clusterManifestProvider.Current);
+                _processUpdatesTask = Task.Run(ProcessClusterManifestUpdates);
+            }
+        }
+
+        public Task StartAsync(CancellationToken cancellation)
+        {
+            EnsureInitialized();
             return Task.CompletedTask;
         }
 
@@ -89,7 +129,7 @@ namespace Orleans
             if (_processUpdatesTask is Task task) await Task.WhenAny(task, cancellation.WhenCancelled());
         }
 
-        private static Dictionary<GrainInterfaceId, GrainType> BuildCache(ClusterManifest clusterManifest)
+        private static Cache BuildCache(ClusterManifest clusterManifest)
         {
             var result = new Dictionary<GrainInterfaceId, GrainType>();
 
@@ -121,7 +161,7 @@ namespace Orleans
                 }
             }
 
-            return result;
+            return new Cache(clusterManifest.Version, result);
 
             IEnumerable<GrainInterfaceId> SupportedGrainInterfaces(GrainProperties grain)
             {
@@ -143,6 +183,18 @@ namespace Orleans
         public void Dispose()
         {
             _cancellation.Cancel();
+        }
+
+        private class Cache
+        {
+            public Cache(MajorMinorVersion version, Dictionary<GrainInterfaceId, GrainType> map)
+            {
+                this.Version = version;
+                this.Map = map;
+            }
+
+            public MajorMinorVersion Version { get; }
+            public Dictionary<GrainInterfaceId, GrainType> Map { get; }
         }
     }
 }

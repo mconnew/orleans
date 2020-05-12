@@ -103,8 +103,6 @@ namespace Orleans.Runtime
                 ActivationData target = catalog.GetOrCreateActivation(
                     message.TargetAddress, 
                     message.IsNewPlacement,
-                    message.NewGrainType,
-                    String.IsNullOrEmpty(message.GenericGrainType) ? null : message.GenericGrainType, 
                     message.RequestContextData,
                     out ignore);
 

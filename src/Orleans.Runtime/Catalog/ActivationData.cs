@@ -25,7 +25,6 @@ namespace Orleans.Runtime
     {
         // This is the maximum amount of time we expect a request to continue processing
         private readonly TimeSpan maxRequestProcessingTime;
-        private readonly GrainReferenceActivator referenceActivator;
         private readonly TimeSpan maxWarningRequestProcessingTime;
         private readonly SiloMessagingOptions messagingOptions;
         private readonly ILogger logger;
@@ -36,14 +35,12 @@ namespace Orleans.Runtime
         
         public ActivationData(
             ActivationAddress addr,
-            string genericArguments,
             PlacementStrategy placedUsing,
             IActivationCollector collector,
             TimeSpan ageLimit,
             IOptions<SiloMessagingOptions> messagingOptions,
             TimeSpan maxWarningRequestProcessingTime,
 			TimeSpan maxRequestProcessingTime,
-            IRuntimeClient runtimeClient,
             ILoggerFactory loggerFactory,
             IServiceProvider applicationServices,
             IGrainRuntime grainRuntime,
@@ -58,7 +55,6 @@ namespace Orleans.Runtime
             this.maxRequestProcessingTime = maxRequestProcessingTime;
             this.maxWarningRequestProcessingTime = maxWarningRequestProcessingTime;
             this.messagingOptions = messagingOptions.Value;
-            this.referenceActivator = referenceActivator;
             ResetKeepAliveRequest();
             Address = addr;
             State = ActivationState.Create;

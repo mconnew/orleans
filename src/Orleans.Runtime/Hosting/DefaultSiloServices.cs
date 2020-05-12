@@ -111,6 +111,7 @@ namespace Orleans.Hosting
             services.TryAddSingleton<OrleansTaskScheduler>();
             services.TryAddSingleton<GrainFactory>(sp => sp.GetService<InsideRuntimeClient>().ConcreteGrainFactory);
             services.TryAddSingleton<GrainInterfaceToTypeResolver>();
+            services.AddSingleton<ILifecycleParticipant<ISiloLifecycle>, GrainInterfaceToTypeResolverLifecycle<ISiloLifecycle>>();
             services.TryAddFromExisting<IGrainFactory, GrainFactory>();
             services.TryAddFromExisting<IInternalGrainFactory, GrainFactory>();
             services.TryAddSingleton<IGrainReferenceRuntime, GrainReferenceRuntime>();

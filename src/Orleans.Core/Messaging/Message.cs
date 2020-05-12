@@ -471,11 +471,7 @@ namespace Orleans.Runtime
 
             if (value.IsNewPlacement)
                 IsNewPlacement = true;
-
-            if (!String.IsNullOrEmpty(value.GrainType))
-                NewGrainType = value.GrainType;
         }
-
 
         public string GetTargetHistory()
         {

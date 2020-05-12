@@ -151,7 +151,7 @@ namespace Orleans.GrainReferences
             Type[] args;
             if (GenericGrainInterfaceId.TryParse(interfaceId, out var genericId))
             {
-                lookupId = genericId.Value;
+                lookupId = genericId.GetGenericGrainType().Value;
                 args = genericId.GetArguments(_typeConverter);
             }
             else

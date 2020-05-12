@@ -17,12 +17,12 @@ namespace Orleans.Runtime
         private readonly PlacementStrategyResolver _placementStrategyResolver;
         private readonly IActivationCollector _activationCollector;
         private readonly SiloManifest _siloManifest;
+        private readonly TypeConverter _typeConverter;
         private readonly GrainClassMap _grainClassMap;
         private readonly GrainCollectionOptions _collectionOptions;
         private readonly IOptions<SiloMessagingOptions> _messagingOptions;
         private readonly TimeSpan _maxWarningRequestProcessingTime;
         private readonly TimeSpan _maxRequestProcessingTime;
-        private readonly IRuntimeClient _runtimeClient;
         private readonly ILoggerFactory _loggerFactory;
         private readonly GrainReferenceActivator _grainReferenceActivator;
         private IGrainRuntime _grainRuntime;
@@ -35,10 +35,11 @@ namespace Orleans.Runtime
             SiloManifest siloManifest,
             IOptions<SiloMessagingOptions> messagingOptions,
             IOptions<GrainCollectionOptions> collectionOptions,
-            IRuntimeClient runtimeClient,
             ILoggerFactory loggerFactory,
-            GrainReferenceActivator grainReferenceActivator)
+            GrainReferenceActivator grainReferenceActivator,
+            TypeConverter typeConverter)
         {
+            _typeConverter = typeConverter;
             _grainClassMap = grainClassMap;
             _argumentFactory = new ConstructorArgumentFactory(serviceProvider);
             _serviceProvider = serviceProvider;
@@ -49,22 +50,36 @@ namespace Orleans.Runtime
             _messagingOptions = messagingOptions;
             _maxWarningRequestProcessingTime = messagingOptions.Value.ResponseTimeout.Multiply(5);
             _maxRequestProcessingTime = messagingOptions.Value.MaxRequestProcessingTime;
-            _runtimeClient = runtimeClient;
             _loggerFactory = loggerFactory;
             _grainReferenceActivator = grainReferenceActivator;
         }
 
         public bool TryGet(GrainType grainType, out IGrainActivator activator)
         {
-            if (!_grainClassMap.AvailableTypes.TryGetValue(grainType, out var grainClass)
+            GrainType lookupType;
+            Type[] args;
+            if (GenericGrainType.TryParse(grainType, out var genericId))
+            {
+                lookupType = genericId.GetGenericGrainType().GrainType;
+                args = genericId.GetArguments(_typeConverter);
+            }
+            else
+            {
+                lookupType = grainType;
+                args = default;
+            }
+
+            if (!_grainClassMap.AvailableTypes.TryGetValue(lookupType, out var grainClass)
                 || !typeof(Grain).IsAssignableFrom(grainClass))
             {
                 activator = default;
                 return false;
             }
 
-            // TODO: handle generics.
-            string genericArguments = null;
+            if (args is object)
+            {
+                grainClass = grainClass.MakeGenericType(args);
+            }
 
             var argumentFactory = _argumentFactory.CreateFactory(grainClass);
             var createGrainInstance = ActivatorUtilities.CreateFactory(grainClass, argumentFactory.ArgumentTypes);
@@ -79,9 +94,7 @@ namespace Orleans.Runtime
                 _messagingOptions,
                 _maxWarningRequestProcessingTime,
                 _maxRequestProcessingTime,
-                _runtimeClient,
                 _loggerFactory,
-                genericArguments,
                 argumentFactory,
                 _serviceProvider,
                 _grainRuntime ??= _serviceProvider.GetRequiredService<IGrainRuntime>(),
@@ -117,9 +130,7 @@ namespace Orleans.Runtime
             private readonly IOptions<SiloMessagingOptions> _messagingOptions;
             private readonly TimeSpan _maxWarningRequestProcessingTime;
             private readonly TimeSpan _maxRequestProcessingTime;
-            private readonly IRuntimeClient _runtimeClient;
             private readonly ILoggerFactory _loggerFactory;
-            private readonly string _genericArguments;
             private readonly ConstructorArgumentFactory.ArgumentFactory _argumentFactory;
             private readonly IServiceProvider _serviceProvider;
             private readonly IGrainRuntime _grainRuntime;
@@ -133,9 +144,7 @@ namespace Orleans.Runtime
                 IOptions<SiloMessagingOptions> messagingOptions,
                 TimeSpan maxWarningRequestProcessingTime,
                 TimeSpan maxRequestProcessingTime,
-                IRuntimeClient runtimeClient,
                 ILoggerFactory loggerFactory,
-                string genericArguments,
                 ConstructorArgumentFactory.ArgumentFactory argumentFactory,
                 IServiceProvider serviceProvider,
                 IGrainRuntime grainRuntime,
@@ -148,9 +157,7 @@ namespace Orleans.Runtime
                 _messagingOptions = messagingOptions;
                 _maxWarningRequestProcessingTime = maxWarningRequestProcessingTime;
                 _maxRequestProcessingTime = maxRequestProcessingTime;
-                _runtimeClient = runtimeClient;
                 _loggerFactory = loggerFactory;
-                _genericArguments = genericArguments;
                 _argumentFactory = argumentFactory;
                 _serviceProvider = serviceProvider;
                 _grainRuntime = grainRuntime;
@@ -161,14 +168,12 @@ namespace Orleans.Runtime
             {
                 var context = new ActivationData(
                     activationAddress,
-                    _genericArguments,
                     _placementStrategy,
                     _activationCollector,
                     _collectionAgeLimit,
                     _messagingOptions,
                     _maxWarningRequestProcessingTime,
                     _maxRequestProcessingTime,
-                    _runtimeClient,
                     _loggerFactory,
                     _serviceProvider,
                     _grainRuntime,
