@@ -54,7 +54,7 @@ namespace Orleans.Serialization
             settings.Converters.Add(new GrainIdConverter());
             settings.Converters.Add(new SiloAddressConverter());
             settings.Converters.Add(new UniqueKeyConverter());
-            settings.Converters.Add(new GrainReferenceConverter(services.GetRequiredService<GrainReferenceActivator>()));
+            settings.Converters.Add(new GrainReferenceJsonConverter(services.GetRequiredService<GrainReferenceActivator>()));
 
             return settings;
         }
@@ -284,13 +284,13 @@ namespace Orleans.Serialization
         }
     }
 
-    public class GrainReferenceConverter : JsonConverter
+    public class GrainReferenceJsonConverter : JsonConverter
     {
         private static readonly Type AddressableType = typeof(IAddressable);
         private readonly GrainReferenceActivator referenceActivator;
         private readonly GrainIdConverter grainIdConverter = new GrainIdConverter();
 
-        public GrainReferenceConverter(GrainReferenceActivator referenceActivator)
+        public GrainReferenceJsonConverter(GrainReferenceActivator referenceActivator)
         {
             this.referenceActivator = referenceActivator;
         }

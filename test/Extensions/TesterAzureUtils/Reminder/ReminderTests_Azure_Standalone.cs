@@ -49,7 +49,7 @@ namespace Tester.AzureUtils.TimerTests
             var clusterOptions = Options.Create(new ClusterOptions { ClusterId = "TMSLocalTesting", ServiceId = this.serviceId });
             var storageOptions = Options.Create(new AzureTableReminderStorageOptions { ConnectionString = TestDefaultConfiguration.DataConnectionString });
 
-            IReminderTable table = new AzureBasedReminderTable(this.fixture.Services.GetRequiredService<IGrainReferenceConverter>(), this.loggerFactory, clusterOptions, storageOptions);
+            IReminderTable table = new AzureBasedReminderTable(this.fixture.Services.GetRequiredService<GrainReferenceKeyStringConverter>(), this.loggerFactory, clusterOptions, storageOptions);
             await table.Init();
 
             await TestTableInsertRate(table, 10);
@@ -62,7 +62,7 @@ namespace Tester.AzureUtils.TimerTests
             string clusterId = NewClusterId();
             var clusterOptions = Options.Create(new ClusterOptions { ClusterId = clusterId, ServiceId = this.serviceId });
             var storageOptions = Options.Create(new AzureTableReminderStorageOptions { ConnectionString = TestDefaultConfiguration.DataConnectionString });
-            IReminderTable table = new AzureBasedReminderTable(this.fixture.Services.GetRequiredService<IGrainReferenceConverter>(), this.loggerFactory, clusterOptions, storageOptions);
+            IReminderTable table = new AzureBasedReminderTable(this.fixture.Services.GetRequiredService<GrainReferenceKeyStringConverter>(), this.loggerFactory, clusterOptions, storageOptions);
             await table.Init();
 
             ReminderEntry[] rows = (await GetAllRows(table)).ToArray();

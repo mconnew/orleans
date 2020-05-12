@@ -37,7 +37,7 @@ namespace Orleans.Storage
         private readonly SerializationManager serializationManager;
         private readonly ILogger logger;
         private readonly IServiceProvider serviceProvider;
-        private readonly IGrainReferenceConverter grainReferenceConverter;
+        private readonly Runtime.GrainReferenceKeyStringConverter grainReferenceConverter;
         private readonly string name;
 
         private DynamoDBStorage storage;
@@ -51,7 +51,7 @@ namespace Orleans.Storage
             DynamoDBStorageOptions options,
             SerializationManager serializationManager,
             IServiceProvider serviceProvider,
-            IGrainReferenceConverter grainReferenceConverter,
+            Runtime.GrainReferenceKeyStringConverter grainReferenceConverter,
             ILogger<DynamoDBGrainStorage> logger)
         {
             this.name = name;
@@ -302,7 +302,7 @@ namespace Orleans.Storage
 
         private string GetKeyString(GrainReference grainReference)
         {
-            var key = string.Format("{0}_{1}", this.options.ServiceId, this.grainReferenceConverter.GetKeyString(grainReference));
+            var key = string.Format("{0}_{1}", this.options.ServiceId, this.grainReferenceConverter.ToKeyString(grainReference));
             return AWSUtils.ValidateDynamoDBPartitionKey(key);
         }
 

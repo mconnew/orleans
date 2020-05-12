@@ -1,32 +1,18 @@
 using System;
-using System.Runtime.CompilerServices;
-using System.Text;
 using Orleans.GrainReferences;
 
 namespace Orleans.Runtime
 {
-    public interface IGrainReferenceConverter
-    {
-        /// <summary>
-        /// Creates a grain reference from a storage key string.
-        /// </summary>
-        /// <param name="key">The key string.</param>
-        /// <returns>The newly created grain reference.</returns>
-        GrainReference GetGrainFromKeyString(string key);
-
-        string GetKeyString(GrainReference grainReference);
-    }
-
-    internal class GrainReferenceConverter : IGrainReferenceConverter
+    public class GrainReferenceKeyStringConverter
     {
         private readonly GrainReferenceActivator _activator;
 
-        public GrainReferenceConverter(GrainReferenceActivator activator)
+        public GrainReferenceKeyStringConverter(GrainReferenceActivator activator)
         {
             _activator = activator;
         }
 
-        public GrainReference GetGrainFromKeyString(string referenceString)
+        public GrainReference FromKeyString(string referenceString)
         {
             var splits = referenceString.Split('_');
             var type = new GrainType(Convert.FromBase64String(splits[0]));
@@ -35,10 +21,10 @@ namespace Orleans.Runtime
             return _activator.CreateReference(id, default);
         }
 
-        string IGrainReferenceConverter.GetKeyString(GrainReference grainReference) => grainReference.ToKeyString();
+        public string ToKeyString(GrainReference grainReference) => grainReference.ToKeyString();
     }
 
-    public static class ConverterGrainReferenceExtensions
+    public static class GrainReferenceConverterExtensions
     {
         public static string ToKeyString(this GrainReference grainReference)
         {

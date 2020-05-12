@@ -440,7 +440,7 @@ namespace UnitTests.General
         private GrainReference RoundTripGrainReferenceToKey(GrainReference input)
         {
             string str = input.ToKeyString();
-            GrainReference output = this.environment.Services.GetRequiredService<IGrainReferenceConverter>().GetGrainFromKeyString(str);
+            GrainReference output = this.environment.Services.GetRequiredService<GrainReferenceKeyStringConverter>().FromKeyString(str);
             return output;
         }
     }
