@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Orleans.Runtime;
+using Orleans.Utilities;
 
 namespace Orleans.Metadata
 {
@@ -36,11 +37,6 @@ namespace Orleans.Metadata
                 throw new ArgumentException($"Argument {nameof(type)} must be an interface. Provided value, \"{type}\", is not an interface.", nameof(type));
             }
 
-            if (type.IsConstructedGenericType)
-            {
-                type = type.GetGenericTypeDefinition();
-            }
-
             // Configured providers take precedence
             foreach (var provider in this._providers)
             {
@@ -57,13 +53,23 @@ namespace Orleans.Metadata
 
         public GrainInterfaceId GetGrainInterfaceIdByConvention(Type type)
         {
-            var result = GrainInterfaceId.Create(_typeConverter.Format(type));
+            var result = GrainInterfaceId.Create(_typeConverter.Format(type, DropOuterAssemblyQualification));
+            result = AddGenericParameters(result, type);
             return result;
+
+            static TypeSpec DropOuterAssemblyQualification(TypeSpec input) => input switch
+            {
+                AssemblyQualifiedTypeSpec asm => asm.Type,
+                _ => input
+            };
         }
 
         private GrainInterfaceId AddGenericParameters(GrainInterfaceId result, Type type)
         {
-            if (GenericGrainInterfaceId.TryParse(result, out var genericGrainType) && type.IsConstructedGenericType && !genericGrainType.IsConstructed)
+            if (GenericGrainInterfaceId.TryParse(result, out var genericGrainType)
+                && type.IsConstructedGenericType
+                && !type.ContainsGenericParameters
+                && !genericGrainType.IsConstructed)
             {
                 result = genericGrainType.Construct(_typeConverter, type.GetGenericArguments()).Value;
             }

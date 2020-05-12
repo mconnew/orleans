@@ -10,10 +10,6 @@ namespace Orleans.Runtime
     {
         private readonly ITypeConverter[] _converters;
         private readonly ClrTypeConverter _defaultFormatter;
-        private readonly ConcurrentDictionary<string, Type> _parsed = new ConcurrentDictionary<string, Type>();
-        private readonly ConcurrentDictionary<Type, string> _formatted = new ConcurrentDictionary<Type, string>();
-        private readonly Func<Type, string> _formatFunc;
-        private readonly Func<string, Type> _parseFunc;
         private readonly Func<QualifiedType, QualifiedType> _convertToDisplayName;
         private readonly Func<QualifiedType, QualifiedType> _convertFromDisplayName;
 
@@ -21,17 +17,17 @@ namespace Orleans.Runtime
         {
             _converters = formatters.ToArray();
             _defaultFormatter = new ClrTypeConverter();
-            _parseFunc = ParseInternal;
-            _formatFunc = FormatInternal;
             _convertToDisplayName = ConvertToDisplayName;
             _convertFromDisplayName = ConvertFromDisplayName;
         }
 
-        public string Format(Type type) => _formatted.GetOrAdd(type, _formatFunc);
+        public string Format(Type type) => FormatInternal(type);
 
-        public Type Parse(string formatted) => _parsed.GetOrAdd(formatted, _parseFunc);
+        internal string Format(Type type, Func<TypeSpec, TypeSpec> rewriter) => FormatInternal(type, rewriter);
 
-        private string FormatInternal(Type type)
+        public Type Parse(string formatted) => ParseInternal(formatted);
+
+        private string FormatInternal(Type type, Func<TypeSpec, TypeSpec> rewriter = null)
         {
             string runtimeType = null;
             foreach (var converter in _converters)
@@ -50,6 +46,11 @@ namespace Orleans.Runtime
 
             var runtimeTypeSpec = RuntimeTypeNameParser.Parse(runtimeType);
             var displayTypeSpec = RuntimeTypeNameRewriter.Rewrite(runtimeTypeSpec, _convertToDisplayName);
+            if (rewriter is object)
+            {
+                displayTypeSpec = rewriter(displayTypeSpec);
+            }
+
             var formatted = displayTypeSpec.Format();
 
             return formatted;
@@ -74,12 +75,48 @@ namespace Orleans.Runtime
 
         private QualifiedType ConvertToDisplayName(QualifiedType input)
         {
-            return input;
+            return input switch
+            {
+                (_, "System.Object") => new QualifiedType(null, "object"),
+                (_, "System.String") => new QualifiedType(null, "string"),
+                (_, "System.Char") => new QualifiedType(null, "char"),
+                (_, "System.SByte") => new QualifiedType(null, "sbyte"),
+                (_, "System.Byte") => new QualifiedType(null, "byte"),
+                (_, "System.Boolean") => new QualifiedType(null, "bool"),
+                (_, "System.Int16") => new QualifiedType(null, "short"),
+                (_, "System.UInt16") => new QualifiedType(null, "ushort"),
+                (_, "System.Int32") => new QualifiedType(null, "int"),
+                (_, "System.UInt32") => new QualifiedType(null, "uint"),
+                (_, "System.Int64") => new QualifiedType(null, "long"),
+                (_, "System.UInt64") => new QualifiedType(null, "ulong"),
+                (_, "System.Single") => new QualifiedType(null, "float"),
+                (_, "System.Double") => new QualifiedType(null, "double"),
+                (_, "System.Decimal") => new QualifiedType(null, "decimal"),
+                _ => input,
+            };
         }
 
         private QualifiedType ConvertFromDisplayName(QualifiedType input)
         {
-            return input;
+            return input switch
+            {
+                (_, "object") => new QualifiedType(null, "System.Object"),
+                (_, "string") => new QualifiedType(null, "System.String"),
+                (_, "char") => new QualifiedType(null, "System.Char"),
+                (_, "sbyte") => new QualifiedType(null, "System.SByte"),
+                (_, "byte") => new QualifiedType(null, "System.Byte"),
+                (_, "bool") => new QualifiedType(null, "System.Boolean"),
+                (_, "short") => new QualifiedType(null, "System.Int16"),
+                (_, "ushort") => new QualifiedType(null, "System.UInt16"),
+                (_, "int") => new QualifiedType(null, "System.Int32"),
+                (_, "uint") => new QualifiedType(null, "System.UInt32"),
+                (_, "long") => new QualifiedType(null, "System.Int64"),
+                (_, "ulong") => new QualifiedType(null, "System.UInt64"),
+                (_, "float") => new QualifiedType(null, "System.Single"),
+                (_, "double") => new QualifiedType(null, "System.Double"),
+                (_, "decimal") => new QualifiedType(null, "System.Decimal"),
+                _ => input,
+            };
         }
     }
 
@@ -103,6 +140,7 @@ namespace Orleans.Runtime
 
         public static string GetDeconstructed(string type)
         {
+            if (string.IsNullOrWhiteSpace(type)) return null;
             var index = type.IndexOf(StartArgument);
 
             if (index <= 0)

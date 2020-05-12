@@ -209,6 +209,7 @@ namespace Orleans.Utilities
             return result;
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ThrowGenericArityTooLarge(int arity) => throw new NotSupportedException($"An arity of {arity} is not supported");
 
         private ref struct Reader

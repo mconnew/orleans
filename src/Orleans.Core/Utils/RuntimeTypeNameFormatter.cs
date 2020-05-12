@@ -108,7 +108,7 @@ namespace Orleans.Utilities
         {
             // Generic type definitions (eg, List<> without parameters) and non-generic types do not include any
             // parameters in their formatting.
-            if (!type.IsConstructedGenericType) return;
+            if (!type.IsConstructedGenericType || type.ContainsGenericParameters) return;
 
             var args = type.GetGenericArguments();
             builder.Append('[');

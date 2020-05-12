@@ -83,7 +83,10 @@ namespace Orleans.Metadata
 
         private GrainType AddGenericParameters(GrainType grainType, Type type)
         {
-            if (GenericGrainType.TryParse(grainType, out var genericGrainType) && type.IsConstructedGenericType && !genericGrainType.IsConstructed)
+            if (GenericGrainType.TryParse(grainType, out var genericGrainType)
+                && type.IsConstructedGenericType
+                && !type.ContainsGenericParameters
+                && !genericGrainType.IsConstructed)
             {
                 grainType = genericGrainType.Construct(_typeConverter, type.GetGenericArguments()).GrainType;
             }

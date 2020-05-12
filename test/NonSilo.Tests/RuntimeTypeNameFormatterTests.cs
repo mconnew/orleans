@@ -78,6 +78,16 @@ namespace NonSilo.Tests
                 this.output.WriteLine($"Reparsed     : {reparsed}");
                 Assert.Equal(formatted, reparsed.Format());
             }
+        } 
+        /// <summary>
+        /// Tests that various strings parsed by <see cref="RuntimeTypeNameParser"/> are reformatted identically to their input, when the input was produced by <see cref="RuntimeTypeNameFormatter"/>.
+        /// </summary>
+        [Fact]
+        public void ParsedTypeNamesAreIdenticalToFormattedNames2()
+        {
+            //var testType = "UnitTests.GrainInterfaces.Generic.EdgeCases.IInterfaceTakingFurtherSpecializedGenArg`1[[UnitTests.Grains.Generic.EdgeCases.GrainSupplyingGenArgSpecializedIntoArray`1+T[],TestGrains]],TestGrainInterfaces";
+            var testType = "UnitTests.Grains.Generic.EdgeCases.GrainSupplyingGenArgSpecializedIntoArray`1+T[],TestGrains";
+            RuntimeTypeNameParser.Parse(testType);
         }
 
         public class Inner<T>

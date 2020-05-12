@@ -15,7 +15,7 @@ namespace Orleans.Utilities
             var result = ApplyInner(input, null, rewriter);
             if (result.Assembly is object)
             {
-                // If the rewriter bubbled up a 
+                // If the rewriter bubbled up an assembly, add it here. 
                 return new AssemblyQualifiedTypeSpec(result.Type, result.Assembly);
             }
 
