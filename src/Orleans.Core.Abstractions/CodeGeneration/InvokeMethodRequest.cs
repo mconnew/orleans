@@ -23,6 +23,11 @@ namespace Orleans.CodeGeneration
             Arguments = arguments;
         }
 
+        void SetTarget<TTarget>(TTarget target) where TTarget : ITargetHolder
+        {
+
+        }
+
         /// <summary> 
         /// String representation for this Invoke request. 
         /// </summary>

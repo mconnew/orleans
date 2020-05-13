@@ -55,6 +55,7 @@ namespace Orleans.Runtime
         private readonly IGrainCancellationTokenRuntime cancellationTokenRuntime;
         private readonly ApplicationRequestsStatisticsGroup appRequestStatistics;
         private readonly MessagingTrace messagingTrace;
+        private readonly ImrGrainMethodInvokerProvider invokers;
         private readonly SchedulingOptions schedulingOptions;
 
         public InsideRuntimeClient(
@@ -73,7 +74,8 @@ namespace Orleans.Runtime
             MessagingTrace messagingTrace,
             GrainReferenceActivator referenceActivator,
             GrainInterfaceIdResolver interfaceIdResolver,
-            GrainInterfaceToTypeResolver interfaceToTypeResolver)
+            GrainInterfaceToTypeResolver interfaceToTypeResolver,
+            ImrGrainMethodInvokerProvider invokers)
         {
             this.ServiceProvider = serviceProvider;
             this.MySilo = siloDetails.SiloAddress;
@@ -91,6 +93,7 @@ namespace Orleans.Runtime
             this.cancellationTokenRuntime = cancellationTokenRuntime;
             this.appRequestStatistics = appRequestStatistics;
             this.messagingTrace = messagingTrace;
+            this.invokers = invokers;
             this.schedulingOptions = schedulerOptions.Value;
 
             this.sharedCallbackData = new SharedCallbackData(
@@ -270,7 +273,7 @@ namespace Orleans.Runtime
             }
         }
 
-        public async Task Invoke(IAddressable target, IInvokable invokable, Message message)
+        public async Task Invoke(IGrainContext target, Message message)
         {
             try
             {
@@ -313,30 +316,12 @@ namespace Orleans.Runtime
                     var request = (InvokeMethodRequest) message.BodyObject;
                     if (request.Arguments != null)
                     {
-                        CancellationSourcesExtension.RegisterCancellationTokens(target, request, this.loggerFactory, logger, this, this.cancellationTokenRuntime);
+                        CancellationSourcesExtension.RegisterCancellationTokens(target, request);
                     }
 
-                    var invoker = invokable.GetInvoker(typeManager, request.InterfaceTypeCode, message.GenericGrainType);
-
-                    if (invoker is IGrainExtensionMethodInvoker &&
-                        !(target is IGrainExtension) &&
-                        !TryInstallExtension(request.InterfaceTypeCode, invokable, message.GenericGrainType, ref invoker))
+                    if (!this.invokers.TryGet(message.InterfaceId, out var invoker))
                     {
-                        // We are trying the invoke a grain extension method on a grain 
-                        // -- most likely reason is that the dynamic extension is not installed for this grain
-                        // So throw a specific exception here rather than a general InvalidCastException
-                        var error = String.Format(
-                            "Extension not installed on grain {0} attempting to invoke type {1} from invokable {2}",
-                            target.GetType().FullName, invoker.GetType().FullName, invokable.GetType().FullName);
-                        var exc = new GrainExtensionNotInstalledException(error);
-                        string extraDebugInfo = null;
-#if DEBUG
-                        extraDebugInfo = Utils.GetStackTrace();
-#endif
-                        this.logger.Warn(ErrorCode.Stream_ExtensionNotInstalled,
-                            string.Format("{0} for message {1} {2}", error, message, extraDebugInfo), exc);
-
-                        throw exc;
+                        throw new KeyNotFoundException($"Could not find an invoker for interface {message.InterfaceId}");
                     }
 
                     messagingTrace.OnInvokeMessage(message);
@@ -463,27 +448,6 @@ namespace Orleans.Runtime
             {
                 RequestContext.Clear();
             }
-        }
-
-        private bool TryInstallExtension(int interfaceId, IInvokable invokable, string genericGrainType, ref IGrainMethodInvoker invoker)
-        {
-            IGrainExtension extension = RuntimeContext.CurrentGrainContext is ActivationData activationData
-                ? activationData.ActivationServices.GetServiceByKey<int, IGrainExtension>(interfaceId)
-                : this.ServiceProvider.GetServiceByKey<int, IGrainExtension>(interfaceId);
-
-            if (extension == null)
-            {
-                return false;
-            }
-
-            if (!TryAddExtension(extension))
-            {
-                return false;
-            }
-
-            // Get the newly installed invoker for the grain extension.
-            invoker = invokable.GetInvoker(typeManager, interfaceId, genericGrainType);
-            return true;
         }
 
         private void SafeSendResponse(Message message, object resultObject)
@@ -738,83 +702,6 @@ namespace Orleans.Runtime
             }
 
             return this.HostedClient.StreamDirectory;
-        }
-
-        public Task<Tuple<TExtension, TExtensionInterface>> BindExtension<TExtension, TExtensionInterface>(Func<TExtension> newExtensionFunc)
-            where TExtension : IGrainExtension
-            where TExtensionInterface : IGrainExtension
-        {
-            if (RuntimeContext.CurrentGrainContext is null)
-            {
-                return this.HostedClient.BindExtension<TExtension, TExtensionInterface>(newExtensionFunc);
-            }
-
-            if (!TryGetExtensionHandler(out TExtension extension))
-            {
-                extension = newExtensionFunc();
-                if (!TryAddExtension(extension))
-                    throw new OrleansException("Failed to register " + typeof(TExtension).Name);
-            }
-
-            IGrainContext context = RuntimeContext.CurrentGrainContext;
-            var currentTypedGrain = context.GrainReference.Cast<TExtensionInterface>();
-
-            return Task.FromResult(Tuple.Create(extension, currentTypedGrain));
-        }
-
-        public bool TryAddExtension(IGrainExtension handler)
-        {
-            ExtensionInvoker extensionInvoker = GetCurrentExtensionInvoker();
-            var methodInvoker = TryGetExtensionMethodInvoker(this.typeManager, handler.GetType());
-            if (methodInvoker == null)
-                throw new InvalidOperationException("Extension method invoker was not generated for an extension interface");
-
-            return extensionInvoker.TryAddExtension(methodInvoker, handler);
-        }
-
-        public void RemoveExtension(IGrainExtension handler)
-        {
-            GetCurrentExtensionInvoker().Remove(handler);
-        }
-
-        public bool TryGetExtensionHandler<TExtension>(out TExtension result) where TExtension : IGrainExtension
-        {
-            ExtensionInvoker invoker = GetCurrentExtensionInvoker();
-            IGrainExtension untypedResult;
-            if (invoker.TryGetExtensionHandler(typeof(TExtension), out untypedResult))
-            {
-                result = (TExtension)untypedResult;
-                return true;
-            }
-
-            result = default(TExtension);
-            return false;
-        }
-
-        private ExtensionInvoker GetCurrentExtensionInvoker()
-        {
-            return RuntimeContext.CurrentGrainContext switch
-            {
-                SystemTarget systemTarget => systemTarget.ExtensionInvoker,
-                ActivationData activation => activation.ExtensionInvoker,
-                _ => throw new InvalidOperationException("Attempting to GetCurrentExtensionInvoker when not in an activation scope")
-            };
-        }
-
-        internal static IGrainExtensionMethodInvoker TryGetExtensionMethodInvoker(GrainTypeManager typeManager, Type handlerType)
-        {
-            var interfaces = GrainInterfaceUtils.GetRemoteInterfaces(handlerType).Values;
-            if (interfaces.Count != 1)
-                throw new InvalidOperationException($"Extension type {handlerType.FullName} implements more than one grain interface.");
-
-            var interfaceId = GrainInterfaceUtils.GetGrainInterfaceId(interfaces.First());
-            var invoker = typeManager.GetInvoker(interfaceId);
-            if (invoker != null)
-                return (IGrainExtensionMethodInvoker)invoker;
-
-            throw new ArgumentException(
-                $"Provider extension handler type {handlerType} was not found in the type manager",
-                nameof(handlerType));
         }
 
         public void Participate(ISiloLifecycle lifecycle)

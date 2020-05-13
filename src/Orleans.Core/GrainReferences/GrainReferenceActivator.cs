@@ -1,5 +1,6 @@
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -8,6 +9,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 using Orleans.ApplicationParts;
+using Orleans.CodeGeneration;
 using Orleans.Metadata;
 using Orleans.Runtime;
 
@@ -121,31 +123,27 @@ namespace Orleans.GrainReferences
         }
     }
 
-    internal class ImrGrainReferenceActivatorProvider : IGrainReferenceActivatorProvider
+    internal class ImrRpcProvider
     {
-        private readonly IServiceProvider _serviceProvider;
         private readonly TypeConverter _typeConverter;
-        private readonly Dictionary<GrainInterfaceId, Type> _mapping;
-        private IGrainReferenceRuntime _grainReferenceRuntime;
-
-        public ImrGrainReferenceActivatorProvider(
-            IServiceProvider serviceProvider,
-            IApplicationPartManager appParts,
-            GrainInterfaceIdResolver resolver,
-            TypeConverter typeConverter)
+        private readonly Dictionary<GrainInterfaceId, (Type ReferenceType, Type InvokerType)> _mapping;
+        public ImrRpcProvider(
+        IServiceProvider serviceProvider,
+        IApplicationPartManager appParts,
+        GrainInterfaceIdResolver resolver,
+        TypeConverter typeConverter)
         {
-            _serviceProvider = serviceProvider;
-            this._typeConverter = typeConverter;
+            _typeConverter = typeConverter;
             var interfaces = appParts.CreateAndPopulateFeature<GrainInterfaceFeature>();
-            _mapping = new Dictionary<GrainInterfaceId, Type>();
+            _mapping = new Dictionary<GrainInterfaceId, (Type ReferenceType, Type InvokerType)>();
             foreach (var @interface in interfaces.Interfaces)
             {
                 var id = resolver.GetGrainInterfaceId(@interface.InterfaceType);
-                _mapping[id] = @interface.ReferenceType;
+                _mapping[id] = (@interface.ReferenceType, @interface.InvokerType);
             }
         }
 
-        public bool TryGet(GrainType grainType, GrainInterfaceId interfaceId, out IGrainReferenceActivator activator)
+        public bool TryGet(GrainInterfaceId interfaceId, out (Type ReferenceType, Type InvokerType) result)
         {
             GrainInterfaceId lookupId;
             Type[] args;
@@ -160,21 +158,80 @@ namespace Orleans.GrainReferences
                 args = default;
             }
 
-            if (!_mapping.TryGetValue(lookupId, out var referenceType))
+            if (!_mapping.TryGetValue(lookupId, out var mapping))
+            {
+                result = default;
+                return false;
+            }
+
+            var (referenceType, invokerType) = mapping;
+
+            if (args is Type[])
+            {
+                referenceType = referenceType.MakeGenericType(args);
+                invokerType = invokerType.MakeGenericType(args);
+            }
+
+            result = (referenceType, invokerType);
+            return true;
+        }
+    }
+
+    internal class ImrGrainMethodInvokerProvider
+    {
+        private readonly ImrRpcProvider _rpcProvider;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly ConcurrentDictionary<GrainInterfaceId, IGrainMethodInvoker> _invokers = new ConcurrentDictionary<GrainInterfaceId, IGrainMethodInvoker>();
+
+        public ImrGrainMethodInvokerProvider(ImrRpcProvider rpcProvider, IServiceProvider serviceProvider)
+        {
+            _rpcProvider = rpcProvider;
+            _serviceProvider = serviceProvider;
+        }
+
+        public bool TryGet(GrainInterfaceId interfaceId, out IGrainMethodInvoker invoker)
+        {
+            if (_invokers.TryGetValue(interfaceId, out invoker))
+            {
+                return true;
+            }
+
+            if (!_rpcProvider.TryGet(interfaceId, out var types))
+            {
+                invoker = default;
+                return false;
+            }
+
+            _invokers[interfaceId] = invoker = (IGrainMethodInvoker)ActivatorUtilities.CreateInstance(_serviceProvider, types.InvokerType);
+            return true;
+        }
+    }
+
+    internal class ImrGrainReferenceActivatorProvider : IGrainReferenceActivatorProvider
+    {
+        private readonly IServiceProvider _serviceProvider;
+        private readonly ImrRpcProvider _rpcProvider;
+        private IGrainReferenceRuntime _grainReferenceRuntime;
+
+        public ImrGrainReferenceActivatorProvider(
+            IServiceProvider serviceProvider,
+            ImrRpcProvider rpcProvider)
+        {
+            _serviceProvider = serviceProvider;
+            _rpcProvider = rpcProvider;
+        }
+
+        public bool TryGet(GrainType grainType, GrainInterfaceId interfaceId, out IGrainReferenceActivator activator)
+        {
+            if (!_rpcProvider.TryGet(interfaceId, out var types))
             {
                 activator = default;
                 return false;
             }
 
-            if (args is Type[])
-            {
-                referenceType = referenceType.MakeGenericType(args);
-            }
-
             var runtime = _grainReferenceRuntime ??= _serviceProvider.GetRequiredService<IGrainReferenceRuntime>();
             var shared = new GrainReferenceShared(grainType, interfaceId, runtime);
-
-            activator = new ImrGrainReferenceActivator(referenceType, shared);
+            activator = new ImrGrainReferenceActivator(types.ReferenceType, shared);
             return true;
         }
 

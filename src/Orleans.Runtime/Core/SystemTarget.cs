@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Orleans.CodeGeneration;
 using Orleans.GrainReferences;
 using Orleans.Runtime.Scheduler;
 
@@ -14,12 +13,12 @@ namespace Orleans.Runtime
     /// Made public for GrainSerive to inherit from it.
     /// Can be turned to internal after a refactoring that would remove the inheritance relation.
     /// </summary>
-    public abstract class SystemTarget : ISystemTarget, ISystemTargetBase, IInvokable, IGrainContext
+    public abstract class SystemTarget : ISystemTarget, ISystemTargetBase, IGrainContext
     {
         private readonly SystemTargetGrainId id;
         private GrainReference selfReference;
-        private IGrainMethodInvoker lastInvoker;
         private Message running;
+        private Dictionary<Type, object> components;
 
         /// <summary>Silo address of the system target.</summary>
         public SiloAddress Silo { get; }
@@ -39,16 +38,6 @@ namespace Orleans.Runtime
                 return this.runtimeClient;
             }
             set { this.runtimeClient = value; }
-        }
-
-        private ExtensionInvoker extensionInvoker;
-        internal ExtensionInvoker ExtensionInvoker
-        {
-            get
-            {
-                this.lastInvoker = null;
-                return this.extensionInvoker ?? (this.extensionInvoker = new ExtensionInvoker());
-            }
         }
 
         IGrainReferenceRuntime ISystemTargetBase.GrainReferenceRuntime => this.RuntimeClient.GrainReferenceRuntime;
@@ -92,36 +81,27 @@ namespace Orleans.Runtime
 
         internal WorkItemGroup WorkItemGroup { get; set; }
 
-        IServiceProvider IGrainContext.ActivationServices => null;
+        public IServiceProvider ActivationServices => this.RuntimeClient.ServiceProvider;
 
         IDictionary<object, object> IGrainContext.Items => throw new NotImplementedException("IGrainContext.Items is not implemented by SystemTarget");
 
         IGrainLifecycle IGrainContext.ObservableLifecycle => throw new NotImplementedException("IGrainContext.ObservableLifecycle is not implemented by SystemTarget");
 
-        IGrainMethodInvoker IInvokable.GetInvoker(GrainTypeManager typeManager, int interfaceId, string genericGrainType)
+        public TComponent GetComponent<TComponent>()
         {
-            // Return previous cached invoker, if applicable
-            if (lastInvoker != null && interfaceId == lastInvoker.InterfaceTypeCode) // extension invoker returns InterfaceId==0, so this condition will never be true if an extension is installed
-                return lastInvoker;
-
-            if (extensionInvoker != null && extensionInvoker.IsExtensionInstalled(interfaceId))
+            if (components is null) components = new Dictionary<Type, object>();
+            if (!components.TryGetValue(typeof(TComponent), out var result))
             {
-                // Shared invoker for all extensions installed on this target
-                lastInvoker = extensionInvoker;
-            }
-            else
-            {
-                // Find the specific invoker for this interface / grain type
-                lastInvoker = typeManager.GetInvoker(interfaceId, genericGrainType);
+                result = components[typeof(TComponent)] = ActivatorUtilities.GetServiceOrCreateInstance(this.ActivationServices, typeof(TComponent));
             }
 
-            return lastInvoker;
+            return (TComponent)result;
         }
 
         internal void HandleNewRequest(Message request)
         {
             running = request;
-            this.RuntimeClient.Invoke(this, this, request).Ignore();
+            this.RuntimeClient.Invoke(this, request).Ignore();
         }
 
         internal void HandleResponse(Message response)

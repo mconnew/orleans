@@ -10,11 +10,11 @@ namespace Orleans.Runtime
     // defined for the grain class.
     // Note that in all cases we never have more than one copy of an actual invoker;
     // we may have a ExtensionInvoker per activation, in the worst case.
-    internal class ExtensionInvoker : IGrainMethodInvoker, IGrainExtensionMap
+    internal class ExtensionInvoker : IGrainExtensionMap
     {
         // Because calls to ExtensionInvoker are allways made within the activation context,
         // we rely on the single-threading guarantee of the runtime and do not protect the map with a lock.
-        private Dictionary<int, Tuple<IGrainExtension, IGrainExtensionMethodInvoker>> extensionMap; // key is the extension interface ID
+        private Dictionary<GrainInterfaceId, (IGrainExtension, IGrainExtensionMethodInvoker)> extensionMap; // key is the extension interface ID
 
         /// <summary>
         /// Try to add an extension for the specific interface ID.
@@ -22,19 +22,16 @@ namespace Orleans.Runtime
         /// Note that if an extension invoker handles multiple interface IDs, it can only be associated
         /// with one of those IDs when added, and so only conflicts on that one ID will be detected and prevented.
         /// </summary>
-        /// <param name="invoker"></param>
-        /// <param name="handler"></param>
-        /// <returns></returns>
-        internal bool TryAddExtension(IGrainExtensionMethodInvoker invoker, IGrainExtension handler)
+        internal bool TryAddExtension(GrainInterfaceId interfaceId, IGrainExtensionMethodInvoker invoker, IGrainExtension extension)
         {
             if (extensionMap == null)
             {
-                extensionMap = new Dictionary<int, Tuple<IGrainExtension, IGrainExtensionMethodInvoker>>(1);
+                extensionMap = new Dictionary<GrainInterfaceId, (IGrainExtension, IGrainExtensionMethodInvoker)>(1);
             }
 
-            if (extensionMap.ContainsKey(invoker.InterfaceTypeCode)) return false;
+            if (extensionMap.ContainsKey(interfaceId)) return false;
 
-            extensionMap.Add(invoker.InterfaceTypeCode, new Tuple<IGrainExtension, IGrainExtensionMethodInvoker>(handler, invoker));
+            extensionMap.Add(interfaceId, (extension, invoker));
             return true;
         }
 
@@ -46,7 +43,7 @@ namespace Orleans.Runtime
         /// <returns>true if the chained invoker is now empty, false otherwise</returns>
         public bool Remove(IGrainExtension extension)
         {
-            int interfaceId = 0;
+            GrainInterfaceId? interfaceId = null;
 
             foreach (var kv in extensionMap)
                 if (kv.Value.Item1 == extension)
@@ -55,11 +52,11 @@ namespace Orleans.Runtime
                     break;
                 }
 
-            if (interfaceId == 0) // not found
+            if (!interfaceId.HasValue) // not found
                 throw new InvalidOperationException(String.Format("Extension {0} is not installed",
                     extension.GetType().FullName));
 
-            extensionMap.Remove(interfaceId);
+            extensionMap.Remove(interfaceId.Value);
             return extensionMap.Count == 0;
         }
 
@@ -85,12 +82,9 @@ namespace Orleans.Runtime
         /// invoker is used to handle the request.
         /// The base invoker will throw an appropriate exception if the request is not recognized.
         /// </summary>
-        /// <param name="grain"></param>
-        /// <param name="request"></param>
-        /// <returns></returns>
-        public Task<object> Invoke(IAddressable grain, InvokeMethodRequest request)
+        public Task<object> Invoke(IAddressable grain, GrainInterfaceId interfaceId, InvokeMethodRequest request)
         {
-            if (extensionMap == null || !extensionMap.TryGetValue(request.InterfaceTypeCode, out var value))
+            if (extensionMap == null || !extensionMap.TryGetValue(interfaceId, out var value))
                 throw new InvalidOperationException(
                     String.Format("Extension invoker invoked with an unknown interface ID:{0}.", request.InterfaceTypeCode));
 
@@ -99,19 +93,9 @@ namespace Orleans.Runtime
             return invoker.Invoke(extension, request);
         }
 
-        public bool IsExtensionInstalled(int interfaceId)
+        public bool IsExtensionInstalled(GrainInterfaceId interfaceId)
         {
             return extensionMap != null && extensionMap.ContainsKey(interfaceId);
-        }
-
-        public int InterfaceTypeCode
-        {
-            get { return 0; } // 0 indicates an extension invoker that may have multiple intefaces inplemented by extensions.
-        }
-
-        public ushort InterfaceVersion
-        {
-            get { return 0; }
         }
 
         /// <summary>
@@ -122,7 +106,7 @@ namespace Orleans.Runtime
         /// <returns>
         /// <see langword="true"/> if the extension is found, <see langword="false"/> otherwise.
         /// </returns>
-        public bool TryGetExtension(int interfaceId, out IGrainExtension extension)
+        public bool TryGetExtension(GrainInterfaceId interfaceId, out IGrainExtension extension)
         {
             if (extensionMap != null && extensionMap.TryGetValue(interfaceId, out var value))
             {

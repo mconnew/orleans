@@ -47,6 +47,9 @@ namespace Orleans.Runtime
         public override string ToString() => _value.ToStringUtf8();
 
         public string ToStringUtf8() => _value.ToString();
+
+        public static bool operator ==(GrainInterfaceId left, GrainInterfaceId right) => left.Equals(right);
+        public static bool operator !=(GrainInterfaceId left, GrainInterfaceId right) => !left.Equals(right);
     }
 
     /// <summary>

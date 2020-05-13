@@ -108,6 +108,8 @@ namespace Orleans.Hosting
             services.TryAddSingleton<GrainRuntime>();
             services.TryAddSingleton<IGrainRuntime, GrainRuntime>();
             services.TryAddSingleton<IGrainCancellationTokenRuntime, GrainCancellationTokenRuntime>();
+            services.AddTransient<CancellationSourcesExtension>();
+            services.AddTransientKeyedService<Type, object>(typeof(ICancellationSourcesExtension), (sp, _) => sp.GetRequiredService<CancellationSourcesExtension>());
             services.TryAddSingleton<OrleansTaskScheduler>();
             services.TryAddSingleton<GrainFactory>(sp => sp.GetService<InsideRuntimeClient>().ConcreteGrainFactory);
             services.TryAddSingleton<GrainInterfaceToTypeResolver>();
@@ -118,6 +120,8 @@ namespace Orleans.Hosting
             services.TryAddSingleton<GrainReferenceActivator>();
             services.AddSingleton<IGrainReferenceActivatorProvider, ImrGrainReferenceActivatorProvider>();
             services.AddSingleton<IGrainReferenceActivatorProvider, UntypedGrainReferenceActivatorProvider>();
+            services.TryAddSingleton<ImrRpcProvider>();
+            services.TryAddSingleton<ImrGrainMethodInvokerProvider>();
             services.TryAddSingleton<GrainReferenceSerializer>();
             services.TryAddSingleton<GrainVersionManifest>();
             services.TryAddSingleton<TypeMetadataCache>();

@@ -32,6 +32,12 @@ namespace Orleans.Runtime
         /// </summary>
         IGrainLifecycle ObservableLifecycle { get; }
 
+        void SetComponent<TComponent>(TComponent value);
+            
+        /// <summary>
+        /// Gets the component of the specified type.
+        /// </summary>
+        TComponent GetComponent<TComponent>();
     }
 
     internal interface IActivationData : IGrainContext

@@ -21,7 +21,7 @@ namespace Orleans.Runtime
     /// MUST lock this object for any concurrent access
     /// Consider: compartmentalize by usage, e.g., using separate interfaces for data for catalog, etc.
     /// </summary>
-    internal class ActivationData : IActivationData, IInvokable, IAsyncDisposable
+    internal class ActivationData : IActivationData, IAsyncDisposable
     {
         // This is the maximum amount of time we expect a request to continue processing
         private readonly TimeSpan maxRequestProcessingTime;
@@ -30,7 +30,6 @@ namespace Orleans.Runtime
         private readonly ILogger logger;
         private readonly IServiceScope serviceScope;
         public readonly TimeSpan CollectionAgeLimit;
-        private IGrainMethodInvoker lastInvoker;
         private HashSet<IGrainTimer> timers;
         
         public ActivationData(
@@ -78,34 +77,23 @@ namespace Orleans.Runtime
 
         internal WorkItemGroup WorkItemGroup { get; set; }
 
-        private ExtensionInvoker extensionInvoker;
-        internal ExtensionInvoker ExtensionInvoker
+        private Dictionary<Type, object> components;
+
+        public void SetComponent<TComponent>(TComponent value)
         {
-            get
-            {
-                this.lastInvoker = null;
-                return this.extensionInvoker ?? (this.extensionInvoker = new ExtensionInvoker());
-            }
+            if (components is null) components = new Dictionary<Type, object>();
+            components[typeof(TComponent)] = value;
         }
 
-        public IGrainMethodInvoker GetInvoker(GrainTypeManager typeManager, int interfaceId, string genericGrainType = null)
+        public TComponent GetComponent<TComponent>()
         {
-            // Return previous cached invoker, if applicable
-            if (lastInvoker != null && interfaceId == lastInvoker.InterfaceTypeCode) // extension invoker returns InterfaceId==0, so this condition will never be true if an extension is installed
-                return lastInvoker;
-
-            if (extensionInvoker != null && extensionInvoker.IsExtensionInstalled(interfaceId))
+            if (components is null) components = new Dictionary<Type, object>();
+            if (!components.TryGetValue(typeof(TComponent), out var result))
             {
-                // Shared invoker for all extensions installed on this grain
-                lastInvoker = extensionInvoker;
-            }
-            else
-            {
-                // Find the specific invoker for this interface / grain type
-                lastInvoker = typeManager.GetInvoker(interfaceId, genericGrainType);
+                result = components[typeof(TComponent)] = this.ServiceProvider.GetServiceByKey<Type, IGrainExtension>(typeof(TComponent));
             }
 
-            return lastInvoker;
+            return (TComponent)result;
         }
 
         public HashSet<ActivationId> RunningRequestsSenders { get; } = new HashSet<ActivationId>();
@@ -129,7 +117,7 @@ namespace Orleans.Runtime
         internal async Task DeactivateStreamResources()
         {
             if (streamDirectory == null) return; // No streams - Nothing to do.
-            if (extensionInvoker == null) return; // No installed extensions - Nothing to do.
+            if (components == null) return; // No installed extensions - Nothing to do.
 
             if (StreamResourceTestControl.TestOnlySuppressStreamCleanupOnDeactivate)
             {
