@@ -83,11 +83,14 @@ namespace Orleans.Runtime
             return resultTask.ToTypedTask<T>();
         }
 
-        public TGrainInterface Convert<TGrainInterface>(IAddressable grain) => (TGrainInterface)this.Convert(grain, typeof(TGrainInterface));
-
-        public object Convert(IAddressable grain, Type interfaceType)
+        public object Cast(IAddressable grain, Type interfaceType)
         {
             var grainId = grain.GetGrainId();
+            if (grain is GrainReference && interfaceType.IsAssignableFrom(grain.GetType()))
+            {
+                return grain;
+            }
+
             var interfaceId = this.interfaceIdResolver.GetGrainInterfaceId(interfaceType);
             return this.referenceActivator.CreateReference(grainId, interfaceId);
         }

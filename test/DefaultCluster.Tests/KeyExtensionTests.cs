@@ -143,13 +143,5 @@ namespace DefaultCluster.Tests.General
                 Assert.True(grainRef.Equals(grainRef2));
             }
         }
-
-        [Fact, TestCategory("BVT"), TestCategory("PrimaryKeyExtension")]
-        public void GetPrimaryKeyStringOnWrongGrainReference()
-        {
-            var grain = this.GrainFactory.GetGrain<ISimpleGrain>(0);
-            var key = ((GrainReference)grain).GetPrimaryKeyString();
-            Assert.Null(key);
-        }
     }
 }

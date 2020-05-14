@@ -1,10 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using Orleans.CodeGeneration;
-using Orleans.Core;
-using Orleans.Serialization;
 
 namespace Orleans.Runtime
 {
@@ -64,20 +60,10 @@ namespace Orleans.Runtime
         /// <summary>Constructs a reference to the grain with the specified ID.</summary>
         internal static GrainReference FromGrainId(GrainReferenceShared shared, GrainId grainId)
         {
-            // TODO: delete this constructor.
             return new GrainReference(shared, grainId.Key);
         }
 
-        internal static GrainReference NewObserverGrainReference(GrainReferenceShared prototype, ObserverGrainId observerId)
-        {
-            // TODO: delete this constructor
-            return new GrainReference(prototype, observerId.GrainId.Key);
-        }
-
-        public virtual T Cast<T>() where T : IAddressable
-        {
-            return _shared.Runtime.Convert<T>(this);
-        }
+        public virtual TGrainInterface Cast<TGrainInterface>() where TGrainInterface : IAddressable => (TGrainInterface)_shared.Runtime.Cast(this, typeof(TGrainInterface));
 
         /// <summary>
         /// Tests this reference for equality to another object.

@@ -285,7 +285,7 @@ namespace Orleans
         }
 
         /// <inheritdoc />
-        GrainReference IInternalGrainFactory.GetGrain(GrainId grainId)
+        IAddressable IGrainFactory.GetGrain(GrainId grainId)
         {
             return this.InternalGrainFactory.GetGrain(grainId);
         }
@@ -311,26 +311,6 @@ namespace Orleans
         }
 
         /// <inheritdoc />
-        public TGrainInterface GetGrain<TGrainInterface>(Type grainInterfaceType, Guid grainPrimaryKey) where TGrainInterface : IGrain
-            => this.InternalGrainFactory.GetGrain<TGrainInterface>(grainInterfaceType, grainPrimaryKey);
-
-        /// <inheritdoc />
-        public TGrainInterface GetGrain<TGrainInterface>(Type grainInterfaceType, long grainPrimaryKey) where TGrainInterface : IGrain
-            => this.InternalGrainFactory.GetGrain<TGrainInterface>(grainInterfaceType, grainPrimaryKey);
-
-        /// <inheritdoc />
-        public TGrainInterface GetGrain<TGrainInterface>(Type grainInterfaceType, string grainPrimaryKey) where TGrainInterface : IGrain
-            => this.InternalGrainFactory.GetGrain<TGrainInterface>(grainInterfaceType, grainPrimaryKey);
-
-        /// <inheritdoc />
-        public TGrainInterface GetGrain<TGrainInterface>(Type grainInterfaceType, Guid grainPrimaryKey, string keyExtension) where TGrainInterface : IGrain
-            => this.InternalGrainFactory.GetGrain<TGrainInterface>(grainInterfaceType, grainPrimaryKey, keyExtension);
-
-        /// <inheritdoc />
-        public TGrainInterface GetGrain<TGrainInterface>(Type grainInterfaceType, long grainPrimaryKey, string keyExtension) where TGrainInterface : IGrain
-            => this.InternalGrainFactory.GetGrain<TGrainInterface>(grainInterfaceType, grainPrimaryKey, keyExtension);
-
-        /// <inheritdoc />
         public IGrain GetGrain(Type grainInterfaceType, string grainPrimaryKey)
             => this.InternalGrainFactory.GetGrain(grainInterfaceType, grainPrimaryKey);
 
@@ -353,5 +333,8 @@ namespace Orleans
         /// <inheritdoc />
         public object Cast(IAddressable grain, Type outputGrainInterfaceType)
             => this.InternalGrainFactory.Cast(grain, outputGrainInterfaceType);
+
+        public IAddressable GetGrain(GrainId grainId, GrainInterfaceId interfaceId)
+            => this.InternalGrainFactory.GetGrain(grainId, interfaceId);
     }
 }

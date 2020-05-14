@@ -45,7 +45,7 @@ namespace Orleans.Runtime
 
         void Reset(bool cleanup);
 
-        GrainReference CreateObjectReference(IAddressable obj, IGrainMethodInvoker invoker);
+        IAddressable CreateObjectReference(IAddressable obj, IGrainMethodInvoker invoker);
 
         void DeleteObjectReference(IAddressable obj);
         

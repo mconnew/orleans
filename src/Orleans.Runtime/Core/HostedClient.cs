@@ -92,7 +92,7 @@ namespace Orleans.Runtime
         public override string ToString() => $"{nameof(HostedClient)}_{this.Address}";
 
         /// <inheritdoc />
-        public GrainReference CreateObjectReference(IAddressable obj, IGrainMethodInvoker invoker)
+        public IAddressable CreateObjectReference(IAddressable obj, IGrainMethodInvoker invoker)
         {
             if (obj is GrainReference) throw new ArgumentException("Argument obj is already a grain reference.");
 

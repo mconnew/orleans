@@ -97,7 +97,7 @@ namespace Tester.AzureUtils.TimerTests
                     var e = new ReminderEntry
                     {
                         //GrainId = LegacyGrainId.GetGrainId(new Guid(s)),
-                        GrainRef = this.fixture.InternalGrainFactory.GetGrain(LegacyGrainId.NewId()),
+                        GrainRef = (GrainReference)this.fixture.InternalGrainFactory.GetGrain(LegacyGrainId.NewId()),
                         ReminderName = "MY_REMINDER_" + i,
                         Period = TimeSpan.FromSeconds(5),
                         StartAt = DateTime.UtcNow
@@ -129,7 +129,7 @@ namespace Tester.AzureUtils.TimerTests
             Guid guid = Guid.NewGuid();
             return new ReminderEntry
                 {
-                    GrainRef = this.fixture.InternalGrainFactory.GetGrain(LegacyGrainId.NewId()),
+                    GrainRef = (GrainReference)this.fixture.InternalGrainFactory.GetGrain(LegacyGrainId.NewId()),
                     ReminderName = string.Format("TestReminder.{0}", guid),
                     Period = TimeSpan.FromSeconds(5),
                     StartAt = DateTime.UtcNow

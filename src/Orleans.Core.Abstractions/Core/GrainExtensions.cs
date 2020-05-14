@@ -1,7 +1,4 @@
 using System;
-using System.Threading.Tasks;
-using Orleans.CodeGeneration;
-using Orleans.Core;
 using Orleans.Runtime;
 
 namespace Orleans
@@ -13,7 +10,7 @@ namespace Orleans
     {
         private const string WRONG_GRAIN_ERROR_MSG = "Passing a half baked grain as an argument. It is possible that you instantiated a grain class explicitly, as a regular object and not via Orleans runtime or via proper test mocking";
 
-        internal static GrainReference AsWeaklyTypedReference(this IAddressable grain)
+        internal static GrainReference AsReference(this IAddressable grain)
         {
             ThrowIfNullGrain(grain);
 
@@ -51,8 +48,8 @@ namespace Orleans
         public static TGrainInterface AsReference<TGrainInterface>(this IAddressable grain)
         {
             ThrowIfNullGrain(grain);
-            var grainReference = grain.AsWeaklyTypedReference();
-            return grainReference.Runtime.Convert<TGrainInterface>(grainReference);
+            var grainReference = grain.AsReference();
+            return (TGrainInterface)grainReference.Runtime.Cast(grain, typeof(TGrainInterface));
         }
 
         /// <summary>
@@ -73,7 +70,7 @@ namespace Orleans
         /// <returns>A reference to <paramref name="grain"/> which implements <paramref name="interfaceType"/>.</returns>
         public static object Cast(this IAddressable grain, Type interfaceType)
         {
-            return grain.AsWeaklyTypedReference().Runtime.Convert(grain, interfaceType);
+            return grain.AsReference().Runtime.Cast(grain, interfaceType);
         }
 
         public static GrainId GetGrainId(this IAddressable grain)

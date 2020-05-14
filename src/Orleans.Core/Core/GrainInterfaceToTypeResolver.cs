@@ -43,7 +43,19 @@ namespace Orleans
         public GrainInterfaceToTypeResolver(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
-            _cache = new Cache(MajorMinorVersion.Zero, new Dictionary<GrainInterfaceId, GrainType>());
+            _cache = new Cache(MajorMinorVersion.Zero, new Dictionary<GrainInterfaceId, GrainType>(), new List<(string, GrainType)>());
+        }
+
+        public GrainType GetGrainTypeFromPrefix(string prefix)
+        {
+            var cache = _cache;
+            foreach (var entry in cache.GrainTypePrefixes)
+            {
+                entry.Prefix.StartsWith(prefix);
+                return entry.GrainType;
+            }
+
+            throw new KeyNotFoundException($"Could not find an implementation matching prefix \"{prefix}\"");
         }
 
         public GrainType GetGrainType(GrainInterfaceId interfaceId)
@@ -132,6 +144,7 @@ namespace Orleans
         private static Cache BuildCache(ClusterManifest clusterManifest)
         {
             var result = new Dictionary<GrainInterfaceId, GrainType>();
+            var prefixes = new List<(string, GrainType)>();
 
             foreach (var entry in clusterManifest.Silos)
             {
@@ -158,10 +171,15 @@ namespace Orleans
                             result[implemented] = id;
                         }
                     }
+
+                    if (grainType.Value.Properties.TryGetValue(WellKnownGrainTypeProperties.GrainTypePrefix, out var typeNamePrefix))
+                    {
+                        prefixes.Add((typeNamePrefix, id));
+                    }
                 }
             }
 
-            return new Cache(clusterManifest.Version, result);
+            return new Cache(clusterManifest.Version, result, prefixes);
 
             IEnumerable<GrainInterfaceId> SupportedGrainInterfaces(GrainProperties grain)
             {
@@ -187,14 +205,16 @@ namespace Orleans
 
         private class Cache
         {
-            public Cache(MajorMinorVersion version, Dictionary<GrainInterfaceId, GrainType> map)
+            public Cache(MajorMinorVersion version, Dictionary<GrainInterfaceId, GrainType> map, List<(string, GrainType)> prefixes)
             {
                 this.Version = version;
                 this.Map = map;
+                this.GrainTypePrefixes = prefixes;
             }
 
             public MajorMinorVersion Version { get; }
             public Dictionary<GrainInterfaceId, GrainType> Map { get; }
+            public List<(string Prefix, GrainType GrainType)> GrainTypePrefixes { get; }
         }
     }
 }

@@ -84,6 +84,11 @@ namespace Orleans.Metadata
         /// The value for <see cref="IdleDeactivationPeriod"/> used to specify that the grain should not be deactivated due to idleness.
         /// </summary>
         public const string IndefiniteIdleDeactivationPeriodValue = "indefinite";
+
+        /// <summary>
+        /// The name of the main type, only for internal use.
+        /// </summary>
+        public const string GrainTypePrefix = "impl-prefix";
     }
 
     /// <summary>

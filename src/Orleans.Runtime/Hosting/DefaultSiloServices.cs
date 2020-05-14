@@ -123,6 +123,7 @@ namespace Orleans.Hosting
             services.TryAddSingleton<ImrRpcProvider>();
             services.TryAddSingleton<ImrGrainMethodInvokerProvider>();
             services.TryAddSingleton<GrainReferenceSerializer>();
+            services.TryAddSingleton<GrainReferenceKeyStringConverter>();
             services.TryAddSingleton<GrainVersionManifest>();
             services.TryAddSingleton<TypeMetadataCache>();
             services.TryAddSingleton<ActivationDirectory>();

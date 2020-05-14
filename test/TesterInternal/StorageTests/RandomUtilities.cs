@@ -38,7 +38,7 @@ namespace UnitTests.StorageTests.Relational
         /// </summary>
         /// <remarks>This switch could take the key generator function as a parameter, so the called could use this same code to
         /// create known grain ID values.</remarks>
-        private static Dictionary<Type, Func<IInternalGrainFactory, Type, bool, object, GrainReference>> GrainReferenceTypeSwitch { get; } = new Dictionary<Type, Func<IInternalGrainFactory, Type, bool, object, GrainReference>>
+        private static Dictionary<Type, Func<IInternalGrainFactory, Type, bool, object, IAddressable>> GrainReferenceTypeSwitch { get; } = new Dictionary<Type, Func<IInternalGrainFactory, Type, bool, object, IAddressable>>
         {
             [typeof(Guid)] = (grainFactory, type, keyExtension, state) =>
             {
@@ -196,7 +196,7 @@ namespace UnitTests.StorageTests.Relational
         /// <exception cref="ArgumentException"/>.
         internal static GrainReference GetRandomGrainReference<TGrainKey, TGrainGeneric>(IInternalGrainFactory grainFactory, bool keyExtension)
         {
-            Func<IInternalGrainFactory, Type, bool, object, GrainReference> func;
+            Func<IInternalGrainFactory, Type, bool, object, IAddressable> func;
             if(GrainReferenceTypeSwitch.TryGetValue(typeof(TGrainKey), out func))
             {
                 //If this a string type, some symbol set from which to draw the symbols needs to given
@@ -204,7 +204,7 @@ namespace UnitTests.StorageTests.Relational
                 const long SymbolsDefaultCount = 15;
                 var symbols = new SymbolSet(SymbolSet.Latin1);
 
-                return func(grainFactory, typeof(TGrainGeneric), keyExtension, Tuple.Create(new Range<long>(SymbolsDefaultCount, SymbolsDefaultCount), symbols));
+                return (GrainReference)func(grainFactory, typeof(TGrainGeneric), keyExtension, Tuple.Create(new Range<long>(SymbolsDefaultCount, SymbolsDefaultCount), symbols));
             }
 
             throw new ArgumentException(typeof(TGrainKey).Name);
@@ -229,10 +229,10 @@ namespace UnitTests.StorageTests.Relational
                 throw new ArgumentNullException(nameof(symbolSet));
             }
 
-            Func<IInternalGrainFactory, Type, bool, object, GrainReference> func;
+            Func<IInternalGrainFactory, Type, bool, object, IAddressable> func;
             if(GrainReferenceTypeSwitch.TryGetValue(typeof(TGrainKey), out func))
             {
-                return func(grainFactory, typeof(TGrainGeneric), keyExtension, Tuple.Create(new Range<long>(symbolCount, symbolCount), symbolSet));
+                return (GrainReference)func(grainFactory, typeof(TGrainGeneric), keyExtension, Tuple.Create(new Range<long>(symbolCount, symbolCount), symbolSet));
             }
 
             throw new ArgumentException(typeof(TGrainKey).Name);
