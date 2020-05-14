@@ -6,37 +6,28 @@ namespace Orleans.Streams
 {
     internal class StreamConsumerGrainContextAction : IConfigureGrain
     {
-        private readonly GrainTypeManager grainTypeManager;
-        private readonly IStreamProviderRuntime streamProviderRuntime;
+        private readonly IStreamProviderRuntime _streamProviderRuntime;
 
         public StreamConsumerGrainContextAction(
-            GrainTypeManager grainTypeManager,
             IStreamProviderRuntime streamProviderRuntime)
         {
-            this.grainTypeManager = grainTypeManager;
-            this.streamProviderRuntime = streamProviderRuntime;
+            _streamProviderRuntime = streamProviderRuntime;
         }
 
         public bool CanConfigure(GrainType grainType) => true;
 
         public void Configure(IGrainContext context)
         {
-            if (context.GrainInstance is IStreamSubscriptionObserver observer && context is ActivationData data)
+            if (context.GrainInstance is IStreamSubscriptionObserver observer)
             {
-                InstallStreamConsumerExtension(data, observer as IStreamSubscriptionObserver);
+                InstallStreamConsumerExtension(context, observer as IStreamSubscriptionObserver);
             }
         }
 
-        private void InstallStreamConsumerExtension(ActivationData result, IStreamSubscriptionObserver observer)
+        private void InstallStreamConsumerExtension(IGrainContext context, IStreamSubscriptionObserver observer)
         {
-            var invoker = InsideRuntimeClient.TryGetExtensionMethodInvoker(this.grainTypeManager, typeof(IStreamConsumerExtension));
-            if (invoker == null)
-            {
-                throw new InvalidOperationException("Extension method invoker was not generated for an extension interface");
-            }
-
-            var handler = new StreamConsumerExtension(this.streamProviderRuntime, observer);
-            result.ExtensionInvoker.TryAddExtension(invoker, handler);
+            var handler = new StreamConsumerExtension(this._streamProviderRuntime, observer);
+            context.SetComponent<IStreamConsumerExtension>(handler);
         }
     }
 }

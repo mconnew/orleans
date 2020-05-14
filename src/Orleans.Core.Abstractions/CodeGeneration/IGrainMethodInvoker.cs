@@ -15,7 +15,7 @@ namespace Orleans.CodeGeneration
         /// <param name="context">Reference to the grain to be invoked.</param>
         /// <param name="request">The request being invoked.</param>
         /// <returns>Value promise for the result of the method invoke.</returns>
-        Task<object> Invoke(IGrainContext context, object request);
+        Task<object> Invoke(IGrainContext context, InvokeMethodRequest request);
     }
 
     /// <summary>

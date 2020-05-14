@@ -66,15 +66,12 @@ namespace Orleans.CodeGenerator
             var members = new List<MemberDeclarationSyntax>(GenerateGenericInvokerFields(grainType))
             {
                 GenerateInvokeMethod(grainType),
-                GenerateInterfaceIdProperty(grainType),
-                GenerateInterfaceVersionProperty(grainType),
             };
 
             // If this is an IGrainExtension, make the generated class implement IGrainExtensionMethodInvoker.
             if (typeof(IGrainExtension).IsAssignableFrom(grainType))
             {
                 baseTypes.Add(SF.SimpleBaseType(typeof(IGrainExtensionMethodInvoker).GetTypeSyntax()));
-                members.Add(GenerateExtensionInvokeMethod(grainType));
             }
             
             var classDeclaration =
@@ -93,39 +90,6 @@ namespace Orleans.CodeGenerator
         }
 
         /// <summary>
-        /// Returns method declaration syntax for the InterfaceId property.
-        /// </summary>
-        /// <param name="grainType">The grain type.</param>
-        /// <returns>Method declaration syntax for the InterfaceId property.</returns>
-        private static MemberDeclarationSyntax GenerateInterfaceIdProperty(Type grainType)
-        {
-            var property = TypeUtils.Member((IGrainMethodInvoker _) => _.InterfaceTypeCode);
-            var returnValue = SF.LiteralExpression(
-                SyntaxKind.NumericLiteralExpression,
-                SF.Literal(GrainInterfaceUtils.GetGrainInterfaceId(grainType)));
-            return
-                SF.PropertyDeclaration(typeof(int).GetTypeSyntax(), property.Name)
-                    .AddAccessorListAccessors(
-                        SF.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
-                            .AddBodyStatements(SF.ReturnStatement(returnValue)))
-                    .AddModifiers(SF.Token(SyntaxKind.PublicKeyword));
-        }
-
-        private static MemberDeclarationSyntax GenerateInterfaceVersionProperty(Type grainType)
-        {
-            var property = TypeUtils.Member((IGrainMethodInvoker _) => _.InterfaceVersion);
-            var returnValue = SF.LiteralExpression(
-                SyntaxKind.NumericLiteralExpression,
-                SF.Literal(GrainInterfaceUtils.GetGrainInterfaceVersion(grainType))); 
-            return
-                SF.PropertyDeclaration(typeof(ushort).GetTypeSyntax(), property.Name)
-                    .AddAccessorListAccessors(
-                        SF.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
-                            .AddBodyStatements(SF.ReturnStatement(returnValue)))
-                    .AddModifiers(SF.Token(SyntaxKind.PublicKeyword));
-        }
-
-        /// <summary>
         /// Generates syntax for the <see cref="IGrainMethodInvoker.Invoke"/> method.
         /// </summary>
         /// <param name="grainType">
@@ -140,27 +104,7 @@ namespace Orleans.CodeGenerator
             var invokeMethod =
                 TypeUtils.Method(
                     (IGrainMethodInvoker x) =>
-                    x.Invoke(default(IAddressable), default(InvokeMethodRequest)));
-
-            return GenerateInvokeMethod(grainType, invokeMethod);
-        }
-
-        /// <summary>
-        /// Generates syntax for the <see cref="IGrainExtensionMethodInvoker"/> invoke method.
-        /// </summary>
-        /// <param name="grainType">
-        /// The grain type.
-        /// </param>
-        /// <returns>
-        /// Syntax for the <see cref="IGrainExtensionMethodInvoker"/> invoke method.
-        /// </returns>
-        private static MethodDeclarationSyntax GenerateExtensionInvokeMethod(Type grainType)
-        {
-            // Get the method with the correct type.
-            var invokeMethod =
-                TypeUtils.Method(
-                    (IGrainExtensionMethodInvoker x) =>
-                    x.Invoke(default(IGrainExtension), default(InvokeMethodRequest)));
+                    x.Invoke(default(IGrainContext), default(InvokeMethodRequest)));
 
             return GenerateInvokeMethod(grainType, invokeMethod);
         }

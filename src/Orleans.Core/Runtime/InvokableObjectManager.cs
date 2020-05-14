@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -181,7 +180,7 @@ namespace Orleans
 
                         // exceptions thrown within this scope are not considered to be thrown from user code
                         // and not from runtime code.
-                        var resultPromise = objectData.Invoker.Invoke(targetOb, request);
+                        var resultPromise = objectData.Invoker.Invoke(objectData, request);
                         if (resultPromise != null) // it will be null for one way messages
                         {
                             resultObject = await resultPromise;
@@ -285,14 +284,8 @@ namespace Orleans
             }
         }
 
-        public class LocalObjectData
+        public class LocalObjectData : IGrainContext
         {
-            internal WeakReference LocalObject { get; }
-            internal IGrainMethodInvoker Invoker { get; }
-            internal ObserverGrainId ObserverId { get; }
-            internal Queue<Message> Messages { get; }
-            internal bool Running { get; set; }
-
             internal LocalObjectData(IAddressable obj, ObserverGrainId observerId, IGrainMethodInvoker invoker)
             {
                 this.LocalObject = new WeakReference(obj);
@@ -301,6 +294,34 @@ namespace Orleans
                 this.Messages = new Queue<Message>();
                 this.Running = false;
             }
+
+            internal WeakReference LocalObject { get; }
+            internal IGrainMethodInvoker Invoker { get; }
+            internal ObserverGrainId ObserverId { get; }
+            internal Queue<Message> Messages { get; }
+            internal bool Running { get; set; }
+
+            GrainId IGrainContext.GrainId => this.ObserverId.GrainId;
+
+            GrainReference IGrainContext.GrainReference => throw new NotImplementedException();
+
+            IAddressable IGrainContext.GrainInstance => this.LocalObject.Target as IAddressable;
+
+            ActivationId IGrainContext.ActivationId => throw new NotImplementedException();
+
+            ActivationAddress IGrainContext.Address => throw new NotImplementedException();
+
+            IServiceProvider IGrainContext.ActivationServices => throw new NotImplementedException();
+
+            IDictionary<object, object> IGrainContext.Items => throw new NotImplementedException();
+
+            IGrainLifecycle IGrainContext.ObservableLifecycle => throw new NotImplementedException();
+
+            void IGrainContext.SetComponent<TComponent>(TComponent value) => throw new NotImplementedException();
+
+            TComponent IGrainContext.GetComponent<TComponent>() => throw new NotImplementedException();
+
+            bool IEquatable<IGrainContext>.Equals(IGrainContext other) => ReferenceEquals(this, other);
         }
 
         public void Dispose()

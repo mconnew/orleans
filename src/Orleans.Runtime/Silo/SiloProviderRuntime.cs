@@ -137,11 +137,5 @@ namespace Orleans.Runtime.Providers
         {
             return runtimeClient.GetStreamDirectory();
         }
-
-        /// <inheritdoc />
-        public Task<Tuple<TExtension, TExtensionInterface>> BindExtension<TExtension, TExtensionInterface>(Func<TExtension> newExtensionFunc) where TExtension : IGrainExtension where TExtensionInterface : IGrainExtension
-        {
-            return runtimeClient.BindExtension<TExtension, TExtensionInterface>(newExtensionFunc);
-        }
     }
 }

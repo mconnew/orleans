@@ -87,12 +87,18 @@ namespace Orleans.Runtime
 
         IGrainLifecycle IGrainContext.ObservableLifecycle => throw new NotImplementedException("IGrainContext.ObservableLifecycle is not implemented by SystemTarget");
 
+        public void SetComponent<TComponent>(TComponent value)
+        {
+            if (components is null) components = new Dictionary<Type, object>();
+            components[typeof(TComponent)] = value;
+        }
+
         public TComponent GetComponent<TComponent>()
         {
             if (components is null) components = new Dictionary<Type, object>();
             if (!components.TryGetValue(typeof(TComponent), out var result))
             {
-                result = components[typeof(TComponent)] = ActivatorUtilities.GetServiceOrCreateInstance(this.ActivationServices, typeof(TComponent));
+                result = components[typeof(TComponent)] = this.ActivationServices.GetServiceByKey<Type, IGrainExtension>(typeof(TComponent));
             }
 
             return (TComponent)result;

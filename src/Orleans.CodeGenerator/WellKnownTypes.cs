@@ -28,6 +28,7 @@ namespace Orleans.CodeGenerator
             GrainReference = Type("Orleans.Runtime.GrainReference");
             GrainReferenceAttribute = Type("Orleans.CodeGeneration.GrainReferenceAttribute");
             IAddressable = Type("Orleans.Runtime.IAddressable");
+            IGrainContext = Type("Orleans.Runtime.IGrainContext");
             ICopyContext = Type("Orleans.Serialization.ICopyContext");
             IDeserializationContext = Type("Orleans.Serialization.IDeserializationContext");
             IFieldUtils = Type("Orleans.Serialization.IFieldUtils");
@@ -183,8 +184,9 @@ namespace Orleans.CodeGenerator
         public INamedTypeSymbol GrainOfT { get; }
         public INamedTypeSymbol GrainReference { get; }
         public INamedTypeSymbol GrainReferenceAttribute { get; }
-        public INamedTypeSymbol IAddressable { get; }
         public INamedTypeSymbol ICopyContext { get; }
+        public INamedTypeSymbol IAddressable { get; }
+        public INamedTypeSymbol IGrainContext { get; }
         public INamedTypeSymbol IDeserializationContext { get; }
         public INamedTypeSymbol IFieldUtils { get; }
         public INamedTypeSymbol IGrain { get; }

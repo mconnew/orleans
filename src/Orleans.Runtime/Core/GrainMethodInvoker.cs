@@ -104,7 +104,7 @@ namespace Orleans.Runtime
             ThrowInvalidCall();
         }
         
-        async Task<object> IGrainMethodInvoker.Invoke(IGrainContext grainContet, object invokeMethodRequest)
+        async Task<object> IGrainMethodInvoker.Invoke(IGrainContext grainContet, InvokeMethodRequest invokeMethodRequest)
         {
             ValidateArguments(grainContext, invokeMethodRequest);
             await this.Invoke();
@@ -115,14 +115,7 @@ namespace Orleans.Runtime
         {
             // Determine if the object being invoked is a grain or a grain extension.
             Type implementationType;
-            if (this.rootInvoker is IGrainExtensionMap extensionMap && extensionMap.TryGetExtension(request.InterfaceTypeCode, out var extension))
-            {
-                implementationType = extension.GetType();
-            }
-            else
-            {
-                implementationType = this.Grain.GetType();
-            }
+            implementationType = this.Grain.GetType();
 
             // Get or create the implementation map for this object.
             var implementationMap = interfaceToImplementationMapping.GetOrCreate(
@@ -134,7 +127,7 @@ namespace Orleans.Runtime
             return method;
         }
 
-        private void ValidateArguments(IGrainContext grain, object invokeMethodRequest)
+        private void ValidateArguments(IGrainContext grain, InvokeMethodRequest invokeMethodRequest)
         {
             if (!Equals(this.Grain, grain.GrainInstance))
                 throw new ArgumentException($"Provided {nameof(IAddressable)} differs from expected value",

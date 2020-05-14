@@ -37,6 +37,10 @@ namespace UnitTests.SchedulerTests
 
         IAddressable IGrainContext.GrainInstance => throw new NotImplementedException();
 
+        public TComponent GetComponent<TComponent>() => throw new NotImplementedException();
+
+        public void SetComponent<TComponent>(TComponent value) => throw new NotImplementedException();
+
         bool IEquatable<IGrainContext>.Equals(IGrainContext other) => ReferenceEquals(this, other);
     }
     

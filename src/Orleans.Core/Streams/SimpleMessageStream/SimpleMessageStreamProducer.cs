@@ -63,11 +63,10 @@ namespace Orleans.Providers.Streams.SimpleMessageStream
 
         private async Task<ISet<PubSubSubscriptionState>> RegisterProducer()
         {
-            var tup = await providerRuntime.BindExtension<SimpleMessageStreamProducerExtension, IStreamProducerExtension>(
-                () => new SimpleMessageStreamProducerExtension(providerRuntime, pubSub, this.logger, fireAndForgetDelivery, optimizeForImmutableData));
-
-            myExtension = tup.Item1;
-            myGrainReference = tup.Item2;
+            myExtension = new SimpleMessageStreamProducerExtension(providerRuntime, pubSub, this.logger, fireAndForgetDelivery, optimizeForImmutableData);
+            var context = RuntimeContext.CurrentGrainContext;
+            context.SetComponent<IStreamProducerExtension>(myExtension);
+            myGrainReference = context.GrainReference.Cast<IStreamProducerExtension>();
 
             myExtension.AddStream(stream.StreamId);
 
