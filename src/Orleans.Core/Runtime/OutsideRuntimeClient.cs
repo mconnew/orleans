@@ -295,6 +295,8 @@ namespace Orleans
 
         private void SendRequestMessage(GrainReference target, Message message, TaskCompletionSource<object> context, InvokeMethodOptions options)
         {
+            message.InterfaceId = target.InterfaceId;
+            message.InterfaceVersion = target.InterfaceVersion;
             var targetGrainId = target.GrainId;
             var oneWay = (options & InvokeMethodOptions.OneWay) != 0;
             message.SendingGrain = CurrentActivationAddress.Grain;

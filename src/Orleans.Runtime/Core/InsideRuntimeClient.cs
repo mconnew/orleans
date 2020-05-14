@@ -141,6 +141,8 @@ namespace Orleans.Runtime
             InvokeMethodOptions options)
         {
             var message = this.messageFactory.CreateMessage(request, options);
+            message.InterfaceId = target.InterfaceId;
+            message.InterfaceVersion = target.InterfaceVersion;
 
             // fill in sender
             if (message.SendingSilo == null)
