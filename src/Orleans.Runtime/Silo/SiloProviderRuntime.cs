@@ -20,6 +20,7 @@ namespace Orleans.Runtime.Providers
         private readonly IStreamPubSub grainBasedPubSub;
         private readonly IStreamPubSub implictPubSub;
         private readonly IStreamPubSub combinedGrainBasedAndImplicitPubSub;
+        private readonly HostedClient hostedClient;
         private readonly ILoggerFactory loggerFactory;
         private readonly ILocalSiloDetails siloDetails;
         private readonly ILogger logger;
@@ -33,8 +34,10 @@ namespace Orleans.Runtime.Providers
             OrleansTaskScheduler scheduler,
             ActivationDirectory activationDirectory,
             ILoggerFactory loggerFactory,
-            ILocalSiloDetails siloDetails)
+            ILocalSiloDetails siloDetails,
+            HostedClient hostedClient)
         {
+            this.hostedClient = hostedClient;
             this.loggerFactory = loggerFactory;
             this.siloDetails = siloDetails;
             this.scheduler = scheduler;
@@ -116,7 +119,7 @@ namespace Orleans.Runtime.Providers
         {
             try
             {
-                var balancer = this.ServiceProvider.GetServiceByName<IStreamQueueBalancer>(streamProviderName)??this.ServiceProvider.GetService<IStreamQueueBalancer>();
+                var balancer = this.ServiceProvider.GetServiceByName<IStreamQueueBalancer>(streamProviderName) ??this.ServiceProvider.GetService<IStreamQueueBalancer>();
                 if (balancer == null)
                     throw new ArgumentOutOfRangeException("balancerType", $"Cannot create stream queue balancer for StreamProvider: {streamProviderName}.Please configure your stream provider with a queue balancer.");
                 this.logger.LogInformation($"Successfully created queue balancer of type {balancer.GetType()} for stream provider {streamProviderName}");
@@ -136,6 +139,20 @@ namespace Orleans.Runtime.Providers
         public StreamDirectory GetStreamDirectory()
         {
             return runtimeClient.GetStreamDirectory();
+        }
+
+        public (TExtension, TExtensionInterface) BindExtension<TExtension, TExtensionInterface>(Func<TExtension> newExtensionFunc)
+            where TExtension : TExtensionInterface
+            where TExtensionInterface : IGrainExtension
+        {
+            var context = RuntimeContext.CurrentGrainContext ?? this.hostedClient;
+            if (!(context.GetComponent<TExtensionInterface>() is TExtension result))
+            {
+                result = newExtensionFunc();
+                context.SetComponent(result);
+            }
+
+            return (result, context.GrainReference.Cast<TExtensionInterface>());
         }
     }
 }

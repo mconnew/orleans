@@ -152,7 +152,7 @@ namespace Orleans.Runtime
 
             if (sendingActivation == null)
             {
-                var clientAddress = this.HostedClient.ClientAddress;
+                var clientAddress = this.HostedClient.Address;
                 message.SendingGrain = clientAddress.Grain;
                 message.SendingActivation = clientAddress.Activation;
             }

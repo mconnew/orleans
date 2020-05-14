@@ -25,7 +25,13 @@ namespace Orleans.Streams
         [NonSerialized]
         private readonly ILogger logger;
 
-        public StreamConsumer(StreamImpl<T> stream, string streamProviderName, IStreamProviderRuntime runtime, IStreamPubSub pubSub, ILogger logger, bool isRewindable)
+        public StreamConsumer(
+            StreamImpl<T> stream,
+            string streamProviderName,
+            IStreamProviderRuntime runtime,
+            IStreamPubSub pubSub,
+            ILogger logger,
+            bool isRewindable)
         {
             if (stream == null) throw new ArgumentNullException(nameof(stream));
             if (runtime == null) throw new ArgumentNullException(nameof(runtime));
@@ -233,7 +239,7 @@ namespace Orleans.Streams
                     if (myExtension == null)
                     {
                         if (logger.IsEnabled(LogLevel.Debug)) logger.Debug("BindExtensionLazy - Binding local extension to stream runtime={0}", providerRuntime);
-
+                        providerRuntime.ServiceProvider.GetRequiredService<GrainExtensionManager>();
                         var context = RuntimeContext.CurrentGrainContext;
                         myExtension = new StreamConsumerExtension(providerRuntime);
                         context.SetComponent<IStreamConsumerExtension>(myExtension);

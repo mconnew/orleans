@@ -1,5 +1,4 @@
 using System;
-using System.Threading.Tasks;
 using Orleans.Runtime;
 
 namespace Orleans.Providers
@@ -23,5 +22,16 @@ namespace Orleans.Providers
         /// Service provider for dependency injection
         /// </summary>
         IServiceProvider ServiceProvider { get; }
+
+        /// <summary>
+        /// Binds an extension to an addressable object, if not already done.
+        /// </summary>
+        /// <typeparam name="TExtension">The type of the extension (e.g. StreamConsumerExtension).</typeparam>
+        /// <typeparam name="TExtensionInterface">The public interface type of the implementation.</typeparam>
+        /// <param name="newExtensionFunc">A factory function that constructs a new extension object.</param>
+        /// <returns>A tuple, containing first the extension and second an addressable reference to the extension's interface.</returns>
+        (TExtension, TExtensionInterface) BindExtension<TExtension, TExtensionInterface>(Func<TExtension> newExtensionFunc)
+            where TExtension : TExtensionInterface
+            where TExtensionInterface : IGrainExtension;
     }
 }

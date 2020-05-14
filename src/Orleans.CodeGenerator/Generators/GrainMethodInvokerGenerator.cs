@@ -169,7 +169,7 @@ namespace Orleans.CodeGenerator.Generators
                 ExpressionSyntax targetObject;
                 if (grainType.HasInterface(wellKnownTypes.IGrainExtension))
                 {
-                    targetObject = InvocationExpression(grainArgument.Member("GetComponent", interfaceType), ArgumentList());
+                    targetObject = InvocationExpression(grainArgument.Member("GetOrSetComponent", interfaceType), ArgumentList());
                 }
                 else
                 {

@@ -18,7 +18,7 @@ namespace Orleans.Runtime
         private readonly SystemTargetGrainId id;
         private GrainReference selfReference;
         private Message running;
-        private Dictionary<Type, object> components;
+        private Dictionary<Type, object> _components;
 
         /// <summary>Silo address of the system target.</summary>
         public SiloAddress Silo { get; }
@@ -87,22 +87,29 @@ namespace Orleans.Runtime
 
         IGrainLifecycle IGrainContext.ObservableLifecycle => throw new NotImplementedException("IGrainContext.ObservableLifecycle is not implemented by SystemTarget");
 
-        public void SetComponent<TComponent>(TComponent value)
-        {
-            if (components is null) components = new Dictionary<Type, object>();
-            components[typeof(TComponent)] = value;
-        }
-
         public TComponent GetComponent<TComponent>()
         {
-            if (this is TComponent component) return component;
-            if (components is null) components = new Dictionary<Type, object>();
-            if (!components.TryGetValue(typeof(TComponent), out var result))
+            if (this is TComponent result) return result;
+            if (_components is null) return default;
+            _components.TryGetValue(typeof(TComponent), out var resultObj);
+            return (TComponent)resultObj;
+        }
+
+        public void SetComponent<TComponent>(TComponent instance)
+        {
+            if (this is TComponent)
             {
-                result = components[typeof(TComponent)] = this.ActivationServices.GetServiceByKey<Type, IGrainExtension>(typeof(TComponent));
+                throw new ArgumentException("Cannot override a component which is implemented by this grain");
             }
 
-            return (TComponent)result;
+            if (instance == null)
+            {
+                _components?.Remove(typeof(TComponent));
+                return;
+            }
+
+            if (_components is null) _components = new Dictionary<Type, object>();
+            _components[typeof(TComponent)] = instance;
         }
 
         internal void HandleNewRequest(Message request)

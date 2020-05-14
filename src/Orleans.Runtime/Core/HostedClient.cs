@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Channels;
@@ -7,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Orleans.CodeGeneration;
+using Orleans.GrainReferences;
 using Orleans.Internal;
 using Orleans.Runtime.Messaging;
 using Orleans.Streams;
@@ -16,7 +16,7 @@ namespace Orleans.Runtime
     /// <summary>
     /// A client which is hosted within a silo.
     /// </summary>
-    internal sealed class HostedClient : IDisposable, ILifecycleParticipant<ISiloLifecycle>
+    internal sealed class HostedClient : IGrainContext, IDisposable, ILifecycleParticipant<ISiloLifecycle>
     {
         private readonly Channel<Message> incomingMessages;
         private readonly Dictionary<Type, Tuple<IGrainExtension, IAddressable>> extensionsTable = new Dictionary<Type, Tuple<IGrainExtension, IAddressable>>();
@@ -29,6 +29,7 @@ namespace Orleans.Runtime
         private readonly IInternalGrainFactory grainFactory;
         private readonly MessageCenter siloMessageCenter;
         private readonly MessagingTrace messagingTrace;
+        private Dictionary<Type, object> _components;
         private bool disposing;
         private Task messagePump;
 
@@ -41,7 +42,8 @@ namespace Orleans.Runtime
             IInternalGrainFactory grainFactory,
             InvokableObjectManager invokableObjectManager,
             MessageCenter messageCenter,
-            MessagingTrace messagingTrace)
+            MessagingTrace messagingTrace,
+            GrainReferenceActivator referenceActivator)
         {
             this.incomingMessages = Channel.CreateUnbounded<Message>(new UnboundedChannelOptions
             {
@@ -60,20 +62,34 @@ namespace Orleans.Runtime
             this.logger = logger;
 
             this.ClientId = ClientGrainId.Create($"hosted-{messageCenter.MyAddress.ToParsableString()}");
-            this.ClientAddress = ActivationAddress.NewActivationAddress(siloDetails.SiloAddress, this.ClientId.GrainId);
+            this.Address = ActivationAddress.NewActivationAddress(siloDetails.SiloAddress, this.ClientId.GrainId);
+            this.GrainReference = referenceActivator.CreateReference(this.ClientId.GrainId, default);
         }
-
-        /// <inheritdoc />
-        public ActivationAddress ClientAddress { get; }
 
         /// <inheritdoc />
         public ClientGrainId ClientId { get; }
 
         /// <inheritdoc />
         public StreamDirectory StreamDirectory { get; } = new StreamDirectory();
-        
+
+        public GrainReference GrainReference { get; }
+
+        public GrainId GrainId => this.ClientId.GrainId;
+
+        public IAddressable GrainInstance => null;
+
+        public ActivationId ActivationId => this.Address.Activation;
+
+        public ActivationAddress Address { get; }
+
+        public IServiceProvider ActivationServices => this.runtimeClient.ServiceProvider;
+
+        public IDictionary<object, object> Items => throw new NotImplementedException();
+
+        public IGrainLifecycle ObservableLifecycle => throw new NotImplementedException();
+
         /// <inheritdoc />
-        public override string ToString() => $"{nameof(HostedClient)}_{this.ClientAddress}";
+        public override string ToString() => $"{nameof(HostedClient)}_{this.Address}";
 
         /// <inheritdoc />
         public GrainReference CreateObjectReference(IAddressable obj, IGrainMethodInvoker invoker)
@@ -111,41 +127,23 @@ namespace Orleans.Runtime
             }
         }
 
-        /// <inheritdoc />
-        public async Task<Tuple<TExtension, TExtensionInterface>> BindExtension<TExtension, TExtensionInterface>(Func<TExtension> newExtensionFunc)
-            where TExtension : IGrainExtension
-            where TExtensionInterface : IGrainExtension
+        public TComponent GetComponent<TComponent>()
         {
-            IAddressable addressable;
-            TExtension extension;
+            if (_components is null) return default;
+            _components.TryGetValue(typeof(TComponent), out var resultObj);
+            return (TComponent)resultObj;
+        }
 
-            using (await this.lockable.LockAsync())
+        public void SetComponent<TComponent>(TComponent instance)
+        {
+            if (instance == null)
             {
-                if (this.extensionsTable.TryGetValue(typeof(TExtensionInterface), out var entry))
-                {
-                    extension = (TExtension) entry.Item1;
-                    addressable = entry.Item2;
-                }
-                else
-                {
-                    extension = newExtensionFunc();
-                    var obj = this.grainFactory.CreateObjectReference<TExtensionInterface>(extension);
-
-                    addressable = obj;
-
-                    if (null == addressable)
-                    {
-                        throw new NullReferenceException("addressable");
-                    }
-                    entry = Tuple.Create((IGrainExtension) extension, addressable);
-                    this.extensionsTable.Add(typeof(TExtensionInterface), entry);
-                }
+                _components?.Remove(typeof(TComponent));
+                return;
             }
 
-            var typedAddressable = addressable.Cast<TExtensionInterface>();
-            // we have to return the extension as well as the IAddressable because the caller needs to root the extension
-            // to prevent it from being collected (the IAddressable uses a weak reference).
-            return Tuple.Create(extension, typedAddressable);
+            if (_components is null) _components = new Dictionary<Type, object>();
+            _components[typeof(TComponent)] = instance;
         }
 
         /// <inheritdoc />
@@ -169,7 +167,7 @@ namespace Orleans.Runtime
             }
             else
             {
-                // Requests agrainst client objects are scheduled for execution on the client.
+                // Requests against client objects are scheduled for execution on the client.
                 this.incomingMessages.Writer.TryWrite(message);
             }
 
@@ -264,5 +262,7 @@ namespace Orleans.Runtime
                 await clusterClient.Close();
             }
         }
+
+        public bool Equals(IGrainContext other) => ReferenceEquals(this, other);
     }
 }

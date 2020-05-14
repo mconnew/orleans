@@ -7,12 +7,10 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Orleans.CodeGeneration;
 using Orleans.Configuration;
 using Orleans.GrainReferences;
 using Orleans.Runtime.Configuration;
 using Orleans.Runtime.Scheduler;
-using Orleans.Storage;
 
 namespace Orleans.Runtime
 {
@@ -31,7 +29,8 @@ namespace Orleans.Runtime
         private readonly IServiceScope serviceScope;
         public readonly TimeSpan CollectionAgeLimit;
         private HashSet<IGrainTimer> timers;
-        
+        private Dictionary<Type, object> _components;
+
         public ActivationData(
             ActivationAddress addr,
             PlacementStrategy placedUsing,
@@ -77,24 +76,29 @@ namespace Orleans.Runtime
 
         internal WorkItemGroup WorkItemGroup { get; set; }
 
-        private Dictionary<Type, object> components;
-
-        public void SetComponent<TComponent>(TComponent value)
-        {
-            if (components is null) components = new Dictionary<Type, object>();
-            components[typeof(TComponent)] = value;
-        }
-
         public TComponent GetComponent<TComponent>()
         {
-            if (this is TComponent component) return component;
-            if (components is null) components = new Dictionary<Type, object>();
-            if (!components.TryGetValue(typeof(TComponent), out var result))
+            if (this.GrainInstance is TComponent result) return result;
+            if (_components is null) return default;
+            _components.TryGetValue(typeof(TComponent), out var resultObj);
+            return (TComponent)resultObj;
+        }
+
+        public void SetComponent<TComponent>(TComponent instance)
+        {
+            if (this.GrainInstance is TComponent)
             {
-                result = components[typeof(TComponent)] = this.ServiceProvider.GetServiceByKey<Type, IGrainExtension>(typeof(TComponent));
+                throw new ArgumentException("Cannot override a component which is implemented by this grain");
             }
 
-            return (TComponent)result;
+            if (instance == null)
+            {
+                _components?.Remove(typeof(TComponent));
+                return;
+            }
+
+            if (_components is null) _components = new Dictionary<Type, object>();
+            _components[typeof(TComponent)] = instance;
         }
 
         public HashSet<ActivationId> RunningRequestsSenders { get; } = new HashSet<ActivationId>();
@@ -118,7 +122,7 @@ namespace Orleans.Runtime
         internal async Task DeactivateStreamResources()
         {
             if (streamDirectory == null) return; // No streams - Nothing to do.
-            if (components == null) return; // No installed extensions - Nothing to do.
+            if (_components == null) return; // No installed extensions - Nothing to do.
 
             if (StreamResourceTestControl.TestOnlySuppressStreamCleanupOnDeactivate)
             {
