@@ -95,6 +95,7 @@ namespace Orleans.Runtime
 
         public TComponent GetComponent<TComponent>()
         {
+            if (this is TComponent component) return component;
             if (components is null) components = new Dictionary<Type, object>();
             if (!components.TryGetValue(typeof(TComponent), out var result))
             {
