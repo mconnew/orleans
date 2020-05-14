@@ -149,7 +149,7 @@ namespace Orleans.Runtime.Providers
             if (!(context.GetComponent<TExtensionInterface>() is TExtension result))
             {
                 result = newExtensionFunc();
-                context.SetComponent(result);
+                context.SetComponent<TExtensionInterface>(result);
             }
 
             return (result, context.GrainReference.Cast<TExtensionInterface>());

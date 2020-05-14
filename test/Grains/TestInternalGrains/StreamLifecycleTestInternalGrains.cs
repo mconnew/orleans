@@ -71,9 +71,9 @@ namespace UnitTests.Grains
             InitStream(streamIdGuid, null, providerName);
             var observer = new MyStreamObserver<int>(logger);
 
-            var context = RuntimeContext.CurrentGrainContext;
-            var myExtension = new StreamConsumerExtension(this.streamProviderRuntime); 
-            var myExtensionReference = context.GrainReference.Cast<IStreamConsumerExtension>();
+            var (myExtension, myExtensionReference) = this.streamProviderRuntime.BindExtension<StreamConsumerExtension, IStreamConsumerExtension>(
+                () => new StreamConsumerExtension(streamProviderRuntime));
+
             string extKey = providerName + "_" + State.Stream.Namespace;
             IPubSubRendezvousGrain pubsub = GrainFactory.GetGrain<IPubSubRendezvousGrain>(streamIdGuid, extKey, null);
             GuidId subscriptionId = GuidId.GetNewGuidId();

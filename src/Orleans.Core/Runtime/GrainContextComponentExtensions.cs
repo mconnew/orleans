@@ -1,13 +1,20 @@
-﻿using System;
+using System;
 using Orleans.Runtime;
 
 namespace Orleans
 {
     public static class GrainContextComponentExtensions
     {
-        private static readonly Func<IGrainContext, Type, object> CreateComponent = (ctx, type) => ctx.ActivationServices.GetRequiredServiceByKey<Type, object>(type);
+        private static readonly Func<IGrainContext, Type, object> CreateExtension = (ctx, type) =>
+            {
+                var result = ctx.ActivationServices.GetServiceByKey<Type, IGrainExtension>(type);
+                if (result is null) throw new GrainExtensionNotInstalledException($"A grain extension of type {type} is not installed on grain {ctx}");
+                return result;
+            };
 
-        public static TComponent GetOrSetComponent<TComponent>(this IGrainContext context) => context.GetOrSetComponent<TComponent>(CreateComponent);
+        public static TComponent GetGrainExtension<TComponent>(this IGrainContext context)
+            where TComponent : IGrainExtension
+            => context.GetOrSetComponent<TComponent>(CreateExtension);
 
         public static TComponent GetOrSetComponent<TComponent>(this IGrainContext context, Func<IGrainContext, Type, object> createComponent)
         {

@@ -76,7 +76,7 @@ namespace Orleans.Runtime
 
         public virtual T Cast<T>() where T : IAddressable
         {
-            throw new NotImplementedException("Should be implemented by a subclass");
+            return _shared.Runtime.Convert<T>(this);
         }
 
         /// <summary>
