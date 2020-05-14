@@ -105,7 +105,18 @@ namespace Orleans
         /// <param name="grain">The target grain.</param>
         public static bool IsPrimaryKeyBasedOnLong(this IAddressable grain)
         {
-            return LegacyGrainId.FromGrainId(GetGrainId(grain)).IsLongKey;
+            var grainId = GetGrainId(grain);
+            if (GrainIdKeyExtensions.TryGetIntegerKey(grainId, out var primaryKey, out _))
+            {
+                return true;
+            }
+
+            if (LegacyGrainId.TryConvertFromGrainId(grainId, out var legacyId))
+            {
+                return legacyId.IsLongKey;
+            }
+
+            throw new InvalidOperationException($"Unable to extract integer key from grain id {grainId}");
         }
 
         /// <summary>
@@ -114,14 +125,42 @@ namespace Orleans
         /// <param name="grain">The grain to find the primary key for.</param>
         /// <param name="keyExt">The output parameter to return the extended key part of the grain primary key, if extended primary key was provided for that grain.</param>
         /// <returns>A long representing the primary key for this grain.</returns>
-        public static long GetPrimaryKeyLong(this IAddressable grain, out string keyExt) => LegacyGrainId.FromGrainId(GetGrainId(grain)).GetPrimaryKeyLong(out keyExt);
+        public static long GetPrimaryKeyLong(this IAddressable grain, out string keyExt)
+        {
+            var grainId = GetGrainId(grain);
+            if (GrainIdKeyExtensions.TryGetIntegerKey(grainId, out var primaryKey, out keyExt))
+            {
+                return primaryKey;
+            }
+
+            if (LegacyGrainId.TryConvertFromGrainId(grainId, out var legacyId))
+            {
+                return legacyId.GetPrimaryKeyLong(out keyExt);
+            }
+
+            throw new InvalidOperationException($"Unable to extract integer key from grain id {grainId}");
+        }
 
         /// <summary>
         /// Returns the long representation of a grain primary key.
         /// </summary>
         /// <param name="grain">The grain to find the primary key for.</param>
         /// <returns>A long representing the primary key for this grain.</returns>
-        public static long GetPrimaryKeyLong(this IAddressable grain) => LegacyGrainId.FromGrainId(GetGrainId(grain)).GetPrimaryKeyLong();
+        public static long GetPrimaryKeyLong(this IAddressable grain)
+        {
+            var grainId = GetGrainId(grain);
+            if (GrainIdKeyExtensions.TryGetIntegerKey(grainId, out var primaryKey, out _))
+            {
+                return primaryKey;
+            }
+
+            if (LegacyGrainId.TryConvertFromGrainId(grainId, out var legacyId))
+            {
+                return legacyId.GetPrimaryKeyLong();
+            }
+
+            throw new InvalidOperationException($"Unable to extract integer key from grain id {grainId}");
+        }
 
         /// <summary>
         /// Returns the Guid representation of a grain primary key.
@@ -129,14 +168,43 @@ namespace Orleans
         /// <param name="grain">The grain to find the primary key for.</param>
         /// <param name="keyExt">The output parameter to return the extended key part of the grain primary key, if extended primary key was provided for that grain.</param>
         /// <returns>A Guid representing the primary key for this grain.</returns>
-        public static Guid GetPrimaryKey(this IAddressable grain, out string keyExt) => LegacyGrainId.FromGrainId(GetGrainId(grain)).GetPrimaryKey(out keyExt);
+        public static Guid GetPrimaryKey(this IAddressable grain, out string keyExt)
+        {
+            var grainId = GetGrainId(grain);
+            if (GrainIdKeyExtensions.TryGetGuidKey(grainId, out var guid, out keyExt))
+            {
+                return guid;
+            }
+
+            if (LegacyGrainId.TryConvertFromGrainId(grainId, out var legacyId))
+            {
+                return legacyId.GetPrimaryKey(out keyExt);
+            }
+
+            throw new InvalidOperationException($"Unable to extract GUID key from grain id {grainId}");
+        }
 
         /// <summary>
         /// Returns the Guid representation of a grain primary key.
         /// </summary>
         /// <param name="grain">The grain to find the primary key for.</param>
         /// <returns>A Guid representing the primary key for this grain.</returns>
-        public static Guid GetPrimaryKey(this IAddressable grain) => LegacyGrainId.FromGrainId(GetGrainId(grain)).GetPrimaryKey();
+        public static Guid GetPrimaryKey(this IAddressable grain)
+        {
+            var grainId = GetGrainId(grain);
+            if (GrainIdKeyExtensions.TryGetGuidKey(grainId, out var guid, out _))
+            {
+                return guid;
+            }
+
+            if (LegacyGrainId.TryConvertFromGrainId(grainId, out var legacyId))
+            {
+                return legacyId.GetPrimaryKey();
+            }
+
+            throw new InvalidOperationException($"Unable to extract GUID key from grain id {grainId}");
+        }
+        
 
         /// <summary>
         /// Returns the string primary key of the grain.
@@ -145,7 +213,13 @@ namespace Orleans
         /// <returns>A string representing the primary key for this grain.</returns>
         public static string GetPrimaryKeyString(this IAddressable grain)
         {
-            return LegacyGrainId.FromGrainId(GetGrainId(grain)).GetPrimaryKeyString();
+            var grainId = GetGrainId(grain);
+            if (LegacyGrainId.TryConvertFromGrainId(grainId, out var legacyId))
+            {
+                return legacyId.GetPrimaryKeyString();
+            }
+
+            return grainId.Key.ToStringUtf8();
         }
 
         private static void ThrowIfNullGrain(IAddressable grain)
