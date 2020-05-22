@@ -28,8 +28,6 @@ namespace Orleans.Runtime
 
         IGrainFactory GrainFactory { get; }
 
-        ITimerRegistry TimerRegistry { get; }
-
         IReminderRegistry ReminderRegistry { get; }
 
         IServiceProvider ServiceProvider { get; }

@@ -16,14 +16,12 @@ namespace Orleans.Runtime
         private readonly ILoggerFactory loggerFactory;
         private readonly IServiceProvider serviceProvider;
         private readonly IReminderRegistry reminderRegistry;
-        private readonly ITimerRegistry timerRegistry;
         private readonly IGrainFactory grainFactory;
 
         public GrainRuntime(
             IOptions<ClusterOptions> clusterOptions,
             ILocalSiloDetails localSiloDetails,
             IGrainFactory grainFactory,
-            ITimerRegistry timerRegistry,
             IReminderRegistry reminderRegistry,
             IServiceProvider serviceProvider,
             ISiloRuntimeClient runtimeClient,
@@ -34,7 +32,6 @@ namespace Orleans.Runtime
             SiloAddress = localSiloDetails.SiloAddress;
             SiloIdentity = SiloAddress.ToLongString();
             this.grainFactory = grainFactory;
-            this.timerRegistry = timerRegistry;
             this.reminderRegistry = reminderRegistry;
             this.serviceProvider = serviceProvider;
             this.loggerFactory = loggerFactory;
@@ -52,15 +49,6 @@ namespace Orleans.Runtime
             {
                 CheckRuntimeContext();
                 return this.grainFactory;
-            }
-        }
-
-        public ITimerRegistry TimerRegistry
-        {
-            get
-            {
-                CheckRuntimeContext();
-                return this.timerRegistry;
             }
         }
 

@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Orleans.Runtime.Scheduler;
+using Orleans.Timers;
 
 namespace Orleans.Runtime
 {
@@ -18,18 +19,18 @@ namespace Orleans.Runtime
         private readonly ILogger logger;
         private Task currentlyExecutingTickTask;
         private readonly OrleansTaskScheduler scheduler;
-        private readonly IActivationData activationData;
+        private readonly ITimerRegistryComponent registry;
 
         public string Name { get; }
         
         private bool TimerAlreadyStopped { get { return timer == null || asyncCallback == null; } }
 
-        private GrainTimer(OrleansTaskScheduler scheduler, IActivationData activationData, ILogger logger, Func<object, Task> asyncCallback, object state, TimeSpan dueTime, TimeSpan period, string name)
+        private GrainTimer(OrleansTaskScheduler scheduler, ITimerRegistryComponent registry, ILogger logger, Func<object, Task> asyncCallback, object state, TimeSpan dueTime, TimeSpan period, string name)
         {
             var ctxt = RuntimeContext.CurrentGrainContext;
             scheduler.CheckSchedulingContextValidity(ctxt);
             this.scheduler = scheduler;
-            this.activationData = activationData;
+            this.registry = registry;
             this.logger = logger;
             this.Name = name;
             this.asyncCallback = asyncCallback;
@@ -50,9 +51,9 @@ namespace Orleans.Runtime
             TimeSpan dueTime,
             TimeSpan period,
             string name = null,
-            IActivationData activationData = null)
+            ITimerRegistryComponent registry = null)
         {
-            return new GrainTimer(scheduler, activationData, logger, asyncCallback, state, dueTime, period, name);
+            return new GrainTimer(scheduler, registry, logger, asyncCallback, state, dueTime, period, name);
         }
 
         public void Start()
@@ -184,7 +185,7 @@ namespace Orleans.Runtime
             Utils.SafeExecute(tmp.Dispose);
             timer = null;
             asyncCallback = null;
-            activationData?.OnTimerDisposed(this);
+            registry?.OnTimerDisposed(this);
         }
     }
 }

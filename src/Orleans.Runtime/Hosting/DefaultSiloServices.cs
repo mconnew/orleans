@@ -102,7 +102,6 @@ namespace Orleans.Hosting
             services.TryAddSingleton<LifecycleSchedulingSystemTarget>();
 
             services.AddLogging();
-            services.TryAddSingleton<ITimerRegistry, TimerRegistry>();
             services.TryAddSingleton<IReminderRegistry, ReminderRegistry>();
             services.TryAddSingleton<GrainRuntime>();
             services.TryAddSingleton<IGrainRuntime, GrainRuntime>();
@@ -419,6 +418,9 @@ namespace Orleans.Hosting
             services.AddSingleton<ILifecycleParticipant<ISiloLifecycle>, GatewayConnectionListener>();
             services.AddSingleton<SocketSchedulers>();
             services.AddSingleton<SharedMemoryPool>();
+
+            // Per-grain services
+            services.AddScoped<ITimerRegistryComponent, TimerRegistryComponent>();
         }
     }
 }

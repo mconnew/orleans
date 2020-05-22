@@ -1,10 +1,14 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
+using Orleans.Runtime;
 
 namespace Orleans.Timers
 {
-    public interface ITimerRegistry
+    internal interface ITimerRegistryComponent
     {
-        IDisposable RegisterTimer(Grain grain, Func<object, Task> asyncCallback, object state, TimeSpan dueTime, TimeSpan period);
+        IDisposable RegisterTimer(Func<object, Task> asyncCallback, object state, TimeSpan dueTime, TimeSpan period);
+        void StopAllTimers();
+        void OnTimerDisposed(IGrainTimer timer);
+        Task WaitForAllTimersToFinish();
     }
 }

@@ -8,6 +8,7 @@ using Orleans.Configuration;
 using Orleans.Internal;
 using Orleans.LeaseProviders;
 using Orleans.Runtime;
+using Orleans.Runtime.Scheduler;
 using Orleans.Timers;
 
 namespace Orleans.Streams
@@ -33,7 +34,7 @@ namespace Orleans.Streams
 
         private readonly LeaseBasedQueueBalancerOptions options;
         private readonly ILeaseProvider leaseProvider;
-        private readonly ITimerRegistry timerRegistry;
+        private readonly OrleansTaskScheduler scheduler;
         private readonly AsyncSerialExecutor executor = new AsyncSerialExecutor();
         private int allQueuesCount;
         private readonly List<AcquiredQueue> myQueues = new List<AcquiredQueue>();
@@ -46,12 +47,12 @@ namespace Orleans.Streams
         /// <summary>
         /// Constructor
         /// </summary>
-        public LeaseBasedQueueBalancer(string name, LeaseBasedQueueBalancerOptions options, ILeaseProvider leaseProvider, ITimerRegistry timerRegistry, IServiceProvider services, ILoggerFactory loggerFactory)
+        public LeaseBasedQueueBalancer(string name, LeaseBasedQueueBalancerOptions options, ILeaseProvider leaseProvider, IServiceProvider services, ILoggerFactory loggerFactory)
             : base(services, loggerFactory.CreateLogger($"{typeof(LeaseBasedQueueBalancer).FullName}.{name}"))
         {
             this.options = options;
             this.leaseProvider = leaseProvider;
-            this.timerRegistry = timerRegistry;
+            this.scheduler = services.GetRequiredService<OrleansTaskScheduler>();
         }
 
         public static IStreamQueueBalancer Create(IServiceProvider services, string name)
@@ -125,7 +126,9 @@ namespace Orleans.Streams
                     this.leaseAquisitionTimer == null &&
                     !base.Cancellation.IsCancellationRequested)
                 {
-                    this.leaseAquisitionTimer = this.timerRegistry.RegisterTimer(null, this.AcquireLeasesToMeetResponsibility, null, TimeSpan.Zero, this.options.LeaseAquisitionPeriod);
+                    var timer = GrainTimer.FromTaskCallback(this.scheduler, this.Logger, this.AcquireLeasesToMeetResponsibility, null, TimeSpan.Zero, this.options.LeaseAquisitionPeriod);
+                    timer.Start();
+                    this.leaseAquisitionTimer = timer;
                 }
             }
             finally
@@ -414,22 +417,28 @@ namespace Orleans.Streams
 
             if (this.myQueues.Count < this.responsibility && this.leaseAquisitionTimer == null)
             {
-                this.leaseAquisitionTimer = this.timerRegistry.RegisterTimer(
-                    null,
+                var timer = GrainTimer.FromTaskCallback(
+                    scheduler,
+                    this.Logger,
                     this.AcquireLeasesToMeetResponsibility,
                     null,
                     this.options.LeaseAquisitionPeriod,
                     this.options.LeaseAquisitionPeriod);
+                timer.Start();
+                this.leaseAquisitionTimer = timer;
             }
 
             if (this.leaseMaintenanceTimer == null)
             {
-                this.leaseMaintenanceTimer = this.timerRegistry.RegisterTimer(
-                    null,
+                var timer = GrainTimer.FromTaskCallback(
+                    scheduler,
+                    this.Logger,
                     this.MaintainLeases,
                     null,
                     this.options.LeaseRenewPeriod,
                     this.options.LeaseRenewPeriod);
+                timer.Start();
+                this.leaseMaintenanceTimer = timer;
             }
 
             await this.AcquireLeasesToMeetResponsibility();

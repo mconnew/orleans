@@ -11,6 +11,7 @@ using Orleans.Configuration;
 using Orleans.GrainReferences;
 using Orleans.Runtime.Configuration;
 using Orleans.Runtime.Scheduler;
+using Orleans.Timers;
 
 namespace Orleans.Runtime
 {
@@ -29,7 +30,6 @@ namespace Orleans.Runtime
         private readonly IServiceScope serviceScope;
         public readonly TimeSpan CollectionAgeLimit;
         private readonly GrainSharedComponents _shared;
-        private HashSet<IGrainTimer> timers;
         private Dictionary<Type, object> _components;
 
         public ActivationData(
@@ -169,10 +169,6 @@ namespace Orleans.Runtime
 
         internal ILifecycleObserver Lifecycle => lifecycle;
 
-        public void OnTimerCreated(IGrainTimer timer)
-        {
-            AddTimer(timer);
-        }
 
         public GrainReference GrainReference { get; }
 
@@ -192,8 +188,10 @@ namespace Orleans.Runtime
         {
             SetState(ActivationState.Deactivating);
             deactivationStartTime = DateTime.UtcNow;
-            if (!IsCurrentlyExecuting)
-                StopAllTimers();
+            if (!IsCurrentlyExecuting && this.GetComponent<ITimerRegistryComponent>() is ITimerRegistryComponent timers)
+            {
+                timers.StopAllTimers();
+            }
         }
 
         /// <summary>
@@ -576,59 +574,6 @@ namespace Orleans.Runtime
                 {
                     action();
                 }
-            }
-        }
-
-        internal void AddTimer(IGrainTimer timer)
-        {
-            lock(this)
-            {
-                if (timers == null)
-                {
-                    timers = new HashSet<IGrainTimer>();
-                }
-                timers.Add(timer);
-            }
-        }
-
-        private void StopAllTimers()
-        {
-            lock (this)
-            {
-                if (timers == null) return;
-
-                foreach (var timer in timers)
-                {
-                    timer.Stop();
-                }
-            }
-        }
-
-        public void OnTimerDisposed(IGrainTimer orleansTimerInsideGrain)
-        {
-            lock (this) // need to lock since dispose can be called on finalizer thread, outside grain context (not single threaded).
-            {
-                timers.Remove(orleansTimerInsideGrain);
-            }
-        }
-
-        internal Task WaitForAllTimersToFinish()
-        {
-            lock(this)
-            { 
-                if (timers == null)
-                {
-                    return Task.CompletedTask;
-                }
-                var tasks = new List<Task>();
-                var timerCopy = timers.ToList(); // need to copy since OnTimerDisposed will change the timers set.
-                foreach (var timer in timerCopy)
-                {
-                    // first call dispose, then wait to finish.
-                    Utils.SafeExecute(timer.Dispose, logger, "timer.Dispose has thrown");
-                    tasks.Add(timer.GetCurrentlyExecutingTickTask());
-                }
-                return Task.WhenAll(tasks);
             }
         }
 

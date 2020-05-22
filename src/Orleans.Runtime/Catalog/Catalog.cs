@@ -19,6 +19,7 @@ using Orleans.Runtime.Scheduler;
 using Orleans.Runtime.Versions;
 using Orleans.Serialization;
 using Orleans.Streams;
+using Orleans.Timers;
 
 namespace Orleans.Runtime
 {
@@ -769,8 +770,6 @@ namespace Orleans.Runtime
         {
             try
             {
-                // Wait timers and call OnDeactivateAsync()
-                await activationData.WaitForAllTimersToFinish();
                 await this.scheduler.RunOrQueueTask(() => CallGrainDeactivateAndCleanupStreams(activationData, ct), activationData);
                 // Unregister from directory
                 await this.grainLocator.Unregister(activationData.Address, UnregistrationCause.Force);
@@ -917,6 +916,18 @@ namespace Orleans.Runtime
 
                 // Note: This call is being made from within Scheduler.Queue wrapper, so we are already executing on worker thread
                 if (logger.IsEnabled(LogLevel.Debug)) logger.Debug(ErrorCode.Catalog_BeforeCallingDeactivate, "About to call {1} grain's OnDeactivateAsync() method {0}", activation, grainTypeName);
+
+                try
+                {
+                    if (activation.GetComponent<ITimerRegistryComponent>() is ITimerRegistryComponent timers)
+                    {
+                        await timers.WaitForAllTimersToFinish();
+                    }
+                }
+                catch (Exception exception)
+                {
+                    this.logger.LogError(exception, "Error while waiting for timers to complete for grain {GrainId}", activation.GrainId);
+                }
 
                 // Call OnDeactivateAsync inline, but within try-catch wrapper to safely capture any exceptions thrown from called function
                 try

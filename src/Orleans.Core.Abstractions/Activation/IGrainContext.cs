@@ -41,8 +41,6 @@ namespace Orleans.Runtime
         IGrainRuntime Runtime { get; }
 
         void DelayDeactivation(TimeSpan timeSpan);
-        void OnTimerCreated(IGrainTimer timer);
-        void OnTimerDisposed(IGrainTimer timer);
     }
 
     public interface IGrainContextAccessor

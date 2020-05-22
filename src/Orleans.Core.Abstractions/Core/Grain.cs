@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Orleans.Core;
 using Orleans.Runtime;
 using Orleans.Streams;
+using Orleans.Timers;
 
 namespace Orleans
 {
@@ -133,7 +134,13 @@ namespace Orleans
                 throw new ArgumentNullException(nameof(asyncCallback));
 
             EnsureRuntime();
-            return Runtime.TimerRegistry.RegisterTimer(this, asyncCallback, state, dueTime, period);
+            if (!(this.Data.GetComponent<ITimerRegistryComponent>() is ITimerRegistryComponent registry))
+            {
+                registry = this.Data.ActivationServices.GetService(typeof(ITimerRegistryComponent)) as ITimerRegistryComponent;
+                this.Data.SetComponent(registry);
+            }
+
+            return registry.RegisterTimer(asyncCallback, state, dueTime, period);
         }
 
         /// <summary>
