@@ -1,5 +1,7 @@
 
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Orleans.Runtime
 {
@@ -34,6 +36,12 @@ namespace Orleans.Runtime
         /// Gets the component of the specified type.
         /// </summary>
         TComponent GetComponent<TComponent>();
+
+        ValueTask ActivateAsync(CancellationToken cancellation);
+
+        ValueTask DeactivateAsync(CancellationToken cancellation);
+
+        void ReceiveMessage(object message);
     }
 
     internal interface IActivationData : IGrainContext

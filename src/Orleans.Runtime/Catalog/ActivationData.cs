@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Orleans.Configuration;
+using Orleans.GrainDirectory;
 using Orleans.GrainReferences;
 using Orleans.Runtime.Configuration;
 using Orleans.Runtime.Scheduler;
@@ -77,6 +78,66 @@ namespace Orleans.Runtime
         public IServiceProvider ActivationServices => this.serviceScope.ServiceProvider;
 
         internal WorkItemGroup WorkItemGroup { get; set; }
+
+        public async ValueTask ActivateAsync(CancellationToken cancellationToken)
+        {
+            // Register with locator
+            if (this.GetComponent<IGrainLocator>() is IGrainLocator grainLocator)
+            {
+                try
+                {
+                    var registeredActivation = await grainLocator.Register(this.Address);
+                    if (!this.Address.Equals(registeredActivation))
+                    {
+                        // Failed to register (another activation is registered)
+                    }
+                }
+                catch (Exception exception)
+                {
+                    // Exception trying to register. Attempt to deregister.
+                }
+
+                // Deactivate
+            }
+
+            this.SetState(ActivationState.Activating);
+
+            try
+            {
+                await this.Lifecycle.OnStart(cancellationToken);
+
+                lock (this)
+                {
+                    if (this.State == ActivationState.Activating)
+                    {
+                        this.SetState(ActivationState.Valid);
+                    }
+
+                    if (!this.IsCurrentlyExecuting)
+                    {
+                        this.RunOnInactive();
+                    }
+
+                    // Run message pump
+                }
+            }
+            catch (Exception exception)
+            {
+                // Reject all queued messages
+
+                // Deactivate
+            }
+        }
+
+        public async ValueTask DeactivateAsync(CancellationToken cancellationToken)
+        {
+
+        }
+
+        public void OnMessage(object message)
+        {
+
+        }
 
         public TComponent GetComponent<TComponent>()
         {
