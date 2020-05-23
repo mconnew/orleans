@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 using Orleans.Configuration;
 using Orleans.GrainDirectory;
 using Orleans.GrainReferences;
+using Orleans.Internal;
 using Orleans.Runtime.Configuration;
 using Orleans.Runtime.Scheduler;
 using Orleans.Timers;
@@ -131,7 +132,47 @@ namespace Orleans.Runtime
 
         public async ValueTask DeactivateAsync(CancellationToken cancellationToken)
         {
+            // TODO: Make this a "Prepare for deactivation" phase
 
+            // Wait for timers
+            try
+            {
+                if (this.GetComponent<ITimerRegistryComponent>() is ITimerRegistryComponent timers)
+                {
+                    var timerCleanup = timers.WaitForAllTimersToFinish();
+                    if (!timerCleanup.IsCompleted)
+                    {
+                        await Task.WhenAny(timerCleanup, cancellationToken.WhenCancelled());
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                this.logger.LogError(exception, "Error while waiting for timers to complete for grain {GrainId}", this.GrainId);
+            }
+
+            // Deactivate
+            try
+            {
+                // TODO: add .WithCancellation or a grace period?
+                await this.Lifecycle.OnStop(cancellationToken);
+            }
+            catch (Exception exception)
+            {
+
+            }
+
+            if (this.IsUsingStreams)
+            {
+                try
+                {
+                    await this.DeactivateStreamResources();
+                }
+                catch (Exception exception)
+                {
+
+                }
+            }
         }
 
         public void OnMessage(object message)
