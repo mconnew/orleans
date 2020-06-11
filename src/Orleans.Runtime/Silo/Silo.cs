@@ -7,22 +7,17 @@ using System.Runtime;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Orleans.Runtime.ConsistentRing;
 using Orleans.Runtime.Counters;
 using Orleans.Runtime.GrainDirectory;
-using Orleans.Runtime.LogConsistency;
 using Orleans.Runtime.Messaging;
 using Orleans.Runtime.Providers;
 using Orleans.Runtime.ReminderService;
 using Orleans.Runtime.Scheduler;
 using Orleans.Services;
-using Orleans.Streams;
-using Orleans.Runtime.Versions;
-using Orleans.Versions;
 using Orleans.ApplicationParts;
 using Orleans.Configuration;
 using Orleans.Serialization;
@@ -66,7 +61,6 @@ namespace Orleans.Runtime
         private readonly TimeSpan stopTimeout = TimeSpan.FromMinutes(1);
         private readonly Catalog catalog;
         private readonly object lockable = new object();
-        private readonly GrainFactory grainFactory;
         private readonly ISiloLifecycleSubject siloLifecycle;
         private readonly IMembershipService membershipService;
         private List<GrainService> grainServices = new List<GrainService>();
@@ -160,16 +154,6 @@ namespace Orleans.Runtime
             var siloMessagingOptions = this.Services.GetRequiredService<IOptions<SiloMessagingOptions>>();
             BufferPool.InitGlobalBufferPool(siloMessagingOptions.Value);
 
-            try
-            {
-                grainFactory = Services.GetRequiredService<GrainFactory>();
-            }
-            catch (InvalidOperationException exc)
-            {
-                logger.Error(ErrorCode.SiloStartError, "Exception during Silo.Start, GrainFactory was not registered in Dependency Injection container", exc);
-                throw;
-            }
-
             // Performance metrics
             siloStatistics = Services.GetRequiredService<SiloStatisticsManager>();
 
@@ -195,18 +179,6 @@ namespace Orleans.Runtime
             RingProvider = Services.GetRequiredService<IConsistentRingProvider>();
 
             catalog = Services.GetRequiredService<Catalog>();
-
-            // Now the incoming message agents
-            var messageFactory = this.Services.GetRequiredService<MessageFactory>();
-            var messagingTrace = this.Services.GetRequiredService<MessagingTrace>();
-            messageCenter.RegisterLocalMessageHandler(new IncomingMessageHandler(
-                messageCenter,
-                activationDirectory,
-                LocalScheduler,
-                catalog.Dispatcher,
-                messageFactory,
-                this.loggerFactory.CreateLogger<IncomingMessageHandler>(),
-                messagingTrace));
 
             siloStatusOracle = Services.GetRequiredService<ISiloStatusOracle>();
             this.membershipService = Services.GetRequiredService<IMembershipService>();

@@ -343,6 +343,8 @@ namespace Orleans
             }
 
             bool IEquatable<IGrainContext>.Equals(IGrainContext other) => ReferenceEquals(this, other);
+
+            public void ReceiveMessage(object message) => throw new NotImplementedException();
         }
 
         public void Dispose()

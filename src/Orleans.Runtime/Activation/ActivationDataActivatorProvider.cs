@@ -24,6 +24,7 @@ namespace Orleans.Runtime
         private readonly TimeSpan _maxRequestProcessingTime;
         private readonly ILoggerFactory _loggerFactory;
         private readonly GrainReferenceActivator _grainReferenceActivator;
+        private ActivationMessagePump _activationMessagePump;
         private IGrainRuntime _grainRuntime;
 
         public ActivationDataActivatorProvider(
@@ -82,7 +83,8 @@ namespace Orleans.Runtime
                 _serviceProvider,
                 _grainRuntime ??= _serviceProvider.GetRequiredService<IGrainRuntime>(),
                 _grainReferenceActivator,
-                sharedComponents);
+                sharedComponents,
+                _activationMessagePump ??= _serviceProvider.GetRequiredService<ActivationMessagePump>());
             return true;
         }
 
@@ -124,6 +126,7 @@ namespace Orleans.Runtime
             private readonly IGrainRuntime _grainRuntime;
             private readonly GrainReferenceActivator _grainReferenceActivator;
             private readonly GrainTypeComponents _sharedComponents;
+            private readonly ActivationMessagePump _activationMessagePump;
 
             public ActivationDataActivator(
                 IGrainActivator grainActivator,
@@ -137,7 +140,8 @@ namespace Orleans.Runtime
                 IServiceProvider serviceProvider,
                 IGrainRuntime grainRuntime,
                 GrainReferenceActivator grainReferenceActivator,
-                GrainTypeComponents sharedComponents)
+                GrainTypeComponents sharedComponents,
+                ActivationMessagePump activationMessagePump)
             {
                 _grainActivator = grainActivator;
                 _placementStrategy = placementStrategy;
@@ -151,6 +155,7 @@ namespace Orleans.Runtime
                 _grainRuntime = grainRuntime;
                 _grainReferenceActivator = grainReferenceActivator;
                 _sharedComponents = sharedComponents;
+                _activationMessagePump = activationMessagePump;
             }
 
             public IGrainContext CreateContext(ActivationAddress activationAddress)
@@ -167,7 +172,8 @@ namespace Orleans.Runtime
                     _serviceProvider,
                     _grainRuntime,
                     _grainReferenceActivator,
-                    _sharedComponents);
+                    _sharedComponents,
+                    _activationMessagePump);
 
                 RuntimeContext.SetExecutionContext(context, out var existingContext);
 
