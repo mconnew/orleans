@@ -905,7 +905,7 @@ namespace Orleans.Runtime.GrainDirectory
             }
         }
 
-        public void InvalidateCacheEntry(ActivationAddress activationAddress, bool invalidateDirectoryAlso = false)
+        public void InvalidateCacheEntry(ActivationAddress activationAddress)
         {
             int version;
             IReadOnlyList<Tuple<SiloAddress, ActivationId>> list;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Orleans.GrainDirectory;
@@ -70,7 +70,7 @@ namespace UnitTests.Directory
             throw new NotImplementedException();
         }
 
-        public void InvalidateCacheEntry(ActivationAddress activation, bool invalidateDirectoryAlso = false)
+        public void InvalidateCacheEntry(ActivationAddress activation)
         {
             throw new NotImplementedException();
         }

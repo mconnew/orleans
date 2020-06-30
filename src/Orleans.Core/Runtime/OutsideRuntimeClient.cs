@@ -92,7 +92,7 @@ namespace Orleans
             this.messagingTrace = messagingTrace;
             this.logger = loggerFactory.CreateLogger<OutsideRuntimeClient>();
             this.clientId = ClientGrainId.Create();
-            callbacks = new ConcurrentDictionary<CorrelationId, CallbackData>();
+            callbacks = new ConcurrentDictionary<CorrelationId, CallbackData>(CorrelationId.Comparer.Instance);
             this.clientMessagingOptions = clientMessagingOptions.Value;
 
             this.sharedCallbackData = new SharedCallbackData(

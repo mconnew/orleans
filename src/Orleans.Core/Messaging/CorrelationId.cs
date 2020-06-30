@@ -1,45 +1,39 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Threading;
 
 namespace Orleans.Runtime
 {
     [Serializable]
-    internal class CorrelationId : IEquatable<CorrelationId>, IComparable<CorrelationId>
+    internal readonly struct CorrelationId : IEquatable<CorrelationId>, IComparable<CorrelationId>
     {
-        private readonly long id;
         private static long nextToUse = 1;
+        private readonly long id;
 
-        internal CorrelationId(long value)
+        public CorrelationId(long value)
         {
             id = value;
         }
 
-        internal CorrelationId() : this(0)
-        {
-        }
+        public long Value => id;
 
-        public CorrelationId(CorrelationId other)
-        {
-            id = other.id;
-        }
-        
         public static CorrelationId GetNext()
         {
-            long val = System.Threading.Interlocked.Increment(ref nextToUse);
+            var val = Interlocked.Increment(ref nextToUse);
             return new CorrelationId(val);
         }
 
-        public override int GetHashCode()
-        {
- 	        return id.GetHashCode();
-        }
+        public override int GetHashCode() => id.GetHashCode();
 
         public override bool Equals(object obj)
         {
-            if (!(obj is CorrelationId))
+            if (!(obj is CorrelationId id))
             {
                 return false;
             }
-            return this.Equals((CorrelationId)obj);
+
+            return this.Equals(id);
         }
 
         public bool Equals(CorrelationId other)
@@ -47,37 +41,21 @@ namespace Orleans.Runtime
             return !ReferenceEquals(other, null) && (id == other.id);
         }
 
-        public static bool operator ==(CorrelationId lhs, CorrelationId rhs)
-        {
-            if (ReferenceEquals(lhs, null))
-            {
-                return ReferenceEquals(rhs, null);
-            }
-            else if (ReferenceEquals(rhs, null))
-            {
-                return false;
-            }
-            else
-            {
-                return (rhs.id == lhs.id);
-            }
-        }
+        public static bool operator ==(CorrelationId lhs, CorrelationId rhs) => (rhs.id == lhs.id);
 
-        public static bool operator !=(CorrelationId lhs, CorrelationId rhs)
-        {
-            return rhs.id != lhs.id;
-        }
+        public static bool operator !=(CorrelationId lhs, CorrelationId rhs) => rhs.id != lhs.id;
 
-        public int CompareTo(CorrelationId other)
-        {
-            return id.CompareTo(other.id);
-        }
+        public int CompareTo(CorrelationId other) => id.CompareTo(other.id);
 
-        public override string ToString()
-        {
-            return id.ToString();
-        }
+        public override string ToString() => id.ToString();
 
-        internal long ToInt64() => this.id;
+        public sealed class Comparer : IEqualityComparer<CorrelationId>
+        {
+            public static Comparer Instance { get; } = new Comparer();
+
+            public bool Equals(CorrelationId x, CorrelationId y) => x.Equals(y);
+
+            public int GetHashCode(CorrelationId obj) => obj.GetHashCode();
+        }
     }
 }

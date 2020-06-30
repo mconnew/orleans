@@ -297,7 +297,7 @@ namespace Orleans
                 }
 
                 // the deep-copy succeeded.
-                _manager.runtimeClient.SendResponse(message, new Response(deepCopy));
+                _manager.runtimeClient.SendResponse(message, Response.CreateResponse(deepCopy));
                 return;
             }
 

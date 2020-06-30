@@ -49,7 +49,7 @@ namespace Orleans.Runtime
             this.shared.Logger.Warn(ErrorCode.Runtime_Error_100157, "{0} About to break its promise.", errorMsg);
 
             var error = Message.CreatePromptExceptionResponse(msg, new TimeoutException(errorMsg));
-            OnFail(msg, error, isOnTimeout: true);
+            OnFail(error, isOnTimeout: true);
         }
 
         public void OnTargetSiloFail()
@@ -64,7 +64,7 @@ namespace Orleans.Runtime
             this.shared.Logger.Warn(ErrorCode.Runtime_Error_100157, "{0} About to break its promise.", errorMsg);
 
             var error = Message.CreatePromptExceptionResponse(msg, new SiloUnavailableException(errorMsg));
-            OnFail(msg, error, isOnTimeout: false);
+            OnFail(error, isOnTimeout: false);
         }
 
         public void DoCallback(Message response)
@@ -92,7 +92,7 @@ namespace Orleans.Runtime
             }
         }
 
-        private void OnFail(Message msg, Message error, bool isOnTimeout = false)
+        private void OnFail(Message error, bool isOnTimeout)
         {
             if (Interlocked.CompareExchange(ref this.completed, 1, 0) == 0)
             {

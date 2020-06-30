@@ -53,8 +53,7 @@ namespace Orleans.Runtime.GrainDirectory
         /// notifying him that the activation does not exist.
         /// </summary>
         /// <param name="activation">The address of the activation that needs to be invalidated in the directory cache for the given grain.</param>
-        /// <param name="invalidateDirectoryAlso">If true, on owner, invalidates directory entry that point to activations in remote clusters as well</param>
-        void InvalidateCacheEntry(ActivationAddress activation, bool invalidateDirectoryAlso = false);
+        void InvalidateCacheEntry(ActivationAddress activation);
 
         /// <summary>
         /// For testing purposes only.

@@ -21,7 +21,7 @@ namespace Orleans.Serialization
         /// <summary> Write a <c>CorrelationId</c> value to the stream. </summary>
         internal static void Write<TWriter>(this TWriter @this, CorrelationId id) where TWriter : IBinaryTokenStreamWriter
         {
-            @this.Write(id.ToInt64());
+            @this.Write(id.Value);
         }
 
         /// <summary> Write a <c>ActivationAddress</c> value to the stream. </summary>

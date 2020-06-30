@@ -6,7 +6,6 @@ namespace Orleans.Runtime
     internal class Response
     {
         public bool ExceptionFlag { get; private set; }
-        public Exception Exception { get; private set; }
         public object Data { get; private set; }
 
         public Response(object data)
@@ -14,7 +13,7 @@ namespace Orleans.Runtime
             switch (data)
             {
                 case Exception exception:
-                    Exception = exception;
+                    Data = exception;
                     ExceptionFlag = true;
                     break;
                 default:
@@ -28,12 +27,20 @@ namespace Orleans.Runtime
         {
         }
 
-        static public Response ExceptionResponse(Exception exc)
+        public static Response CreateResponse(object value)
+        {
+            return new Response
+            {
+                Data = value
+            };
+        }
+
+        public static Response ExceptionResponse(Exception exc)
         {
             return new Response
             {
                 ExceptionFlag = true,
-                Exception = exc
+                Data = exc
             };
         }
 
@@ -41,7 +48,7 @@ namespace Orleans.Runtime
         {
             if (ExceptionFlag)
             {
-                return $"Response Exception={Exception}";
+                return $"Response Exception={Data}";
             }
 
             return $"Response Data={Data}";

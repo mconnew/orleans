@@ -12,7 +12,7 @@ namespace Orleans.Runtime.Messaging
 {
     internal sealed class SiloConnection : Connection
     {
-        private static readonly Response PingResponse = new Response(null);
+        private static readonly Response PingResponse = Response.CreateResponse(null);
         private readonly MessageCenter messageCenter;
         private readonly ConnectionManager connectionManager;
         private readonly ConnectionOptions connectionOptions;

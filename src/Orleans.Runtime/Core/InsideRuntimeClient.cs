@@ -73,7 +73,7 @@ namespace Orleans.Runtime
             this.ServiceProvider = serviceProvider;
             this.MySilo = siloDetails.SiloAddress;
             this.disposables = new List<IDisposable>();
-            this.callbacks = new ConcurrentDictionary<CorrelationId, CallbackData>();
+            this.callbacks = new ConcurrentDictionary<CorrelationId, CallbackData>(CorrelationId.Comparer.Instance);
             this.messageFactory = messageFactory;
             this.transactionAgent = transactionAgent;
             this.Scheduler = scheduler;
@@ -223,7 +223,7 @@ namespace Orleans.Runtime
                 {
                     foreach (ActivationAddress address in message.CacheInvalidationHeader)
                     {
-                        this.Directory.InvalidateCacheEntry(address, message.IsReturnedFromRemoteCluster);
+                        this.Directory.InvalidateCacheEntry(address);
                     }
                 }
 
@@ -427,7 +427,7 @@ namespace Orleans.Runtime
         {
             try
             {
-                SendResponse(message, new Response(this.serializationManager.DeepCopy(resultObject)));
+                SendResponse(message, Response.CreateResponse(this.serializationManager.DeepCopy(resultObject)));
             }
             catch (Exception exc)
             {

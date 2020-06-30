@@ -2124,8 +2124,7 @@ namespace Orleans.Serialization
         internal static void SerializeOrleansResponse(object obj, ISerializationContext context, Type expected)
         {
             var resp = (Response)obj;
-
-            SerializationManager.SerializeInner(resp.ExceptionFlag ? resp.Exception : resp.Data, context, null);
+            SerializationManager.SerializeInner(resp.Data, context, null);
         }
 
         internal static object DeserializeOrleansResponse(Type expected, IDeserializationContext context)

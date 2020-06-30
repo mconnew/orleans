@@ -88,7 +88,7 @@ namespace Orleans.Runtime
             }
             else
             {
-                context.TrySetException(response.Exception);
+                context.TrySetException((Exception)response.Data);
             }
         }
     }
