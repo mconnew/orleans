@@ -64,8 +64,6 @@ namespace Orleans.Runtime
                     case Message.RejectionTypes.GatewayTooBusy:
                         rejection = new GatewayTooBusyException();
                         break;
-                    case Message.RejectionTypes.DuplicateRequest:
-                        return; // Ignore duplicates
 
                     default:
                         rejection = message.BodyObject as Exception;

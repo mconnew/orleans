@@ -299,10 +299,9 @@ namespace Orleans
 
             if (logger.IsEnabled(LogLevel.Trace)) logger.Trace("Received {0}", response);
 
-            // ignore duplicate requests
+            // Ignore cache invalidation notifications.
             if (response.Result == Message.ResponseTypes.Rejection
-                && (response.RejectionType == Message.RejectionTypes.DuplicateRequest
-                 || response.RejectionType == Message.RejectionTypes.CacheInvalidation))
+                 && response.RejectionType == Message.RejectionTypes.CacheInvalidation)
             {
                 return;
             }

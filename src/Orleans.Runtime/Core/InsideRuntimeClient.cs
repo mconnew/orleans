@@ -532,9 +532,6 @@ namespace Orleans.Runtime
                 if (logger.IsEnabled(LogLevel.Debug)) this.logger.Debug(ErrorCode.Dispatcher_HandleMsg, "HandleMessage {0}", message);
                 switch (message.RejectionType)
                 {
-                    case Message.RejectionTypes.DuplicateRequest:
-                        // try to remove from callbackData, just in case it is still there.
-                        break;
                     case Message.RejectionTypes.Overloaded:
                         break;
 
