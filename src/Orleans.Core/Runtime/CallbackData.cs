@@ -48,8 +48,7 @@ namespace Orleans.Runtime
             string errorMsg = $"Response did not arrive on time in {timeout} for message: {msg}. Target History is: {messageHistory}.";
             this.shared.Logger.Warn(ErrorCode.Runtime_Error_100157, "{0} About to break its promise.", errorMsg);
 
-            var error = Message.CreatePromptExceptionResponse(msg, new TimeoutException(errorMsg));
-            OnFail(error, isOnTimeout: true);
+            OnFail(isOnTimeout: true, new TimeoutException(errorMsg));
         }
 
         public void OnTargetSiloFail()
@@ -63,8 +62,7 @@ namespace Orleans.Runtime
                 $"The target silo became unavailable for message: {msg}. Target History is: {messageHistory}. See {Constants.TroubleshootingHelpLink} for troubleshooting help.";
             this.shared.Logger.Warn(ErrorCode.Runtime_Error_100157, "{0} About to break its promise.", errorMsg);
 
-            var error = Message.CreatePromptExceptionResponse(msg, new SiloUnavailableException(errorMsg));
-            OnFail(error, isOnTimeout: false);
+            OnFail(isOnTimeout: false, new SiloUnavailableException(errorMsg));
         }
 
         public void DoCallback(Message response)
@@ -92,7 +90,7 @@ namespace Orleans.Runtime
             }
         }
 
-        private void OnFail(Message error, bool isOnTimeout)
+        private void OnFail(bool isOnTimeout, Exception exception)
         {
             if (Interlocked.CompareExchange(ref this.completed, 1, 0) == 0)
             {
@@ -113,7 +111,7 @@ namespace Orleans.Runtime
                     }
                 }
 
-                this.shared.ResponseCallback(error, this.context);
+                this.context.TrySetException(exception);
             }
         }
     }

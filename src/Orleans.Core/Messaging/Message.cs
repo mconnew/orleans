@@ -443,17 +443,6 @@ namespace Orleans.Runtime
             return history.ToString();
         }
 
-        public static Message CreatePromptExceptionResponse(Message request, Exception exception)
-        {
-            return new Message
-            {
-                Category = request.Category,
-                Direction = Message.Directions.Response,
-                Result = Message.ResponseTypes.Error,
-                BodyObject = Response.ExceptionResponse(exception)
-            };
-        }
-
         [Serializable]
         public class HeadersContainer
         {
