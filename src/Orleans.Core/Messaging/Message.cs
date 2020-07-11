@@ -1,5 +1,7 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
+using System.IO.Pipelines;
 using System.Text;
 using Orleans.CodeGeneration;
 using Orleans.Serialization;
@@ -7,7 +9,7 @@ using Orleans.Transactions;
 
 namespace Orleans.Runtime
 {
-    internal class Message
+    internal class Message : IDisposable
     {
         public const int LENGTH_HEADER_SIZE = 8;
         public const int LENGTH_META_HEADER = 4;
@@ -78,7 +80,6 @@ namespace Orleans.Runtime
         {
             Transient,
             Overloaded,
-            DuplicateRequest,
             Unrecoverable,
             GatewayTooBusy,
             CacheInvalidation
@@ -334,6 +335,24 @@ namespace Orleans.Runtime
 
         public object BodyObject { get; set; }
 
+        public OwnedSequence<byte> Payload { get; set; }
+
+        public void Reset()
+        {
+            _targetHistory = default;
+            _queuedTime = default;
+            _retryCount = default;
+            Headers?.Reset();
+
+            Payload?.Dispose();
+            Payload = null;
+
+            (BodyObject as IDisposable)?.Dispose();
+            BodyObject = null;
+        }
+
+        public void Dispose() => Reset();
+
         public void ClearTargetAddress()
         {
             targetAddress = null;
@@ -507,13 +526,48 @@ namespace Orleans.Runtime
             private RejectionTypes _rejectionType;
             private string _rejectionInfo;
             private Dictionary<string, object> _requestContextData;
-            private readonly DateTime _localCreationTime;
+            private DateTime _localCreationTime;
             private TraceContext _traceContext;
-            private GrainInterfaceType interfaceType;
+            private GrainInterfaceType _interfaceType;
 
             public HeadersContainer()
             {
+                SetLocalCreationTime();
+            }
+
+            public void SetLocalCreationTime()
+            {
                 _localCreationTime = DateTime.UtcNow;
+            }
+
+            public void Reset()
+            {
+                _category = default;
+                _direction = default;
+                _isReadOnly = default;
+                _isAlwaysInterleave = default;
+                _isUnordered = default;
+                _isTransactionRequired = default;
+                _id = default;
+                _forwardCount = default;
+                _targetSilo = default;
+                _targetGrain = default;
+                _targetActivation = default;
+                _sendingSilo = default;
+                _sendingGrain = default;
+                _sendingActivation = default;
+                _isNewPlacement = default;
+                _interfaceVersion = default;
+                _result = default;
+                _transactionInfo = default;
+                _timeToLive = default;
+                _cacheInvalidationHeader = default;
+                _rejectionType = default;
+                _rejectionInfo = default;
+                _requestContextData = default;
+                _localCreationTime = default;
+                _traceContext = default;
+                _interfaceType = default;
             }
 
             public TraceContext TraceContext
@@ -734,10 +788,10 @@ namespace Orleans.Runtime
 
             public GrainInterfaceType InterfaceType
             {
-                get { return interfaceType; }
+                get { return _interfaceType; }
                 set
                 {
-                    interfaceType = value;
+                    _interfaceType = value;
                 }
             }
 
@@ -777,7 +831,7 @@ namespace Orleans.Runtime
                 headers = _traceContext == null? headers & ~Headers.TRACE_CONTEXT : headers | Headers.TRACE_CONTEXT;
                 headers = IsTransactionRequired ? headers | Headers.IS_TRANSACTION_REQUIRED : headers & ~Headers.IS_TRANSACTION_REQUIRED;
                 headers = _transactionInfo == null ? headers & ~Headers.TRANSACTION_INFO : headers | Headers.TRANSACTION_INFO;
-                headers = interfaceType.IsDefault ? headers & ~Headers.INTERFACE_TYPE : headers | Headers.INTERFACE_TYPE;
+                headers = _interfaceType.IsDefault ? headers & ~Headers.INTERFACE_TYPE : headers | Headers.INTERFACE_TYPE;
                 return headers;
             }
 
@@ -898,7 +952,7 @@ namespace Orleans.Runtime
 
                 if ((headers & Headers.INTERFACE_TYPE) != Headers.NONE)
                 {
-                    writer.Write(input.interfaceType);
+                    writer.Write(input._interfaceType);
                 }
             }
 

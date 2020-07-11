@@ -2,12 +2,49 @@ using System;
 using System.Buffers;
 using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
+using Microsoft.Extensions.ObjectPool;
 using Orleans.Configuration;
 using Orleans.Networking.Shared;
 using Orleans.Serialization;
 
 namespace Orleans.Runtime.Messaging
 {
+    internal sealed class MessagingPool : IPooledObjectPolicy<Message>, IPooledObjectPolicy<OwnedSequence<byte>>
+    {
+        private readonly MemoryPool<byte> _memoryPool;
+
+        public MessagingPool(SharedMemoryPool memoryPool)
+        {
+            _memoryPool = memoryPool.Pool;
+        }
+
+        public ObjectPool<OwnedSequence<byte>> SequencePool { get; }
+
+        public ObjectPool<Message> MessagePool { get; }
+
+        public Message Create()
+        {
+            return new Message();
+        }
+
+        public bool Return(Message obj)
+        {
+            obj.Reset();
+            return true;
+        }
+
+        public bool Return(OwnedSequence<byte> obj)
+        {
+            obj.Reset();
+            return true;
+        }
+
+        OwnedSequence<byte> IPooledObjectPolicy<OwnedSequence<byte>>.Create()
+        {
+            return new OwnedSequence<byte>(_memoryPool);
+        }
+    }
+
     internal sealed class MessageSerializer : IMessageSerializer
     {
         private const int FramingLength = Message.LENGTH_HEADER_SIZE;
@@ -15,6 +52,7 @@ namespace Orleans.Runtime.Messaging
         private readonly HeadersSerializer headersSerializer;
         private readonly OrleansSerializer<object> objectSerializer;
         private readonly MemoryPool<byte> memoryPool;
+        private readonly MessagingPool _messagingPool;
         private readonly int maxHeaderLength;
         private readonly int maxBodyLength;
         private object bufferWriter;
@@ -62,16 +100,19 @@ namespace Orleans.Runtime.Messaging
 
                 // decode body
                 int bodyOffset = FramingLength + headerLength;
-                var body = input.Slice(bodyOffset, bodyLength);
 
                 // build message
                 this.headersSerializer.Deserialize(header, out var headersContainer);
                 message = new Message(headersContainer);
 
-                // Body deserialization is more likely to fail than header deserialization.
-                // Separating the two allows for these kinds of errors to be propagated back to the caller.
-                this.objectSerializer.Deserialize(body, out var bodyObject);
-                message.BodyObject = bodyObject;
+                // Copy the body into a new sequence with a separately managed lifetime.
+                var payload = _messagingPool.SequencePool.Get();
+                foreach (var buffer in input.Slice(bodyOffset, bodyLength))
+                {
+                    payload.Write(buffer.Span);
+                }
+
+                message.Payload = payload;
 
                 return (0, headerLength, bodyLength);
             }
