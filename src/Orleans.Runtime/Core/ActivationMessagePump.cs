@@ -52,6 +52,7 @@ namespace Orleans.Runtime
             {
                 MessagingProcessingStatisticsGroup.OnDispatcherMessageProcessedError(message);
                 this.messagingTrace.OnDropExpiredMessage(message, MessagingStatisticsGroup.Phase.Dispatch);
+                message.CompleteProcessing();
                 return;
             }
 
@@ -159,6 +160,7 @@ namespace Orleans.Runtime
                 if (targetActivation.State == ActivationState.Invalid || targetActivation.State == ActivationState.FailedToActivate)
                 {
                     this.messagingTrace.OnDispatcherReceiveInvalidActivation(message, targetActivation.State);
+                    message.CompleteProcessing();
                     return;
                 }
 

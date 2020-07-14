@@ -267,7 +267,7 @@ namespace Orleans.Runtime
                 && _grainClassMap.TryGetGrainClass(grainType, out var grainClass))
             {
                 var predicate = GetMayInterleavePredicate(grainClass);
-                configurator = new MayInterleaveConfigurator(message => predicate((InvokeMethodRequest)message.BodyObject));
+                configurator = new MayInterleaveConfigurator(message => predicate(message.GetBodyObject<InvokeMethodRequest>()));
                 return true;
             }
 

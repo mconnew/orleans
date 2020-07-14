@@ -246,8 +246,7 @@ namespace Orleans
         {
             var message = this.messageFactory.CreateResponseMessage(request);
             OrleansOutsideRuntimeClientEvent.Log.SendResponse(message);
-            message.BodyObject = response;
-
+            message.SetBodyObject(response);
             MessageCenter.SendMessage(message);
         }
 

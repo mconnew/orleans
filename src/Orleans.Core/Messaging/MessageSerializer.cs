@@ -9,65 +9,37 @@ using Orleans.Serialization;
 
 namespace Orleans.Runtime.Messaging
 {
-    internal sealed class MessagingPool : IPooledObjectPolicy<Message>, IPooledObjectPolicy<OwnedSequence<byte>>
-    {
-        private readonly MemoryPool<byte> _memoryPool;
-
-        public MessagingPool(SharedMemoryPool memoryPool)
-        {
-            _memoryPool = memoryPool.Pool;
-        }
-
-        public ObjectPool<OwnedSequence<byte>> SequencePool { get; }
-
-        public ObjectPool<Message> MessagePool { get; }
-
-        public Message Create()
-        {
-            return new Message();
-        }
-
-        public bool Return(Message obj)
-        {
-            obj.Reset();
-            return true;
-        }
-
-        public bool Return(OwnedSequence<byte> obj)
-        {
-            obj.Reset();
-            return true;
-        }
-
-        OwnedSequence<byte> IPooledObjectPolicy<OwnedSequence<byte>>.Create()
-        {
-            return new OwnedSequence<byte>(_memoryPool);
-        }
-    }
-
     internal sealed class MessageSerializer : IMessageSerializer
     {
         private const int FramingLength = Message.LENGTH_HEADER_SIZE;
-        private const int MessageSizeHint = 4096;
+        private const int HeaderSizeHint = 4096;
         private readonly HeadersSerializer headersSerializer;
         private readonly OrleansSerializer<object> objectSerializer;
+        private readonly BinaryTokenStreamReader2 _headersReader = new BinaryTokenStreamReader2();
         private readonly MemoryPool<byte> memoryPool;
-        private readonly MessagingPool _messagingPool;
+        private readonly MessageFactory _messageFactory;
         private readonly int maxHeaderLength;
         private readonly int maxBodyLength;
+        private readonly DeserializationContext _headersDeserializationContext;
         private object bufferWriter;
 
         public MessageSerializer(
             SerializationManager serializationManager,
             SharedMemoryPool memoryPool,
             int maxHeaderSize,
-            int maxBodySize)
+            int maxBodySize,
+            MessageFactory messageFactory)
         {
+            _messageFactory = messageFactory;
             this.headersSerializer = new HeadersSerializer(serializationManager);
             this.objectSerializer = new OrleansSerializer<object>(serializationManager);
             this.memoryPool = memoryPool.Pool;
             this.maxHeaderLength = maxHeaderSize;
             this.maxBodyLength = maxBodySize;
+            _headersDeserializationContext = new DeserializationContext(serializationManager)
+            {
+                StreamReader = _headersReader
+            };
         }
 
         public (int RequiredBytes, int HeaderLength, int BodyLength) TryRead(ref ReadOnlySequence<byte> input, out Message message)
@@ -102,23 +74,23 @@ namespace Orleans.Runtime.Messaging
                 int bodyOffset = FramingLength + headerLength;
 
                 // build message
-                this.headersSerializer.Deserialize(header, out var headersContainer);
-                message = new Message(headersContainer);
+                message = _messageFactory.CreateMessageForDeserialization();
+                _headersReader.PartialReset(header);
+                Message.HeadersContainer.DeserializeInto(message.Headers, _headersReader, _headersDeserializationContext);
 
                 // Copy the body into a new sequence with a separately managed lifetime.
-                var payload = _messagingPool.SequencePool.Get();
+                var payload = message.GetPayload();
                 foreach (var buffer in input.Slice(bodyOffset, bodyLength))
                 {
                     payload.Write(buffer.Span);
                 }
-
-                message.Payload = payload;
 
                 return (0, headerLength, bodyLength);
             }
             finally
             {
                 input = input.Slice(requiredBytes);
+                _headersDeserializationContext.Reset();
             }
         }
 
@@ -126,7 +98,7 @@ namespace Orleans.Runtime.Messaging
         {
             if (!(this.bufferWriter is PrefixingBufferWriter<byte, TBufferWriter> buffer))
             {
-                this.bufferWriter = buffer = new PrefixingBufferWriter<byte, TBufferWriter>(FramingLength, MessageSizeHint, this.memoryPool);
+                this.bufferWriter = buffer = new PrefixingBufferWriter<byte, TBufferWriter>(FramingLength, HeaderSizeHint, this.memoryPool);
             }
 
             buffer.Reset(writer);
@@ -135,18 +107,24 @@ namespace Orleans.Runtime.Messaging
             this.headersSerializer.Serialize(buffer, message.Headers);
             var headerLength = buffer.CommittedBytes;
 
-            this.objectSerializer.Serialize(buffer, message.BodyObject);
-
             // Write length prefixes, first header length then body length.
             BinaryPrimitives.WriteInt32LittleEndian(lengthFields, headerLength);
 
-            var bodyLength = buffer.CommittedBytes - headerLength;
+            var payload = message.GetPayload();
+            var bodyLength = (int)payload.Length;
             BinaryPrimitives.WriteInt32LittleEndian(lengthFields.Slice(4), bodyLength);
 
             // Before completing, check lengths
             ThrowIfLengthsInvalid(headerLength, bodyLength);
 
             buffer.Complete(lengthFields);
+
+            // Write the body.
+            foreach (var segment in payload.AsReadOnlySequence)
+            {
+                writer.Write(segment.Span);
+            }
+
             return (headerLength, bodyLength);
         }
 

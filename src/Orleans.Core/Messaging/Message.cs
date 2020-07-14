@@ -9,10 +9,13 @@ using Orleans.Transactions;
 
 namespace Orleans.Runtime
 {
-    internal class Message : IDisposable
+    internal class Message
     {
         public const int LENGTH_HEADER_SIZE = 8;
         public const int LENGTH_META_HEADER = 4;
+
+        [NonSerialized]
+        private readonly MessageFactory _messageFactory;
 
         [NonSerialized]
         private string _targetHistory;
@@ -42,17 +45,20 @@ namespace Orleans.Runtime
         }
         
         // Cache values of TargetAddess and SendingAddress as they are used very frequently
-        private ActivationAddress targetAddress;
-        private ActivationAddress sendingAddress;
-        
-        public Message()
-        {
-            Headers = new HeadersContainer();
-        }
+        [NonSerialized]
+        private ActivationAddress _targetAddress;
 
-        public Message(HeadersContainer headers)
+        [NonSerialized]
+        private ActivationAddress _sendingAddress;
+
+        private object _bodyObject;
+        private readonly OwnedSequence<byte> _payload;
+
+        public Message(MessageFactory messageFactory, MemoryPool<byte> memoryPool)
         {
-            Headers = headers ?? throw new ArgumentNullException();
+            _messageFactory = messageFactory;
+            _payload = new OwnedSequence<byte>(memoryPool);
+            Headers = new HeadersContainer();
         }
 
         public enum Categories
@@ -143,7 +149,7 @@ namespace Orleans.Runtime
             set
             {
                 Headers.TargetSilo = value;
-                targetAddress = null;
+                _targetAddress = null;
             }
         }
         
@@ -153,7 +159,7 @@ namespace Orleans.Runtime
             set
             {
                 Headers.TargetGrain = value;
-                targetAddress = null;
+                _targetAddress = null;
             }
         }
         
@@ -163,19 +169,19 @@ namespace Orleans.Runtime
             set
             {
                 Headers.TargetActivation = value;
-                targetAddress = null;
+                _targetAddress = null;
             }
         }
 
         public ActivationAddress TargetAddress
         {
-            get { return targetAddress ?? (targetAddress = ActivationAddress.GetAddress(TargetSilo, TargetGrain, TargetActivation)); }
+            get { return _targetAddress ?? (_targetAddress = ActivationAddress.GetAddress(TargetSilo, TargetGrain, TargetActivation)); }
             set
             {
                 TargetGrain = value.Grain;
                 TargetActivation = value.Activation;
                 TargetSilo = value.Silo;
-                targetAddress = value;
+                _targetAddress = value;
             }
         }
         
@@ -185,7 +191,7 @@ namespace Orleans.Runtime
             set
             {
                 Headers.SendingSilo = value;
-                sendingAddress = null;
+                _sendingAddress = null;
             }
         }
         
@@ -195,7 +201,7 @@ namespace Orleans.Runtime
             set
             {
                 Headers.SendingGrain = value;
-                sendingAddress = null;
+                _sendingAddress = null;
             }
         }
         
@@ -205,7 +211,7 @@ namespace Orleans.Runtime
             set
             {
                 Headers.SendingActivation = value;
-                sendingAddress = null;
+                _sendingAddress = null;
             }
         }
 
@@ -217,13 +223,13 @@ namespace Orleans.Runtime
 
         public ActivationAddress SendingAddress
         {
-            get { return sendingAddress ?? (sendingAddress = ActivationAddress.GetAddress(SendingSilo, SendingGrain, SendingActivation)); }
+            get { return _sendingAddress ?? (_sendingAddress = ActivationAddress.GetAddress(SendingSilo, SendingGrain, SendingActivation)); }
             set
             {
                 SendingGrain = value.Grain;
                 SendingActivation = value.Activation;
                 SendingSilo = value.Silo;
-                sendingAddress = value;
+                _sendingAddress = value;
             }
         }
         
@@ -333,29 +339,47 @@ namespace Orleans.Runtime
             set { Headers.RequestContextData = value; }
         }
 
-        public object BodyObject { get; set; }
+        public OwnedSequence<byte> GetPayload()
+        {
+            if (_payload.Length > 0 || _bodyObject is null) return _payload;
+            _messageFactory.SetPayload(_payload, _bodyObject);
+            return _payload;
+        }
 
-        public OwnedSequence<byte> Payload { get; set; }
+        public T GetBodyObject<T>()
+        {
+            if (_bodyObject is object body) return (T)body;
+            var result = _messageFactory.GetPayload<T>(_payload);
+            _bodyObject = result;
+            return result;
+        }
 
-        public void Reset()
+        public void SetBodyObject<T>(T value)
+        {
+            _bodyObject = value;
+            _payload.Reset(); 
+        }
+
+        /// <summary>
+        /// Returns this instance back to the message pool, resetting its internal state. Must be called for every message.
+        /// </summary>
+        public void CompleteProcessing()
         {
             _targetHistory = default;
             _queuedTime = default;
             _retryCount = default;
-            Headers?.Reset();
+            _sendingAddress = default;
+            _targetAddress = default;
+            _bodyObject = default;
+            _payload.Reset();
+            Headers.Reset();
 
-            Payload?.Dispose();
-            Payload = null;
-
-            (BodyObject as IDisposable)?.Dispose();
-            BodyObject = null;
+            _messageFactory.ReturnMessageToPool(this);
         }
-
-        public void Dispose() => Reset();
 
         public void ClearTargetAddress()
         {
-            targetAddress = null;
+            _targetAddress = null;
         }
 
         // For testing and logging/tracing
@@ -960,7 +984,12 @@ namespace Orleans.Runtime
             public static object Deserializer(Type expected, IDeserializationContext context)
             {
                 var result = new HeadersContainer();
-                var reader = context.StreamReader;
+                DeserializeInto(result, context.StreamReader, context);
+                return result;
+            }
+
+            public static void DeserializeInto<TReader>(HeadersContainer result, TReader reader, IDeserializationContext context) where TReader : IBinaryTokenStreamReader
+            {
                 context.RecordObject(result);
                 var headers = (Headers)reader.ReadInt();
 
@@ -1056,8 +1085,6 @@ namespace Orleans.Runtime
 
                 if ((headers & Headers.INTERFACE_TYPE) != Headers.NONE)
                     result.InterfaceType = reader.ReadGrainInterfaceType();
-
-                return result;
             }
         }
     }

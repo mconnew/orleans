@@ -9,6 +9,7 @@ using TestExtensions;
 using Xunit;
 using Tester;
 using Orleans.Internal;
+using Microsoft.Extensions.DependencyInjection;
 
 #if !NETCOREAPP
 using System.Runtime.Remoting.Messaging;
@@ -21,15 +22,12 @@ namespace UnitTests.General
     {
         private readonly Dictionary<string, object> headers = new Dictionary<string, object>();
 
-        private static bool oldPropagateActivityId;
-
         private static readonly SafeRandom random = new SafeRandom();
         private readonly TestEnvironmentFixture fixture;
 
         public RequestContextTests_Local(TestEnvironmentFixture fixture)
         {
             this.fixture = fixture;
-            oldPropagateActivityId = RequestContext.PropagateActivityId;
             RequestContext.PropagateActivityId = true;
             RequestContextTestUtils.SetActivityId(Guid.Empty);
             RequestContext.Clear();
@@ -54,7 +52,7 @@ namespace UnitTests.General
             const int NumLoops = 50;
             string id = "key" + random.Next();
 
-            Message msg = new Message();
+            Message msg = this.fixture.Client.ServiceProvider.GetRequiredService<MessageFactory>().CreateMessageForDeserialization();
             Task[] promises = new Task[NumLoops];
             ManualResetEventSlim flag = new ManualResetEventSlim(false);
             for (int i = 0; i < NumLoops; i++)
@@ -71,6 +69,7 @@ namespace UnitTests.General
                 RequestContext.Remove(key);
             }
             await Task.WhenAll(promises);
+            msg.CompleteProcessing();
         }
 
         [Fact, TestCategory("Functional"), TestCategory("RequestContext")]
@@ -80,17 +79,18 @@ namespace UnitTests.General
             Guid activityId2 = Guid.NewGuid();
             Guid nullActivityId = Guid.Empty;
 
-            Message msg = new Message();
+            Message msg = this.fixture.Client.ServiceProvider.GetRequiredService<MessageFactory>().CreateMessageForDeserialization();
             msg.RequestContextData = RequestContextExtensions.Export(this.fixture.SerializationManager);
             if (msg.RequestContextData != null) foreach (var kvp in msg.RequestContextData)
                 {
                     headers.Add(kvp.Key, kvp.Value);
                 };
             Assert.False(headers.ContainsKey(RequestContext.E2_E_TRACING_ACTIVITY_ID_HEADER), "ActivityId should not be be present " + headers.ToStrings(separator: ","));
+            msg.CompleteProcessing();
             TestCleanup();
 
             RequestContextTestUtils.SetActivityId(activityId);
-            msg = new Message();
+            msg = this.fixture.Client.ServiceProvider.GetRequiredService<MessageFactory>().CreateMessageForDeserialization();
             msg.RequestContextData = RequestContextExtensions.Export(this.fixture.SerializationManager);
             if (msg.RequestContextData != null) foreach (var kvp in msg.RequestContextData)
                 {
@@ -101,20 +101,22 @@ namespace UnitTests.General
             Assert.NotNull(result);// ActivityId #1 should not be null
             Assert.Equal(activityId, result);  // "E2E ActivityId #1 not propagated correctly"
             Assert.Equal(activityId, RequestContextTestUtils.GetActivityId());  // "Original E2E ActivityId #1 should not have changed"
+            msg.CompleteProcessing();
             TestCleanup();
 
             RequestContextTestUtils.SetActivityId(nullActivityId);
-            msg = new Message();
+            msg = this.fixture.Client.ServiceProvider.GetRequiredService<MessageFactory>().CreateMessageForDeserialization();
             msg.RequestContextData = RequestContextExtensions.Export(this.fixture.SerializationManager);
             if (msg.RequestContextData != null) foreach (var kvp in msg.RequestContextData)
                 {
                     headers.Add(kvp.Key, kvp.Value);
                 };
             Assert.False(headers.ContainsKey(RequestContext.E2_E_TRACING_ACTIVITY_ID_HEADER), "Null ActivityId should not be present " + headers.ToStrings(separator: ","));
+            msg.CompleteProcessing();
             TestCleanup();
 
             RequestContextTestUtils.SetActivityId(activityId2);
-            msg = new Message();
+            msg = this.fixture.Client.ServiceProvider.GetRequiredService<MessageFactory>().CreateMessageForDeserialization();
             msg.RequestContextData = RequestContextExtensions.Export(this.fixture.SerializationManager);
             foreach (var kvp in msg.RequestContextData)
             {
@@ -126,6 +128,7 @@ namespace UnitTests.General
             Assert.Equal(activityId2, result);  // "E2E ActivityId #2 not propagated correctly"
 
             Assert.Equal(activityId2, RequestContextTestUtils.GetActivityId());  // "Original E2E ActivityId #2 should not have changed"
+            msg.CompleteProcessing();
             TestCleanup();
         }
 
@@ -136,16 +139,17 @@ namespace UnitTests.General
             Guid activityId2 = Guid.NewGuid();
             Guid nullActivityId = Guid.Empty;
 
-            Message msg = new Message();
+            Message msg = this.fixture.Client.ServiceProvider.GetRequiredService<MessageFactory>().CreateMessageForDeserialization();
             msg.RequestContextData = RequestContextExtensions.Export(this.fixture.SerializationManager);
             RequestContext.Clear();
             RequestContextExtensions.Import(msg.RequestContextData);
             var actId = RequestContext.Get(RequestContext.E2_E_TRACING_ACTIVITY_ID_HEADER);
             Assert.Null(actId);
+            msg.CompleteProcessing();
             TestCleanup();
 
             RequestContextTestUtils.SetActivityId(activityId);
-            msg = new Message();
+            msg = this.fixture.Client.ServiceProvider.GetRequiredService<MessageFactory>().CreateMessageForDeserialization();
             msg.RequestContextData = RequestContextExtensions.Export(this.fixture.SerializationManager);
             RequestContext.Clear();
             RequestContextExtensions.Import(msg.RequestContextData);
@@ -159,19 +163,21 @@ namespace UnitTests.General
             Assert.NotNull(result);// "ActivityId #1 should not be null"
             Assert.Equal(activityId, result);  // "E2E ActivityId #1 not propagated correctly"
             Assert.Equal(activityId, RequestContextTestUtils.GetActivityId());  // "Original E2E ActivityId #1 should not have changed"
+            msg.CompleteProcessing();
             TestCleanup();
 
             RequestContextTestUtils.SetActivityId(nullActivityId);
-            msg = new Message();
+            msg = this.fixture.Client.ServiceProvider.GetRequiredService<MessageFactory>().CreateMessageForDeserialization();
             msg.RequestContextData = RequestContextExtensions.Export(this.fixture.SerializationManager);
             RequestContext.Clear();
             RequestContextExtensions.Import(msg.RequestContextData);
             actId = RequestContext.Get(RequestContext.E2_E_TRACING_ACTIVITY_ID_HEADER);
             Assert.Null(actId);
+            msg.CompleteProcessing();
             TestCleanup();
 
             RequestContextTestUtils.SetActivityId(activityId2);
-            msg = new Message();
+            msg = this.fixture.Client.ServiceProvider.GetRequiredService<MessageFactory>().CreateMessageForDeserialization();
             msg.RequestContextData = RequestContextExtensions.Export(this.fixture.SerializationManager);
             RequestContext.Clear();
             RequestContextExtensions.Import(msg.RequestContextData);
@@ -186,6 +192,7 @@ namespace UnitTests.General
             Assert.Equal(activityId2, result);// "E2E ActivityId #2 not propagated correctly
 
             Assert.Equal(activityId2, RequestContextTestUtils.GetActivityId()); // "Original E2E ActivityId #2 should not have changed"
+            msg.CompleteProcessing();
             TestCleanup();
         }
 

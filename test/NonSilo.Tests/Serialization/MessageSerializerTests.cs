@@ -166,7 +166,7 @@ namespace UnitTests.Serialization
                 requestBody.Add(k + ": test line");
             }
 
-            resp.BodyObject = requestBody;
+            resp.SetBodyObject(requestBody);
 
             string s = resp.ToString();
             output.WriteLine(s);
@@ -184,7 +184,7 @@ namespace UnitTests.Serialization
             Assert.True(resp.TargetGrain.Equals(resp1.TargetGrain));
             Assert.True(resp.SendingGrain.Equals(resp1.SendingGrain));
             Assert.True(resp.SendingSilo.Equals(resp1.SendingSilo)); //SendingSilo is incorrect
-            List<object> responseList = Assert.IsAssignableFrom<List<object>>(resp1.BodyObject);
+            List<object> responseList = Assert.IsAssignableFrom<List<object>>(resp1.GetBodyObject<List<object>>());
             Assert.Equal<int>(numItems, responseList.Count); //Body list has wrong number of entries
             for (int k = 0; k < numItems; k++)
             {

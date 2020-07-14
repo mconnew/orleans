@@ -155,7 +155,7 @@ namespace Orleans.Runtime.Messaging
             else
             {
                 var response = this.MessageFactory.CreateResponseMessage(msg);
-                response.BodyObject = PingResponse;
+                response.SetBodyObject(PingResponse);
                 this.Send(response);
             }
         }

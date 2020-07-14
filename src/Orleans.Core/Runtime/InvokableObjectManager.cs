@@ -195,9 +195,9 @@ namespace Orleans
             {
                 while (true)
                 {
+                    Message message = default;
                     try
                     {
-                        Message message;
                         lock (this.Messages)
                         {
                             if (this.Messages.Count == 0)
@@ -219,7 +219,7 @@ namespace Orleans
                         InvokeMethodRequest request = null;
                         try
                         {
-                            request = (InvokeMethodRequest)message.BodyObject;
+                            request = message.GetBodyObject<InvokeMethodRequest>();
                         }
                         catch (Exception deserializationException)
                         {
@@ -270,6 +270,8 @@ namespace Orleans
                     finally
                     {
                         RequestContext.Clear();
+                        message?.CompleteProcessing();
+                        message = default;
                     }
                 }
             }
@@ -304,7 +306,6 @@ namespace Orleans
             [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
             private void ReportException(Message message, Exception exception)
             {
-                var request = (InvokeMethodRequest)message.BodyObject;
                 switch (message.Direction)
                 {
                     case Message.Directions.OneWay:
@@ -312,8 +313,7 @@ namespace Orleans
                             _manager.logger.LogError(
                                 (int)ErrorCode.ProxyClient_OGC_UnhandledExceptionInOneWayInvoke,
                                 exception,
-                                "Exception during invocation of notification method {MethodId}, interface {Interface}. Ignoring exception because this is a one way request.",
-                                request.MethodId,
+                                "Exception during invocation of interface {Interface}. Ignoring exception because this is a one way request.",
                                 message.InterfaceType);
                             break;
                         }
@@ -343,7 +343,7 @@ namespace Orleans
                         }
 
                     default:
-                        throw new InvalidOperationException($"Unrecognized direction for message {message}, request {request}, which resulted in exception: {exception}");
+                        throw new InvalidOperationException($"Unrecognized direction for message {message}, which resulted in exception: {exception}");
                 }
             }
         }

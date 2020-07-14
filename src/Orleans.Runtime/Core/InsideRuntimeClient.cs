@@ -199,6 +199,7 @@ namespace Orleans.Runtime
             if (request.IsExpired)
             {
                 this.messagingTrace.OnDropExpiredMessage(request, MessagingStatisticsGroup.Phase.Respond);
+                request.CompleteProcessing();
                 return;
             }
 
@@ -290,7 +291,7 @@ namespace Orleans.Runtime
                 object resultObject;
                 try
                 {
-                    var request = (InvokeMethodRequest) message.BodyObject;
+                    var request = message.GetBodyObject<InvokeMethodRequest>();
                     if (request.Arguments != null)
                     {
                         CancellationSourcesExtension.RegisterCancellationTokens(target, request);
@@ -549,6 +550,7 @@ namespace Orleans.Runtime
 
                     case Message.RejectionTypes.CacheInvalidation when message.HasCacheInvalidationHeader:
                         // The message targeted an invalid (eg, defunct) activation and this response serves only to invalidate this silo's activation cache.
+                        message.CompleteProcessing();
                         return;
                     default:
                         this.logger.Error(ErrorCode.Dispatcher_InvalidEnum_RejectionType,
@@ -574,6 +576,7 @@ namespace Orleans.Runtime
             {
                 if (logger.IsEnabled(LogLevel.Debug)) this.logger.Debug(ErrorCode.Dispatcher_NoCallbackForResp,
                     "No callback for response message: " + message);
+                message.CompleteProcessing();
             }
         }
 
@@ -632,6 +635,7 @@ namespace Orleans.Runtime
                     }
                 }
             }
+
             return Task.CompletedTask;
         }
 

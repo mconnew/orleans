@@ -343,7 +343,7 @@ namespace Orleans.Runtime
         {
             // create the response
             var message = this.messageFactory.CreateResponseMessage(request);
-            message.BodyObject = response;
+            message.SetBodyObject(response);
 
             if (message.TargetGrain.IsSystemTarget())
             {

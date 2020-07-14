@@ -42,6 +42,7 @@ using Orleans.Networking.Shared;
 using Orleans.Configuration.Internal;
 using Orleans.Runtime.Metadata;
 using Orleans.GrainReferences;
+using Microsoft.Extensions.ObjectPool;
 
 namespace Orleans.Hosting
 {
@@ -102,6 +103,7 @@ namespace Orleans.Hosting
             services.TryAddSingleton<LifecycleSchedulingSystemTarget>();
 
             services.AddLogging();
+            services.TryAddSingleton<ObjectPoolProvider, DefaultObjectPoolProvider>();
             services.TryAddSingleton<ITimerRegistry, TimerRegistry>();
             services.TryAddSingleton<IReminderRegistry, ReminderRegistry>();
             services.TryAddSingleton<GrainRuntime>();

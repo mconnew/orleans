@@ -454,9 +454,7 @@ namespace Orleans.Runtime.Messaging
             if (message.Direction == Message.Directions.Request)
             {
                 // Send a fast fail to the caller.
-                var response = this.MessageFactory.CreateResponseMessage(message);
-                response.Result = Message.ResponseTypes.Error;
-                response.BodyObject = Response.ExceptionResponse(exception);
+                var response = this.MessageFactory.CreateErrorResponse(message, exception);
 
                 // Send the error response and continue processing the next message.
                 this.Send(response);
@@ -465,7 +463,7 @@ namespace Orleans.Runtime.Messaging
             {
                 // If the message was a response, propagate the exception to the intended recipient.
                 message.Result = Message.ResponseTypes.Error;
-                message.BodyObject = Response.ExceptionResponse(exception);
+                message.SetBodyObject(Response.ExceptionResponse(exception));
                 this.MessageCenter.OnReceivedMessage(message);
             }
 
@@ -488,9 +486,7 @@ namespace Orleans.Runtime.Messaging
 
             if (message.Direction == Message.Directions.Request)
             {
-                var response = this.MessageFactory.CreateResponseMessage(message);
-                response.Result = Message.ResponseTypes.Error;
-                response.BodyObject = Response.ExceptionResponse(exception);
+                var response = this.MessageFactory.CreateErrorResponse(message, exception);
 
                 this.MessageCenter.OnReceivedMessage(response);
             }
@@ -499,7 +495,7 @@ namespace Orleans.Runtime.Messaging
                 // If we failed sending an original response, turn the response body into an error and reply with it.
                 // unless we have already tried sending the response multiple times.
                 message.Result = Message.ResponseTypes.Error;
-                message.BodyObject = Response.ExceptionResponse(exception);
+                message.SetBodyObject(exception);
                 ++message.RetryCount;
 
                 this.Send(message);

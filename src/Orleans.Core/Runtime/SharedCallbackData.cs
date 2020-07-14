@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Orleans.Configuration;
+using Orleans.Serialization;
 
 namespace Orleans.Runtime
 {
@@ -43,50 +44,53 @@ namespace Orleans.Runtime
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         public void ResponseCallback(Message message, TaskCompletionSource<object> context)
         {
-            Response response;
-            if (message.Result != Message.ResponseTypes.Rejection)
+            if (message.Result == Message.ResponseTypes.Rejection)
             {
-                try
-                {
-                    response = (Response)message.BodyObject;
-                }
-                catch (Exception exc)
-                {
-                    //  catch the Deserialize exception and break the promise with it.
-                    response = Response.ExceptionResponse(exc);
-                }
-            }
-            else
-            {
-                Exception rejection;
                 switch (message.RejectionType)
                 {
                     case Message.RejectionTypes.GatewayTooBusy:
-                        rejection = new GatewayTooBusyException();
+                        context.TrySetException(new GatewayTooBusyException());
                         break;
 
                     default:
-                        rejection = message.BodyObject as Exception;
-                        if (rejection == null)
+                        var rejection = message.GetBodyObject<Exception>();
+                        if (rejection is Exception exception)
+                        {
+                            context.TrySetException(exception);
+                        }
+                        else
                         {
                             if (string.IsNullOrEmpty(message.RejectionInfo))
                             {
                                 message.RejectionInfo = "Unable to send request - no rejection info available";
                             }
-                            rejection = new OrleansMessageRejectionException(message.RejectionInfo);
+
+                            context.TrySetException(new OrleansMessageRejectionException(message.RejectionInfo));
                         }
+
                         break;
                 }
-                response = Response.ExceptionResponse(rejection);
+
+                return;
             }
 
-            if (!response.ExceptionFlag)
+            try
             {
-                context.TrySetResult(response.Data);
+                var response = message.GetBodyObject<Response>();
+
+                if (!response.ExceptionFlag)
+                {
+                    context.TrySetResult(response.Data);
+                }
+                else
+                {
+                    context.TrySetException((Exception)response.Data);
+                }
             }
-            else
+            catch (Exception exc)
             {
-                context.TrySetException((Exception)response.Data);
+                // Catch the deserialization exception and break the promise with it.
+                context.TrySetException(exc);
             }
         }
     }
