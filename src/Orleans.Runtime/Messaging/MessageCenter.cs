@@ -207,6 +207,7 @@ namespace Orleans.Runtime.Messaging
                 // Do not send reject a rejection locally, it will create a stack overflow
                 MessagingStatisticsGroup.OnDroppedSentMessage(msg);
                 if (this.log.IsEnabled(LogLevel.Debug)) log.Debug("Dropping rejection {msg}", msg);
+                msg.CompleteProcessing();
             }
             else
             {
@@ -214,6 +215,7 @@ namespace Orleans.Runtime.Messaging
                 var error = this.messageFactory.CreateRejectionResponse(msg, rejectionType, reason);
                 // rejection msgs are always originated in the local silo, they are never remote.
                 this.OnReceivedMessage(error);
+                msg.CompleteProcessing();
             }
         }
 

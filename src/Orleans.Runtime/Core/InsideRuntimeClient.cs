@@ -407,6 +407,7 @@ namespace Orleans.Runtime
                         SafeSendResponse(message, resultObject);
                     }
                 }
+
                 return;
             }
             catch (Exception exc2)
@@ -421,6 +422,7 @@ namespace Orleans.Runtime
             finally
             {
                 RequestContext.Clear();
+                message.CompleteProcessing();
             }
         }
 

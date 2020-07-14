@@ -57,6 +57,7 @@ namespace Orleans.Runtime.Messaging
             if (msg.IsExpired)
             {
                 this.messagingTrace.OnDropExpiredMessage(msg, MessagingStatisticsGroup.Phase.Send);
+                msg.CompleteProcessing();
                 return;
             }
 
