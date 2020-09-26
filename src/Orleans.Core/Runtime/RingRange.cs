@@ -38,9 +38,12 @@ namespace Orleans.Runtime
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     internal class SingleRange : IRingRangeInternal, IEquatable<SingleRange>, ISingleRange
     {
+        [Hagar.Id(1)]
         private readonly uint begin;
+        [Hagar.Id(2)]
         private readonly uint end;
 
         /// <summary>
@@ -168,10 +171,14 @@ namespace Orleans.Runtime
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     internal class GeneralMultiRange : IRingRangeInternal
     {
+        [Hagar.Id(1)]
         private readonly List<SingleRange> ranges;
+        [Hagar.Id(2)]
         private readonly long rangeSize;
+        [Hagar.Id(3)]
         private readonly double rangePercentage;
 
         internal IEnumerable<SingleRange> Ranges { get { return ranges; } }
@@ -235,11 +242,14 @@ namespace Orleans.Runtime
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     internal class EquallyDividedMultiRange
     {
         [Serializable]
+        [Hagar.GenerateSerializer]
         private class EquallyDividedSingleRange
         {
+            [Hagar.Id(1)]
             private readonly List<SingleRange> ranges;
 
             internal EquallyDividedSingleRange(SingleRange singleRange, int numSubRanges)
@@ -279,8 +289,11 @@ namespace Orleans.Runtime
             }
         }
 
+        [Hagar.Id(1)]
         private readonly Dictionary<int, IRingRangeInternal> multiRanges;
+        [Hagar.Id(2)]
         private readonly long rangeSize;
+        [Hagar.Id(3)]
         private readonly double rangePercentage;
 
         // This class takes a range and devides it into X (x being numSubRanges) equal ranges.

@@ -151,9 +151,34 @@ namespace Benchmarks
             {
                 new PingBenchmark(numSilos: 2, startClient: false, grainsOnSecondariesOnly: true).PingConcurrentHostedClient(blocksPerWorker: 10).GetAwaiter().GetResult();                
             },
+            ["ConcurrentPing_SiloToSilo_Forever"] = () =>
+            {
+                Console.WriteLine("Press any key to begin.");
+                Console.ReadKey();
+                Console.WriteLine("Press any key to end.");
+                Console.WriteLine("## Silo to Silo ##");
+                while (!Console.KeyAvailable)
+                {
+                    var test = new PingBenchmark(numSilos: 2, startClient: false, grainsOnSecondariesOnly: true);
+                    Console.WriteLine("Starting");
+                    test.PingConcurrentHostedClient(blocksPerWorker: 10).GetAwaiter().GetResult();
+                    Console.WriteLine("Stopping");
+                    test.Shutdown().GetAwaiter().GetResult();
+                }
+
+                Console.WriteLine("Interrupted by user");
+            },
             ["ConcurrentPing_SiloToSilo_Long"] = () =>
             {
                 new PingBenchmark(numSilos: 2, startClient: false, grainsOnSecondariesOnly: true).PingConcurrentHostedClient(blocksPerWorker: 1000).GetAwaiter().GetResult();
+            },
+            ["ConcurrentPing_OneSilo_Forever"] = () =>
+            {
+                new PingBenchmark(numSilos: 1, startClient: true).PingConcurrentForever().GetAwaiter().GetResult();
+            },
+            ["PingOnce"] = () =>
+            {
+                new PingBenchmark().Ping().GetAwaiter().GetResult();
             },
             ["PingForever"] = () =>
             {
@@ -207,6 +232,9 @@ namespace Benchmarks
         // requires benchmark name or 'All' word as first parameter
         public static void Main(string[] args)
         {
+            var x = new SerializationBenchmarks();
+            x.BenchmarkSetup();
+            x.DeserializerHeaders();
             if (args.Length > 0 && args[0].Equals("all", StringComparison.InvariantCultureIgnoreCase))
             {
                 Console.WriteLine("Running full benchmarks suite");

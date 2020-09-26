@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <PackageId>Microsoft.Orleans.Streaming.SQS</PackageId>
     <Title>Microsoft Orleans Streaming AWS SQS</Title>
@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <PackageReference Include="AWSSDK.SQS" Version="$(AWSSDKSQSVersion)" />
+    <PackageReference Include="System.Diagnostics.Tracing" Version="$(SystemDiagnosticsTracingVersion)" />
   </ItemGroup>
 
 </Project>

@@ -88,30 +88,36 @@ namespace Orleans
 
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class ReminderEntry
     {
         /// <summary>
         /// The grain reference of the grain that created the reminder. Forms the reminder
         /// primary key together with <see cref="ReminderName"/>.
         /// </summary>
+        [Hagar.Id(1)]
         public GrainReference GrainRef { get; set; }
 
         /// <summary>
         /// The name of the reminder. Forms the reminder primary key together with 
         /// <see cref="GrainRef"/>.
         /// </summary>
+        [Hagar.Id(2)]
         public string ReminderName { get; set; }
 
         /// <summary>
         /// the time when the reminder was supposed to tick in the first time
         /// </summary>
+        [Hagar.Id(3)]
         public DateTime StartAt { get; set; }
 
         /// <summary>
         /// the time period for the reminder
         /// </summary>
+        [Hagar.Id(4)]
         public TimeSpan Period { get; set; }
 
+        [Hagar.Id(5)]
         public string ETag { get; set; }
 
         public override string ToString()
@@ -126,10 +132,14 @@ namespace Orleans
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     internal class ReminderData : IGrainReminder
     {
+        [Hagar.Id(1)]
         public GrainReference GrainRef { get; private set; }
+        [Hagar.Id(2)]
         public string ReminderName { get; private set; }
+        [Hagar.Id(3)]
         public string ETag { get; private set; }
 
         internal ReminderData(GrainReference grainRef, string reminderName, string eTag)

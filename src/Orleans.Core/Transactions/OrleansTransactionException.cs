@@ -8,6 +8,7 @@ namespace Orleans.Transactions
     /// Base class for all transaction exceptions
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class OrleansTransactionException : OrleansException
     {
         public OrleansTransactionException() : base("Orleans transaction error.") { }
@@ -26,6 +27,7 @@ namespace Orleans.Transactions
     /// Orleans transactions are disabled.
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class OrleansTransactionsDisabledException : OrleansTransactionException
     {
         public OrleansTransactionsDisabledException()
@@ -43,6 +45,7 @@ namespace Orleans.Transactions
     /// Signifies that the runtime was unable to start a transaction.
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class OrleansStartTransactionFailedException : OrleansTransactionException
     {
         public OrleansStartTransactionFailedException(Exception innerException)
@@ -60,6 +63,7 @@ namespace Orleans.Transactions
     /// Signifies that transaction runtime is overloaded
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class OrleansTransactionOverloadException : OrleansTransactionException
     {
         public OrleansTransactionOverloadException()
@@ -73,8 +77,10 @@ namespace Orleans.Transactions
     /// has committed.
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class OrleansTransactionInDoubtException : OrleansTransactionException
     {
+        [Hagar.Id(1)]
         public string TransactionId { get; private set; }
 
         public OrleansTransactionInDoubtException(string transactionId) : base(string.Format("Transaction {0} is InDoubt", transactionId))
@@ -109,11 +115,13 @@ namespace Orleans.Transactions
     /// Signifies that the executing transaction has aborted.
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class OrleansTransactionAbortedException : OrleansTransactionException
     {
         /// <summary>
         /// The unique identifier of the aborted transaction.
         /// </summary>
+        [Hagar.Id(1)]
         public string TransactionId { get; private set; }
  
         public OrleansTransactionAbortedException(string transactionId, string msg, Exception innerException) : base(msg, innerException)
@@ -149,8 +157,10 @@ namespace Orleans.Transactions
     /// Signifies that the executing transaction has aborted because a dependent transaction aborted.
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class OrleansCascadingAbortException : OrleansTransactionTransientFailureException
     {
+        [Hagar.Id(1)]
         public string DependentTransactionId { get; private set; }
 
         public OrleansCascadingAbortException(string transactionId, string dependentId)
@@ -186,6 +196,7 @@ namespace Orleans.Transactions
     /// Signifies that the executing transaction has aborted because a method did not await all its pending calls.
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class OrleansOrphanCallException : OrleansTransactionAbortedException
     {
         public OrleansOrphanCallException(string transactionId, int pendingCalls)
@@ -205,6 +216,7 @@ namespace Orleans.Transactions
     /// Signifies that the executing read-only transaction has aborted because it attempted to write to a grain.
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class OrleansReadOnlyViolatedException : OrleansTransactionAbortedException
     {
         public OrleansReadOnlyViolatedException(string transactionId)
@@ -219,6 +231,7 @@ namespace Orleans.Transactions
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class OrleansTransactionServiceNotAvailableException : OrleansTransactionException
     {
         public OrleansTransactionServiceNotAvailableException() : base("Transaction service not available")
@@ -235,6 +248,7 @@ namespace Orleans.Transactions
     /// Signifies that the executing transaction has aborted because its execution lock was broken
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class OrleansBrokenTransactionLockException : OrleansTransactionTransientFailureException
     {
         public OrleansBrokenTransactionLockException(string transactionId, string situation)
@@ -257,6 +271,7 @@ namespace Orleans.Transactions
     /// Signifies that the executing transaction has aborted because it could not upgrade some lock
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class OrleansTransactionLockUpgradeException : OrleansTransactionTransientFailureException
     {
         public OrleansTransactionLockUpgradeException(string transactionId) :
@@ -274,6 +289,7 @@ namespace Orleans.Transactions
     /// Signifies that the executing transaction has aborted because the TM did not receive all prepared messages in time
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class OrleansTransactionPrepareTimeoutException : OrleansTransactionTransientFailureException
     {
         public OrleansTransactionPrepareTimeoutException(string transactionId, Exception innerException)
@@ -292,6 +308,7 @@ namespace Orleans.Transactions
     /// timeouts for locks or protocol responses, or speculation failures.
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class OrleansTransactionTransientFailureException : OrleansTransactionAbortedException
     {
         public OrleansTransactionTransientFailureException(string transactionId, string msg, Exception innerException)

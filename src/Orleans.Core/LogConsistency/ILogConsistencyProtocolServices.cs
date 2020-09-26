@@ -62,6 +62,7 @@ namespace Orleans.LogConsistency
     /// Exception thrown by protocol messaging layer.
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class ProtocolTransportException : OrleansException
     {
         public ProtocolTransportException()

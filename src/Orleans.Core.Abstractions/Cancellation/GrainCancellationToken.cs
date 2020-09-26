@@ -13,6 +13,7 @@ namespace Orleans
     /// Grain cancellation token
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public sealed class GrainCancellationToken : IDisposable
     {
         [NonSerialized]
@@ -54,6 +55,7 @@ namespace Orleans
         /// <summary>
         /// Unique id of concrete token
         /// </summary>
+        [Hagar.Id(1)]
         internal Guid Id { get; private set; }
 
         /// <summary>

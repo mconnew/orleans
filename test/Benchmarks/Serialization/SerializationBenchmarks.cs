@@ -1,11 +1,17 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Pipelines;
+using System.Net;
 using System.Reflection;
 using BenchmarkDotNet.Attributes;
 using Microsoft.Extensions.DependencyInjection;
 using Orleans;
 using Orleans.Configuration;
+using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
+using Orleans.Runtime.Messaging;
 using Orleans.Serialization;
 using Orleans.Serialization.ProtobufNet;
 using UnitTests.GrainInterfaces;
@@ -62,11 +68,13 @@ namespace Benchmarks.Serialization
         public SerializerToUse Serializer { get; set; }
 
         private OuterClass.SomeConcreteClass complexClass;
-
+        private Message.HeadersContainer messageHeaders;
         private byte[] serializedBytes;
-
+        private ReadOnlySequence<byte> headerBytes;
         private LargeTestData largeTestData;
         private SerializationManager serializationManager;
+        private TestSingleSegmentBufferWriter bufferWriter;
+        private MessageSerializer.HeadersSerializer headerSerializer;
 
         [GlobalSetup]
         public void BenchmarkSetup()
@@ -114,16 +122,78 @@ namespace Benchmarks.Serialization
             this.largeTestData.SetBit(13);
             this.largeTestData.SetEnemy(17, CampaignEnemyTestType.Enemy1);
 
+            var body = new Response("yess!");
+            messageHeaders = (new Message
+            {
+                TargetActivation = ActivationId.NewId(),
+                TargetSilo = SiloAddress.New(IPEndPoint.Parse("210.50.4.44:40902"), 5423123),
+                TargetGrain = GrainId.Create("sys.mygrain", "borken_thee_doggo"),
+                BodyObject = body,
+                InterfaceType = GrainInterfaceType.Create("imygrain"),
+                SendingActivation = ActivationId.NewId(),
+                SendingSilo = SiloAddress.New(IPEndPoint.Parse("10.50.4.44:40902"), 5423123),
+                SendingGrain = GrainId.Create("sys.mygrain", "fluffy_g"),
+                TraceContext = new TraceContext { ActivityId = Guid.NewGuid() },
+                Id = CorrelationId.GetNext()
+            }).Headers;
+
             this.serializedBytes = this.serializationManager.SerializeToByteArray(this.largeTestData);
+
+            this.bufferWriter = new TestSingleSegmentBufferWriter(new byte[10000]); 
+            this.headerSerializer = new MessageSerializer.HeadersSerializer(this.serializationManager);
+            this.headerSerializer.Serialize(this.bufferWriter, this.messageHeaders);
+            this.headerBytes = this.bufferWriter.GetReadOnlySequence();
+            this.bufferWriter.Reset();
+        }
+
+        public class TestSingleSegmentBufferWriter : IBufferWriter<byte>
+        {
+            private readonly byte[] _buffer;
+            private int _written;
+
+            public TestSingleSegmentBufferWriter(byte[] buffer)
+            {
+                _buffer = buffer;
+                _written = 0;
+            }
+
+            public void Advance(int bytes) => _written += bytes;
+
+            public Memory<byte> GetMemory(int sizeHint = 0) => _buffer.AsMemory().Slice(_written);
+
+            public Span<byte> GetSpan(int sizeHint) => _buffer.AsSpan().Slice(_written);
+
+            public void Reset() => _written = 0;
+
+            public ReadOnlySequence<byte> GetReadOnlySequence()
+            {
+                var bytes = new byte[_written];
+                _buffer.AsSpan(0, _written).CopyTo(bytes);
+                return new ReadOnlySequence<byte>(bytes);
+            }
         }
 
         [Benchmark]
+        public void SerializeHeaders()
+        {
+            this.bufferWriter.Reset();
+            this.headerSerializer.Serialize(this.bufferWriter, this.messageHeaders);
+        }
+
+        [Benchmark]
+        public object DeserializerHeaders()
+        {
+            this.headerSerializer.Deserialize(this.headerBytes, out var result);
+            return result;
+        }
+
+        //[Benchmark]
         public byte[] SerializerBenchmark()
         {
             return this.serializationManager.SerializeToByteArray(this.largeTestData);
         }
 
-        [Benchmark]
+        //[Benchmark]
         public object DeserializerBenchmark()
         {
             return this.serializationManager.DeserializeFromByteArray<LargeTestData>(this.serializedBytes);
@@ -133,7 +203,7 @@ namespace Benchmarks.Serialization
         /// Performs a full serialization loop using a type which has not had code generation performed.
         /// </summary>
         /// <returns></returns>
-        [Benchmark]
+        //[Benchmark]
         public object FallbackFullLoop()
         {
             return OrleansSerializationLoop(this.complexClass);

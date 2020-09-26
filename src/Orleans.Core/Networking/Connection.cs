@@ -1,7 +1,9 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -33,6 +35,7 @@ namespace Orleans.Runtime.Messaging
 #else
         private readonly WaitCallback handleMessageCallback;
 #endif
+        private readonly MemoryPool<byte> memoryPool = MemoryPool<byte>.Shared;
         private readonly ConnectionCommon shared;
         private readonly ConnectionDelegate middleware;
         private readonly Channel<Message> outgoingMessages;
@@ -306,6 +309,7 @@ namespace Orleans.Runtime.Messaging
             {
                 input?.Complete();
                 this.CloseInternal(error);
+                (serializer as IDisposable)?.Dispose();
             }
         }
 
@@ -366,6 +370,7 @@ namespace Orleans.Runtime.Messaging
             {
                 output?.Complete();
                 this.CloseInternal(error);
+                (serializer as IDisposable)?.Dispose();
             }
         }
 

@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Immutable;
 using System.Text;
+using Hagar;
 
 namespace Orleans.Runtime
 {
+    [GenerateSerializer]
     internal sealed class MembershipTableSnapshot
     {
         public MembershipTableSnapshot(
@@ -69,7 +71,10 @@ namespace Orleans.Runtime
             return new MembershipTableSnapshot(snapshot.Version, entries.ToImmutable());
         }
 
+        [Id(1)]
         public MembershipVersion Version { get; }
+        
+        [Id(2)]
         public ImmutableDictionary<SiloAddress, MembershipEntry> Entries { get; }
 
         public int ActiveNodeCount

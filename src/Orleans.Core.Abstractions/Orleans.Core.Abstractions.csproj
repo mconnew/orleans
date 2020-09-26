@@ -14,8 +14,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Hagar.Analyzers" Version="0.5.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.Bcl.HashCode" Version="$(MicrosoftBclHashCodeVersion)" />
     <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
+    <PackageReference Include="Hagar.Abstractions" Version="0.5.2" />
+    <PackageReference Include="Hagar" Version="0.5.2" />
+    <PackageReference Include="Hagar.CodeGenerator.MSBuild" Version="0.5.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
-  
+
 </Project>

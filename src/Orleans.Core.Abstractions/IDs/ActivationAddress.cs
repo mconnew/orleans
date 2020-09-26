@@ -4,10 +4,15 @@ using Orleans.Concurrency;
 namespace Orleans.Runtime
 {
     [Serializable, Immutable]
+    [Hagar.GenerateSerializer]
+    [Hagar.SuppressReferenceTracking]
     public sealed class ActivationAddress : IEquatable<ActivationAddress>
     {
+        [Hagar.Id(1)]
         public GrainId Grain { get; private set; }
+        [Hagar.Id(2)]
         public ActivationId Activation { get; private set; }
+        [Hagar.Id(3)]
         public SiloAddress Silo { get; private set; }
 
         public bool IsComplete => !Grain.IsDefault && Activation != null && Silo != null;

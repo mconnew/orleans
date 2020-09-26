@@ -12,14 +12,22 @@ namespace Orleans.Streams
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     internal class StreamConsumerData
     {
+        [Hagar.Id(1)]
         public GuidId SubscriptionId;
+        [Hagar.Id(2)]
         public InternalStreamId StreamId;
+        [Hagar.Id(3)]
         public IStreamConsumerExtension StreamConsumer;
+        [Hagar.Id(4)]
         public StreamConsumerDataState State = StreamConsumerDataState.Inactive;
+        [Hagar.Id(5)]
         public IQueueCacheCursor Cursor;
+        [Hagar.Id(6)]
         public StreamHandshakeToken LastToken;
+        [Hagar.Id(7)]
         public string FilterData;
 
         public StreamConsumerData(GuidId subscriptionId, InternalStreamId streamId, IStreamConsumerExtension streamConsumer, string filterData)

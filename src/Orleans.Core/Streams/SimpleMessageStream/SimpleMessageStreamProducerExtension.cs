@@ -19,14 +19,22 @@ namespace Orleans.Providers.Streams.SimpleMessageStream
     /// On the client, we have one extension per stream (we bind an extension for every StreamProducer, therefore every stream has its own extension).
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     internal class SimpleMessageStreamProducerExtension : IStreamProducerExtension
     {
+        [Hagar.Id(1)]
         private readonly Dictionary<InternalStreamId, StreamConsumerExtensionCollection> remoteConsumers;
+        [Hagar.Id(2)]
         private readonly IStreamProviderRuntime     providerRuntime;
+        [Hagar.Id(3)]
         private readonly IStreamPubSub              streamPubSub;
+        [Hagar.Id(4)]
         private readonly IStreamFilter              streamFilter;
+        [Hagar.Id(5)]
         private readonly bool                       fireAndForgetDelivery;
+        [Hagar.Id(6)]
         private readonly bool                       optimizeForImmutableData;
+        [Hagar.Id(7)]
         private readonly ILogger                    logger;
 
         internal SimpleMessageStreamProducerExtension(IStreamProviderRuntime providerRt, IStreamPubSub pubsub, IStreamFilter streamFilter, ILogger logger, bool fireAndForget, bool optimizeForImmutable)
@@ -165,10 +173,14 @@ namespace Orleans.Providers.Streams.SimpleMessageStream
 
 
         [Serializable]
+        [Hagar.GenerateSerializer]
         internal class StreamConsumerExtensionCollection
         {
+            [Hagar.Id(1)]
             private readonly ConcurrentDictionary<GuidId, (IStreamConsumerExtension StreamConsumer, string FilterData)> consumers;
+            [Hagar.Id(2)]
             private readonly IStreamPubSub streamPubSub;
+            [Hagar.Id(3)]
             private readonly ILogger logger;
 
             internal StreamConsumerExtensionCollection(IStreamPubSub pubSub, ILogger logger)

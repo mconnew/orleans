@@ -285,7 +285,9 @@ namespace Orleans.Serialization
                     this.Write((byte)0);
                 }
                 
+                // TODO: Specialize for .NET Core 3.1 and above (TryWriteBytes(Span<byte>) overload)
                 this.Write(ip.GetAddressBytes()); // IPv4 -- 4 bytes
+
             }
             else
             {

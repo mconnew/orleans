@@ -10,6 +10,7 @@ using Orleans.Concurrency;
 namespace Orleans.Runtime
 {
     [Serializable, Immutable]
+    [Hagar.GenerateSerializer]
     public sealed class LegacyGrainId : IEquatable<LegacyGrainId>, IComparable<LegacyGrainId>
     {
         private static readonly Interner<UniqueKey, LegacyGrainId> grainIdInternCache = new Interner<UniqueKey, LegacyGrainId>(InternerConstants.SIZE_LARGE);
@@ -19,6 +20,7 @@ namespace Orleans.Runtime
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2104:DoNotDeclareReadOnlyMutableReferenceTypes")]
         [DataMember]
+        [Hagar.Id(1)]
         internal readonly UniqueKey Key;
 
         public UniqueKey.Category Category => Key.IdCategory;

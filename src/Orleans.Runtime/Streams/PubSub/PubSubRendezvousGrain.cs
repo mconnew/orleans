@@ -10,9 +10,12 @@ using Orleans.Streams.Core;
 namespace Orleans.Streams
 {
     [Serializable]
+    [Hagar.GenerateSerializer]
     internal class PubSubGrainState
     {
+        [Hagar.Id(1)]
         public HashSet<PubSubPublisherState> Producers { get; set; } = new HashSet<PubSubPublisherState>();
+        [Hagar.Id(2)]
         public HashSet<PubSubSubscriptionState> Consumers { get; set; } = new HashSet<PubSubSubscriptionState>();
     }
 

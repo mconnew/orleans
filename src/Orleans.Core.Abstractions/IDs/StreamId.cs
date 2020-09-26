@@ -15,10 +15,16 @@ namespace Orleans.Runtime
     [Immutable]
     [Serializable]
     [StructLayout(LayoutKind.Auto)]
+    [Hagar.GenerateSerializer]
     public readonly struct StreamId : IEquatable<StreamId>, IComparable<StreamId>, ISerializable
     {
+        [Hagar.Id(1)]
         private readonly byte[] fullKey;
+        
+        [Hagar.Id(2)]
         private readonly ushort keyIndex;
+        
+        [Hagar.Id(3)]
         private readonly int hash;
 
         public ReadOnlyMemory<byte> FullKey => fullKey;
@@ -133,10 +139,13 @@ namespace Orleans.Runtime
     [Immutable]
     [Serializable]
     [StructLayout(LayoutKind.Auto)]
+    [Hagar.GenerateSerializer]
     internal readonly struct InternalStreamId : IEquatable<InternalStreamId>, IComparable<InternalStreamId>, ISerializable
     {
+        [Hagar.Id(1)]
         public string ProviderName { get; }
 
+        [Hagar.Id(2)]
         public StreamId StreamId { get; }
 
         public InternalStreamId(string providerName, StreamId streamId)

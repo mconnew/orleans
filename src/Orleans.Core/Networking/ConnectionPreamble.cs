@@ -15,7 +15,7 @@ namespace Orleans.Runtime.Messaging
         internal static async ValueTask Write(ConnectionContext connection, GrainId nodeIdentity, NetworkProtocolVersion protocolVersion, SiloAddress siloAddress)
         {
             var output = connection.Transport.Output;
-            var outputWriter = new PrefixingBufferWriter<byte, PipeWriter>(sizeof(int), 1024, MemoryPool<byte>.Shared);
+            using var outputWriter = new PrefixingBufferWriter<byte, PipeWriter>(sizeof(int), 1024, MemoryPool<byte>.Shared);
             outputWriter.Reset(output);
             var writer = new BinaryTokenStreamWriter2<PrefixingBufferWriter<byte, PipeWriter>>(outputWriter);
 
