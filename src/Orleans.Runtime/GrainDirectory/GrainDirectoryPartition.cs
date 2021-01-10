@@ -13,20 +13,23 @@ namespace Orleans.Runtime.GrainDirectory
     [Serializable]
     internal class ActivationInfo : IActivationInfo
     {
+        public ActivationId ActivationId { get; private set; }
         public SiloAddress SiloAddress { get; private set; }
 
         public DateTime TimeCreated { get; private set; }
 
-        public ActivationInfo(SiloAddress siloAddress)
+        public ActivationInfo(ActivationId activationId, SiloAddress siloAddress)
         {
+            ActivationId = activationId;
             SiloAddress = siloAddress;
             TimeCreated = DateTime.UtcNow;
         }
 
-        public ActivationInfo(IActivationInfo iActivationInfo)
+        public ActivationInfo(IActivationInfo other)
         {
-            SiloAddress = iActivationInfo.SiloAddress;
-            TimeCreated = iActivationInfo.TimeCreated;
+            ActivationId = other.ActivationId;
+            SiloAddress = other.SiloAddress;
+            TimeCreated = other.TimeCreated;
         }
 
         public bool OkToRemove(UnregistrationCause cause, TimeSpan lazyDeregistrationDelay)
@@ -50,16 +53,13 @@ namespace Orleans.Runtime.GrainDirectory
             }
         }
 
-        public override string ToString()
-        {
-            return String.Format("{0}, {1}", SiloAddress, TimeCreated);
-        }
+        public override string ToString() => $"{ActivationId}@{SiloAddress} ({TimeCreated})";
     }
 
     [Serializable]
     internal class GrainInfo : IGrainInfo
     {
-        public Dictionary<ActivationId, IActivationInfo> Instances { get; private set; }
+        public IActivationInfo Instance { get; private set; }
         public int VersionTag { get; private set; }
         public bool SingleInstance { get; private set; }
 
@@ -71,30 +71,24 @@ namespace Orleans.Runtime.GrainDirectory
             rand = new SafeRandom();
         }
 
-        internal GrainInfo()
-        {
-            Instances = new Dictionary<ActivationId, IActivationInfo>();
-            VersionTag = 0;
-            SingleInstance = false;
-        }
-
         public bool AddActivation(ActivationId act, SiloAddress silo)
         {
-            if (SingleInstance && (Instances.Count > 0) && !Instances.ContainsKey(act))
+            if (SingleInstance && Instance is object && Instance.ActivationId != act)
             {
                 throw new InvalidOperationException(
                     "Attempting to add a second activation to an existing grain in single activation mode");
             }
-            IActivationInfo info;
-            if (Instances.TryGetValue(act, out info))
+
+            if (Instance is null)
             {
-                if (info.SiloAddress.Equals(silo))
-                {
-                    // just refresh, no need to generate new VersionTag
-                    return false;
-                }
+                Instance = new ActivationInfo(act, silo);
             }
-            Instances[act] = new ActivationInfo(silo);
+            else if (Instance.ActivationId == act && Instance.SiloAddress.Equals(silo))
+            {
+                // just refresh, no need to generate new VersionTag
+                return false;
+            }
+
             VersionTag = rand.Next();
             return true;
         }
@@ -102,14 +96,14 @@ namespace Orleans.Runtime.GrainDirectory
         public ActivationAddress AddSingleActivation(GrainId grain, ActivationId act, SiloAddress silo)
         {
             SingleInstance = true;
-            if (Instances.Count > 0)
+            if (Instance is object)
             {
-                var item = Instances.First();
-                return ActivationAddress.GetAddress(item.Value.SiloAddress, grain, item.Key);
+                var existing = Instance;
+                return ActivationAddress.GetAddress(existing.SiloAddress, grain, existing.ActivationId);
             }
             else
             {
-                Instances.Add(act, new ActivationInfo(silo));
+                Instance = new ActivationInfo(act, silo);
                 VersionTag = rand.Next();
                 return ActivationAddress.GetAddress(silo, grain, act);
             }
@@ -119,53 +113,42 @@ namespace Orleans.Runtime.GrainDirectory
         {
             info = null;
             wasRemoved = false;
-            if (Instances.TryGetValue(act, out info) && info.OkToRemove(cause, lazyDeregistrationDelay))
+            if (Instance is object && Instance.ActivationId.Equals(act) && info.OkToRemove(cause, lazyDeregistrationDelay))
             {
-                Instances.Remove(act);
+                Instance = null;
                 wasRemoved = true;
                 VersionTag = rand.Next();
             }
-            return Instances.Count == 0;
+
+            return Instance is null;
         }
 
         public Dictionary<SiloAddress, List<ActivationAddress>> Merge(GrainId grain, IGrainInfo other)
         {
-            bool modified = false;
-            foreach (var pair in other.Instances)
+            var otherInstance = other?.Instance;
+            if (otherInstance is null)
             {
-                if (Instances.ContainsKey(pair.Key)) continue;
-
-                Instances[pair.Key] = new ActivationInfo(pair.Value.SiloAddress);
-                modified = true;
+                return null;
             }
 
-            if (modified)
+            if (Instance is null)
             {
+                Instance = new ActivationInfo(other.Instance);
                 VersionTag = rand.Next();
+                return null;
             }
-            
-            if (SingleInstance && (Instances.Count > 0))
+
+            if (!Instance.ActivationId.Equals(otherInstance.ActivationId))
             {
                 // Grain is supposed to be in single activation mode, but we have two activations!!
                 // Eventually we should somehow delegate handling this to the silo, but for now, we'll arbitrarily pick one value.
-                var orderedActivations = Instances.OrderBy(pair => pair.Key);
-                var activationToKeep = orderedActivations.First();
-                var activationsToDrop = orderedActivations.Skip(1);
-                Instances.Clear();
-                Instances.Add(activationToKeep.Key, activationToKeep.Value);
-                var mapping = new Dictionary<SiloAddress, List<ActivationAddress>>();
-                foreach (var activationPair in activationsToDrop)
+                var mapping = new Dictionary<SiloAddress, List<ActivationAddress>>
                 {
-                    var activation = ActivationAddress.GetAddress(activationPair.Value.SiloAddress, grain, activationPair.Key);
-
-                    List<ActivationAddress> activationsToRemoveOnSilo;
-                    if (!mapping.TryGetValue(activation.Silo, out activationsToRemoveOnSilo))
+                    [otherInstance.SiloAddress] = new List<ActivationAddress>
                     {
-                        activationsToRemoveOnSilo = mapping[activation.Silo] = new List<ActivationAddress>(1);
+                        ActivationAddress.GetAddress(otherInstance.SiloAddress, grain, otherInstance.ActivationId)
                     }
-
-                    activationsToRemoveOnSilo.Add(activation);
-                }
+                };
 
                 return mapping;
             }
@@ -189,12 +172,6 @@ namespace Orleans.Runtime.GrainDirectory
         private readonly ISiloStatusOracle siloStatusOracle;
         private readonly IInternalGrainFactory grainFactory;
         private readonly IOptions<GrainDirectoryOptions> grainDirectoryOptions;
-
-        [ThreadStatic]
-        private static ActivationId[] activationIdsHolder;
-
-        [ThreadStatic]
-        private static IActivationInfo[] activationInfosHolder;
 
         internal int Count { get { return partitionData.Count; } }
 
@@ -354,56 +331,21 @@ namespace Orleans.Runtime.GrainDirectory
         internal AddressesAndTag LookUpActivations(GrainId grain)
         {
             var result = new AddressesAndTag();
-            ActivationId[] activationIds;
-            IActivationInfo[] activationInfos;
-            const int arrayReusingThreshold = 100;
-            int grainInfoInstancesCount;
-
+            IGrainInfo grainInfo;
             lock (lockable)
             {
-                IGrainInfo graininfo;
-                if (!partitionData.TryGetValue(grain, out graininfo))
+                if (!partitionData.TryGetValue(grain, out grainInfo))
                 {
                     return result;
                 }
 
-                result.VersionTag = graininfo.VersionTag;
-
-                grainInfoInstancesCount = graininfo.Instances.Count;
-                if (grainInfoInstancesCount < arrayReusingThreshold)
-                {
-                    if ((activationIds = activationIdsHolder) == null)
-                    {
-                        activationIdsHolder = activationIds = new ActivationId[arrayReusingThreshold];
-                    }
-
-                    if ((activationInfos = activationInfosHolder) == null)
-                    {
-                        activationInfosHolder = activationInfos = new IActivationInfo[arrayReusingThreshold];
-                    }
-                }
-                else
-                {
-                    activationIds = new ActivationId[grainInfoInstancesCount];
-                    activationInfos = new IActivationInfo[grainInfoInstancesCount];
-                }
-
-
-                graininfo.Instances.Keys.CopyTo(activationIds, 0);
-                graininfo.Instances.Values.CopyTo(activationInfos, 0);
+                result.VersionTag = grainInfo.VersionTag;
             }
 
-            result.Addresses = new List<ActivationAddress>(grainInfoInstancesCount);
-            for (var i = 0; i < grainInfoInstancesCount; i++)
+            result.Addresses = new List<ActivationAddress>(1);
+            if (grainInfo?.Instance is IActivationInfo activationInfo && IsValidSilo(activationInfo.SiloAddress))
             {
-                var activationInfo = activationInfos[i];
-                if (IsValidSilo(activationInfo.SiloAddress))
-                {
-                    result.Addresses.Add(ActivationAddress.GetAddress(activationInfo.SiloAddress, grain, activationIds[i]));
-                }
-
-                activationInfos[i] = null;
-                activationIds[i] = null;
+                result.Addresses.Add(ActivationAddress.GetAddress(activationInfo.SiloAddress, grain, activationInfo.ActivationId));
             }
 
             return result;
@@ -527,10 +469,10 @@ namespace Orleans.Runtime.GrainDirectory
                 foreach (var pair in partitionData)
                 {
                     var grain = pair.Key;
-                    if (pair.Value.SingleInstance == singleActivation)
+                    var instance = pair.Value.Instance;
+                    if (pair.Value.SingleInstance == singleActivation && instance is object && IsValidSilo(instance.SiloAddress))
                     {
-                        result.AddRange(pair.Value.Instances.Select(activationPair => ActivationAddress.GetAddress(activationPair.Value.SiloAddress, grain, activationPair.Key))
-                            .Where(addr => IsValidSilo(addr.Silo)));
+                        result.Add(ActivationAddress.GetAddress(instance.SiloAddress, grain, instance.ActivationId));
                     }
                 }
             }
@@ -582,11 +524,11 @@ namespace Orleans.Runtime.GrainDirectory
             {
                 foreach (var grainEntry in partitionData)
                 {
-                    foreach (var activationEntry in grainEntry.Value.Instances)
+                    var instance = grainEntry.Value.Instance;
+                    if (instance is object)
                     {
                         sb.Append("    ").Append(grainEntry.Key.ToString()).Append("[" + grainEntry.Value.VersionTag + "]").
-                            Append(" => ").Append(activationEntry.Key.ToString()).
-                            Append(" @ ").AppendLine(activationEntry.Value.ToString());
+                            Append(" => ").AppendLine(instance.ToString());
                     }
                 }
             }

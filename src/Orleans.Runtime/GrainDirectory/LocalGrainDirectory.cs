@@ -329,9 +329,10 @@ namespace Orleans.Runtime.GrainDirectory
             foreach (var entry in this.DirectoryPartition.GetItems())
             {
                 var (grain, grainInfo) = (entry.Key, entry.Value);
-                foreach (var instance in grainInfo.Instances)
+                var instance = grainInfo.Instance;
+                if (instance is object)
                 {
-                    var (activationId, activationInfo) = (instance.Key, instance.Value);
+                    var (activationId, activationInfo) = (instance.ActivationId, instance);
 
                     // Include any activations from dead silos and from predecessors.
                     var siloIsDead = dead && activationInfo.SiloAddress.Equals(silo);

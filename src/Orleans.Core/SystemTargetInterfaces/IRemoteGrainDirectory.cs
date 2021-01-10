@@ -7,6 +7,7 @@ namespace Orleans.Runtime
 {
     internal interface IActivationInfo
     {
+        ActivationId ActivationId { get; }
         SiloAddress SiloAddress { get; }
         DateTime TimeCreated { get; }
         bool OkToRemove(UnregistrationCause cause, TimeSpan lazyDeregistrationDelay);
@@ -14,7 +15,7 @@ namespace Orleans.Runtime
 
     internal interface IGrainInfo
     {
-        Dictionary<ActivationId, IActivationInfo> Instances { get; }
+        IActivationInfo Instance { get; }
         int VersionTag { get; }
         bool SingleInstance { get; }
         bool AddActivation(ActivationId act, SiloAddress silo);
