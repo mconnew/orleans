@@ -1,4 +1,6 @@
-﻿namespace Orleans.Serialization
+using System;
+
+namespace Orleans.Serialization
 {
     /// <summary>
     /// Values for identifying <see cref="IKeyedSerializer"/> serializers.
@@ -10,9 +12,7 @@
         /// </summary>
         ILBasedSerializer = 1,
 
-        /// <summary>
-        /// <see cref="Orleans.Serialization.BinaryFormatterISerializableSerializer"/>
-        /// </summary>
+        [Obsolete("Removed")]
         BinaryFormatterISerializable = 2,
 
         /// <summary>

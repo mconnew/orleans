@@ -51,7 +51,6 @@ namespace UnitTests.Serialization
         public enum SerializerToUse
         {
             Default,
-            BinaryFormatterFallbackSerializer,
             IlBasedFallbackSerializer,
             NoFallback
         }
@@ -59,7 +58,6 @@ namespace UnitTests.Serialization
         public static IEnumerable<object[]> FallbackSerializers = new[]
         {
             new object[] { SerializerToUse.Default },
-            new object[] { SerializerToUse.BinaryFormatterFallbackSerializer },
             new object[] { SerializerToUse.IlBasedFallbackSerializer }
         };
 
@@ -78,12 +76,7 @@ namespace UnitTests.Serialization
                     switch (serializerToUse)
                     {
                         case SerializerToUse.IlBasedFallbackSerializer:
-#pragma warning disable CS0618 // Type or member is obsolete
                             fallback = typeof(ILBasedSerializer);
-#pragma warning restore CS0618 // Type or member is obsolete
-                            break;
-                        case SerializerToUse.BinaryFormatterFallbackSerializer:
-                            fallback = typeof(BinaryFormatterSerializer);
                             break;
                         case SerializerToUse.NoFallback:
                             fallback = typeof(SupportsNothingSerializer);
@@ -791,37 +784,6 @@ namespace UnitTests.Serialization
 
         [Theory, TestCategory("Functional")]
         [InlineData(SerializerToUse.NoFallback)]
-        public void Serialize_GrainReference_ViaStandardSerializer(SerializerToUse serializerToUse)
-        {
-            var environment = InitializeSerializer(serializerToUse);
-            GrainId grainId = LegacyGrainId.NewId();
-            GrainReference input = (GrainReference)environment.InternalGrainFactory.GetGrain(grainId);
-            Assert.True(input.IsBound);
-
-            object deserialized = DotNetSerializationLoop(input, environment.SerializationManager);
-            var grainRef = Assert.IsAssignableFrom<GrainReference>(deserialized); //GrainReference copied as wrong type
-            Assert.True(grainRef.IsBound);
-            Assert.Equal(grainId, grainRef.GrainId); //GrainId different after copy
-            Assert.Equal(input, grainRef); //Wrong contents after round-trip of input
-        }
-        
-        [Theory, TestCategory("Functional")]
-        [InlineData(SerializerToUse.NoFallback)]
-        public void Serialize_GrainBase_ViaStandardSerializer(SerializerToUse serializerToUse)
-        {
-            var environment = InitializeSerializer(serializerToUse);
-            Grain input = new EchoTaskGrain(null, null);
-
-            // Expected exception:
-            // System.Runtime.Serialization.SerializationException: Type 'Echo.Grains.EchoTaskGrain' in Assembly 'UnitTestGrains, Version=1.0.0.0, Culture=neutral, PublicKeyToken=070f47935e3ed133' is not marked as serializable.
-
-            var exc = Assert.Throws<SerializationException>(() => DotNetSerializationLoop(input, environment.SerializationManager));
-
-            Assert.Contains("is not marked as serializable", exc.Message);
-        }
-
-        [Theory, TestCategory("Functional")]
-        [InlineData(SerializerToUse.NoFallback)]
         public void Serialize_ValidateBuildSegmentListWithLengthLimit(SerializerToUse serializerToUse)
         {
             _ = InitializeSerializer(serializerToUse);
@@ -928,28 +890,6 @@ namespace UnitTests.Serialization
                 copy = serializationManager.RoundTripSerializationForTesting(copy);
             }
             return copy;
-        }
-
-        internal static object DotNetSerializationLoop(object input, SerializationManager serializationManager)
-        {
-            byte[] bytes;
-            object deserialized;
-            var formatter = new BinaryFormatter
-            {
-                Context = new StreamingContext(StreamingContextStates.All, new SerializationContext(serializationManager)),
-                SurrogateSelector = new BinaryFormatterGrainReferenceSurrogateSelector(serializationManager.ServiceProvider.GetService<GrainReferenceActivator>())
-            };
-            using (var str = new MemoryStream())
-            {
-                formatter.Serialize(str, input);
-                str.Flush();
-                bytes = str.ToArray();
-            }
-            using (var inStream = new MemoryStream(bytes))
-            {
-                deserialized = formatter.Deserialize(inStream);
-            }
-            return deserialized;
         }
 
         private void ValidateDictionary<K, V>(Dictionary<K, V> source, object deserialized, string type)
@@ -1165,12 +1105,7 @@ namespace UnitTests.Serialization
                 Payload = "pyjamas"
             };
 
-            var result2 = (SimpleISerializableObject)DotNetSerializationLoop(
-                input2,
-                environment.SerializationManager);
-
             Assert.Equal(input2.History, input.History);
-            Assert.Equal(result2.History, result.History);
         }
 
         /// <summary>
@@ -1205,12 +1140,7 @@ namespace UnitTests.Serialization
                 Payload = "pyjamas"
             };
 
-            var result2 = (SimpleISerializableStruct)DotNetSerializationLoop(
-                input2,
-                environment.SerializationManager);
-
             Assert.Equal(input2.History, input.History);
-            Assert.Equal(result2.History, result.History);
         }
 
         [Serializable]
