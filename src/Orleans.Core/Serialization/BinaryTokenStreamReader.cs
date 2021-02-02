@@ -72,15 +72,11 @@ namespace Orleans.Serialization
         {
             var silo = @this.ReadSiloAddress();
             var grain = @this.ReadGrainId();
-            var act = @this.ReadActivationId();
 
             if (silo.Equals(SiloAddress.Zero))
                 silo = null;
 
-            if (act.Equals(ActivationId.Zero))
-                act = default;
-
-            return ActivationAddress.GetAddress(silo, grain, act);
+            return ActivationAddress.GetAddress(silo, grain);
         }
 
         /// <summary>

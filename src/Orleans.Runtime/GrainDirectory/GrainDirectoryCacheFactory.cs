@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Orleans.Configuration;
+using Orleans.GrainDirectory;
 
 namespace Orleans.Runtime.GrainDirectory
 {
@@ -38,21 +39,21 @@ namespace Orleans.Runtime.GrainDirectory
 
     internal class NullGrainDirectoryCache : IGrainDirectoryCache
     {
-        private static readonly List<(GrainId, SiloAddress, ActivationId, int)> EmptyList = new List<(GrainId, SiloAddress, ActivationId, int)>();
+        private static readonly List<ActivationAddress> EmptyList = new List<ActivationAddress>();
 
-        public List<(GrainId GrainId, SiloAddress SiloAddress, ActivationId ActivationId, int VersionTag)> KeyValues => EmptyList; 
+        public List<ActivationAddress> Entries => EmptyList;
 
-        public void AddOrUpdate(GrainId key, (SiloAddress SiloAddress, ActivationId ActivationId, int VersionTag) value) { }
+        public void AddOrUpdate(GrainId key, ActivationAddress value) { } 
 
         public void Clear() { }
 
-        public bool LookUp(GrainId key, out (SiloAddress SiloAddress, ActivationId ActivationId, int VersionTag) result)
+        public bool LookUp(GrainId key, out ActivationAddress result)
         {
             result = default;
             return false;
         }
 
-        public bool Remove(GrainId key) => false; 
+        public bool Remove(ActivationAddress key) => false;
     }
 }
 

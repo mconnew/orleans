@@ -219,15 +219,14 @@ namespace Orleans.Runtime
             }
             else if (forwardingAddress != null)
             {
-                message.TargetAddress = forwardingAddress;
+                message.TargetGrain = forwardingAddress.Grain;
+                message.TargetSilo = forwardingAddress.Silo;
                 message.IsNewPlacement = false;
                 this.messageCenter.SendMessage(message);
             }
             else
             {
-                message.TargetActivation = default;
                 message.TargetSilo = null;
-                message.ClearTargetAddress();
                 this.SendMessage(message);
             }
         }
@@ -295,9 +294,8 @@ namespace Orleans.Runtime
         /// <returns>Resolve when message is addressed (modifies message fields)</returns>
         private Task AddressMessage(Message message)
         {
-            var targetAddress = message.TargetAddress;
-            if (targetAddress is null) throw new InvalidOperationException("Cannot address a message with a null TargetAddress");
-            if (targetAddress.IsComplete) return Task.CompletedTask;
+            if (message.TargetGrain.IsDefault) throw new InvalidOperationException("Cannot address a message with a missing TargetGrain");
+            if (message.TargetSilo is object) return Task.CompletedTask;
 
             var target = new PlacementTarget(
                 message.TargetGrain,
@@ -309,25 +307,25 @@ namespace Orleans.Runtime
 
             if (placementTask.IsCompletedSuccessfully)
             {
-                SetMessageTargetPlacement(message, placementTask.Result, targetAddress);
+                SetMessageTargetPlacement(message, placementTask.Result, message.TargetGrain);
                 return Task.CompletedTask;
             }
 
-            return AddressMessageAsync(placementTask);
+            return AddressMessageAsync(placementTask, message.TargetGrain);
 
-            async Task AddressMessageAsync(ValueTask<PlacementResult> addressTask)
+            async Task AddressMessageAsync(ValueTask<PlacementResult> addressTask, GrainId targetGrain)
             {
                 var placementResult = await addressTask;
-                SetMessageTargetPlacement(message, placementResult, targetAddress);
+                SetMessageTargetPlacement(message, placementResult, targetGrain);
             }
         }
 
-        private void SetMessageTargetPlacement(Message message, PlacementResult placementResult, ActivationAddress targetAddress)
+        private void SetMessageTargetPlacement(Message message, PlacementResult placementResult, GrainId targetGrain)
         {
-            if (placementResult.IsNewPlacement && targetAddress.Grain.IsClient())
+            if (placementResult.IsNewPlacement && targetGrain.IsClient())
             {
                 logger.Error(ErrorCode.Dispatcher_AddressMsg_UnregisteredClient, $"AddressMessage could not find target for client pseudo-grain {message}");
-                throw new KeyNotFoundException($"Attempting to send a message {message} to an unregistered client pseudo-grain {targetAddress.Grain}");
+                throw new KeyNotFoundException($"Attempting to send a message {message} to an unregistered client pseudo-grain {targetGrain}");
             }
 
             message.SetTargetPlacement(placementResult);
@@ -361,11 +359,6 @@ namespace Orleans.Runtime
             {
                 message.TargetSilo = messageCenter.MyAddress;
             }
-
-            if (message.TargetActivation is null)
-            {
-                message.TargetActivation = ActivationId.GetDeterministic(message.TargetGrain);
-            }
         }
 
         public void ReceiveMessage(Message msg)
@@ -386,7 +379,7 @@ namespace Orleans.Runtime
                         (int)ErrorCode.MessagingMessageFromUnknownActivation,
                         "Received a message {Message} for an unknown SystemTarget: {Target}",
                         msg,
-                        msg.TargetAddress);
+                        msg.TargetGrain);
                     return;
                 }
 
@@ -401,8 +394,8 @@ namespace Orleans.Runtime
                 try
                 {
                     var targetActivation = catalog.GetOrCreateActivation(
-                        msg.TargetAddress,
-                        msg.IsNewPlacement,
+                        msg.TargetGrain,
+                        msg.TargetSilo is null,
                         msg.RequestContextData);
 
                     if (targetActivation is null)
@@ -412,8 +405,8 @@ namespace Orleans.Runtime
                         {
                             logger.LogWarning(
                                 (int)ErrorCode.Dispatcher_NoTargetActivation,
-                                "No target activation {Activation} for response message: {Message}",
-                                msg.TargetActivation,
+                                "No target activation {TargetGrain} for response message: {Message}",
+                                msg.TargetGrain,
                                 msg);
                             return;
                         }
@@ -423,9 +416,8 @@ namespace Orleans.Runtime
                                 (int)ErrorCode.Dispatcher_Intermediate_GetOrCreateActivation,
                                 "Intermediate NonExistentActivation for message {Message}",
                                 msg);
-
-                            var nonExistentActivation = msg.TargetAddress;
-                            ProcessRequestToInvalidActivation(msg, nonExistentActivation, null, "Non-existent activation");
+;
+                            ProcessRequestToInvalidActivation(msg, msg.TargetGrain, null, "Non-existent activation");
                             return;
                         }
                     }

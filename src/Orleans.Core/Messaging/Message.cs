@@ -39,10 +39,6 @@ namespace Orleans.Runtime
             set { _retryCount = value; }
         }
         
-        // Cache values of TargetAddess and SendingAddress as they are used very frequently
-        private ActivationAddress targetAddress;
-        private ActivationAddress sendingAddress;
-        
         static Message()
         {
         }
@@ -143,7 +139,6 @@ namespace Orleans.Runtime
             set
             {
                 Headers.TargetSilo = value;
-                targetAddress = null;
             }
         }
         
@@ -153,39 +148,6 @@ namespace Orleans.Runtime
             set
             {
                 Headers.TargetGrain = value;
-                targetAddress = null;
-            }
-        }
-        
-        public ActivationId TargetActivation
-        {
-            get { return Headers.TargetActivation; }
-            set
-            {
-                Headers.TargetActivation = value;
-                targetAddress = null;
-            }
-        }
-
-        public ActivationAddress TargetAddress
-        {
-            get
-            {
-                if (targetAddress is object) return targetAddress;
-                if (!TargetGrain.IsDefault)
-                {
-                    return targetAddress = ActivationAddress.GetAddress(TargetSilo, TargetGrain, TargetActivation);
-                }
-
-                return null;
-            }
-
-            set
-            {
-                TargetGrain = value.Grain;
-                TargetActivation = value.Activation;
-                TargetSilo = value.Silo;
-                targetAddress = value;
             }
         }
         
@@ -195,7 +157,6 @@ namespace Orleans.Runtime
             set
             {
                 Headers.SendingSilo = value;
-                sendingAddress = null;
             }
         }
         
@@ -205,17 +166,6 @@ namespace Orleans.Runtime
             set
             {
                 Headers.SendingGrain = value;
-                sendingAddress = null;
-            }
-        }
-        
-        public ActivationId SendingActivation
-        {
-            get { return Headers.SendingActivation; }
-            set
-            {
-                Headers.SendingActivation = value;
-                sendingAddress = null;
             }
         }
 
@@ -230,18 +180,6 @@ namespace Orleans.Runtime
             set { Headers.TraceContext = value; }
         }
 
-        public ActivationAddress SendingAddress
-        {
-            get { return sendingAddress ?? (sendingAddress = ActivationAddress.GetAddress(SendingSilo, SendingGrain, SendingActivation)); }
-            set
-            {
-                SendingGrain = value.Grain;
-                SendingActivation = value.Activation;
-                SendingSilo = value.Silo;
-                sendingAddress = value;
-            }
-        }
-        
         public bool IsNewPlacement
         {
             get { return Headers.IsNewPlacement; }
@@ -286,7 +224,9 @@ namespace Orleans.Runtime
             get
             {
                 if (!TimeToLive.HasValue)
+                {
                     return false;
+                }
                 
                 return TimeToLive <= TimeSpan.Zero;
             }
@@ -350,11 +290,6 @@ namespace Orleans.Runtime
 
         public object BodyObject { get; set; }
 
-        public void ClearTargetAddress()
-        {
-            targetAddress = null;
-        }
-
         private static string GetNotNullString(string s)
         {
             return s ?? string.Empty;
@@ -390,10 +325,8 @@ namespace Orleans.Runtime
             AppendIfExists(HeadersContainer.Headers.REJECTION_TYPE, sb, (m) => m.RejectionType);
             AppendIfExists(HeadersContainer.Headers.REQUEST_CONTEXT, sb, (m) => m.RequestContextData);
             AppendIfExists(HeadersContainer.Headers.RESULT, sb, (m) => m.Result);
-            AppendIfExists(HeadersContainer.Headers.SENDING_ACTIVATION, sb, (m) => m.SendingActivation);
             AppendIfExists(HeadersContainer.Headers.SENDING_GRAIN, sb, (m) => m.SendingGrain);
             AppendIfExists(HeadersContainer.Headers.SENDING_SILO, sb, (m) => m.SendingSilo);
-            AppendIfExists(HeadersContainer.Headers.TARGET_ACTIVATION, sb, (m) => m.TargetActivation);
             AppendIfExists(HeadersContainer.Headers.TARGET_GRAIN, sb, (m) => m.TargetGrain);
             AppendIfExists(HeadersContainer.Headers.CALL_CHAIN_ID, sb, (m) => m.CallChainId);
             AppendIfExists(HeadersContainer.Headers.TRACE_CONTEXT, sb, (m) => m.TraceContext);
@@ -441,8 +374,8 @@ namespace Orleans.Runtime
                 IsNewPlacement ? "NewPlacement " : "", // 2
                 response,  //3
                 Direction, //4
-                $"[{SendingSilo} {SendingGrain} {SendingActivation}]", //5
-                $"[{TargetSilo} {TargetGrain} {TargetActivation}]", //6
+                $"[{SendingSilo} {SendingGrain}]", //5
+                $"[{TargetSilo} {TargetGrain}]", //6
                 BodyObject is InvokeMethodRequest request ? $" {request.ToString()}" : string.Empty, // 7
                 Id, //8
                 ForwardCount > 0 ? "[ForwardCount=" + ForwardCount + "]" : ""); //9
@@ -450,7 +383,6 @@ namespace Orleans.Runtime
 
         internal void SetTargetPlacement(PlacementResult value)
         {
-            TargetActivation = value.Activation;
             TargetSilo = value.Silo;
 
             if (value.IsNewPlacement)
@@ -468,10 +400,6 @@ namespace Orleans.Runtime
             if (!TargetGrain.IsDefault)
             {
                 history.Append(TargetGrain).Append(":");
-            }
-            if (TargetActivation is object)
-            {
-                history.Append(TargetActivation);
             }
             history.Append(">");
             if (!string.IsNullOrEmpty(TargetHistory))
@@ -549,12 +477,12 @@ namespace Orleans.Runtime
                 REJECTION_TYPE = 1 << 12,
                 READ_ONLY = 1 << 13,
                 RESEND_COUNT = 1 << 14, // Support removed. Value retained for backwards compatibility.
-                SENDING_ACTIVATION = 1 << 15,
+                // SENDING_ACTIVATION = 1 << 15,
                 SENDING_GRAIN = 1 <<16,
                 SENDING_SILO = 1 << 17,
                 IS_NEW_PLACEMENT = 1 << 18,
 
-                TARGET_ACTIVATION = 1 << 19,
+                // TARGET_ACTIVATION = 1 << 19,
                 TARGET_GRAIN = 1 << 20,
                 TARGET_SILO = 1 << 21,
                 TARGET_OBSERVER = 1 << 22,
@@ -586,10 +514,8 @@ namespace Orleans.Runtime
             private int _forwardCount;
             private SiloAddress _targetSilo;
             private GrainId _targetGrain;
-            private ActivationId _targetActivation;
             private SiloAddress _sendingSilo;
             private GrainId _sendingGrain;
-            private ActivationId _sendingActivation;
             private bool _isNewPlacement;
             private ushort _interfaceVersion;
             private ResponseTypes _result;
@@ -714,15 +640,6 @@ namespace Orleans.Runtime
                 }
             }
 
-            public ActivationId TargetActivation
-            {
-                get { return _targetActivation; }
-                set
-                {
-                    _targetActivation = value;
-                }
-            }
-
             public SiloAddress SendingSilo
             {
                 get { return _sendingSilo; }
@@ -738,15 +655,6 @@ namespace Orleans.Runtime
                 set
                 {
                     _sendingGrain = value;
-                }
-            }
-
-            public ActivationId SendingActivation
-            {
-                get { return _sendingActivation; }
-                set
-                {
-                    _sendingActivation = value;
                 }
             }
 
@@ -873,10 +781,8 @@ namespace Orleans.Runtime
 
                 headers = _targetSilo == null ? headers & ~Headers.TARGET_SILO : headers | Headers.TARGET_SILO;
                 headers = _targetGrain.IsDefault ? headers & ~Headers.TARGET_GRAIN : headers | Headers.TARGET_GRAIN;
-                headers = _targetActivation is null ? headers & ~Headers.TARGET_ACTIVATION : headers | Headers.TARGET_ACTIVATION;
                 headers = _sendingSilo is null ? headers & ~Headers.SENDING_SILO : headers | Headers.SENDING_SILO;
                 headers = _sendingGrain.IsDefault ? headers & ~Headers.SENDING_GRAIN : headers | Headers.SENDING_GRAIN;
-                headers = _sendingActivation is null ? headers & ~Headers.SENDING_ACTIVATION : headers | Headers.SENDING_ACTIVATION;
                 headers = _isNewPlacement == default(bool) ? headers & ~Headers.IS_NEW_PLACEMENT : headers | Headers.IS_NEW_PLACEMENT;
                 headers = _isReturnedFromRemoteCluster == default(bool) ? headers & ~Headers.IS_RETURNED_FROM_REMOTE_CLUSTER : headers | Headers.IS_RETURNED_FROM_REMOTE_CLUSTER;
                 headers = _interfaceVersion == 0 ? headers & ~Headers.INTERFACE_VERSION : headers | Headers.INTERFACE_VERSION;
@@ -974,11 +880,6 @@ namespace Orleans.Runtime
                 if ((headers & Headers.RESULT) != Headers.NONE)
                     writer.Write((byte)input.Result);
 
-                if ((headers & Headers.SENDING_ACTIVATION) != Headers.NONE)
-                {
-                    writer.Write(input.SendingActivation);
-                }
-
                 if ((headers & Headers.SENDING_GRAIN) != Headers.NONE)
                 {
                     writer.Write(input.SendingGrain);
@@ -987,11 +888,6 @@ namespace Orleans.Runtime
                 if ((headers & Headers.SENDING_SILO) != Headers.NONE)
                 {
                     writer.Write(input.SendingSilo);
-                }
-
-                if ((headers & Headers.TARGET_ACTIVATION) != Headers.NONE)
-                {
-                    writer.Write(input.TargetActivation);
                 }
 
                 if ((headers & Headers.TARGET_GRAIN) != Headers.NONE)
@@ -1110,17 +1006,11 @@ namespace Orleans.Runtime
                 if ((headers & Headers.RESULT) != Headers.NONE)
                     result.Result = (Orleans.Runtime.Message.ResponseTypes)reader.ReadByte();
 
-                if ((headers & Headers.SENDING_ACTIVATION) != Headers.NONE)
-                    result.SendingActivation = reader.ReadActivationId();
-
                 if ((headers & Headers.SENDING_GRAIN) != Headers.NONE)
                     result.SendingGrain = reader.ReadGrainId();
 
                 if ((headers & Headers.SENDING_SILO) != Headers.NONE)
                     result.SendingSilo = reader.ReadSiloAddress();
-
-                if ((headers & Headers.TARGET_ACTIVATION) != Headers.NONE) 
-                    result.TargetActivation = reader.ReadActivationId();
 
                 if ((headers & Headers.TARGET_GRAIN) != Headers.NONE)
                     result.TargetGrain = reader.ReadGrainId();

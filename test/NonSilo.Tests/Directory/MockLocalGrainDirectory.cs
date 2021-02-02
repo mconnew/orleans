@@ -70,12 +70,12 @@ namespace UnitTests.Directory
             throw new NotImplementedException();
         }
 
-        public bool LocalLookup(GrainId grain, out AddressAndTag addresses)
+        public bool LocalLookup(GrainId grain, out ActivationAddress addresses)
         {
             throw new NotImplementedException();
         }
 
-        public Task<AddressAndTag> LookupAsync(GrainId grainId, int hopCount = 0)
+        public Task<ActivationAddress> LookupAsync(GrainId grainId, int hopCount = 0)
         {
             throw new NotImplementedException();
         }
@@ -101,8 +101,9 @@ namespace UnitTests.Directory
         }
 
         public bool TryGetCached(GrainId grain, out ActivationAddress address) => throw new NotImplementedException();
-        public Task<AddressAndTag> RegisterAsync(ActivationAddress address, int hopCount) => throw new NotImplementedException();
-        public bool TryGetCached(GrainId grain, out AddressAndTag address) => throw new NotImplementedException();
+        public Task<ActivationAddress> RegisterAsync(ActivationAddress address, int hopCount) => throw new NotImplementedException();
+        public Task UnregisterAfterNonexistingActivation(ActivationAddress address, SiloAddress origin) => throw new NotImplementedException();
+        public void InvalidateCacheEntry(ActivationAddress activation, bool invalidateDirectoryAlso = false) => throw new NotImplementedException();
         #endregion
     }
 }

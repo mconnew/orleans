@@ -127,6 +127,8 @@ namespace UnitTests.Grains
     [Orleans.Providers.StorageProvider(ProviderName = "ErrorInjector")]
     public class PersistenceProviderErrorGrain : Grain<PersistenceTestGrainState>, IPersistenceProviderErrorGrain
     {
+        private readonly Guid _activationId = Guid.NewGuid();
+
         public override Task OnActivateAsync()
         {
             return Task.CompletedTask;
@@ -149,7 +151,7 @@ namespace UnitTests.Grains
             return State.Field1;
         }
 
-        public Task<string> GetActivationId() => Task.FromResult(this.Data.ActivationId.ToString());
+        public Task<string> GetActivationId() => Task.FromResult(_activationId.ToString());
     }
 
     [Orleans.Providers.StorageProvider(ProviderName = "ErrorInjector")]
@@ -206,13 +208,15 @@ namespace UnitTests.Grains
 
     public class PersistenceProviderErrorProxyGrain : Grain, IPersistenceProviderErrorProxyGrain
     {
+        private readonly Guid _activationId = Guid.NewGuid();
+
         public Task<int> GetValue(IPersistenceProviderErrorGrain other) => other.GetValue();
 
         public Task DoWrite(int val, IPersistenceProviderErrorGrain other) => other.DoWrite(val);
 
         public Task<int> DoRead(IPersistenceProviderErrorGrain other) => other.DoRead();
 
-        public Task<string> GetActivationId() => Task.FromResult(this.Data.ActivationId.ToString());
+        public Task<string> GetActivationId() => Task.FromResult(_activationId.ToString());
     }
 
     [Orleans.Providers.StorageProvider(ProviderName = "test1")]
@@ -425,6 +429,8 @@ namespace UnitTests.Grains
     public class AWSStorageTestGrain : Grain<PersistenceTestGrainState>,
         IAWSStorageTestGrain, IAWSStorageTestGrain_LongKey
     {
+        private readonly Guid _activationId = Guid.NewGuid();
+
         public override Task OnActivateAsync()
         {
             return Task.CompletedTask;
@@ -447,7 +453,7 @@ namespace UnitTests.Grains
             return State.Field1;
         }
 
-        public Task<string> GetActivationId() => Task.FromResult(this.Data.ActivationId.ToString());
+        public Task<string> GetActivationId() => Task.FromResult(_activationId.ToString());
 
         public Task DoDelete()
         {

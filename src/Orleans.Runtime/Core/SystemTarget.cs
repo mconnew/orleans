@@ -25,7 +25,6 @@ namespace Orleans.Runtime
         internal ActivationAddress ActivationAddress { get; }
 
         GrainId ISystemTargetBase.GrainId => id.GrainId;
-        internal ActivationId ActivationId { get; set; }
         private InsideRuntimeClient runtimeClient;
         private RuntimeMessagingTrace messagingTrace;
         private readonly ILogger timerLogger;
@@ -51,8 +50,6 @@ namespace Orleans.Runtime
 
         IAddressable IGrainContext.GrainInstance => this;
 
-        ActivationId IGrainContext.ActivationId => this.ActivationId;
-
         ActivationAddress IGrainContext.Address => this.ActivationAddress;
         private RuntimeMessagingTrace MessagingTrace => this.messagingTrace ??= this.RuntimeClient.ServiceProvider.GetRequiredService<RuntimeMessagingTrace>();
         
@@ -75,9 +72,8 @@ namespace Orleans.Runtime
         {
             this.id = grainId;
             this.Silo = silo;
-            this.ActivationAddress = ActivationAddress.GetAddress(this.Silo, this.id.GrainId, this.ActivationId);
+            this.ActivationAddress = new ActivationAddress(this.id.GrainId, this.Silo, eTag: null);
             this.IsLowPriority = lowPriority;
-            this.ActivationId = ActivationId.GetDeterministic(grainId.GrainId);
             this.timerLogger = loggerFactory.CreateLogger<GrainTimer>();
             this.logger = loggerFactory.CreateLogger(this.GetType());
         }
@@ -162,7 +158,7 @@ namespace Orleans.Runtime
         /// <summary>Override of object.ToString()</summary>
         public override string ToString()
         {
-            return $"[{(IsLowPriority ? "LowPriority" : string.Empty)}SystemTarget: {Silo}/{this.id.ToString()}{this.ActivationId}]";
+            return $"[{(IsLowPriority ? "LowPriority" : string.Empty)}SystemTarget: {Silo}/{this.id.ToString()}]";
         }
 
         /// <summary>Adds details about message currently being processed</summary>

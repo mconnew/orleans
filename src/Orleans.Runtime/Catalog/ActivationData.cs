@@ -181,8 +181,6 @@ namespace Orleans.Runtime
 
         public IAddressable GrainInstance { get; private set; }
 
-        public ActivationId ActivationId { get { return Address.Activation; } }
-
         public ActivationAddress Address { get; private set; }
 
         public IServiceProvider ServiceProvider => this.serviceScope?.ServiceProvider;
@@ -780,10 +778,9 @@ namespace Orleans.Runtime
 
         public override string ToString()
         {
-            return String.Format("[Activation: {0}/{1}{2}{3} State={4}]",
+            return string.Format("[Activation: {0}/{1}{2} State={3}]",
                  Silo,
                  this.GrainId,
-                 this.ActivationId,
                  GetActivationInfoString(),
                  State);
         }
@@ -792,10 +789,9 @@ namespace Orleans.Runtime
         {
             return
                 String.Format(
-                    "[Activation: {0}/{1}{2} {3} State={4} NonReentrancyQueueSize={5} EnqueuedOnDispatcher={6} InFlightCount={7} NumRunning={8} IdlenessTimeSpan={9} CollectionAgeLimit={10}{11}]",
+                    "[Activation: {0}/{1} {2} State={3} NonReentrancyQueueSize={4} EnqueuedOnDispatcher={5} InFlightCount={6} NumRunning={7} IdlenessTimeSpan={8} CollectionAgeLimit={9}{10}]",
                     Silo.ToLongString(),
                     this.GrainId.ToString(),
-                    this.ActivationId,
                     GetActivationInfoString(),
                     State,                          // 4
                     WaitingCount,                   // 5 NonReentrancyQueueSize
@@ -811,10 +807,9 @@ namespace Orleans.Runtime
         {
             get
             {
-                return String.Format("[Activation: {0}{1}{2}{3}]",
+                return String.Format("[Activation: {0}{1}{2}]",
                      Silo,
                      this.GrainId,
-                     this.ActivationId,
                      GetActivationInfoString());
             }
         }

@@ -13,6 +13,7 @@ namespace UnitTests.Grains
 {
     public class TestGrain : Grain, ITestGrain
     {
+        private readonly Guid _activationId = Guid.NewGuid();
         private string label;
         private ILogger logger;
         private IDisposable timer;
@@ -105,7 +106,7 @@ namespace UnitTests.Grains
 
         public Task<string> GetActivationId()
         {
-            return Task.FromResult(Data.ActivationId.ToString());
+            return Task.FromResult(_activationId.ToString());
         }
 
         public Task<ITestGrain> GetGrainReference()
@@ -158,6 +159,7 @@ namespace UnitTests.Grains
 
     internal class GuidTestGrain : Grain, IGuidTestGrain
     {
+        private readonly Guid _activationId = Guid.NewGuid();
         private string label;
         private ILogger logger;
 
@@ -200,7 +202,7 @@ namespace UnitTests.Grains
 
         public Task<string> GetActivationId()
         {
-            return Task.FromResult(Data.ActivationId.ToString());
+            return Task.FromResult(_activationId.ToString());
         }
     }
 

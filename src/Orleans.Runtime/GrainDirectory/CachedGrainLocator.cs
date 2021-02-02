@@ -62,10 +62,8 @@ namespace Orleans.Runtime.GrainDirectory
                 return address;
             }
 
-            var activationAddress = entry.ToActivationAddress();
-
             // Check if the entry is pointing to a dead silo
-            if (this.knownDeadSilos.Contains(activationAddress.Silo))
+            if (this.knownDeadSilos.Contains(entry.SiloAddress))
             {
                 // Remove it from the directory
                 await GetGrainDirectory(grainId.Type).Unregister(entry);
@@ -73,8 +71,8 @@ namespace Orleans.Runtime.GrainDirectory
             else
             {
                 // Add to the local cache and return it
-                address = activationAddress;
-                this.cache.AddOrUpdate(grainId, (activationAddress.Silo, activationAddress.Activation, SafeRandom.Instance.Next()));
+                address = entry;
+                this.cache.AddOrUpdate(grainId, entry);
             }
 
             return address;
@@ -88,26 +86,20 @@ namespace Orleans.Runtime.GrainDirectory
                 ThrowUnsupportedGrainType(address.Grain);
             }
 
-            var grainAddress = address.ToGrainAddress();
-
-            var result = await GetGrainDirectory(grainType).Register(grainAddress);
-            var activationAddress = result.ToActivationAddress();
+            var result = await GetGrainDirectory(grainType).Register(address);
 
             // Check if the entry point to a dead silo
-            if (this.knownDeadSilos.Contains(activationAddress.Silo))
+            if (this.knownDeadSilos.Contains(result.Silo))
             {
                 // Remove outdated entry and retry to register
                 await GetGrainDirectory(grainType).Unregister(result);
-                result = await GetGrainDirectory(grainType).Register(grainAddress);
-                activationAddress = result.ToActivationAddress();
+                result = await GetGrainDirectory(grainType).Register(address);
             }
 
             // Cache update
-            this.cache.AddOrUpdate(
-                activationAddress.Grain,
-                (activationAddress.Silo, activationAddress.Activation, SafeRandom.Instance.Next()));
+            this.cache.AddOrUpdate(result.Grain, result);
 
-            return activationAddress;
+            return result;
         }
 
         public bool TryLocalLookup(GrainId grainId, out ActivationAddress address)
@@ -121,14 +113,14 @@ namespace Orleans.Runtime.GrainDirectory
             if (this.cache.LookUp(grainId, out var result))
             {
                 // If the silo is dead, remove the entry
-                if (this.knownDeadSilos.Contains(result.SiloAddress))
+                if (this.knownDeadSilos.Contains(result.Silo))
                 {
-                    this.cache.Remove(grainId);
+                    this.cache.Remove(result);
                 }
                 else
                 {
                     // Entry found and valid -> return it
-                    address = ActivationAddress.GetAddress(result.SiloAddress, grainId, result.ActivationId);
+                    address = result;
                     return true;
                 }
             }
@@ -141,11 +133,11 @@ namespace Orleans.Runtime.GrainDirectory
         {
             try
             {
-                await GetGrainDirectory(address.Grain.Type).Unregister(address.ToGrainAddress());
+                await GetGrainDirectory(address.Grain.Type).Unregister(address);
             }
             finally
             {
-                this.cache.Remove(address.Grain);
+                this.cache.Remove(address);
             }
         }
 
@@ -211,21 +203,18 @@ namespace Orleans.Runtime.GrainDirectory
 
     internal static class AddressHelpers
     {
-        public static ActivationAddress ToActivationAddress(this GrainAddress addr)
+        public static ActivationAddress ToActivationAddress(this ActivationAddress addr)
         {
-            return ActivationAddress.GetAddress(
-                    SiloAddress.FromParsableString(addr.SiloAddress),
-                    GrainId.Parse(addr.GrainId),
-                    ActivationId.GetActivationId(UniqueKey.Parse(addr.ActivationId.AsSpan())));
+            return ActivationAddress.GetAddress(addr.Silo, addr.Grain);
         }
 
-        public static GrainAddress ToGrainAddress(this ActivationAddress addr)
+        public static ActivationAddress ToGrainAddress(this ActivationAddress addr)
         {
-            return new GrainAddress
+            return new ActivationAddress
             {
-                SiloAddress = addr.Silo.ToParsableString(),
-                GrainId = addr.Grain.ToString(),
-                ActivationId = (addr.Activation.Key.ToHexString())
+                Silo = addr.Silo,
+                Grain = addr.Grain,
+                ETag = null,
             };
         }
     }

@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.ExceptionServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -32,7 +34,7 @@ namespace Orleans.GrainDirectory.Redis
             this.clusterOptions = clusterOptions.Value;
         }
 
-        public async Task<GrainAddress> Lookup(string grainId)
+        public async Task<ActivationAddress> Lookup(GrainId grainId)
         {
             try
             {
@@ -44,7 +46,7 @@ namespace Orleans.GrainDirectory.Redis
                 if (string.IsNullOrWhiteSpace(result))
                     return default;
 
-                return JsonConvert.DeserializeObject<GrainAddress>(result);
+                return JsonConvert.DeserializeObject<ActivationAddress>(result);
             }
             catch (Exception ex)
             {
@@ -57,60 +59,60 @@ namespace Orleans.GrainDirectory.Redis
             }
         }
 
-        public async Task<GrainAddress> Register(GrainAddress address)
+        public async Task<ActivationAddress> Register(ActivationAddress address)
         {
             var value = JsonConvert.SerializeObject(address);
 
             try
             {
                 var success = await this.database.StringSetAsync(
-                    this.GetKey(address.GrainId),
+                    this.GetKey(address.Grain),
                     value,
                     this.directoryOptions.EntryExpiry,
                     When.NotExists);
 
                 if (this.logger.IsEnabled(LogLevel.Debug))
-                    this.logger.LogDebug("Register {GrainId} ({Address}): {Result}", address.GrainId, value, success ? "OK" : "Conflict");
+                    this.logger.LogDebug("Register {GrainId} ({Address}): {Result}", address.Grain, value, success ? "OK" : "Conflict");
 
                 if (success)
                     return address;
 
-                return await Lookup(address.GrainId);
+                return await Lookup(address.Grain);
             }
             catch (Exception ex)
             {
-                this.logger.LogError(ex, "Register failed for {GrainId} ({Address})", address.GrainId, value);
+                this.logger.LogError(ex, "Register failed for {GrainId} ({Address})", address.Grain, value);
 
                 if (IsRedisException(ex))
-                    throw new OrleansException($"Register failed for {address.GrainId} ({value}) : {ex.ToString()}");
+                    throw new OrleansException($"Register failed for {address.Grain} ({value}) : {ex.ToString()}");
                 else
                     throw;
             }
         }
 
-        public async Task Unregister(GrainAddress address)
+        public async Task Unregister(ActivationAddress address)
         {
             var value = JsonConvert.SerializeObject(address);
 
             try
             {
-                var result = (int) await this.database.ScriptEvaluateAsync(this.deleteScript, new { key = GetKey(address.GrainId), val = JsonConvert.SerializeObject(address) });
+                var result = (int) await this.database.ScriptEvaluateAsync(this.deleteScript, new { key = GetKey(address.Grain), val = JsonConvert.SerializeObject(address) });
 
                 if (this.logger.IsEnabled(LogLevel.Debug))
-                    this.logger.LogDebug("Unregister {GrainId} ({Address}): {Result}", address.GrainId, value, (result != 0) ? "OK" : "Conflict");
+                    this.logger.LogDebug("Unregister {GrainId} ({Address}): {Result}", address.Grain, value, (result != 0) ? "OK" : "Conflict");
             }
             catch (Exception ex)
             {
-                this.logger.LogError(ex, "Unregister failed for {GrainId} ({Address})", address.GrainId, value);
+                this.logger.LogError(ex, "Unregister failed for {GrainId} ({Address})", address.Grain, value);
 
                 if (IsRedisException(ex))
-                    throw new OrleansException($"Unregister failed for {address.GrainId} ({value}) : {ex.ToString()}");
+                    throw new OrleansException($"Unregister failed for {address.Grain} ({value}) : {ex.ToString()}");
                 else
                     throw;
             }
         }
 
-        public Task UnregisterSilos(List<string> siloAddresses)
+        public Task UnregisterSilos(List<SiloAddress> siloAddresses)
         {
             return Task.CompletedTask;
         }
@@ -155,7 +157,7 @@ end
             }
         }
 
-        private string GetKey(string grainId) => $"{this.clusterOptions.ClusterId}-{grainId}";
+        private string GetKey(GrainId grainId) => $"{this.clusterOptions.ClusterId}-{HttpUtility.UrlEncode(grainId.ToString(), Encoding.UTF8)}";
 
         #region Logging
         private void LogConnectionRestored(object sender, ConnectionFailedEventArgs e)

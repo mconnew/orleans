@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Orleans.Configuration;
+using Orleans.GrainDirectory;
 using Orleans.Internal;
 using Orleans.Runtime.Messaging;
 
@@ -306,7 +307,7 @@ namespace Orleans.Runtime.GrainDirectory
                                 clientRoutes = clientsBuilder[client] = new List<ActivationAddress>();
                             }
 
-                            clientRoutes.Add(Gateway.GetClientActivationAddress(client, entry.Key));
+                            clientRoutes.Add(new ActivationAddress(client, entry.Key, eTag: null));
                         }
                     }
 

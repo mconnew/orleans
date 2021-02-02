@@ -218,7 +218,7 @@ namespace Orleans.Runtime.GrainDirectory
 
                         // Record the applications which lost the registration race (duplicate activations).
                         var winner = await tasks[i];
-                        if (!winner.Address.Equals(singleActivations[i]))
+                        if (!winner.Silo.Equals(singleActivations[i].Silo))
                         {
                             var duplicate = singleActivations[i];
 

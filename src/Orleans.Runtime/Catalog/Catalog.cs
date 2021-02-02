@@ -261,7 +261,7 @@ namespace Orleans.Runtime
             if (list != null && list.Count > 0)
             {
                 count = list.Count;
-                if (logger.IsEnabled(LogLevel.Debug)) logger.Debug("CollectActivations{0}", list.ToStrings(d => d.GrainId.ToString() + d.ActivationId));
+                if (logger.IsEnabled(LogLevel.Debug)) logger.Debug("CollectActivations{0}", list.ToStrings(d => d.GrainId.ToString() + d.Address));
                 await DeactivateActivationsFromCollector(list);
             }
             
@@ -351,8 +351,8 @@ namespace Orleans.Runtime
                 Grain = grain,
                 SiloAddress = LocalSilo,
                 SiloName = localSiloName,
-                LocalCacheActivationAddress = cached.Address,
-                LocalDirectoryActivationAddress = address.Address,
+                LocalCacheGrainAddress = cached,
+                LocalDirectoryGrainAddress = address,
                 PrimaryForGrain = directory.GetPrimaryForGrain(grain)
             };
             try
@@ -371,17 +371,6 @@ namespace Orleans.Runtime
             var activation = activations.FindTarget(grain);
             report.LocalActivation = activation?.ToDetailedString();
             return report;
-        }
-
-        /// <summary>
-        /// Register a new object to which messages can be delivered with the local lookup table and scheduler.
-        /// </summary>
-        /// <param name="activation"></param>
-        public void RegisterMessageTarget(ActivationData activation)
-        {
-            scheduler.RegisterWorkContext(activation);
-            activations.RecordNewTarget(activation);
-            activationsCreated.Increment();
         }
 
         /// <summary>
@@ -427,16 +416,14 @@ namespace Orleans.Runtime
         /// Return immediately using a dummy that will queue messages.
         /// Concurrently start creating and initializing the real activation and replace it when it is ready.
         /// </summary>
-        /// <param name="address">Grain's activation address</param>
-        /// <param name="newPlacement">Creation of new activation was requested by the placement director.</param>
+        /// <param name="grainId">The target grain</param>
         /// <param name="requestContextData">Request context data.</param>
         /// <returns></returns>
         public ActivationData GetOrCreateActivation(
-            ActivationAddress address,
-            bool newPlacement,
+            GrainId grainId,
             Dictionary<string, object> requestContextData)
         {
-            if (TryGetActivation(address.Grain, out var result))
+            if (TryGetActivation(grainId, out var result))
             {
                 return result;
             }
@@ -444,80 +431,29 @@ namespace Orleans.Runtime
             // Lock over all activations to try to prevent multiple instances of the same activation being created concurrently.
             lock (activations)
             {
-                if (TryGetActivation(address.Grain, out result))
+                if (TryGetActivation(grainId, out result))
                 {
                     return result;
                 }
 
-                if (newPlacement && !SiloStatusOracle.CurrentStatus.IsTerminating())
+                // Create a new activation
+                result = (ActivationData)this.grainActivator.CreateInstance(grainId);
+
+                if (result.GrainInstance is object grainInstance)
                 {
-                    result = (ActivationData)this.grainActivator.CreateInstance(address);
-
-                    if (result.PlacedUsing is StatelessWorkerPlacement st)
-                    {
-                        // Check if there is already enough StatelessWorker created
-                        if (TryGetActivation(address.Grain, out var local))
-                        {
-                            // Redirect directly to an already created StatelessWorker
-                            // It's a bit hacky since we will return an activation with a different
-                            // ActivationId than the one requested, but StatelessWorker are local only,
-                            // so no need to clear the cache. This will avoid unecessary and costly redirects.
-                            if (logger.IsEnabled(LogLevel.Debug))
-                            {
-                                logger.LogDebug(
-                                    (int)ErrorCode.Catalog_DuplicateActivation,
-                                    "Trying to create too many {GrainType} activations on this silo. Redirecting to activation {RedirectActivation}",
-                                    result.Name,
-                                    local.ActivationId);
-                            }
-
-                            return local;
-                        }
-                        // The newly created StatelessWorker will be registered in RegisterMessageTarget()
-                    }
-
-                    if (result.GrainInstance is object grainInstance)
-                    {
-                        var grainTypeName = TypeUtils.GetFullName(grainInstance.GetType());
-                        activations.IncrementGrainCounter(grainTypeName);
-                    }
-
-                    RegisterMessageTarget(result);
-                }
-            } // End lock
-
-            if (result is null)
-            {
-                if (failedActivations.TryGetValue(address, out var ex))
-                {
-                    logger.Warn(ErrorCode.Catalog_ActivationException, "Call to an activation that failed during OnActivateAsync()");
-                    throw ex;
+                    var grainTypeName = TypeUtils.GetFullName(grainInstance.GetType());
+                    activations.IncrementGrainCounter(grainTypeName);
                 }
 
-                // Did not find and did not start placing new
-                if (logger.IsEnabled(LogLevel.Debug))
-                {
-                    logger.LogDebug((int)ErrorCode.CatalogNonExistingActivation2, "Non-existent activation {Activation}", address.ToFullString());
-                }
-
-                CounterStatistic.FindOrCreate(StatisticNames.CATALOG_ACTIVATION_NON_EXISTENT_ACTIVATIONS).Increment();
-
-                this.directory.InvalidateCacheEntry(address);
-
-                // Unregister the target activation so we don't keep getting spurious messages.
-                // The time delay (one minute, as of this writing) is to handle the unlikely but possible race where
-                // this request snuck ahead of another request, with new placement requested, for the same activation.
-                // If the activation registration request from the new placement somehow sneaks ahead of this unregistration,
-                // we want to make sure that we don't unregister the activation we just created.
-                _ = this.UnregisterNonExistentActivation(address);
-                return null;
+                // Register the activation in the activations directory, allowing the lock to be released
+                scheduler.RegisterWorkContext(result);
+                activations.RecordNewTarget(result);
+                activationsCreated.Increment();
             }
-            else
-            {
-                // Initialize the new activation asynchronously.
-                _ = InitActivation(result, requestContextData);
-                return result;
-            }
+
+            // Initialize the new activation asynchronously.
+            _ = InitActivation(result, requestContextData);
+            return result;
         }
 
         private enum ActivationInitializationStage
@@ -601,13 +537,13 @@ namespace Orleans.Runtime
         {
             var address = activation.Address;
 
-            if (initStage == ActivationInitializationStage.Register && registrationResult.ExistingActivationAddress != null)
+            if (initStage == ActivationInitializationStage.Register && registrationResult.ExistingGrainAddress != null)
             {
                 // Another activation is registered in the directory: let's forward everything
                 lock (activation)
                 {
                     activation.SetState(ActivationState.Invalid);
-                    activation.ForwardingAddress = registrationResult.ExistingActivationAddress;
+                    activation.ForwardingAddress = registrationResult.ExistingGrainAddress;
                     if (activation.ForwardingAddress != null)
                     {
                         CounterStatistic
@@ -622,7 +558,7 @@ namespace Orleans.Runtime
                                 $"Tried to create a duplicate activation {address}, but we'll use {activation.ForwardingAddress} instead. " +
                                 $"GrainInstance Type is {activation.GrainInstance?.GetType()}. " +
                                 $"{(primary != null ? "Primary Directory partition for this grain is " + primary + ". " : string.Empty)}" +
-                                $"Full activation address is {address.ToFullString()}. We have {activation.WaitingCount} messages to forward.";
+                                $"Full activation address is {address}. We have {activation.WaitingCount} messages to forward.";
                             logger.Debug(ErrorCode.Catalog_DuplicateActivation, logMsg);
                         }
 
@@ -718,8 +654,12 @@ namespace Orleans.Runtime
             // stuck (it might never run the deactivation process), we remove it from the directory directly
             logger.LogError("Deactivating stuck grain {Grain}", activationData.ToDetailedString());
             await this.grainLocator.Unregister(activationData.Address, UnregistrationCause.Force);
-            UnregisterMessageTarget(activationData);
-            DeactivateActivationImpl(activationData, StatisticNames.CATALOG_ACTIVATION_SHUTDOWN_VIA_DEACTIVATE_STUCK_ACTIVATION);
+
+            lock (activationData)
+            {
+                UnregisterMessageTarget(activationData);
+                DeactivateActivationImpl(activationData, StatisticNames.CATALOG_ACTIVATION_SHUTDOWN_VIA_DEACTIVATE_STUCK_ACTIVATION);
+            }
         }
 
         private void DeactivateActivationImpl(ActivationData data, StatisticName statisticName)
@@ -999,10 +939,10 @@ namespace Orleans.Runtime
                 IsSuccess = true
             };
 
-            public ActivationRegistrationResult(ActivationAddress existingActivationAddress)
+            public ActivationRegistrationResult(ActivationAddress existingGrainAddress)
             {
-                ValidateExistingActivationAddress(existingActivationAddress);
-                ExistingActivationAddress = existingActivationAddress;
+                ValidateExistingGrainAddress(existingGrainAddress);
+                ExistingGrainAddress = existingGrainAddress;
                 IsSuccess = false;
             }
 
@@ -1014,12 +954,12 @@ namespace Orleans.Runtime
             /// <summary>
             /// The existing activation address if this instance represents a duplicate activation.
             /// </summary>
-            public ActivationAddress ExistingActivationAddress { get; }
+            public ActivationAddress ExistingGrainAddress { get; }
 
-            private static void ValidateExistingActivationAddress(ActivationAddress existingActivationAddress)
+            private static void ValidateExistingGrainAddress(ActivationAddress existingGrainAddress)
             {
-                if (existingActivationAddress == null)
-                    throw new ArgumentNullException(nameof(existingActivationAddress));
+                if (existingGrainAddress == null)
+                    throw new ArgumentNullException(nameof(existingGrainAddress));
             }
         }
 
@@ -1034,7 +974,7 @@ namespace Orleans.Runtime
                 var result = await scheduler.RunOrQueueTask(() => this.grainLocator.Register(address), this);
                 if (address.Equals(result)) return ActivationRegistrationResult.Success;
 
-                return new ActivationRegistrationResult(existingActivationAddress: result);
+                return new ActivationRegistrationResult(existingGrainAddress: result);
             }
             else if (activation.PlacedUsing is StatelessWorkerPlacement stPlacement)
             {
@@ -1048,12 +988,12 @@ namespace Orleans.Runtime
                 lock (activations)
                 {
                     var exists = TryGetActivation(address.Grain, out var local);
-                    if (exists && local.ActivationId.Equals(activation.ActivationId))
+                    if (exists && local.Equals(address))
                     {
                         return ActivationRegistrationResult.Success;
                     }
 
-                    return new ActivationRegistrationResult(existingActivationAddress: local.Address);
+                    return new ActivationRegistrationResult(existingGrainAddress: local.Address);
                 }
             }
 
@@ -1128,7 +1068,7 @@ namespace Orleans.Runtime
                 foreach (var activationAddress in addresses)
                 {
                     ActivationData data;
-                    if (TryGetActivation(activationAddress.Grain, out data) && data.ActivationId.Equals(activationAddress.Activation))
+                    if (TryGetActivation(activationAddress.Grain, out data) && (data.Address.ETag is null || data.Address.ETag is string eTag && eTag.Equals(activationAddress.ETag)))
                     {
                         datas.Add(data);
                     }

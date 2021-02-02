@@ -103,24 +103,12 @@ namespace Orleans.Runtime
             if (!request.SendingGrain.IsDefault)
             {
                 response.TargetGrain = request.SendingGrain;
-                if (request.SendingActivation != null)
-                {
-                    response.TargetActivation = request.SendingActivation;
-                }
             }
 
             response.SendingSilo = request.TargetSilo;
             if (!request.TargetGrain.IsDefault)
             {
                 response.SendingGrain = request.TargetGrain;
-                if (request.TargetActivation != null)
-                {
-                    response.SendingActivation = request.TargetActivation;
-                }
-                else if (request.TargetGrain.IsSystemTarget())
-                {
-                    response.SendingActivation = ActivationId.GetDeterministic(request.TargetGrain);
-                }
             }
 
             response.CacheInvalidationHeader = request.CacheInvalidationHeader;

@@ -103,8 +103,6 @@ namespace Orleans
 
             IAddressable IGrainContext.GrainInstance => this.LocalObject.Target as IAddressable;
 
-            ActivationId IGrainContext.ActivationId => throw new NotImplementedException();
-
             ActivationAddress IGrainContext.Address => throw new NotImplementedException();
 
             IServiceProvider IGrainContext.ActivationServices => throw new NotSupportedException();

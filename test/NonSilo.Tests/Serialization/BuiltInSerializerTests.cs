@@ -250,15 +250,13 @@ namespace UnitTests.Serialization
         {
             var environment = InitializeSerializer(serializerToUse);
             GrainId grain = LegacyGrainId.NewId();
-            var addr = ActivationAddress.GetAddress(null, grain, default);
+            var addr = ActivationAddress.GetAddress(null, grain);
             object deserialized = OrleansSerializationLoop(environment.SerializationManager, addr, false);
             Assert.IsAssignableFrom<ActivationAddress>(deserialized);
-            Assert.Null(((ActivationAddress)deserialized).Activation); //Activation no longer null after copy
             Assert.Null(((ActivationAddress)deserialized).Silo); //Silo no longer null after copy
             Assert.Equal(grain, ((ActivationAddress)deserialized).Grain); //Grain different after copy
             deserialized = OrleansSerializationLoop(environment.SerializationManager, addr);
             Assert.IsAssignableFrom<ActivationAddress>(deserialized); //ActivationAddress full serialization loop as wrong type
-            Assert.Null(((ActivationAddress)deserialized).Activation); //Activation no longer null after full serialization loop
             Assert.Null(((ActivationAddress)deserialized).Silo); //Silo no longer null after full serialization loop
             Assert.Equal(grain, ((ActivationAddress)deserialized).Grain); //Grain different after copy
         }

@@ -23,11 +23,6 @@ namespace Orleans.Runtime
         IAddressable GrainInstance { get; }
 
         /// <summary>
-        /// Gets the activation id.
-        /// </summary>
-        ActivationId ActivationId { get; }
-
-        /// <summary>
         /// Gets the activation address.
         /// </summary>
         ActivationAddress Address { get; }

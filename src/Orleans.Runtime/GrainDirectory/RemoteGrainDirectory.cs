@@ -21,7 +21,7 @@ namespace Orleans.Runtime.GrainDirectory
             logger = loggerFactory.CreateLogger($"{typeof(RemoteGrainDirectory).FullName}.CacheValidator");
         }
 
-        public async Task<AddressAndTag> RegisterAsync(ActivationAddress address, int hopCount)
+        public async Task<ActivationAddress> RegisterAsync(ActivationAddress address, int hopCount)
         {
             router.RegistrationsSingleActRemoteReceived.Increment();
             
@@ -57,38 +57,39 @@ namespace Orleans.Runtime.GrainDirectory
             return router.DeleteGrainAsync(grainId, hopCount);
         }
 
-        public Task<AddressAndTag> LookupAsync(GrainId grainId, int hopCount)
+        public Task<ActivationAddress> LookupAsync(GrainId grainId, int hopCount)
         {
             return router.LookupAsync(grainId, hopCount);
         }
 
-        public Task<List<(GrainId GrainId, int VersionTag, ActivationAddress ActivationAddress)>> LookUpMany(List<(GrainId GrainId, int VersionTag)> grainAndETagList)
+        public Task<List<ActivationAddress>> LookUpMany(List<(GrainId GrainId, string ETag)> grainAndETagList)
         {
             router.CacheValidationsReceived.Increment();
             if (logger.IsEnabled(LogLevel.Trace)) logger.Trace("LookUpMany for {0} entries", grainAndETagList.Count);
 
-            var result = new List<(GrainId, int, ActivationAddress)>();
+            var result = new List<ActivationAddress>();
 
             foreach (var query in grainAndETagList)
             {
-                if (partition.TryLookup(query.GrainId, out var lookupResult) && lookupResult.Address != null)
+                if (partition.TryLookup(query.GrainId, out var lookupResult))
                 {
                     ActivationAddress address;
-                    if (lookupResult.VersionTag == query.VersionTag)
+                    if (string.Equals(lookupResult.ETag, query.ETag, StringComparison.Ordinal))
                     {
-                        // If the query's VersionTag matches the current registration's VersionTag, do not return the ActivationAddress.
+                        // If the query's VersionTag matches the current registration's ETag, do not return the ActivationAddress.
                         address = null;
                     }
                     else
                     {
-                        address = lookupResult.Address;
+                        // The query did not provide a matching ETag, so provide the correct value in the response
+                        address = lookupResult;
                     }
 
-                    result.Add((query.GrainId, lookupResult.VersionTag, address));
+                    result.Add(address);
                 }
                 else
                 {
-                    result.Add((query.GrainId, AddressAndTag.NO_ETAG, null));
+                    result.Add(new ActivationAddress(query.GrainId, null, null));
                 }
             }
 

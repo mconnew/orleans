@@ -475,7 +475,7 @@ namespace UnitTests.Grains
 
         public override Task OnActivateAsync()
         {
-            _logger = this.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Test.Streaming_ProducerGrain " + RuntimeIdentity + "/" + IdentityString + "/" + Data.ActivationId);
+            _logger = this.ServiceProvider.GetRequiredService<ILogger<Streaming_ProducerGrain>>();
             _logger.Info("OnActivateAsync");
              _producers = new List<IProducerObserver>();
             _cleanedUpFlag = new InterlockedFlag();
@@ -587,7 +587,7 @@ namespace UnitTests.Grains
         public override async Task OnActivateAsync()
         {
             await base.OnActivateAsync();
-            _logger = this.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Test.PersistentStreaming_ProducerGrain " + RuntimeIdentity + "/" + IdentityString + "/" + Data.ActivationId);
+            _logger = this.ServiceProvider.GetRequiredService<ILogger<PersistentStreaming_ProducerGrain>>();
             _logger.Info("OnActivateAsync");
             if (State.Producers == null)
             {
@@ -654,7 +654,7 @@ namespace UnitTests.Grains
         
         public override Task OnActivateAsync()
         {
-            _logger = this.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Test.Streaming_ConsumerGrain " + RuntimeIdentity + "/" + IdentityString + "/" + Data.ActivationId);
+            _logger = this.ServiceProvider.GetRequiredService<ILogger<Streaming_ConsumerGrain>>();
             _logger.Info("OnActivateAsync");    
             _observers = new List<IConsumerObserver>();
             return Task.CompletedTask;
@@ -713,7 +713,7 @@ namespace UnitTests.Grains
         public override async Task OnActivateAsync()
         {
             await base.OnActivateAsync();
-            _logger = this.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Test.PersistentStreaming_ConsumerGrain " + RuntimeIdentity + "/" + IdentityString + "/" + Data.ActivationId);
+            _logger = this.ServiceProvider.GetRequiredService<ILogger<PersistentStreaming_ConsumerGrain>>();
             _logger.Info("OnActivateAsync");
 
             if (State.Consumers == null)
@@ -760,7 +760,7 @@ namespace UnitTests.Grains
 
         public override async Task OnActivateAsync()
         {
-            _logger = this.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Test.Streaming_Reentrant_ProducerConsumerGrain " + RuntimeIdentity + "/" + IdentityString + "/" + Data.ActivationId) ;
+            _logger = this.ServiceProvider.GetRequiredService<ILogger<Streaming_Reentrant_ProducerConsumerGrain>>();
             _logger.Info("OnActivateAsync");
             await base.OnActivateAsync();
         }
@@ -775,7 +775,7 @@ namespace UnitTests.Grains
 
         public override Task OnActivateAsync()
         {
-            _logger = this.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Test.Streaming_ProducerConsumerGrain " + RuntimeIdentity + "/" + IdentityString + "/" + Data.ActivationId);
+            _logger = this.ServiceProvider.GetRequiredService<ILogger<Streaming_ProducerConsumerGrain>>();
             _logger.Info("OnActivateAsync");
             return Task.CompletedTask;
         }
@@ -885,7 +885,7 @@ namespace UnitTests.Grains
         
         public override async Task OnActivateAsync()
         {
-            _logger = this.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Test.Streaming_ImplicitConsumerGrain1 " + RuntimeIdentity + "/" + IdentityString + "/" + Data.ActivationId);
+            _logger = this.ServiceProvider.GetRequiredService<ILogger<Streaming_ImplicitlySubscribedConsumerGrainBase>>();
             _logger.Info("{0}.OnActivateAsync", GetType().FullName);    
             _observers = new Dictionary<string, IConsumerObserver>();
             // discuss: Note that we need to know the provider that will be used in advance. I think it would be beneficial if we specified the provider as an argument to ImplicitConsumerActivationAttribute.

@@ -57,24 +57,15 @@ namespace UnitTests.Directory
         }
 
         [Fact]
-        public void ConvertActivationAddressToGrainAddress()
-        {
-            var expected = GenerateActivationAddress();
-            var grainAddress = expected.ToGrainAddress();
-            Assert.Equal(expected, grainAddress.ToActivationAddress());
-        }
-
-        [Fact]
         public async Task RegisterWhenNoOtherEntryExists()
         {
-            var expected = GenerateActivationAddress();
-            var grainAddress = expected.ToGrainAddress();
+            var expected = GenerateGrainAddress();
 
-            this.grainDirectory.Register(grainAddress).Returns(grainAddress);
+            this.grainDirectory.Register(expected).Returns(expected);
 
             var actual = await this.grainLocator.Register(expected);
             Assert.Equal(expected, actual);
-            await this.grainDirectory.Received(1).Register(grainAddress);
+            await this.grainDirectory.Received(1).Register(expected);
 
             // Now should be in cache
             Assert.True(this.grainLocator.TryLocalLookup(expected.Grain, out var address));
@@ -84,16 +75,14 @@ namespace UnitTests.Directory
         [Fact]
         public async Task RegisterWhenOtherEntryExists()
         {
-            var expectedAddr = GenerateActivationAddress();
-            var expectedGrainAddr = expectedAddr.ToGrainAddress();
-            var otherAddr = GenerateActivationAddress();
-            var otherGrainAddr = otherAddr.ToGrainAddress();
+            var expectedAddr = GenerateGrainAddress();
+            var otherAddr = GenerateGrainAddress();
 
-            this.grainDirectory.Register(otherGrainAddr).Returns(expectedGrainAddr);
+            this.grainDirectory.Register(otherAddr).Returns(expectedAddr);
 
             var actual = await this.grainLocator.Register(otherAddr);
             Assert.Equal(expectedAddr, actual);
-            await this.grainDirectory.Received(1).Register(otherGrainAddr);
+            await this.grainDirectory.Received(1).Register(otherAddr);
 
             // Now should be in cache
             Assert.True(this.grainLocator.TryLocalLookup(expectedAddr.Grain, out var address));
@@ -103,10 +92,8 @@ namespace UnitTests.Directory
         [Fact]
         public async Task RegisterWhenOtherEntryExistsButSiloIsDead()
         {
-            var expectedAddr = GenerateActivationAddress();
-            var expectedGrainAddr = expectedAddr.ToGrainAddress();
-            var outdatedAddr = GenerateActivationAddress();
-            var outdatedGrainAddr = outdatedAddr.ToGrainAddress();
+            var expectedAddr = GenerateGrainAddress();
+            var outdatedAddr = GenerateGrainAddress();
 
             // Setup membership service
             this.mockMembershipService.UpdateSiloStatus(expectedAddr.Silo, SiloStatus.Active, "exp");
@@ -115,12 +102,12 @@ namespace UnitTests.Directory
             await WaitUntilClusterChangePropagated();
 
             // First returns the outdated entry, then the new one
-            this.grainDirectory.Register(expectedGrainAddr).Returns(outdatedGrainAddr, expectedGrainAddr);
+            this.grainDirectory.Register(expectedAddr).Returns(outdatedAddr, (ActivationAddress)expectedAddr);
 
             var actual = await this.grainLocator.Register(expectedAddr);
             Assert.Equal(expectedAddr, actual);
-            await this.grainDirectory.Received(2).Register(expectedGrainAddr);
-            await this.grainDirectory.Received(1).Unregister(outdatedGrainAddr);
+            await this.grainDirectory.Received(2).Register(expectedAddr);
+            await this.grainDirectory.Received(1).Unregister(outdatedAddr);
 
             // Now should be in cache
             Assert.True(this.grainLocator.TryLocalLookup(expectedAddr.Grain, out var address));
@@ -132,10 +119,9 @@ namespace UnitTests.Directory
         [Fact]
         public async Task LookupPopulateTheCache()
         {
-            var expected = GenerateActivationAddress();
-            var grainAddress = expected.ToGrainAddress();
+            var expected = GenerateGrainAddress();
 
-            this.grainDirectory.Lookup(grainAddress.GrainId).Returns(grainAddress);
+            this.grainDirectory.Lookup(expected.Grain).Returns(expected);
 
             // Cache should be empty
             Assert.False(this.grainLocator.TryLocalLookup(expected.Grain, out _));
@@ -152,21 +138,20 @@ namespace UnitTests.Directory
         [Fact]
         public async Task LookupWhenEntryExistsButSiloIsDead()
         {
-            var outdatedAddr = GenerateActivationAddress();
-            var outdatedGrainAddr = outdatedAddr.ToGrainAddress();
+            var outdatedAddr = GenerateGrainAddress();
 
             // Setup membership service
             this.mockMembershipService.UpdateSiloStatus(outdatedAddr.Silo, SiloStatus.Dead, "old");
             await this.lifecycle.OnStart();
             await WaitUntilClusterChangePropagated();
 
-            this.grainDirectory.Lookup(outdatedGrainAddr.GrainId).Returns(outdatedGrainAddr);
+            this.grainDirectory.Lookup(outdatedAddr.Grain).Returns(outdatedAddr);
 
             var actual = await this.grainLocator.Lookup(outdatedAddr.Grain);
             Assert.Null(actual);
 
-            await this.grainDirectory.Received(1).Lookup(outdatedGrainAddr.GrainId);
-            await this.grainDirectory.Received(1).Unregister(outdatedGrainAddr);
+            await this.grainDirectory.Received(1).Lookup(outdatedAddr.Grain);
+            await this.grainDirectory.Received(1).Unregister(outdatedAddr);
             Assert.False(this.grainLocator.TryLocalLookup(outdatedAddr.Grain, out _));
 
             await this.lifecycle.OnStop();
@@ -175,20 +160,19 @@ namespace UnitTests.Directory
         [Fact]
         public async Task LocalLookupWhenEntryExistsButSiloIsDead()
         {
-            var outdatedAddr = GenerateActivationAddress();
-            var outdatedGrainAddr = outdatedAddr.ToGrainAddress();
+            var outdatedAddr = GenerateGrainAddress();
 
             // Setup membership service
             this.mockMembershipService.UpdateSiloStatus(outdatedAddr.Silo, SiloStatus.Dead, "old");
             await this.lifecycle.OnStart();
             await WaitUntilClusterChangePropagated();
 
-            this.grainDirectory.Lookup(outdatedGrainAddr.GrainId).Returns(outdatedGrainAddr);
+            this.grainDirectory.Lookup(outdatedAddr.Grain).Returns(outdatedAddr);
             Assert.False(this.grainLocator.TryLocalLookup(outdatedAddr.Grain, out _));
 
             // Local lookup should never call the directory
-            await this.grainDirectory.DidNotReceive().Lookup(outdatedGrainAddr.GrainId);
-            await this.grainDirectory.DidNotReceive().Unregister(outdatedGrainAddr);
+            await this.grainDirectory.DidNotReceive().Lookup(outdatedAddr.Grain);
+            await this.grainDirectory.DidNotReceive().Unregister(outdatedAddr);
 
             await this.lifecycle.OnStop();
         }
@@ -196,10 +180,8 @@ namespace UnitTests.Directory
         [Fact]
         public async Task CleanupWhenSiloIsDead()
         {
-            var expectedAddr = GenerateActivationAddress();
-            var expectedGrainAddr = expectedAddr.ToGrainAddress();
-            var outdatedAddr = GenerateActivationAddress();
-            var outdatedGrainAddr = outdatedAddr.ToGrainAddress();
+            var expectedAddr = GenerateGrainAddress();
+            var outdatedAddr = GenerateGrainAddress();
 
             // Setup membership service
             this.mockMembershipService.UpdateSiloStatus(expectedAddr.Silo, SiloStatus.Active, "exp");
@@ -208,8 +190,8 @@ namespace UnitTests.Directory
             await WaitUntilClusterChangePropagated();
 
             // Register two entries
-            this.grainDirectory.Register(expectedGrainAddr).Returns(expectedGrainAddr);
-            this.grainDirectory.Register(outdatedGrainAddr).Returns(outdatedGrainAddr);
+            this.grainDirectory.Register(expectedAddr).Returns(expectedAddr);
+            this.grainDirectory.Register(outdatedAddr).Returns(outdatedAddr);
 
             await this.grainLocator.Register(expectedAddr);
             await this.grainLocator.Register(outdatedAddr);
@@ -223,7 +205,7 @@ namespace UnitTests.Directory
             // Cleanup function from grain directory should have been called
             await this.grainDirectory
                 .Received(1)
-                .UnregisterSilos(Arg.Is<List<string>>(list => list.Count == 1 && list.Contains(outdatedGrainAddr.SiloAddress)));
+                .UnregisterSilos(Arg.Is<List<SiloAddress>>(list => list.Count == 1 && list.Contains(outdatedAddr.Silo)));
 
             // Cache should have been cleaned
             Assert.False(this.grainLocator.TryLocalLookup(outdatedAddr.Grain, out var unused1));
@@ -238,10 +220,9 @@ namespace UnitTests.Directory
         [Fact]
         public async Task UnregisterCallDirectoryAndCleanCache()
         {
-            var expectedAddr = GenerateActivationAddress();
-            var expectedGrainAddr = expectedAddr.ToGrainAddress();
+            var expectedAddr = GenerateGrainAddress();
 
-            this.grainDirectory.Register(expectedGrainAddr).Returns(expectedGrainAddr);
+            this.grainDirectory.Register(expectedAddr).Returns(expectedAddr);
 
             // Register to populate cache
             await this.grainLocator.Register(expectedAddr);
@@ -251,14 +232,14 @@ namespace UnitTests.Directory
             Assert.False(this.grainLocator.TryLocalLookup(expectedAddr.Grain, out _));
         }
 
-
         private int generation = 0;
-        private ActivationAddress GenerateActivationAddress()
+
+        private ActivationAddress GenerateGrainAddress()
         {
             var grainId = GrainId.Create(GrainType.Create("test"), GrainIdKeyExtensions.CreateGuidKey(Guid.NewGuid()));
             var siloAddr = SiloAddress.New(new IPEndPoint(IPAddress.Loopback, 5000), ++generation);
 
-            return ActivationAddress.NewActivationAddress(siloAddr, grainId);
+            return new ActivationAddress(grainId, siloAddr, Guid.NewGuid().ToString());
         }
 
         private async Task WaitUntilClusterChangePropagated()

@@ -9,7 +9,7 @@ namespace Orleans.Runtime.GrainDirectory
     {
         internal class GrainDirectoryCacheEntry
         {
-            internal (SiloAddress SiloAddress, ActivationId ActivationId, int VersionTag) Value { get; private set; }
+            internal ActivationAddress Value { get; private set; }
 
             internal DateTime Created { get; set; }
 
@@ -23,7 +23,7 @@ namespace Orleans.Runtime.GrainDirectory
             /// </summary>
             internal int NumAccesses { get; set; }
 
-            internal GrainDirectoryCacheEntry((SiloAddress, ActivationId, int) value, DateTime created, TimeSpan expirationTimer)
+            internal GrainDirectoryCacheEntry(ActivationAddress value, DateTime created, TimeSpan expirationTimer)
             {
                 Value = value;
                 ExpirationTimer = expirationTimer;
@@ -69,7 +69,7 @@ namespace Orleans.Runtime.GrainDirectory
             IntValueStatistic.FindOrCreate(StatisticNames.DIRECTORY_CACHE_SIZE, () => cache.Count);
         }
 
-        public void AddOrUpdate(GrainId key, (SiloAddress, ActivationId, int) value)
+        public void AddOrUpdate(GrainId key, ActivationAddress value)
         {            
             var entry = new GrainDirectoryCacheEntry(value, DateTime.UtcNow, initialExpirationTimer);
 
@@ -77,9 +77,9 @@ namespace Orleans.Runtime.GrainDirectory
             cache.Add(key, entry);
         }
 
-        public bool Remove(GrainId key)
+        public bool Remove(ActivationAddress address)
         {
-            return cache.RemoveKey(key, out _);
+            return cache.RemoveKey(address.Grain, out _);
         }
 
         public void Clear()
@@ -87,7 +87,7 @@ namespace Orleans.Runtime.GrainDirectory
             cache.Clear();
         }
 
-        public bool LookUp(GrainId key, out (SiloAddress, ActivationId, int) result)
+        public bool LookUp(GrainId key, out ActivationAddress result)
         {
             // for stats
             NumAccesses++;
@@ -109,17 +109,17 @@ namespace Orleans.Runtime.GrainDirectory
             return true;
         }
 
-        public List<(GrainId, SiloAddress, ActivationId, int)> KeyValues
+        public List<ActivationAddress> Entries
         {
             get
             {
-                var result = new List<(GrainId, SiloAddress, ActivationId, int)>();
+                var result = new List<ActivationAddress>();
                 var enumerator = GetStoredEntries();
                 while (enumerator.MoveNext())
                 {
                     var current = enumerator.Current;
                     var value = current.Value.Value;
-                    result.Add((current.Key, value.SiloAddress, value.ActivationId, value.VersionTag));
+                    result.Add(value);
                 }
                 return result;
             }

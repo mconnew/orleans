@@ -25,8 +25,6 @@ namespace UnitTests.SchedulerTests
 
         public IAddressable GrainInstance => throw new NotImplementedException();
 
-        public ActivationId ActivationId => throw new NotImplementedException();
-
         public ActivationAddress Address => throw new NotImplementedException();
 
         public IServiceProvider ActivationServices => throw new NotImplementedException();

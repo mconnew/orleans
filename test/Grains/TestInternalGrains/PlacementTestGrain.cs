@@ -21,6 +21,7 @@ namespace UnitTests.Grains
 {
     internal abstract class PlacementTestGrainBase : Grain
     {
+        private readonly Guid _activationId = Guid.NewGuid();
         private readonly OverloadDetector overloadDetector;
 
         private readonly TestHooksHostEnvironmentStatistics hostEnvironmentStatistics;
@@ -49,7 +50,7 @@ namespace UnitTests.Grains
 
         public Task<string> GetActivationId()
         {
-            return Task.FromResult(Data.ActivationId.ToString());
+            return Task.FromResult(_activationId.ToString());
         }
 
         public Task Nop()

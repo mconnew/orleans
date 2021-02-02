@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Orleans.GrainDirectory;
 
-namespace Orleans.Runtime.GrainDirectory
+namespace Orleans.Runtime
 {
     internal interface ILocalClientDirectory
     {

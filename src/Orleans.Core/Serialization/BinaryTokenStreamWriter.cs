@@ -31,7 +31,6 @@ namespace Orleans.Serialization
 
             // GrainId must not be null
             @this.Write(addr.Grain);
-            @this.Write(addr.Activation ?? ActivationId.Zero);
         }
 
         internal static void Write<TWriter>(this TWriter @this, UniqueKey key) where TWriter : IBinaryTokenStreamWriter

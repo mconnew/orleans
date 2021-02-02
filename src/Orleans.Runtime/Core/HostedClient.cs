@@ -66,7 +66,7 @@ namespace Orleans.Runtime
             this.logger = logger;
 
             this.ClientId = CreateHostedClientGrainId(siloDetails.SiloAddress);
-            this.Address = Gateway.GetClientActivationAddress(this.ClientId.GrainId, siloDetails.SiloAddress);
+            this.Address = new ActivationAddress(this.ClientId.GrainId, siloDetails.SiloAddress, eTag: null);
             this.GrainReference = referenceActivator.CreateReference(this.ClientId.GrainId, default);
         }
 
@@ -83,8 +83,6 @@ namespace Orleans.Runtime
         public GrainId GrainId => this.ClientId.GrainId;
 
         public IAddressable GrainInstance => null;
-
-        public ActivationId ActivationId => this.Address.Activation;
 
         public ActivationAddress Address { get; }
 

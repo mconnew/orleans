@@ -79,16 +79,16 @@ namespace Orleans.Runtime.GrainDirectory
                         // we found our owned entry in the cache -- it is not supposed to happen unless there were 
                         // changes in the membership
                         Log.Warn(ErrorCode.Runtime_Error_100185, "Grain {grain} owned by {owner} was found in the cache of {owner}", grain, owner, owner);
-                        cache.Remove(grain);
+                        cache.Remove(entry.Value);
                         cnt1++;                             // for debug
                     }
                     else
                     {
-                        if (entry == null)
+                        if (entry?.Value == null)
                         {
                             // 0. If the entry was deleted in parallel, presumably due to cleanup after silo death
-                            cache.Remove(grain);            // for debug
-                            cnt3++;                            
+                            cache.Remove(new ActivationAddress(grain, null, null));
+                            cnt3++;
                         }
                         else if (!entry.IsExpired())
                         {
@@ -98,7 +98,7 @@ namespace Orleans.Runtime.GrainDirectory
                         else if (entry.NumAccesses == 0)
                         {
                             // 2. If the entry is expired and was not accessed in the last time interval -- throw it away
-                            cache.Remove(grain);            // for debug
+                            cache.Remove(entry.Value);            // for debug
                             cnt3++;
                         }
                         else
@@ -143,34 +143,35 @@ namespace Orleans.Runtime.GrainDirectory
                 router.Scheduler.QueueTask(async () =>
                 {
                     var response = await validator.LookUpMany(cachedGrainAndETagList);
-                    ProcessCacheRefreshResponse(silo, response);
+                    ProcessCacheRefreshResponse(silo, cachedGrainAndETagList, response);
                 }, router.CacheValidator).Ignore();
 
                 if (Log.IsEnabled(LogLevel.Trace)) Log.Trace("Silo {0} is sending request to silo {1} with {2} entries", router.MyAddress, silo, cachedGrainAndETagList.Count);
             }
         }
 
-        private void ProcessCacheRefreshResponse(SiloAddress silo, List<(GrainId GrainId, int VersionTag, ActivationAddress ActivationAddress)> refreshResponse)
+        private void ProcessCacheRefreshResponse(SiloAddress silo, List<(GrainId, string)> cachedGrainAndETagList, List<ActivationAddress> refreshResponse)
         {
             if (Log.IsEnabled(LogLevel.Trace)) Log.Trace("Silo {0} received ProcessCacheRefreshResponse. #Response entries {1}.", router.MyAddress, refreshResponse.Count);
 
             int cnt1 = 0, cnt2 = 0, cnt3 = 0;
 
             // pass through returned results and update the cache if needed
-            foreach (var tuple in refreshResponse)
+            for (var i = 0; i < refreshResponse.Count; i++)
             {
-                if (tuple.ActivationAddress != null)
+                var entry = refreshResponse[i];
+                if (entry.Silo != null)
                 {
                     // the server returned an updated entry
-                    cache.AddOrUpdate(tuple.GrainId, (tuple.ActivationAddress.Silo, tuple.ActivationAddress.Activation, tuple.VersionTag));
+                    cache.AddOrUpdate(entry.Grain, entry);
                     cnt1++;
                 }
-                else if (tuple.VersionTag == AddressAndTag.NO_ETAG)
+                else if (entry.ETag is null)
                 {
                     // The server indicates that it does not own the grain anymore.
                     // It could be that by now, the cache has been already updated and contains an entry received from another server (i.e., current owner for the grain).
                     // For simplicity, we do not care about this corner case and simply remove the cache entry.
-                    cache.Remove(tuple.GrainId);
+                    cache.Remove(cachedGrainAndETagList[i]);
                     cnt2++;
                 }
                 else
@@ -180,7 +181,7 @@ namespace Orleans.Runtime.GrainDirectory
                     // Validate that the generation number in the request and the response are equal
                     // Contract.Assert(tuple.Item2 == refreshRequest.Find(o => o.Item1 == tuple.Item1).Item2);
                     // refresh the entry in the cache
-                    cache.MarkAsFresh(tuple.GrainId);
+                    cache.MarkAsFresh(entry.Grain);
                     cnt3++;
                 }
             }
@@ -194,18 +195,18 @@ namespace Orleans.Runtime.GrainDirectory
         /// </summary>
         /// <param name="grains">List of grains owned by the same silo</param>
         /// <returns>List of grains in input along with their generation counters stored in the cache </returns>
-        private List<(GrainId, int)> BuildGrainAndETagList(List<GrainId> grains)
+        private List<(GrainId, string)> BuildGrainAndETagList(List<GrainId> grains)
         {
-            var grainAndETagList = new List<(GrainId, int)>();
+            var grainAndETagList = new List<(GrainId, string)>();
 
             foreach (GrainId grain in grains)
             {
                 // NOTE: should this be done with TryGet? Won't Get invoke the LRU getter function?
                 AdaptiveGrainDirectoryCache.GrainDirectoryCacheEntry entry = cache.Get(grain);
 
-                if (entry != null)
+                if (entry?.Value != null)
                 {
-                    grainAndETagList.Add((grain, entry.Value.VersionTag));
+                    grainAndETagList.Add((entry.Value.Grain, entry.Value.ETag));
                 }
                 else
                 {

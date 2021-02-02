@@ -30,13 +30,13 @@ namespace Orleans.Runtime.GrainDirectory
             this.grainContext = grainContext;
         }
 
-        public async Task<ActivationAddress> Lookup(GrainId grainId) => (await this.localGrainDirectory.LookupAsync(grainId)).Address;
+        public async Task<ActivationAddress> Lookup(GrainId grainId) => (await this.localGrainDirectory.LookupAsync(grainId));
 
         public bool TryLocalLookup(GrainId grainId, out ActivationAddress address)
         {
             if (this.localGrainDirectory.LocalLookup(grainId, out var existing))
             {
-                address = existing.Address;
+                address = existing;
                 return true;
             }
 
@@ -44,8 +44,7 @@ namespace Orleans.Runtime.GrainDirectory
             return false;
         }
 
-        public async Task<ActivationAddress> Register(ActivationAddress address)
-            => (await this.localGrainDirectory.RegisterAsync(address)).Address;
+        public async Task<ActivationAddress> Register(ActivationAddress address) => (await this.localGrainDirectory.RegisterAsync(address));
 
         public Task Unregister(ActivationAddress address, UnregistrationCause cause)
         {

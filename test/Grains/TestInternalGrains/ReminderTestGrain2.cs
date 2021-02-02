@@ -22,6 +22,7 @@ namespace UnitTests.Grains
     // NOTE: if you make any changes here, copy them to ReminderTestCopyGrain
     public class ReminderTestGrain2 : Grain, IReminderTestGrain2, IRemindable
     {
+        private readonly Guid _activationId = Guid.NewGuid();
         private readonly IReminderTable reminderTable;
 
         private readonly IReminderRegistry unvalidatedReminderRegistry;
@@ -48,7 +49,7 @@ namespace UnitTests.Grains
 
         public override Task OnActivateAsync()
         {
-            this.myId = this.Data.ActivationId.ToString();// new Random().Next();
+            this.myId = _activationId.ToString();// new Random().Next();
             this.allReminders = new Dictionary<string, IGrainReminder>();
             this.sequence = new Dictionary<string, long>();
             this.period = GetDefaultPeriod(this.logger);

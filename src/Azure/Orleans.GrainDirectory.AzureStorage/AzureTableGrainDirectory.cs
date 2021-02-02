@@ -22,26 +22,22 @@ namespace Orleans.GrainDirectory.AzureStorage
         {
             public string SiloAddress { get; set; }
 
-            public string ActivationId { get; set; }
-
-            public GrainAddress ToGrainAddress()
+            public ActivationAddress ToGrainAddress()
             {
-                return new GrainAddress
-                {
-                    GrainId = HttpUtility.UrlDecode(this.RowKey, Encoding.UTF8),
-                    SiloAddress = this.SiloAddress,
-                    ActivationId = this.ActivationId,
-                };
+                return new ActivationAddress(
+                    grainId: GrainId.Parse(HttpUtility.UrlDecode(this.RowKey, Encoding.UTF8)),
+                    siloAddress: Orleans.Runtime.SiloAddress.FromParsableString(this.SiloAddress),
+                    eTag: this.ETag);
             }
 
-            public static GrainDirectoryEntity FromGrainAddress(string clusterId, GrainAddress address)
+            public static GrainDirectoryEntity FromGrainAddress(string clusterId, ActivationAddress address)
             {
                 return new GrainDirectoryEntity
                 {
                     PartitionKey = clusterId,
-                    RowKey = HttpUtility.UrlEncode(address.GrainId, Encoding.UTF8),
-                    SiloAddress = address.SiloAddress,
-                    ActivationId = address.ActivationId,
+                    RowKey = HttpUtility.UrlEncode(address.Grain.ToString(), Encoding.UTF8),
+                    SiloAddress = address.Silo.ToParsableString(),
+                    ETag = address.ETag,
                 };
             }
         }
@@ -57,9 +53,9 @@ namespace Orleans.GrainDirectory.AzureStorage
             this.clusterId = clusterOptions.Value.ClusterId;
         }
 
-        public async Task<GrainAddress> Lookup(string grainId)
+        public async Task<ActivationAddress> Lookup(GrainId grainId)
         {
-            var result = await this.tableDataManager.ReadSingleTableEntryAsync(this.clusterId, HttpUtility.UrlEncode(grainId, Encoding.UTF8));
+            var result = await this.tableDataManager.ReadSingleTableEntryAsync(this.clusterId, HttpUtility.UrlEncode(grainId.ToString(), Encoding.UTF8));
 
             if (result == null)
                 return null;
@@ -67,29 +63,33 @@ namespace Orleans.GrainDirectory.AzureStorage
             return result.Item1.ToGrainAddress();
         }
 
-        public async Task<GrainAddress> Register(GrainAddress address)
+        public async Task<ActivationAddress> Register(ActivationAddress address)
         {
             var entry = GrainDirectoryEntity.FromGrainAddress(this.clusterId, address);
             var result = await this.tableDataManager.InsertTableEntryAsync(entry);
             // Possible race condition?
-            return result.isSuccess ? address : await Lookup(address.GrainId);
+            return result.isSuccess ? address : await Lookup(address.Grain);
         }
 
-        public async Task Unregister(GrainAddress address)
+        public async Task Unregister(ActivationAddress address)
         {
-            var result = await this.tableDataManager.ReadSingleTableEntryAsync(this.clusterId, HttpUtility.UrlEncode(address.GrainId, Encoding.UTF8));
+            var result = await this.tableDataManager.ReadSingleTableEntryAsync(this.clusterId, HttpUtility.UrlEncode(address.Grain.ToString(), Encoding.UTF8));
 
             // No entry found
             if (result == null)
+            {
                 return;
+            }
 
             // Check if the entry in storage match the one we were asked to delete
             var entity = result.Item1;
-            if (entity.ActivationId == address.ActivationId)
+            if (string.Equals(entity.ETag, address.ETag))
+            {
                 await this.tableDataManager.DeleteTableEntryAsync(GrainDirectoryEntity.FromGrainAddress(this.clusterId, address), entity.ETag);
+            }
         }
 
-        public async Task UnregisterMany(List<GrainAddress> addresses)
+        public async Task UnregisterMany(List<ActivationAddress> addresses)
         {
             if (addresses.Count <= this.tableDataManager.StoragePolicyOptions.MaxBulkUpdateRows)
             {
@@ -106,27 +106,27 @@ namespace Orleans.GrainDirectory.AzureStorage
             }
         }
 
-        public Task UnregisterSilos(List<string> siloAddresses)
+        public Task UnregisterSilos(List<SiloAddress> siloAddresses)
         {
             // Too costly to implement using Azure Table
             return Task.CompletedTask;
         }
 
-        private async Task UnregisterManyBlock(List<GrainAddress> addresses)
+        private async Task UnregisterManyBlock(List<ActivationAddress> addresses)
         {
             var pkFilter = TableQuery.GenerateFilterCondition(nameof(GrainDirectoryEntity.PartitionKey), QueryComparisons.Equal, this.clusterId);
             string rkFilter = TableQuery.CombineFilters(
-                    TableQuery.GenerateFilterCondition(nameof(GrainDirectoryEntity.RowKey), QueryComparisons.Equal, HttpUtility.UrlEncode(addresses[0].GrainId, Encoding.UTF8)),
+                    TableQuery.GenerateFilterCondition(nameof(GrainDirectoryEntity.RowKey), QueryComparisons.Equal, HttpUtility.UrlEncode(addresses[0].Grain.ToString(), Encoding.UTF8)),
                     TableOperators.And,
-                    TableQuery.GenerateFilterCondition(nameof(GrainDirectoryEntity.ActivationId), QueryComparisons.Equal, addresses[0].ActivationId)
+                    TableQuery.GenerateFilterCondition(nameof(GrainDirectoryEntity.ETag), QueryComparisons.Equal, addresses[0].ETag)
                     );
 
             foreach (var addr in addresses.Skip(1))
             {
                 var tmp = TableQuery.CombineFilters(
-                    TableQuery.GenerateFilterCondition(nameof(GrainDirectoryEntity.RowKey), QueryComparisons.Equal, HttpUtility.UrlEncode(addr.GrainId, Encoding.UTF8)),
+                    TableQuery.GenerateFilterCondition(nameof(GrainDirectoryEntity.RowKey), QueryComparisons.Equal, HttpUtility.UrlEncode(addr.Grain.ToString(), Encoding.UTF8)),
                     TableOperators.And,
-                    TableQuery.GenerateFilterCondition(nameof(GrainDirectoryEntity.ActivationId), QueryComparisons.Equal, addr.ActivationId)
+                    TableQuery.GenerateFilterCondition(nameof(GrainDirectoryEntity.ETag), QueryComparisons.Equal, addr.ETag)
                     );
                 rkFilter = TableQuery.CombineFilters(rkFilter, TableOperators.Or, tmp);
             }
@@ -143,7 +143,6 @@ namespace Orleans.GrainDirectory.AzureStorage
 
         public void Participate(ISiloLifecycle lifecycle)
         {
-
             lifecycle.Subscribe(nameof(AzureTableGrainDirectory), ServiceLifecycleStage.RuntimeInitialize, InitializeIfNeeded);
         }
     }

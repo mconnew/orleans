@@ -22,8 +22,6 @@ namespace Orleans
 
         public IAddressable GrainInstance => null;
 
-        public ActivationId ActivationId => _runtimeClient.CurrentActivationAddress.Activation;
-
         public ActivationAddress Address => _runtimeClient.CurrentActivationAddress;
 
         public IServiceProvider ActivationServices => _runtimeClient.ServiceProvider;

@@ -5,21 +5,21 @@ namespace Orleans.Runtime.GrainDirectory
 {
     internal class LRUBasedGrainDirectoryCache : IGrainDirectoryCache
     {
-        private readonly LRU<GrainId, (SiloAddress SiloAddress, ActivationId ActivationId, int VersionTag)> cache;
+        private readonly LRU<GrainId, ActivationAddress> cache;
 
         public LRUBasedGrainDirectoryCache(int maxCacheSize, TimeSpan maxEntryAge)
         {
-            cache = new LRU<GrainId, (SiloAddress, ActivationId, int)>(maxCacheSize, maxEntryAge, null);
+            cache = new LRU<GrainId, ActivationAddress>(maxCacheSize, maxEntryAge, null);
         }
 
-        public void AddOrUpdate(GrainId key, (SiloAddress SiloAddress, ActivationId ActivationId, int VersionTag) value)
+        public void AddOrUpdate(GrainId key, ActivationAddress value)
         {
             cache.Add(key, value);
         }
 
-        public bool Remove(GrainId key)
+        public bool Remove(ActivationAddress address)
         {
-            return cache.RemoveKey(key, out _);
+            return cache.RemoveKey(address.Grain, out _);
         }
 
         public void Clear()
@@ -27,23 +27,24 @@ namespace Orleans.Runtime.GrainDirectory
             cache.Clear();
         }
 
-        public bool LookUp(GrainId key, out (SiloAddress SiloAddress, ActivationId ActivationId, int VersionTag) result)
+        public bool LookUp(GrainId key, out ActivationAddress result)
         {
             return cache.TryGetValue(key, out result);
         }
 
-        public List<(GrainId, SiloAddress, ActivationId, int)> KeyValues
+        public List<ActivationAddress> Entries
         {
             get
             {
-                var result = new List<(GrainId, SiloAddress, ActivationId, int)>();
+                var result = new List<ActivationAddress>();
                 var enumerator = cache.GetEnumerator();
                 while (enumerator.MoveNext())
                 {
                     var current = enumerator.Current;
                     var value = current.Value;
-                    result.Add((current.Key, value.SiloAddress, value.ActivationId, value.VersionTag));
+                    result.Add(value);
                 }
+                
                 return result;
             }
         }
