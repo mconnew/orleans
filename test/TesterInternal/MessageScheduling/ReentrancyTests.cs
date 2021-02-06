@@ -12,6 +12,7 @@ using UnitTests.Grains;
 using Xunit;
 using Xunit.Abstractions;
 using Orleans.Configuration;
+using Orleans.Internal;
 
 namespace UnitTests
 {
@@ -26,7 +27,7 @@ namespace UnitTests
         }
     }
 
-    public class ReentrancyTests : OrleansTestingBase, IClassFixture<ReentrancyTests.Fixture>
+    public class ReentrancyTests : IClassFixture<ReentrancyTests.Fixture>
     {
         public class Fixture : BaseTestClusterFixture
         {
@@ -56,7 +57,7 @@ namespace UnitTests
         [Fact, TestCategory("Functional"), TestCategory("Tasks"), TestCategory("Reentrancy")]
         public void ReentrantGrain()
         {
-            var reentrant = this.fixture.GrainFactory.GetGrain<IReentrantGrain>(GetRandomGrainId());
+            var reentrant = this.fixture.GrainFactory.GetGrain<IReentrantGrain>(SafeRandom.Next());
             reentrant.SetSelf(reentrant).Wait();
             try
             {
@@ -72,7 +73,7 @@ namespace UnitTests
         [Fact, TestCategory("Functional"), TestCategory("Tasks"), TestCategory("Reentrancy")]
         public void NonReentrantGrain_WithMayInterleavePredicate_WhenPredicateReturnsTrue()
         {
-            var grain = this.fixture.GrainFactory.GetGrain<IMayInterleavePredicateGrain>(GetRandomGrainId());
+            var grain = this.fixture.GrainFactory.GetGrain<IMayInterleavePredicateGrain>(SafeRandom.Next());
             grain.SetSelf(grain).Wait();
             try
             {
@@ -88,7 +89,7 @@ namespace UnitTests
         [Fact, TestCategory("Functional"), TestCategory("Tasks"), TestCategory("Reentrancy")]
         public void NonReentrantGrain_WithMayInterleavePredicate_StreamItemDelivery_WhenPredicateReturnsTrue()
         {
-            var grain = this.fixture.GrainFactory.GetGrain<IMayInterleavePredicateGrain>(GetRandomGrainId());
+            var grain = this.fixture.GrainFactory.GetGrain<IMayInterleavePredicateGrain>(SafeRandom.Next());
             grain.SubscribeToStream().Wait();
             try
             {
@@ -104,7 +105,7 @@ namespace UnitTests
         [Fact, TestCategory("Functional"), TestCategory("Tasks"), TestCategory("Reentrancy")]
         public void NonReentrantGrain_WithMayInterleavePredicate_WhenPredicateThrows()
         {
-            var grain = this.fixture.GrainFactory.GetGrain<IMayInterleavePredicateGrain>(GetRandomGrainId());
+            var grain = this.fixture.GrainFactory.GetGrain<IMayInterleavePredicateGrain>(SafeRandom.Next());
             grain.SetSelf(grain).Wait();
             try
             {
@@ -259,7 +260,7 @@ namespace UnitTests
         private async Task Do_FanOut_Task_Join(int offset, bool doNonReentrant, bool doCallChain)
         {
             const int num = 10;
-            int id = random.Next();
+            int id = SafeRandom.Next();
             if (doNonReentrant)
             {
                 IFanOutGrain grain = this.fixture.GrainFactory.GetGrain<IFanOutGrain>(id);
@@ -289,7 +290,7 @@ namespace UnitTests
         private async Task Do_FanOut_AC_Join(int offset, bool doNonReentrant, bool doCallChain)
         {
             const int num = 10;
-            int id = random.Next();
+            int id = SafeRandom.Next();
             if (doNonReentrant)
             {
                 IFanOutACGrain grain = this.fixture.GrainFactory.GetGrain<IFanOutACGrain>(id);

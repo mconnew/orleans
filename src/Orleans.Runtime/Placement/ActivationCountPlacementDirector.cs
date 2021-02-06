@@ -110,7 +110,7 @@ namespace Orleans.Runtime.Placement
                 var chooseFromThoseSilos = new List<CachedLocalStat>();
                 while (chooseFromThoseSilos.Count < chooseFrom)
                 {
-                    int index = ThreadSafeRandom.Next(relevantSilos.Count);
+                    int index = SafeRandom.Next(relevantSilos.Count);
                     var pickedSilo = relevantSilos[index];
                     relevantSilos.RemoveAt(index);
                     chooseFromThoseSilos.Add(pickedSilo);

@@ -16,7 +16,7 @@ using Orleans.Configuration;
 namespace Tester.CustomPlacementTests
 {
     [TestCategory("Functional"), TestCategory("Placement")]
-    public class CustomPlacementTests : OrleansTestingBase, IClassFixture<CustomPlacementTests.Fixture>
+    public class CustomPlacementTests : IClassFixture<CustomPlacementTests.Fixture>
     {
         private const short nSilos = 3;
         private readonly Fixture fixture;

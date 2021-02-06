@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Orleans;
+using Orleans.Internal;
 using TestExtensions;
 using UnitTests.GrainInterfaces;
 using UnitTests.Grains;
@@ -27,7 +28,7 @@ namespace DefaultCluster.Tests.SchedulerTests
             var grainFullName = typeof(ErrorGrain).FullName;
             for (int i = 0; i < 100; i++)
             {
-                grains.Add(this.GrainFactory.GetGrain<IErrorGrain>(GetRandomGrainId(), grainFullName));
+                grains.Add(this.GrainFactory.GetGrain<IErrorGrain>(SafeRandom.Next(), grainFullName));
             }
 
             // Send a bunch of do-nothing requests just to get the grains activated

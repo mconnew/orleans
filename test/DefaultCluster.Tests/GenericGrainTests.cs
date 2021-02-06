@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Orleans;
+using Orleans.Internal;
 using Orleans.Runtime;
 using TestExtensions;
 using TestGrainInterfaces;
@@ -17,7 +18,7 @@ namespace DefaultCluster.Tests.General
     /// </summary>
     public class GenericGrainTests : HostedTestClusterEnsureDefaultStarted
     {
-        private static int grainId = 0;
+        private static int _grainId = 0;
 
         public GenericGrainTests(DefaultClusterFixture fixture) : base(fixture)
         {
@@ -30,7 +31,7 @@ namespace DefaultCluster.Tests.General
 
         public TGrainInterface GetGrain<TGrainInterface>() where TGrainInterface : IGrainWithIntegerKey
         {
-            return  this.GrainFactory.GetGrain<TGrainInterface>(GetRandomGrainId());
+            return  this.GrainFactory.GetGrain<TGrainInterface>(SafeRandom.Next());
         }
 
         /// Can instantiate multiple concrete grain types that implement
@@ -60,7 +61,7 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("Generics")]
         public async Task GenericGrainTests_ConcreteGrainWithGenericInterfaceMultiplicity()
         {
-            var grainId = GetRandomGrainId();
+            var grainId = (long) SafeRandom.Next();
 
             var grainRef1 = GetGrain<IGenericGrain<int, float>>(grainId);
             await grainRef1.SetT(123);
@@ -112,7 +113,7 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("Generics")]
         public async Task GenericGrainTests_SimpleGenericGrainMultiplicity()
         {
-            var grainId = GetRandomGrainId();
+            var grainId = (long) SafeRandom.Next();
 
             var grainRef1 = GetGrain<ISimpleGenericGrain<float>>(grainId);
             await grainRef1.Set(1.2f);
@@ -150,7 +151,7 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("Generics")]
         public async Task GenericGrainTests_PreferConcreteGrainImplementationOfGenericInterfaceMultiplicity()
         {
-            var grainId = GetRandomGrainId();
+            var grainId = (long) SafeRandom.Next();
 
             var grainRef1 = GetGrain<ISimpleGenericGrain<double>>(grainId);
             await grainRef1.Set(1.0);
@@ -189,7 +190,7 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("Generics")]
         public async Task GenericGrainTests_ConcreteGrainWithMultipleGenericInterfacesMultiplicity1()
         {
-            var grainId = GetRandomGrainId();
+            var grainId = (long) SafeRandom.Next();
 
             var grainRef1 = GetGrain<ISimpleGenericGrain<int>>(grainId);
             await grainRef1.Set(1);
@@ -209,7 +210,7 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("Generics")]
         public async Task GenericGrainTests_ConcreteGrainWithMultipleGenericInterfacesMultiplicity2()
         {
-            var grainId = GetRandomGrainId();
+            var grainId = (long) SafeRandom.Next();
 
             var grainRef1 = GetGrain<ISimpleGenericGrain<int>>(grainId);
             await grainRef1.Set(1);
@@ -227,7 +228,7 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("Generics")]
         public async Task GenericGrainTests_UseGenericFactoryInsideGrain()
         {
-            var grainId = GetRandomGrainId();
+            var grainId = (long) SafeRandom.Next();
 
             var grainRef1 = GetGrain<ISimpleGenericGrain<string>>(grainId);
             await grainRef1.Set("JustString");
@@ -238,18 +239,18 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("Generics")]
         public async Task Generic_SimpleGrain_GetGrain()
         {
-            var grain =  this.GrainFactory.GetGrain<ISimpleGenericGrain1<int>>(grainId++);
+            var grain =  this.GrainFactory.GetGrain<ISimpleGenericGrain1<int>>(_grainId++);
             await grain.GetA();
         }
 
         [Fact, TestCategory("BVT"), TestCategory("Generics")]
         public async Task Generic_SimpleGrainControlFlow()
         {
-            var a = random.Next(100);
+            var a = SafeRandom.Next(100);
             var b = a + 1;
             var expected = a + "x" + b;
 
-            var grain =  this.GrainFactory.GetGrain<ISimpleGenericGrain1<int>>(grainId++);
+            var grain =  this.GrainFactory.GetGrain<ISimpleGenericGrain1<int>>(_grainId++);
 
             await grain.SetA(a);
 
@@ -262,11 +263,11 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("Generics")]
         public void Generic_SimpleGrainControlFlow_Blocking()
         {
-            var a = random.Next(100);
+            var a = SafeRandom.Next(100);
             var b = a + 1;
             var expected = a + "x" + b;
 
-            var grain =  this.GrainFactory.GetGrain<ISimpleGenericGrain1<int>>(grainId++);
+            var grain =  this.GrainFactory.GetGrain<ISimpleGenericGrain1<int>>(_grainId++);
 
             // explicitly use .Wait() and .Result to make sure the client does not deadlock in these cases.
             grain.SetA(a).Wait();
@@ -280,11 +281,11 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("Generics")]
         public async Task Generic_SimpleGrainDataFlow()
         {
-            var a = random.Next(100);
+            var a = SafeRandom.Next(100);
             var b = a + 1;
             var expected = a + "x" + b;
 
-            var grain =  this.GrainFactory.GetGrain<ISimpleGenericGrain1<int>>(grainId++);
+            var grain =  this.GrainFactory.GetGrain<ISimpleGenericGrain1<int>>(_grainId++);
 
             var setAPromise = grain.SetA(a);
             var setBPromise = grain.SetB(b);
@@ -297,9 +298,9 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("Generics")]
         public async Task Generic_SimpleGrain2_GetGrain()
         {
-            var g1 =  this.GrainFactory.GetGrain<ISimpleGenericGrain1<int>>(grainId++);
-            var g2 =  this.GrainFactory.GetGrain<ISimpleGenericGrainU<int>>(grainId++);
-            var g3 =  this.GrainFactory.GetGrain<ISimpleGenericGrain2<int, int>>(grainId++);
+            var g1 =  this.GrainFactory.GetGrain<ISimpleGenericGrain1<int>>(_grainId++);
+            var g2 =  this.GrainFactory.GetGrain<ISimpleGenericGrainU<int>>(_grainId++);
+            var g3 =  this.GrainFactory.GetGrain<ISimpleGenericGrain2<int, int>>(_grainId++);
             await g1.GetA();
             await g2.GetA();
             await g3.GetA();
@@ -308,20 +309,20 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("Generics")]
         public async Task Generic_SimpleGrainGenericParameterWithMultipleArguments_GetGrain()
         {
-            var g1 =  this.GrainFactory.GetGrain<ISimpleGenericGrain1<Dictionary<int, int>>>(GetRandomGrainId());
+            var g1 =  this.GrainFactory.GetGrain<ISimpleGenericGrain1<Dictionary<int, int>>>(SafeRandom.Next());
             await g1.GetA();
         }
 
         [Fact, TestCategory("BVT"), TestCategory("Generics")]
         public async Task Generic_SimpleGrainControlFlow2_GetAB()
         {
-            var a = random.Next(100);
+            var a = SafeRandom.Next(100);
             var b = a + 1;
             var expected = a + "x" + b;
 
-            var g1 =  this.GrainFactory.GetGrain<ISimpleGenericGrain1<int>>(grainId++);
-            var g2 =  this.GrainFactory.GetGrain<ISimpleGenericGrainU<int>>(grainId++);
-            var g3 =  this.GrainFactory.GetGrain<ISimpleGenericGrain2<int, int>>(grainId++);
+            var g1 =  this.GrainFactory.GetGrain<ISimpleGenericGrain1<int>>(_grainId++);
+            var g2 =  this.GrainFactory.GetGrain<ISimpleGenericGrainU<int>>(_grainId++);
+            var g3 =  this.GrainFactory.GetGrain<ISimpleGenericGrain2<int, int>>(_grainId++);
 
             string r1 = await g1.GetAxB(a, b);
             string r2 = await g2.GetAxB(a, b);
@@ -334,7 +335,7 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("Generics")]
         public async Task Generic_SimpleGrainControlFlow3()
         {
-            ISimpleGenericGrain2<int, float> g =  this.GrainFactory.GetGrain<ISimpleGenericGrain2<int, float>>(grainId++);
+            ISimpleGenericGrain2<int, float> g =  this.GrainFactory.GetGrain<ISimpleGenericGrain2<int, float>>(_grainId++);
             await g.SetA(3);
             await g.SetB(1.25f);
             Assert.Equal("3x1.25", await g.GetAxB());
@@ -352,10 +353,10 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("Generics")]
         public async Task GrainWithListFields()
         {
-            string a = random.Next(100).ToString(CultureInfo.InvariantCulture);
-            string b = random.Next(100).ToString(CultureInfo.InvariantCulture);
+            string a = SafeRandom.Next(100).ToString(CultureInfo.InvariantCulture);
+            string b = SafeRandom.Next(100).ToString(CultureInfo.InvariantCulture);
 
-            var g1 =  this.GrainFactory.GetGrain<IGrainWithListFields>(grainId++);
+            var g1 =  this.GrainFactory.GetGrain<IGrainWithListFields>(_grainId++);
 
             var p1 = g1.AddItem(a);
             var p2 = g1.AddItem(b);
@@ -371,11 +372,11 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("Generics")]
         public async Task Generic_GrainWithListFields()
         {
-            int a = random.Next(100);
-            int b = random.Next(100);
+            int a = SafeRandom.Next(100);
+            int b = SafeRandom.Next(100);
 
 
-            var g1 =  this.GrainFactory.GetGrain<IGenericGrainWithListFields<int>>(grainId++);
+            var g1 =  this.GrainFactory.GetGrain<IGenericGrainWithListFields<int>>(_grainId++);
 
             var p1 = g1.AddItem(a);
             var p2 = g1.AddItem(b);
@@ -391,11 +392,11 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("Generics")]
         public async Task Generic_GrainWithNoProperties_ControlFlow()
         {
-            int a = random.Next(100);
-            int b = random.Next(100);
+            int a = SafeRandom.Next(100);
+            int b = SafeRandom.Next(100);
             string expected = a + "x" + b;
 
-            var g1 =  this.GrainFactory.GetGrain<IGenericGrainWithNoProperties<int>>(grainId++);
+            var g1 =  this.GrainFactory.GetGrain<IGenericGrainWithNoProperties<int>>(_grainId++);
 
             string r1 = await g1.GetAxB(a, b);
             Assert.Equal(expected, r1);
@@ -404,11 +405,11 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("Generics")]
         public async Task GrainWithNoProperties_ControlFlow()
         {
-            int a = random.Next(100);
-            int b = random.Next(100);
+            int a = SafeRandom.Next(100);
+            int b = SafeRandom.Next(100);
             string expected = a + "x" + b;
 
-            long grainId = GetRandomGrainId();
+            long grainId = SafeRandom.Next();
             var g1 =  this.GrainFactory.GetGrain<IGrainWithNoProperties>(grainId);
 
             string r1 = await g1.GetAxB(a, b);
@@ -418,8 +419,8 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("Generics")]
         public async Task Generic_ReaderWriterGrain1()
         {
-            int a = random.Next(100);
-            var g =  this.GrainFactory.GetGrain<IGenericReaderWriterGrain1<int>>(grainId++);
+            int a = SafeRandom.Next(100);
+            var g =  this.GrainFactory.GetGrain<IGenericReaderWriterGrain1<int>>(_grainId++);
             await g.SetValue(a);
             var res = await g.GetValue();
             Assert.Equal(a, res);
@@ -428,10 +429,10 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("Generics")]
         public async Task Generic_ReaderWriterGrain2()
         {
-            int a = random.Next(100);
+            int a = SafeRandom.Next(100);
             string b = "bbbbb";
 
-            var g =  this.GrainFactory.GetGrain<IGenericReaderWriterGrain2<int, string>>(grainId++);
+            var g =  this.GrainFactory.GetGrain<IGenericReaderWriterGrain2<int, string>>(_grainId++);
             await g.SetValue1(a);
             await g.SetValue2(b);
             var r1 = await g.GetValue1();
@@ -443,11 +444,11 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("Generics")]
         public async Task Generic_ReaderWriterGrain3()
         {
-            int a = random.Next(100);
+            int a = SafeRandom.Next(100);
             string b = "bbbbb";
             double c = 3.145;
 
-            var g =  this.GrainFactory.GetGrain<IGenericReaderWriterGrain3<int, string, double>>(grainId++);
+            var g =  this.GrainFactory.GetGrain<IGenericReaderWriterGrain3<int, string, double>>(_grainId++);
             await g.SetValue1(a);
             await g.SetValue2(b);
             await g.SetValue3(c);
@@ -484,7 +485,7 @@ namespace DefaultCluster.Tests.General
         {
             const string msg1 = "Hello from EchoGenericChainGrain-1";
 
-            IEchoGenericChainGrain<string> g1 =  this.GrainFactory.GetGrain<IEchoGenericChainGrain<string>>(GetRandomGrainId());
+            IEchoGenericChainGrain<string> g1 =  this.GrainFactory.GetGrain<IEchoGenericChainGrain<string>>(SafeRandom.Next());
 
             string received = await g1.Echo(msg1);
             Assert.Equal(msg1, received);
@@ -495,7 +496,7 @@ namespace DefaultCluster.Tests.General
         {
             const string msg2 = "Hello from EchoGenericChainGrain-2";
 
-            IEchoGenericChainGrain<string> g2 =  this.GrainFactory.GetGrain<IEchoGenericChainGrain<string>>(GetRandomGrainId());
+            IEchoGenericChainGrain<string> g2 =  this.GrainFactory.GetGrain<IEchoGenericChainGrain<string>>(SafeRandom.Next());
 
             string received = await g2.Echo2(msg2);
             Assert.Equal(msg2, received);
@@ -506,7 +507,7 @@ namespace DefaultCluster.Tests.General
         {
             const string msg3 = "Hello from EchoGenericChainGrain-3";
 
-            IEchoGenericChainGrain<string> g3 =  this.GrainFactory.GetGrain<IEchoGenericChainGrain<string>>(GetRandomGrainId());
+            IEchoGenericChainGrain<string> g3 =  this.GrainFactory.GetGrain<IEchoGenericChainGrain<string>>(SafeRandom.Next());
 
             string received = await g3.Echo3(msg3);
             Assert.Equal(msg3, received);
@@ -517,7 +518,7 @@ namespace DefaultCluster.Tests.General
         {
             const string msg4 = "Hello from EchoGenericChainGrain-4";
 
-            var g4 = this.GrainFactory.GetGrain<IEchoGenericChainGrain<string>>(GetRandomGrainId());
+            var g4 = this.GrainFactory.GetGrain<IEchoGenericChainGrain<string>>(SafeRandom.Next());
 
             string received = await g4.Echo4(msg4);
             Assert.Equal(msg4, received);
@@ -528,7 +529,7 @@ namespace DefaultCluster.Tests.General
         {
             const string msg5 = "Hello from EchoGenericChainGrain-5";
 
-            var g5 = this.GrainFactory.GetGrain<IEchoGenericChainGrain<string>>(GetRandomGrainId());
+            var g5 = this.GrainFactory.GetGrain<IEchoGenericChainGrain<string>>(SafeRandom.Next());
 
             string received = await g5.Echo5(msg5);
             Assert.Equal(msg5, received);
@@ -539,7 +540,7 @@ namespace DefaultCluster.Tests.General
         {
             const string msg6 = "Hello from EchoGenericChainGrain-6";
 
-            var g6 = this.GrainFactory.GetGrain<IEchoGenericChainGrain<string>>(GetRandomGrainId());
+            var g6 = this.GrainFactory.GetGrain<IEchoGenericChainGrain<string>>(SafeRandom.Next());
 
             string received = await g6.Echo6(msg6);
             Assert.Equal(msg6, received);

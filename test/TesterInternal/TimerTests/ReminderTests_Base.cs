@@ -21,7 +21,7 @@ using Xunit;
 
 namespace UnitTests.TimerTests
 {
-    public class ReminderTests_Base : OrleansTestingBase, IDisposable
+    public class ReminderTests_Base : IDisposable
     {
         protected TestCluster HostedCluster { get; private set; }
         internal static readonly TimeSpan LEEWAY = TimeSpan.FromMilliseconds(100); // the experiment shouldnt be that long that the sums of leeways exceeds a period

@@ -11,7 +11,7 @@ using Xunit;
 
 namespace UnitTests.StreamingTests
 {
-    public class SMSSubscriptionMultiplicityTests : OrleansTestingBase, IClassFixture<SMSSubscriptionMultiplicityTests.Fixture>
+    public class SMSSubscriptionMultiplicityTests : IClassFixture<SMSSubscriptionMultiplicityTests.Fixture>
     {
        
         public class Fixture : BaseTestClusterFixture

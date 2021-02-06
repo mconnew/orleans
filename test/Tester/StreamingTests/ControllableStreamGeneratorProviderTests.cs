@@ -19,7 +19,7 @@ using Xunit;
 
 namespace UnitTests.StreamingTests
 {
-    public class ControllableStreamGeneratorProviderTests : OrleansTestingBase, IClassFixture<ControllableStreamGeneratorProviderTests.Fixture>
+    public class ControllableStreamGeneratorProviderTests : IClassFixture<ControllableStreamGeneratorProviderTests.Fixture>
     {
         private const int TotalQueueCount = 4;
         private readonly Fixture fixture;

@@ -643,13 +643,10 @@ namespace UnitTests.StreamingTests
 
         private IList<Task> SetupConsumers(StreamId streamId, string streamNamespace, string streamProviderName, AsyncPipeline pipeline, int numConsumers, bool normalSubscribeCalls)
         {
-            var consumers = new List<IStreamLifecycleConsumerGrain>();
             var promises = new List<Task>();
-            _ = random.Next();
             for (int loopCount = 0; loopCount < numConsumers; loopCount++)
             {
                 var grain = this.GrainFactory.GetGrain<IStreamLifecycleConsumerGrain>(Guid.NewGuid());
-                consumers.Add(grain);
 
                 Task promise;
                 if (normalSubscribeCalls)

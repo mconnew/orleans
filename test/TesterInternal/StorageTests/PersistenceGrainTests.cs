@@ -28,7 +28,7 @@ namespace UnitTests.StorageTests
     /// <summary>
     /// PersistenceGrainTests - Run with only local unit test silo -- no external dependency on Azure storage
     /// </summary>
-    public class PersistenceGrainTests_Local : OrleansTestingBase, IClassFixture<PersistenceGrainTests_Local.Fixture>, IDisposable
+    public class PersistenceGrainTests_Local : IClassFixture<PersistenceGrainTests_Local.Fixture>, IDisposable
     {
         public class Fixture : BaseTestClusterFixture
         {
@@ -1108,7 +1108,7 @@ namespace UnitTests.StorageTests
             List<Task> tasks = new List<Task>();
             for (int i = 0; i < loops; i++)
             {
-                int idx = random.Next(num);
+                int idx = SafeRandom.Next(num);
                 tasks.Add(Task.Run(() => { var copy = this.HostedCluster.SerializationManager.DeepCopy(states[idx]); }));
                 tasks.Add(Task.Run(() => { var other = this.HostedCluster.SerializationManager.RoundTripSerializationForTesting(states[idx]); }));
             }

@@ -11,7 +11,7 @@ using Orleans.Hosting;
 namespace ServiceBus.Tests.StreamingTests
 {
     [TestCategory("Functional")]
-    public class EHSubscriptionMultiplicityTests : OrleansTestingBase, IClassFixture<EHSubscriptionMultiplicityTests.Fixture>
+    public class EHSubscriptionMultiplicityTests : IClassFixture<EHSubscriptionMultiplicityTests.Fixture>
     {
         private const string StreamProviderName = "EventHubStreamProvider";
         private const string StreamNamespace = "EHSubscriptionMultiplicityTestsNamespace";

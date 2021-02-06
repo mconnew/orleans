@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Orleans;
+using Orleans.Internal;
 using TestExtensions;
 using UnitTests.GrainInterfaces;
 using Xunit;
@@ -23,7 +24,7 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("Functional"), TestCategory("Cast")]
         public void RWReferences()
         {
-            writer = this.GrainFactory.GetGrain<IMultifacetWriter>(GetRandomGrainId());
+            writer = this.GrainFactory.GetGrain<IMultifacetWriter>(SafeRandom.Next());
             reader = writer.AsReference<IMultifacetReader>();
             
             int x = 1234;
@@ -38,7 +39,7 @@ namespace DefaultCluster.Tests.General
         {
             Assert.Throws<InvalidCastException>(() =>
             {
-                reader = this.GrainFactory.GetGrain<IMultifacetReader>(GetRandomGrainId());
+                reader = this.GrainFactory.GetGrain<IMultifacetReader>(SafeRandom.Next());
                 writer = (IMultifacetWriter)reader;
             });
         }
@@ -46,8 +47,8 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("Cast")]
         public async Task MultifacetFactory()
         {
-            IMultifacetFactoryTestGrain factory = this.GrainFactory.GetGrain<IMultifacetFactoryTestGrain>(GetRandomGrainId());
-            IMultifacetTestGrain grain = this.GrainFactory.GetGrain<IMultifacetTestGrain>(GetRandomGrainId());
+            IMultifacetFactoryTestGrain factory = this.GrainFactory.GetGrain<IMultifacetFactoryTestGrain>(SafeRandom.Next());
+            IMultifacetTestGrain grain = this.GrainFactory.GetGrain<IMultifacetTestGrain>(SafeRandom.Next());
             IMultifacetWriter writer = await factory.GetWriter(grain /*"MultifacetFactory"*/);
             IMultifacetReader reader = await factory.GetReader(grain /*"MultifacetFactory"*/);
             writer.SetValue(5).Wait();
@@ -59,8 +60,8 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("Cast")]
         public async Task Multifacet_InterfacesAsArguments()
         {
-            IMultifacetFactoryTestGrain factory = this.GrainFactory.GetGrain<IMultifacetFactoryTestGrain>(GetRandomGrainId());
-            IMultifacetTestGrain grain = this.GrainFactory.GetGrain<IMultifacetTestGrain>(GetRandomGrainId());
+            IMultifacetFactoryTestGrain factory = this.GrainFactory.GetGrain<IMultifacetFactoryTestGrain>(SafeRandom.Next());
+            IMultifacetTestGrain grain = this.GrainFactory.GetGrain<IMultifacetTestGrain>(SafeRandom.Next());
             factory.SetReader(grain).Wait();
             factory.SetWriter(grain).Wait();
             IMultifacetWriter writer = await factory.GetWriter();

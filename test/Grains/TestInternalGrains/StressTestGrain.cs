@@ -219,7 +219,7 @@ namespace UnitTests.Grains
                 Func<Task> func = (
                     async () =>
                     {
-                        await Task.Delay(ThreadSafeRandom.NextTimeSpan(delay));
+                        await Task.Delay(SafeRandom.NextTimeSpan(delay));
                         int fileMetadata = capture;
                         if ((fileMetadata%2) == 0)
                         {
@@ -238,7 +238,7 @@ namespace UnitTests.Grains
                 int fileId = keyValuePair.Key;
                 Func<Task> func = (async () =>
                 {
-                    await Task.Delay(ThreadSafeRandom.NextTimeSpan(delay));
+                    await Task.Delay(SafeRandom.NextTimeSpan(delay));
                     _ = fileMetadatas[fileId];
                 });
                 tagPromises.Add(func());

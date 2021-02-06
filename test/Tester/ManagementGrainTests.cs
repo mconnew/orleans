@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Orleans;
+using Orleans.Internal;
 using Orleans.Runtime;
 using Orleans.TestingHost;
 using TestExtensions;
@@ -17,7 +18,7 @@ using Xunit.Abstractions;
 
 namespace UnitTests.Management
 {
-    public class ManagementGrainTests :  OrleansTestingBase, IClassFixture<ManagementGrainTests.Fixture>
+    public class ManagementGrainTests : IClassFixture<ManagementGrainTests.Fixture>
     {
         private readonly Fixture fixture;
         private readonly ITestOutputHelper output;
@@ -106,7 +107,7 @@ namespace UnitTests.Management
             string grainType = typeof(TGrain).FullName;
             int initialStatisticsCount = stats.Count(s => s.GrainType == grainType);
             int initialActivationsCount = stats.Where(s => s.GrainType == grainType).Sum(s => s.ActivationCount);
-            var grain1 = this.fixture.Client.GetGrain<TGrainInterface>(random.Next());
+            var grain1 = this.fixture.Client.GetGrain<TGrainInterface>(SafeRandom.Next());
             callGrainMethodAction(grain1); // Call grain method
             stats = this.GetSimpleGrainStatisticsRunner("After Invoke");
             Assert.True(stats.Count(s => s.GrainType == grainType) >= initialStatisticsCount, "Activation counter now exists for grain: " + grainType);

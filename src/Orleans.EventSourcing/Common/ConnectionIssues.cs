@@ -50,11 +50,11 @@ namespace Orleans.EventSourcing.Common
 
             // grows exponentially up to slowpoll interval
             if (previous.Value.TotalMilliseconds < slowpollinterval)
-                backoff = (int)((backoff + ThreadSafeRandom.Next(5, 15)) * 1.5);
+                backoff = (int)((backoff + SafeRandom.Next(5, 15)) * 1.5);
 
             // during slowpoll, slightly randomize
             if (backoff > slowpollinterval)
-                backoff = slowpollinterval + ThreadSafeRandom.Next(1, 200);
+                backoff = slowpollinterval + SafeRandom.Next(1, 200);
 
             return TimeSpan.FromMilliseconds(backoff);
         }

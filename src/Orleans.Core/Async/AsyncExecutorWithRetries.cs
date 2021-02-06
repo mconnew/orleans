@@ -251,7 +251,7 @@ namespace Orleans.Internal
             currMax = StandardExtensions.Min(currMax, maxDelay);
 
             if (minDelay >= currMax) throw new ArgumentOutOfRangeException($"minDelay {minDelay}, currMax = {currMax}");
-            return ThreadSafeRandom.NextTimeSpan(minDelay, currMax);
+            return SafeRandom.NextTimeSpan(minDelay, currMax);
         }
     }
 }

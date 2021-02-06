@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Orleans;
 using Orleans.Runtime;
 using Orleans.TestingHost;
-using TestExtensions;
 using UnitTests.GrainInterfaces;
 using UnitTests.TestHelper;
 using Xunit;
@@ -21,7 +20,7 @@ namespace UnitTests.ActivationsLifeCycleTests
 
 
     [TestCategory("ActivationCollector")]
-    public class DeactivateOnIdleTests : OrleansTestingBase, IDisposable
+    public class DeactivateOnIdleTests : IDisposable
     {
         private readonly ITestOutputHelper output;
         private TestCluster testCluster;

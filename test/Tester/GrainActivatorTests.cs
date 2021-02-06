@@ -8,12 +8,13 @@ using UnitTests.GrainInterfaces;
 using UnitTests.Grains;
 using Xunit;
 using Orleans.Hosting;
+using Orleans.Internal;
 using Orleans.Metadata;
 
 namespace UnitTests.General
 {
     [TestCategory("DI")]
-    public class GrainActivatorTests : OrleansTestingBase, IClassFixture<GrainActivatorTests.Fixture>
+    public class GrainActivatorTests : IClassFixture<GrainActivatorTests.Fixture>
     {
         private readonly Fixture fixture;
 
@@ -45,7 +46,7 @@ namespace UnitTests.General
         [Fact, TestCategory("BVT")]
         public async Task CanUseCustomGrainActivatorToCreateGrains()
         {
-            ISimpleDIGrain grain = this.fixture.GrainFactory.GetGrain<ISimpleDIGrain>(GetRandomGrainId(), grainClassNamePrefix: "UnitTests.Grains.ExplicitlyRegistered");
+            ISimpleDIGrain grain = this.fixture.GrainFactory.GetGrain<ISimpleDIGrain>(SafeRandom.Next(), grainClassNamePrefix: "UnitTests.Grains.ExplicitlyRegistered");
             var actual = await grain.GetStringValue();
             Assert.Equal(HardcodedGrainActivator.HardcodedValue, actual);
         }
@@ -53,10 +54,10 @@ namespace UnitTests.General
         [Fact, TestCategory("BVT")]
         public async Task CanUseCustomGrainActivatorToReleaseGrains()
         {
-            ISimpleDIGrain grain1 = this.fixture.GrainFactory.GetGrain<ISimpleDIGrain>(GetRandomGrainId(), grainClassNamePrefix: "UnitTests.Grains.ExplicitlyRegistered");
+            ISimpleDIGrain grain1 = this.fixture.GrainFactory.GetGrain<ISimpleDIGrain>(SafeRandom.Next(), grainClassNamePrefix: "UnitTests.Grains.ExplicitlyRegistered");
             long initialReleasedInstances = await grain1.GetLongValue();
 
-            ISimpleDIGrain grain2 = this.fixture.GrainFactory.GetGrain<ISimpleDIGrain>(GetRandomGrainId(), grainClassNamePrefix: "UnitTests.Grains.ExplicitlyRegistered");
+            ISimpleDIGrain grain2 = this.fixture.GrainFactory.GetGrain<ISimpleDIGrain>(SafeRandom.Next(), grainClassNamePrefix: "UnitTests.Grains.ExplicitlyRegistered");
             long secondReleasedInstances = await grain2.GetLongValue();
 
             Assert.Equal(initialReleasedInstances, secondReleasedInstances);
@@ -64,7 +65,7 @@ namespace UnitTests.General
             await grain1.DoDeactivate();
             await Task.Delay(250);
 
-            ISimpleDIGrain grain3 = this.fixture.GrainFactory.GetGrain<ISimpleDIGrain>(GetRandomGrainId(), grainClassNamePrefix: "UnitTests.Grains.ExplicitlyRegistered");
+            ISimpleDIGrain grain3 = this.fixture.GrainFactory.GetGrain<ISimpleDIGrain>(SafeRandom.Next(), grainClassNamePrefix: "UnitTests.Grains.ExplicitlyRegistered");
             long finalReleasedInstances = await grain3.GetLongValue();
             Assert.Equal(initialReleasedInstances + 1, finalReleasedInstances);
         }

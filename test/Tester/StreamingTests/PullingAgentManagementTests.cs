@@ -13,7 +13,7 @@ using Xunit;
 
 namespace UnitTests.StreamingTests
 {
-    public class PullingAgentManagementTests : OrleansTestingBase, IClassFixture<PullingAgentManagementTests.Fixture>
+    public class PullingAgentManagementTests : IClassFixture<PullingAgentManagementTests.Fixture>
     {
         private readonly Fixture fixture;
         public class Fixture : BaseTestClusterFixture

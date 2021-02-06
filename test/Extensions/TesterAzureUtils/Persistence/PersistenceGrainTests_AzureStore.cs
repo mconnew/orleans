@@ -29,7 +29,7 @@ namespace Tester.AzureUtils.Persistence
     /// <summary>
     /// Base_PersistenceGrainTests - a base class for testing persistence providers
     /// </summary>
-    public abstract class Base_PersistenceGrainTests_AzureStore : OrleansTestingBase
+    public abstract class Base_PersistenceGrainTests_AzureStore
     {
         private readonly ITestOutputHelper output;
         protected TestCluster HostedCluster { get; private set; }

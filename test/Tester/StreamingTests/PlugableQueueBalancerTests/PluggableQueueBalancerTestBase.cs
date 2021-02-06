@@ -11,7 +11,7 @@ using System.Collections.Generic;
 
 namespace Tester.StreamingTests
 {
-    public class PluggableQueueBalancerTestBase : OrleansTestingBase
+    public class PluggableQueueBalancerTestBase
     {
         private readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
         private static Type QueueBalancerType = typeof(LeaseBasedQueueBalancerForTest);

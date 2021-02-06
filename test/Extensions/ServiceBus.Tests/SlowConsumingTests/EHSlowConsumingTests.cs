@@ -23,7 +23,7 @@ using System.IO;
 namespace ServiceBus.Tests.SlowConsumingTests
 {
     [TestCategory("EventHub"), TestCategory("Streaming")]
-    public class EHSlowConsumingTests : OrleansTestingBase, IClassFixture<EHSlowConsumingTests.Fixture>
+    public class EHSlowConsumingTests : IClassFixture<EHSlowConsumingTests.Fixture>
     {
         private const string StreamProviderName = "EventHubStreamProvider";
         private const string StreamNamespace = "EHTestsNamespace";

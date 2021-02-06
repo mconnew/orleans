@@ -66,7 +66,7 @@ namespace Tester.StreamingTests.Filtering
         }
     }
 
-    public abstract class StreamFilteringTestsBase : OrleansTestingBase
+    public abstract class StreamFilteringTestsBase
     {
         protected readonly BaseTestClusterFixture fixture;
         private IClusterClient clusterClient => this.fixture.Client;

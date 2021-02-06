@@ -25,7 +25,7 @@ namespace DefaultCluster.Tests.TimerTests
         {
             for (int i = 0; i < 10; i++)
             {
-                var grain = GrainFactory.GetGrain<ITimerGrain>(GetRandomGrainId());
+                var grain = GrainFactory.GetGrain<ITimerGrain>(SafeRandom.Next());
                 var period = await grain.GetTimerPeriod();
                 var timeout = period.Multiply(50);
                 var stopwatch = Stopwatch.StartNew();
@@ -53,7 +53,7 @@ namespace DefaultCluster.Tests.TimerTests
             List<ITimerGrain> grains = new List<ITimerGrain>();
             for (int i = 0; i < 10; i++)
             {
-                ITimerGrain grain = GrainFactory.GetGrain<ITimerGrain>(GetRandomGrainId());
+                ITimerGrain grain = GrainFactory.GetGrain<ITimerGrain>(SafeRandom.Next());
                 grains.Add(grain);
                 period = await grain.GetTimerPeriod(); // activate grains
             }
@@ -91,7 +91,7 @@ namespace DefaultCluster.Tests.TimerTests
         [Fact, TestCategory("BVT"), TestCategory("Timers")]
         public async Task TimerOrleansTest_Migration()
         {
-            ITimerGrain grain = GrainFactory.GetGrain<ITimerGrain>(GetRandomGrainId());
+            ITimerGrain grain = GrainFactory.GetGrain<ITimerGrain>(SafeRandom.Next());
             TimeSpan period = await grain.GetTimerPeriod();
 
             // Ensure that the grain works as it should.
@@ -146,7 +146,7 @@ namespace DefaultCluster.Tests.TimerTests
             Exception error = null;
             try
             {
-                grain = GrainFactory.GetGrain<ITimerCallGrain>(GetRandomGrainId());
+                grain = GrainFactory.GetGrain<ITimerCallGrain>(SafeRandom.Next());
 
                 await grain.StartTimer(testName, delay);
 

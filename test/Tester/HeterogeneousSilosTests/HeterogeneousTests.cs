@@ -11,7 +11,6 @@ using Orleans.Runtime;
 using Orleans.TestingHost;
 using Orleans.Utilities;
 using Orleans.Internal;
-using TestExtensions;
 using UnitTests.GrainInterfaces;
 using UnitTests.Grains;
 using Xunit;
@@ -19,7 +18,7 @@ using Xunit;
 namespace Tester.HeterogeneousSilosTests
 {
     [TestCategory("Functional")]
-    public class HeterogeneousTests : OrleansTestingBase, IDisposable, IAsyncLifetime
+    public class HeterogeneousTests : IDisposable, IAsyncLifetime
     {
         private static readonly TimeSpan ClientRefreshDelay = TimeSpan.FromSeconds(1);
         private static readonly TimeSpan RefreshInterval = TimeSpan.FromMilliseconds(200);

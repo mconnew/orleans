@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Orleans;
+using Orleans.Internal;
 using Orleans.Storage;
 using Orleans.Storage.Internal;
 using TestExtensions;
@@ -62,7 +63,7 @@ namespace DefaultCluster.Tests.StorageTests
         [Fact, TestCategory("BVT")]
         public async Task MemoryStorageGrainEnforcesEtagsTest()
         {
-            var memoryStorageGrain = this.GrainFactory.GetGrain<IMemoryStorageGrain>(random.Next());
+            var memoryStorageGrain = this.GrainFactory.GetGrain<IMemoryStorageGrain>(SafeRandom.Next());
 
             // Delete grain state from empty grain, should be safe.
             await memoryStorageGrain.DeleteStateAsync("stateStore", "grainStoreKey", "eTag");
@@ -118,8 +119,8 @@ namespace DefaultCluster.Tests.StorageTests
             {
                 return new TestGrainState
                 {
-                    State = random.Next(),
-                    ETag = random.Next().ToString()
+                    State = SafeRandom.Next(),
+                    ETag = SafeRandom.Next().ToString()
                 };
             }
 
@@ -127,7 +128,7 @@ namespace DefaultCluster.Tests.StorageTests
             {
                 return new TestGrainState
                 {
-                    State = random.Next(),
+                    State = SafeRandom.Next(),
                     ETag = eTag
                 };
             }

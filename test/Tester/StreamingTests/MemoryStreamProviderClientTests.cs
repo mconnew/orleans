@@ -14,7 +14,7 @@ using Xunit.Abstractions;
 
 namespace Tester.StreamingTests
 {
-    public class MemoryStreamProviderClientTests : OrleansTestingBase, IClassFixture<MemoryStreamProviderClientTests.Fixture>
+    public class MemoryStreamProviderClientTests : IClassFixture<MemoryStreamProviderClientTests.Fixture>
     {
         public class Fixture : BaseTestClusterFixture
         {

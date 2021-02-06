@@ -13,6 +13,7 @@ using TestExtensions;
 using UnitTests.GrainInterfaces;
 using Xunit;
 using Microsoft.Extensions.DependencyInjection;
+using Orleans.Internal;
 using Orleans.Runtime.Placement;
 using Orleans.TestingHost;
 
@@ -51,8 +52,8 @@ namespace DefaultCluster.Tests.General
         [Fact]
         public void GrainReferenceComparison_DifferentReference()
         {
-            ISimpleGrain ref1 = this.GrainFactory.GetGrain<ISimpleGrain>(random.Next(), UnitTests.Grains.SimpleGrain.SimpleGrainNamePrefix);
-            ISimpleGrain ref2 = this.GrainFactory.GetGrain<ISimpleGrain>(random.Next(), UnitTests.Grains.SimpleGrain.SimpleGrainNamePrefix);
+            ISimpleGrain ref1 = this.GrainFactory.GetGrain<ISimpleGrain>(SafeRandom.Next(), UnitTests.Grains.SimpleGrain.SimpleGrainNamePrefix);
+            ISimpleGrain ref2 = this.GrainFactory.GetGrain<ISimpleGrain>(SafeRandom.Next(), UnitTests.Grains.SimpleGrain.SimpleGrainNamePrefix);
             Assert.True(ref1 != ref2);
             Assert.True(ref2 != ref1);
             Assert.False(ref1 == ref2);
@@ -77,8 +78,8 @@ namespace DefaultCluster.Tests.General
         [Fact]
         public void GrainReference_Pass_this()
         {
-            IChainedGrain g1 = this.GrainFactory.GetGrain<IChainedGrain>(GetRandomGrainId());
-            IChainedGrain g2 = this.GrainFactory.GetGrain<IChainedGrain>(GetRandomGrainId());
+            IChainedGrain g1 = this.GrainFactory.GetGrain<IChainedGrain>(SafeRandom.Next());
+            IChainedGrain g2 = this.GrainFactory.GetGrain<IChainedGrain>(SafeRandom.Next());
 
             g1.PassThis(g2).Wait();
         }
@@ -86,8 +87,8 @@ namespace DefaultCluster.Tests.General
         [Fact]
         public void GrainReference_Pass_this_Nested()
         {
-            IChainedGrain g1 = this.GrainFactory.GetGrain<IChainedGrain>(GetRandomGrainId());
-            IChainedGrain g2 = this.GrainFactory.GetGrain<IChainedGrain>(GetRandomGrainId());
+            IChainedGrain g1 = this.GrainFactory.GetGrain<IChainedGrain>(SafeRandom.Next());
+            IChainedGrain g2 = this.GrainFactory.GetGrain<IChainedGrain>(SafeRandom.Next());
 
             g1.PassThisNested(new ChainGrainHolder { Next = g2 }).Wait();
         }
@@ -95,8 +96,8 @@ namespace DefaultCluster.Tests.General
         [Fact]
         public async Task GrainReference_Pass_Null()
         {
-            IChainedGrain g1 = this.GrainFactory.GetGrain<IChainedGrain>(GetRandomGrainId());
-            IChainedGrain g2 = this.GrainFactory.GetGrain<IChainedGrain>(GetRandomGrainId());
+            IChainedGrain g1 = this.GrainFactory.GetGrain<IChainedGrain>(SafeRandom.Next());
+            IChainedGrain g2 = this.GrainFactory.GetGrain<IChainedGrain>(SafeRandom.Next());
 
             // g1 will pass a null reference to g2
             await g1.PassNullNested(new ChainGrainHolder { Next = g2 });
@@ -108,7 +109,7 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("Serialization"), TestCategory("JSON")]
         public void GrainReference_Json_Serialization()
         {
-            int id = random.Next();
+            int id = SafeRandom.Next();
             TestGrainReferenceSerialization(id, true);
         }
 
@@ -117,7 +118,7 @@ namespace DefaultCluster.Tests.General
         {
             var settings = OrleansJsonSerializer.GetDefaultSerializerSettings(this.HostedCluster.Client.ServiceProvider);
 
-            var grain = HostedCluster.GrainFactory.GetGrain<ISimpleGrain>(GetRandomGrainId());
+            var grain = HostedCluster.GrainFactory.GetGrain<ISimpleGrain>(SafeRandom.Next());
             await grain.SetA(56820);
             var input = new GenericGrainReferenceHolder
             {
@@ -142,7 +143,7 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("Serialization"), TestCategory("JSON")]
         public void GrainReference_Json_Serialization_Unresolved()
         {
-            int id = random.Next();
+            int id = SafeRandom.Next();
             TestGrainReferenceSerialization(id, false);
         }
 
@@ -165,7 +166,7 @@ namespace DefaultCluster.Tests.General
         private void TestGrainReferenceSerialization(int id, bool resolveBeforeSerialize)
         {
             // Make sure grain references serialize well through .NET serializer.
-            var grain = this.GrainFactory.GetGrain<ISimpleGrain>(random.Next(), UnitTests.Grains.SimpleGrain.SimpleGrainNamePrefix);
+            var grain = this.GrainFactory.GetGrain<ISimpleGrain>(SafeRandom.Next(), UnitTests.Grains.SimpleGrain.SimpleGrainNamePrefix);
 
             if (resolveBeforeSerialize)
             {

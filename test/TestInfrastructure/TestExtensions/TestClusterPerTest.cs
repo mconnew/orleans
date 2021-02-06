@@ -8,7 +8,7 @@ using Orleans.TestingHost;
 
 namespace TestExtensions
 {
-    public abstract class TestClusterPerTest : OrleansTestingBase, Xunit.IAsyncLifetime
+    public abstract class TestClusterPerTest : Xunit.IAsyncLifetime
     {
         private readonly ExceptionDispatchInfo preconditionsException;
         static TestClusterPerTest()

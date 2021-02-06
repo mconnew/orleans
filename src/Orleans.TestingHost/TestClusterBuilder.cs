@@ -139,7 +139,7 @@ namespace Orleans.TestingHost
         public static string CreateClusterId()
         {
             string prefix = "testcluster-";
-            int randomSuffix = ThreadSafeRandom.Next(1000);
+            int randomSuffix = SafeRandom.Next(1000);
             DateTime now = DateTime.UtcNow;
             string DateTimeFormat = @"yyyy-MM-dd\tHH-mm-ss";
             return $"{prefix}{now.ToString(DateTimeFormat, CultureInfo.InvariantCulture)}-{randomSuffix}";

@@ -8,7 +8,7 @@ using Xunit;
 namespace UnitTests.General
 {
     [TestCategory("BVT"), TestCategory("OneWay")]
-    public class OneWayDeactivationTests : OrleansTestingBase, IClassFixture<OneWayDeactivationTests.Fixture>
+    public class OneWayDeactivationTests : IClassFixture<OneWayDeactivationTests.Fixture>
     {
         private readonly Fixture fixture;
 

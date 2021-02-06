@@ -222,10 +222,10 @@ namespace Tester.AzureUtils.TimerTests
 
             // stop a couple of silos
             log.Info("Stopping 2 silos");
-            int i = random.Next(silos.Count);
+            int i = SafeRandom.Next(silos.Count);
             await this.HostedCluster.StopSiloAsync(silos[i]);
             silos.RemoveAt(i);
-            await this.HostedCluster.StopSiloAsync(silos[random.Next(silos.Count)]);
+            await this.HostedCluster.StopSiloAsync(silos[SafeRandom.Next(silos.Count)]);
 
             await Task.WhenAll(tasks).WithTimeout(ENDWAIT); // Block until all tasks complete.
         }
@@ -255,7 +255,7 @@ namespace Tester.AzureUtils.TimerTests
 
             Thread.Sleep(period.Multiply(failAfter));
 
-            var siloToKill = silos[random.Next(silos.Count)];
+            var siloToKill = silos[SafeRandom.Next(silos.Count)];
             // stop a silo and join a new one in parallel
             log.Info("Stopping a silo and joining a silo");
             Task t1 = Task.Factory.StartNew(async () => await this.HostedCluster.StopSiloAsync(siloToKill));
@@ -329,7 +329,7 @@ namespace Tester.AzureUtils.TimerTests
 
             Thread.Sleep(period.Multiply(failAfter));
 
-            var siloToKill = silos[random.Next(silos.Count)];
+            var siloToKill = silos[SafeRandom.Next(silos.Count)];
             // stop a silo and join a new one in parallel
             log.Info("Stopping a silo and joining a silo");
             Task t1 = Task.Run(async () => await this.HostedCluster.StopSiloAsync(siloToKill));

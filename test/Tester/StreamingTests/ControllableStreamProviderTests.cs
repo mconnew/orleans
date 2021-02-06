@@ -13,7 +13,7 @@ using Xunit;
 
 namespace UnitTests.StreamingTests
 {
-    public class ControllableStreamProviderTests : OrleansTestingBase, IClassFixture<ControllableStreamProviderTests.Fixture>
+    public class ControllableStreamProviderTests : IClassFixture<ControllableStreamProviderTests.Fixture>
     {
         public class Fixture : BaseTestClusterFixture
         {

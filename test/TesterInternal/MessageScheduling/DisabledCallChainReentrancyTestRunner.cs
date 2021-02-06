@@ -1,10 +1,11 @@
-﻿using System;
+using System;
 using Orleans;
 using Orleans.Runtime;
 using TestExtensions;
 using UnitTests.GrainInterfaces;
 using Xunit;
 using Microsoft.Extensions.Logging;
+using Orleans.Internal;
 
 namespace UnitTests
 {
@@ -21,7 +22,7 @@ namespace UnitTests
 
         public void NonReentrantGrain(bool performDeadlockDetection)
         {
-            INonReentrantGrain nonreentrant = this.grainFactory.GetGrain<INonReentrantGrain>(OrleansTestingBase.GetRandomGrainId());
+            INonReentrantGrain nonreentrant = this.grainFactory.GetGrain<INonReentrantGrain>(SafeRandom.Next());
             nonreentrant.SetSelf(nonreentrant).Wait();
             bool timeout = false;
             bool deadlock = false;
@@ -54,7 +55,7 @@ namespace UnitTests
 
         public void NonReentrantGrain_WithMessageInterleavesPredicate_StreamItemDelivery_WhenPredicateReturnsFalse(bool performDeadlockDetection)
         {
-            var grain = this.grainFactory.GetGrain<IMayInterleavePredicateGrain>(OrleansTestingBase.GetRandomGrainId());
+            var grain = this.grainFactory.GetGrain<IMayInterleavePredicateGrain>(SafeRandom.Next());
             grain.SubscribeToStream().Wait();
             bool timeout = false;
             bool deadlock = false;
@@ -87,7 +88,7 @@ namespace UnitTests
 
         public void NonReentrantGrain_WithMayInterleavePredicate_WhenPredicateReturnsFalse(bool performDeadlockDetection)
         {
-            var grain = this.grainFactory.GetGrain<IMayInterleavePredicateGrain>(OrleansTestingBase.GetRandomGrainId());
+            var grain = this.grainFactory.GetGrain<IMayInterleavePredicateGrain>(SafeRandom.Next());
             grain.SetSelf(grain).Wait();
             bool timeout = false;
             bool deadlock = false;
@@ -120,7 +121,7 @@ namespace UnitTests
 
         public void UnorderedNonReentrantGrain(bool performDeadlockDetection)
         {
-            IUnorderedNonReentrantGrain unonreentrant = this.grainFactory.GetGrain<IUnorderedNonReentrantGrain>(OrleansTestingBase.GetRandomGrainId());
+            IUnorderedNonReentrantGrain unonreentrant = this.grainFactory.GetGrain<IUnorderedNonReentrantGrain>(SafeRandom.Next());
             unonreentrant.SetSelf(unonreentrant).Wait();
             bool timeout = false;
             bool deadlock = false;

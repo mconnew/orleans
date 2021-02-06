@@ -6,6 +6,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Orleans;
 using Orleans.Hosting;
+using Orleans.Internal;
 using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
 using Orleans.TestingHost;
@@ -47,7 +48,7 @@ namespace UnitTests.General
             logger.Info("********************** Starting the test DefaultPlacementShouldBeRandom ******************************");
             TestSilosStarted(2);
 
-            var actual = await GrainFactory.GetGrain<IDefaultPlacementGrain>(GetRandomGrainId()).GetDefaultPlacement();
+            var actual = await GrainFactory.GetGrain<IDefaultPlacementGrain>(SafeRandom.Next()).GetDefaultPlacement();
             Assert.IsType<RandomPlacement>(actual);
         }
 

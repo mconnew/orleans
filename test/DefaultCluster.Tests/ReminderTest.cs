@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Orleans.Internal;
 using TestExtensions;
 using UnitTests.GrainInterfaces;
 using Xunit;
@@ -14,7 +15,7 @@ namespace DefaultCluster.Tests
         [Fact, TestCategory("BVT"), TestCategory("Reminders")]
         public async Task SimpleGrainGetGrain()
         {
-            IReminderTestGrain grain = this.GrainFactory.GetGrain<IReminderTestGrain>(GetRandomGrainId());
+            IReminderTestGrain grain = this.GrainFactory.GetGrain<IReminderTestGrain>(SafeRandom.Next());
             bool notExists = await grain.IsReminderExists("not exists");
             Assert.False(notExists);
         }

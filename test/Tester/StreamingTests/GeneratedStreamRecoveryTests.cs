@@ -16,7 +16,7 @@ using Xunit;
 
 namespace UnitTests.StreamingTests
 {
-    public class GeneratedImplicitSubscriptionStreamRecoveryTests : OrleansTestingBase, IClassFixture<GeneratedImplicitSubscriptionStreamRecoveryTests.Fixture>
+    public class GeneratedImplicitSubscriptionStreamRecoveryTests : IClassFixture<GeneratedImplicitSubscriptionStreamRecoveryTests.Fixture>
     {
         private static readonly string StreamProviderTypeName = typeof(PersistentStreamProvider).FullName;
         private const int TotalQueueCount = 4;

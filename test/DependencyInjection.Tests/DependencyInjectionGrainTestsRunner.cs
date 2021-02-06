@@ -9,10 +9,11 @@ using Xunit;
 using System.Linq;
 using Orleans.Hosting;
 using System;
+using Orleans.Internal;
 
 namespace DependencyInjection.Tests
 {
-    public abstract class DependencyInjectionGrainTestRunner : OrleansTestingBase
+    public abstract class DependencyInjectionGrainTestRunner
     {
         private readonly BaseTestClusterFixture fixture;
 
@@ -48,7 +49,7 @@ namespace DependencyInjection.Tests
         [Fact]
         public async Task CanGetGrainWithInjectedDependencies()
         {
-            IDIGrainWithInjectedServices grain = this.fixture.GrainFactory.GetGrain<IDIGrainWithInjectedServices>(GetRandomGrainId());
+            IDIGrainWithInjectedServices grain = this.fixture.GrainFactory.GetGrain<IDIGrainWithInjectedServices>(SafeRandom.Next());
             var _ = await grain.GetLongValue();
         }
 
@@ -57,15 +58,15 @@ namespace DependencyInjection.Tests
         {
             // please don't inject your implemetation of IGrainFactory to DI container in Startup Class, 
             // since we are currently not supporting replacing IGrainFactory 
-            IDIGrainWithInjectedServices grain = this.fixture.GrainFactory.GetGrain<IDIGrainWithInjectedServices>(GetRandomGrainId());
+            IDIGrainWithInjectedServices grain = this.fixture.GrainFactory.GetGrain<IDIGrainWithInjectedServices>(SafeRandom.Next());
             _ = await grain.GetGrainFactoryId();
         }
 
         [Fact]
         public async Task CanResolveSingletonDependencies()
         {
-            var grain1 = this.fixture.GrainFactory.GetGrain<IDIGrainWithInjectedServices>(GetRandomGrainId());
-            var grain2 = this.fixture.GrainFactory.GetGrain<IDIGrainWithInjectedServices>(GetRandomGrainId());
+            var grain1 = this.fixture.GrainFactory.GetGrain<IDIGrainWithInjectedServices>(SafeRandom.Next());
+            var grain2 = this.fixture.GrainFactory.GetGrain<IDIGrainWithInjectedServices>(SafeRandom.Next());
 
             // the injected service will return the same value only if it's the same instance
             Assert.Equal(
@@ -79,8 +80,8 @@ namespace DependencyInjection.Tests
         [Fact]
         public async Task CanResolveScopedDependencies()
         {
-            var grain1 = this.fixture.GrainFactory.GetGrain<IDIGrainWithInjectedServices>(GetRandomGrainId());
-            var grain2 = this.fixture.GrainFactory.GetGrain<IDIGrainWithInjectedServices>(GetRandomGrainId());
+            var grain1 = this.fixture.GrainFactory.GetGrain<IDIGrainWithInjectedServices>(SafeRandom.Next());
+            var grain2 = this.fixture.GrainFactory.GetGrain<IDIGrainWithInjectedServices>(SafeRandom.Next());
 
             // the injected service will only return a different value if it's a different instance
             Assert.NotEqual(
@@ -94,8 +95,8 @@ namespace DependencyInjection.Tests
         [Fact]
         public async Task CanResolveScopedGrainActivationContext()
         {
-            long id1 = GetRandomGrainId();
-            long id2 = GetRandomGrainId();
+            long id1 = SafeRandom.Next();
+            long id2 = SafeRandom.Next();
             var grain1 = this.fixture.GrainFactory.GetGrain<IDIGrainWithInjectedServices>(id1);
             var grain2 = this.fixture.GrainFactory.GetGrain<IDIGrainWithInjectedServices>(id2);
 
@@ -111,7 +112,7 @@ namespace DependencyInjection.Tests
         public async Task ScopedDependenciesAreThreadSafe()
         {
             const int parallelCalls = 10;
-            var grain1 = this.fixture.GrainFactory.GetGrain<IDIGrainWithInjectedServices>(GetRandomGrainId());
+            var grain1 = this.fixture.GrainFactory.GetGrain<IDIGrainWithInjectedServices>(SafeRandom.Next());
 
             var calls =
                 Enumerable.Range(0, parallelCalls)
@@ -131,8 +132,8 @@ namespace DependencyInjection.Tests
         [Fact]
         public async Task CanResolveSameDependenciesViaServiceProvider()
         {
-            var grain1 = this.fixture.GrainFactory.GetGrain<IDIGrainWithInjectedServices>(GetRandomGrainId());
-            var grain2 = this.fixture.GrainFactory.GetGrain<IDIGrainWithInjectedServices>(GetRandomGrainId());
+            var grain1 = this.fixture.GrainFactory.GetGrain<IDIGrainWithInjectedServices>(SafeRandom.Next());
+            var grain2 = this.fixture.GrainFactory.GetGrain<IDIGrainWithInjectedServices>(SafeRandom.Next());
 
             await grain1.AssertCanResolveSameServiceInstances();
             await grain2.AssertCanResolveSameServiceInstances();
@@ -144,8 +145,8 @@ namespace DependencyInjection.Tests
         [Fact]
         public async Task CanResolveSingletonGrainFactory()
         {
-            var grain1 = this.fixture.GrainFactory.GetGrain<IDIGrainWithInjectedServices>(GetRandomGrainId());
-            var grain2 = this.fixture.GrainFactory.GetGrain<IDIGrainWithInjectedServices>(GetRandomGrainId());
+            var grain1 = this.fixture.GrainFactory.GetGrain<IDIGrainWithInjectedServices>(SafeRandom.Next());
+            var grain2 = this.fixture.GrainFactory.GetGrain<IDIGrainWithInjectedServices>(SafeRandom.Next());
 
             // the injected grain factory will return the same value only if it's the same instance,
             Assert.Equal(
@@ -156,7 +157,7 @@ namespace DependencyInjection.Tests
         [Fact]
         public async Task CannotGetExplictlyRegisteredGrain()
         {
-            ISimpleDIGrain grain = this.fixture.GrainFactory.GetGrain<ISimpleDIGrain>(GetRandomGrainId(), grainClassNamePrefix: "UnitTests.Grains.ExplicitlyRegistered");
+            ISimpleDIGrain grain = this.fixture.GrainFactory.GetGrain<ISimpleDIGrain>(SafeRandom.Next(), grainClassNamePrefix: "UnitTests.Grains.ExplicitlyRegistered");
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => grain.GetLongValue());
             Assert.Contains("Unable to resolve service for type 'System.String' while attempting to activate 'UnitTests.Grains.ExplicitlyRegisteredSimpleDIGrain'", exception.Message);
         }

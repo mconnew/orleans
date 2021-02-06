@@ -16,9 +16,9 @@ namespace Orleans.Transactions.TestKit
 
         public DateTime UtcNow()
         {
-            TimeSpan skew = TimeSpan.FromTicks(minSkew.Ticks + ThreadSafeRandom.Next(skewRangeTicks));
+            TimeSpan skew = TimeSpan.FromTicks(minSkew.Ticks + SafeRandom.Next(skewRangeTicks));
             // skew forward in time or backward in time
-            return ((ThreadSafeRandom.Next() & 1) != 0)
+            return ((SafeRandom.Next() & 1) != 0)
                 ? DateTime.UtcNow + skew
                 : DateTime.UtcNow - skew;
         }

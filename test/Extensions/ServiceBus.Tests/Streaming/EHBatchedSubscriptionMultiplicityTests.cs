@@ -9,7 +9,7 @@ using Xunit;
 
 namespace ServiceBus.Tests.StreamingTests
 {
-    public class EHBatchedSubscriptionMultiplicityTests : OrleansTestingBase, IClassFixture<EHBatchedSubscriptionMultiplicityTests.Fixture>
+    public class EHBatchedSubscriptionMultiplicityTests : IClassFixture<EHBatchedSubscriptionMultiplicityTests.Fixture>
     {
         private const string StreamProviderName = "EHStreamPerPartition";
         private const string StreamNamespace = "EHPullingAgentBatchingTests";

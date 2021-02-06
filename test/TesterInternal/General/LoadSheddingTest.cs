@@ -14,7 +14,7 @@ using Xunit;
 namespace UnitTests.General
 {
     // if we parallelize tests, each test should run in isolation 
-    public class LoadSheddingTest : OrleansTestingBase, IClassFixture<LoadSheddingTest.Fixture>
+    public class LoadSheddingTest : IClassFixture<LoadSheddingTest.Fixture>
     {
         private readonly Fixture fixture;
 
@@ -48,7 +48,7 @@ namespace UnitTests.General
         [Fact, TestCategory("Functional"), TestCategory("LoadShedding")]
         public async Task LoadSheddingBasic()
         {
-            ISimpleGrain grain = this.fixture.GrainFactory.GetGrain<ISimpleGrain>(random.Next(), SimpleGrain.SimpleGrainNamePrefix);
+            ISimpleGrain grain = this.fixture.GrainFactory.GetGrain<ISimpleGrain>(SafeRandom.Next(), SimpleGrain.SimpleGrainNamePrefix);
 
             var latchPeriod = TimeSpan.FromSeconds(1);
             await this.HostedCluster.Client.GetTestHooks(this.HostedCluster.Primary).LatchIsOverloaded(true, latchPeriod);
@@ -62,7 +62,7 @@ namespace UnitTests.General
         [Fact, TestCategory("Functional"), TestCategory("LoadShedding")]
         public async Task LoadSheddingComplex()
         {
-            ISimpleGrain grain = this.fixture.GrainFactory.GetGrain<ISimpleGrain>(random.Next(), SimpleGrain.SimpleGrainNamePrefix);
+            ISimpleGrain grain = this.fixture.GrainFactory.GetGrain<ISimpleGrain>(SafeRandom.Next(), SimpleGrain.SimpleGrainNamePrefix);
 
             this.fixture.Logger.Info("Acquired grain reference");
 

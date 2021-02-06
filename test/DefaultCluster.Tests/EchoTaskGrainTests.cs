@@ -257,7 +257,7 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("Echo")]
         public async Task EchoTaskGrain_Await()
         {
-            IBlockingEchoTaskGrain g = this.GrainFactory.GetGrain<IBlockingEchoTaskGrain>(GetRandomGrainId());
+            IBlockingEchoTaskGrain g = this.GrainFactory.GetGrain<IBlockingEchoTaskGrain>(SafeRandom.Next());
 
             string received = await g.Echo(expectedEcho);
             Assert.Equal(expectedEcho, received); // Echo
@@ -272,7 +272,7 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("Echo")]
         public async Task EchoTaskGrain_Await_Reentrant()
         {
-            IReentrantBlockingEchoTaskGrain g = this.GrainFactory.GetGrain<IReentrantBlockingEchoTaskGrain>(GetRandomGrainId());
+            IReentrantBlockingEchoTaskGrain g = this.GrainFactory.GetGrain<IReentrantBlockingEchoTaskGrain>(SafeRandom.Next());
 
             string received = await g.Echo(expectedEcho);
             Assert.Equal(expectedEcho, received); // Echo

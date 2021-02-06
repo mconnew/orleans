@@ -116,7 +116,7 @@ namespace UnitTests.Streaming
         }
     }
 
-    public class StreamProvidersTests_ProviderConfigLoaded : OrleansTestingBase, IClassFixture<StreamProvidersTests_ProviderConfigLoaded.Fixture>
+    public class StreamProvidersTests_ProviderConfigLoaded : IClassFixture<StreamProvidersTests_ProviderConfigLoaded.Fixture>
     {
         public class Fixture : BaseTestClusterFixture
         {

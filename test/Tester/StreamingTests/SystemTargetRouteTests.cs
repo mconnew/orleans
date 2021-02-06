@@ -18,7 +18,7 @@ using Xunit;
 
 namespace Tester.StreamingTests
 {
-    public class SystemTargetRouteTests : OrleansTestingBase, IClassFixture<SystemTargetRouteTests.Fixture>
+    public class SystemTargetRouteTests : IClassFixture<SystemTargetRouteTests.Fixture>
     {
         private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
         private int eventsConsumed = 0;

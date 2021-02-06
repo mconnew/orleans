@@ -17,7 +17,7 @@ using Xunit;
 namespace UnitTests.StreamingTests
 {
     [TestCategory("Streaming")]
-    public class SampleSmsStreamingTests : OrleansTestingBase, IClassFixture<SampleSmsStreamingTests.Fixture>
+    public class SampleSmsStreamingTests : IClassFixture<SampleSmsStreamingTests.Fixture>
     {
         private readonly Fixture fixture;
 

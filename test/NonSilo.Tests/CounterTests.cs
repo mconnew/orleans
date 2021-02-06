@@ -29,7 +29,7 @@ namespace UnitTests
         public void Counter_SetValue()
         {
             StatisticName name = new StatisticName(CounterName);
-            int val = ThreadSafeRandom.Next(1000000);
+            int val = SafeRandom.Next(1000000);
             CounterStatistic ctr = CounterStatistic.FindOrCreate(name);
             ctr.IncrementBy(val);
             Assert.Equal(val, ctr.GetCurrentValue());
@@ -49,7 +49,7 @@ namespace UnitTests
         public void Counter_IncrementBy()
         {
             StatisticName name = new StatisticName(CounterName);
-            int val = ThreadSafeRandom.Next(1000000);
+            int val = SafeRandom.Next(1000000);
             CounterStatistic ctr = CounterStatistic.FindOrCreate(name);
             ctr.IncrementBy(val);
             Assert.Equal(val, ctr.GetCurrentValue());

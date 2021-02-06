@@ -285,7 +285,7 @@ namespace Orleans.Reminders.DynamoDB
                     { PERIOD_PROPERTY_NAME, new AttributeValue(entry.Period.ToString()) },
                     { START_TIME_PROPERTY_NAME, new AttributeValue(entry.StartAt.ToString()) },
                     { REMINDER_NAME_PROPERTY_NAME, new AttributeValue(entry.ReminderName) },
-                    { ETAG_PROPERTY_NAME, new AttributeValue { N = ThreadSafeRandom.Next().ToString() } }
+                    { ETAG_PROPERTY_NAME, new AttributeValue { N = SafeRandom.Next().ToString() } }
                 };
 
             try

@@ -11,7 +11,7 @@ using Xunit;
 
 namespace UnitTests.CancellationTests
 {
-    public class GrainCancellationTokenTests : OrleansTestingBase, IClassFixture<GrainCancellationTokenTests.Fixture>
+    public class GrainCancellationTokenTests : IClassFixture<GrainCancellationTokenTests.Fixture>
     {
         private readonly Fixture fixture;
 

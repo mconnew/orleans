@@ -17,7 +17,7 @@ using Orleans;
 namespace ServiceBus.Tests.StreamingTests
 {
     [TestCategory("EventHub"), TestCategory("Streaming"), TestCategory("Functional")]
-    public class EHImplicitSubscriptionStreamRecoveryTests : OrleansTestingBase, IClassFixture<EHImplicitSubscriptionStreamRecoveryTests.Fixture>
+    public class EHImplicitSubscriptionStreamRecoveryTests : IClassFixture<EHImplicitSubscriptionStreamRecoveryTests.Fixture>
     {
         private readonly Fixture fixture;
         private const string StreamProviderName = GeneratedStreamTestConstants.StreamProviderName;

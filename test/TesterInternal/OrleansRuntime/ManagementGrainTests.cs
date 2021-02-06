@@ -9,7 +9,7 @@ using Xunit;
 
 namespace UnitTests.OrleansRuntime
 {
-    public class ManagementGrainTests : OrleansTestingBase, IClassFixture<ManagementGrainTests.Fixture>
+    public class ManagementGrainTests : IClassFixture<ManagementGrainTests.Fixture>
     {
         private readonly Fixture fixture;
 

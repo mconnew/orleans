@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Orleans;
+using Orleans.Internal;
 using TestExtensions;
 using UnitTests.GrainInterfaces;
 using UnitTests.Grains;
@@ -23,7 +24,7 @@ namespace Tester.CodeGenTests
         [Fact]
         public async Task CodeGenRoundTripSerialization()
         {
-            var grain = this.GrainFactory.GetGrain<ISerializationGenerationGrain>(GetRandomGrainId());
+            var grain = this.GrainFactory.GetGrain<ISerializationGenerationGrain>(SafeRandom.Next());
 
             // Test struct serialization.
             var expectedStruct = new SomeStruct(10) { Id = Guid.NewGuid(), PublicValue = 6, ValueWithPrivateGetter = 7 };
@@ -96,7 +97,7 @@ namespace Tester.CodeGenTests
         public async Task GeneratorGrainControlFlow()
         {
             var grainName = typeof(GeneratorTestGrain).FullName;
-            IGeneratorTestGrain grain = this.GrainFactory.GetGrain<IGeneratorTestGrain>(GetRandomGrainId(), grainName);
+            IGeneratorTestGrain grain = this.GrainFactory.GetGrain<IGeneratorTestGrain>(SafeRandom.Next(), grainName);
 
             bool isNull = await grain.StringIsNullOrEmpty();
             Assert.True(isNull);
@@ -127,7 +128,7 @@ namespace Tester.CodeGenTests
         [Fact]
         public async Task GeneratorDerivedGrain1ControlFlow()
         {
-            IGeneratorTestDerivedGrain1 grain = this.GrainFactory.GetGrain<IGeneratorTestDerivedGrain1>(GetRandomGrainId());
+            IGeneratorTestDerivedGrain1 grain = this.GrainFactory.GetGrain<IGeneratorTestDerivedGrain1>(SafeRandom.Next());
 
             bool isNull = await grain.StringIsNullOrEmpty();
             Assert.True(isNull);
@@ -159,7 +160,7 @@ namespace Tester.CodeGenTests
         public async Task GeneratorDerivedGrain2ControlFlow()
         {
             var grainName = typeof(GeneratorTestDerivedGrain2).FullName;
-            IGeneratorTestDerivedGrain2 grain = this.GrainFactory.GetGrain<IGeneratorTestDerivedGrain2>(GetRandomGrainId(), grainName);
+            IGeneratorTestDerivedGrain2 grain = this.GrainFactory.GetGrain<IGeneratorTestDerivedGrain2>(SafeRandom.Next(), grainName);
 
             bool boolPromise = await grain.StringIsNullOrEmpty();
             Assert.True(boolPromise);
@@ -193,7 +194,7 @@ namespace Tester.CodeGenTests
         [Fact]
         public async Task GeneratorDerivedDerivedGrainControlFlow()
         {
-            IGeneratorTestDerivedDerivedGrain grain = this.GrainFactory.GetGrain<IGeneratorTestDerivedDerivedGrain>(GetRandomGrainId());
+            IGeneratorTestDerivedDerivedGrain grain = this.GrainFactory.GetGrain<IGeneratorTestDerivedDerivedGrain>(SafeRandom.Next());
 
             bool isNull = await grain.StringIsNullOrEmpty();
             Assert.True(isNull);

@@ -8,7 +8,7 @@ using UnitTests.GrainInterfaces;
 
 namespace Tester
 {
-    public class GrainServiceTests : OrleansTestingBase, IClassFixture<GrainServiceTests.Fixture>
+    public class GrainServiceTests : IClassFixture<GrainServiceTests.Fixture>
     {
         public class Fixture : BaseTestClusterFixture
         {

@@ -12,7 +12,7 @@ using Xunit;
 
 namespace UnitTests.StreamingTests
 {
-    public class PubSubRendezvousGrainTests : OrleansTestingBase, IClassFixture<PubSubRendezvousGrainTests.Fixture>
+    public class PubSubRendezvousGrainTests : IClassFixture<PubSubRendezvousGrainTests.Fixture>
     {
         private readonly Fixture fixture;
 

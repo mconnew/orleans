@@ -13,7 +13,7 @@ using Xunit;
 
 namespace Tester.StreamingTests.ProgrammaticSubscribeTests
 {
-    public class SubscriptionObserverWithImplicitSubscribingTestRunner: OrleansTestingBase
+    public class SubscriptionObserverWithImplicitSubscribingTestRunner
     {
         private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(30);
         //test utilities and statics

@@ -18,7 +18,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace ServiceBus.Tests.StreamingTests
 {
     [TestCategory("EventHub"), TestCategory("Streaming"), TestCategory("Functional")]
-    public class EHStreamPerPartitionTests : OrleansTestingBase, IClassFixture<EHStreamPerPartitionTests.Fixture>
+    public class EHStreamPerPartitionTests : IClassFixture<EHStreamPerPartitionTests.Fixture>
     {
         private readonly Fixture fixture;
         private const string StreamProviderName = "EHStreamPerPartition";

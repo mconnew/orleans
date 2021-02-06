@@ -390,7 +390,7 @@ namespace Tester.AzureUtils.Persistence
                     State = new TestStoreGrainStateWithCustomJsonProperties
                     {
                         String = aPropertyLength == null
-                            ? ThreadSafeRandom.Next().ToString(CultureInfo.InvariantCulture)
+                            ? SafeRandom.Next().ToString(CultureInfo.InvariantCulture)
                             : GenerateRandomDigitString(aPropertyLength.Value)
                     }
                 };
@@ -401,7 +401,7 @@ namespace Tester.AzureUtils.Persistence
                 var characters = new char[stringLength];
                 for (var i = 0; i < stringLength; ++i)
                 {
-                    characters[i] = (char)ThreadSafeRandom.Next('0', '9' + 1);
+                    characters[i] = (char)SafeRandom.Next('0', '9' + 1);
                 }
                 return new string(characters);
             }

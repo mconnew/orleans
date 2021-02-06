@@ -15,12 +15,13 @@ using UnitTests.GrainInterfaces;
 using UnitTests.Grains;
 using Xunit;
 using Orleans.Hosting;
+using Orleans.Internal;
 using Orleans.Serialization;
 
 namespace UnitTests.General
 {
     [TestCategory("BVT"), TestCategory("GrainCallFilter")]
-    public class GrainCallFilterTests : OrleansTestingBase, IClassFixture<GrainCallFilterTests.Fixture>
+    public class GrainCallFilterTests : IClassFixture<GrainCallFilterTests.Fixture>
     {
         public class Fixture : BaseTestClusterFixture
         {
@@ -158,8 +159,8 @@ namespace UnitTests.General
         [Fact]
         public async Task GrainCallFilter_Outgoing_Test()
         {
-            var grain = this.fixture.GrainFactory.GetGrain<IOutgoingMethodInterceptionGrain>(random.Next());
-            var grain2 = this.fixture.GrainFactory.GetGrain<IMethodInterceptionGrain>(random.Next());
+            var grain = this.fixture.GrainFactory.GetGrain<IOutgoingMethodInterceptionGrain>(SafeRandom.Next());
+            var grain2 = this.fixture.GrainFactory.GetGrain<IMethodInterceptionGrain>(SafeRandom.Next());
 
             // This grain method reads the context and returns it
             var result = await grain.EchoViaOtherGrain(grain2, "ab");
@@ -179,7 +180,7 @@ namespace UnitTests.General
         [Fact]
         public async Task GrainCallFilter_Incoming_Order_Test()
         {
-            var grain = this.fixture.GrainFactory.GetGrain<IGrainCallFilterTestGrain>(random.Next());
+            var grain = this.fixture.GrainFactory.GetGrain<IGrainCallFilterTestGrain>(SafeRandom.Next());
 
             // This grain method reads the context and returns it
             var context = await grain.GetRequestContext();
@@ -308,7 +309,7 @@ namespace UnitTests.General
         [Fact]
         public async Task GrainCallFilter_Incoming_ExceptionHandling_Test()
         {
-            var grain = this.fixture.GrainFactory.GetGrain<IMethodInterceptionGrain>(random.Next());
+            var grain = this.fixture.GrainFactory.GetGrain<IMethodInterceptionGrain>(SafeRandom.Next());
 
             // This grain method throws, but the exception should be handled by one of the filters and converted
             // into a specific message.
@@ -323,7 +324,7 @@ namespace UnitTests.General
         [Fact]
         public async Task GrainCallFilter_Incoming_FilterThrows_Test()
         {
-            var grain = this.fixture.GrainFactory.GetGrain<IMethodInterceptionGrain>(random.Next());
+            var grain = this.fixture.GrainFactory.GetGrain<IMethodInterceptionGrain>(SafeRandom.Next());
             
             var exception = await Assert.ThrowsAsync<MethodInterceptionGrain.MyDomainSpecificException>(() => grain.FilterThrows());
             Assert.NotNull(exception);
@@ -337,7 +338,7 @@ namespace UnitTests.General
         [Fact]
         public async Task GrainCallFilter_Incoming_SetIncorrectResultType_Test()
         {
-            var grain = this.fixture.GrainFactory.GetGrain<IMethodInterceptionGrain>(random.Next());
+            var grain = this.fixture.GrainFactory.GetGrain<IMethodInterceptionGrain>(SafeRandom.Next());
 
             // This grain method throws, but the exception should be handled by one of the filters and converted
             // into a specific message.
@@ -351,7 +352,7 @@ namespace UnitTests.General
         [Fact]
         public async Task GrainCallFilter_Incoming_GenericInterface_ConcreteGrain_Test()
         {
-            var id = random.Next();
+            var id = SafeRandom.Next();
             var hungry = this.fixture.GrainFactory.GetGrain<IHungryGrain<Apple>>(id);
             var caterpillar = this.fixture.GrainFactory.GetGrain<ICaterpillarGrain>(id);
             var omnivore = this.fixture.GrainFactory.GetGrain<IOmnivoreGrain>(id);

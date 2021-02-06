@@ -87,7 +87,7 @@ namespace Orleans.Runtime.GrainDirectory
 
             async ValueTask<List<ActivationAddress>> LookupClientAsync(GrainId grainId)
             {
-                var seed = ThreadSafeRandom.Next();
+                var seed = SafeRandom.Next();
                 var attemptsRemaining = 5;
                 List<ActivationAddress> result = null;
                 while (attemptsRemaining-- > 0 && _remoteDirectories is var remoteDirectories && remoteDirectories.Length > 0)
@@ -349,7 +349,7 @@ namespace Orleans.Runtime.GrainDirectory
             var membershipUpdates = _clusterMembershipService.MembershipUpdates.GetAsyncEnumerator(_shutdownCancellation.Token);
 
             Task<bool> membershipTask = null;
-            Task<bool> timerTask = _refreshTimer.NextTick(ThreadSafeRandom.NextTimeSpan(_messagingOptions.ClientRegistrationRefresh));
+            Task<bool> timerTask = _refreshTimer.NextTick(SafeRandom.NextTimeSpan(_messagingOptions.ClientRegistrationRefresh));
 
             while (true)
             {

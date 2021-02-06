@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Orleans;
 using Orleans.Configuration;
+using Orleans.Internal;
 using Orleans.Runtime;
 using Tester;
 using TestExtensions;
@@ -47,7 +48,7 @@ namespace DefaultCluster.Tests.General
             // do extra calls to trigger activation of ExpectedMaxLocalActivations local activations
             int numberOfCalls = ExpectedMaxLocalActivations * 3 * gatewaysCount; 
 
-            IStatelessWorkerGrain grain = this.GrainFactory.GetGrain<IStatelessWorkerGrain>(GetRandomGrainId());
+            IStatelessWorkerGrain grain = this.GrainFactory.GetGrain<IStatelessWorkerGrain>(SafeRandom.Next());
             List<Task> promises = new List<Task>();
 
             // warmup
@@ -125,7 +126,7 @@ namespace DefaultCluster.Tests.General
             // do extra calls to trigger activation of ExpectedMaxLocalActivations local activations
             int numberOfCalls = ExpectedMaxLocalActivations * 3 * gatewaysCount;
 
-            IStatelessWorkerGrain grain = this.GrainFactory.GetGrain<IStatelessWorkerGrain>(GetRandomGrainId());
+            IStatelessWorkerGrain grain = this.GrainFactory.GetGrain<IStatelessWorkerGrain>(SafeRandom.Next());
             List<Task> promises = new List<Task>();
             
             for (int i = 0; i < numberOfCalls; i++)

@@ -9,6 +9,7 @@ using Orleans;
 using Orleans.CodeGeneration;
 using Orleans.Configuration;
 using Orleans.Hosting;
+using Orleans.Internal;
 using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
 using Orleans.TestingHost;
@@ -20,7 +21,7 @@ using Xunit.Abstractions;
 
 namespace UnitTests.General
 { 
-    public class RequestContextTests_Silo : OrleansTestingBase, IClassFixture<RequestContextTests_Silo.Fixture>, IDisposable
+    public class RequestContextTests_Silo : IClassFixture<RequestContextTests_Silo.Fixture>, IDisposable
     {
         private readonly ITestOutputHelper output;
         private readonly Fixture fixture;
@@ -73,7 +74,7 @@ namespace UnitTests.General
         public async Task RequestContext_ActivityId_Simple()
         {
             Guid activityId = Guid.NewGuid();
-            IRequestContextTestGrain grain = this.fixture.GrainFactory.GetGrain<IRequestContextTestGrain>(GetRandomGrainId());
+            IRequestContextTestGrain grain = this.fixture.GrainFactory.GetGrain<IRequestContextTestGrain>(SafeRandom.Next());
 
             RequestContextTestUtils.SetActivityId(activityId);
             Guid result = await grain.E2EActivityId();
@@ -84,7 +85,7 @@ namespace UnitTests.General
         public async Task RequestContext_LegacyActivityId_Simple()
         {
             Guid activityId = Guid.NewGuid();
-            IRequestContextTestGrain grain = this.fixture.GrainFactory.GetGrain<IRequestContextTestGrain>(GetRandomGrainId());
+            IRequestContextTestGrain grain = this.fixture.GrainFactory.GetGrain<IRequestContextTestGrain>(SafeRandom.Next());
 
             Trace.CorrelationManager.ActivityId = activityId;
             Assert.True(RequestContext.PropagateActivityId); // "Verify activityId propagation is enabled."
@@ -95,7 +96,7 @@ namespace UnitTests.General
         [Fact, TestCategory("Functional"), TestCategory("RequestContext")]
         public async Task RequestContext_AC_Test1()
         {
-            long id = GetRandomGrainId();
+            long id = SafeRandom.Next();
             const string key = "TraceId";
             string val = "TraceValue-" + id;
             string val2 = val + "-2";
@@ -122,7 +123,7 @@ namespace UnitTests.General
         [Fact, TestCategory("Functional"), TestCategory("RequestContext")]
         public async Task RequestContext_Task_Test1()
         {
-            long id = GetRandomGrainId();
+            long id = SafeRandom.Next();
             const string key = "TraceId";
             string val = "TraceValue-" + id;
             string val2 = val + "-2";
@@ -172,7 +173,7 @@ namespace UnitTests.General
             Guid activityId2 = Guid.NewGuid();
             Guid nullActivityId = Guid.Empty;
 
-            IRequestContextTestGrain grain = this.fixture.GrainFactory.GetGrain<IRequestContextTestGrain>(GetRandomGrainId());
+            IRequestContextTestGrain grain = this.fixture.GrainFactory.GetGrain<IRequestContextTestGrain>(SafeRandom.Next());
 
             RequestContext.Set(RequestContext.E2_E_TRACING_ACTIVITY_ID_HEADER, activityId);
             Guid result = await grain.E2EActivityId();
@@ -197,7 +198,7 @@ namespace UnitTests.General
             Guid activityId2 = Guid.NewGuid();
             Guid nullActivityId = Guid.Empty;
 
-            IRequestContextTestGrain grain = this.fixture.GrainFactory.GetGrain<IRequestContextTestGrain>(GetRandomGrainId());
+            IRequestContextTestGrain grain = this.fixture.GrainFactory.GetGrain<IRequestContextTestGrain>(SafeRandom.Next());
 
             Trace.CorrelationManager.ActivityId = activityId;
             Assert.Null(RequestContext.Get(RequestContext.E2_E_TRACING_ACTIVITY_ID_HEADER));
@@ -228,7 +229,7 @@ namespace UnitTests.General
             Guid activityId2 = Guid.NewGuid();
             Guid nullActivityId = Guid.Empty;
 
-            IRequestContextProxyGrain grain = this.fixture.GrainFactory.GetGrain<IRequestContextProxyGrain>(GetRandomGrainId());
+            IRequestContextProxyGrain grain = this.fixture.GrainFactory.GetGrain<IRequestContextProxyGrain>(SafeRandom.Next());
 
             Trace.CorrelationManager.ActivityId = activityId;
             Assert.Null(RequestContext.Get(RequestContext.E2_E_TRACING_ACTIVITY_ID_HEADER));
@@ -259,7 +260,7 @@ namespace UnitTests.General
 
             RequestContext.Clear();
 
-            IRequestContextTestGrain grain = this.fixture.GrainFactory.GetGrain<IRequestContextTestGrain>(GetRandomGrainId());
+            IRequestContextTestGrain grain = this.fixture.GrainFactory.GetGrain<IRequestContextTestGrain>(SafeRandom.Next());
 
             Guid result = await grain.E2EActivityId();
             Assert.Equal(nullActivityId,  result);  // "E2E ActivityId should not exist"
@@ -289,7 +290,7 @@ namespace UnitTests.General
         {
             Guid nullActivityId = Guid.Empty;
 
-            IRequestContextTestGrain grain = this.fixture.GrainFactory.GetGrain<IRequestContextTestGrain>(GetRandomGrainId());
+            IRequestContextTestGrain grain = this.fixture.GrainFactory.GetGrain<IRequestContextTestGrain>(SafeRandom.Next());
 
             Guid result = grain.E2EActivityId().Result;
             Assert.Equal(nullActivityId,  result);  // "E2E ActivityId should not exist"
@@ -321,7 +322,7 @@ namespace UnitTests.General
             Guid activityId = Guid.NewGuid();
             Guid activityId2 = Guid.NewGuid();
 
-            IRequestContextTestGrain grain = this.fixture.GrainFactory.GetGrain<IRequestContextTestGrain>(GetRandomGrainId());
+            IRequestContextTestGrain grain = this.fixture.GrainFactory.GetGrain<IRequestContextTestGrain>(SafeRandom.Next());
 
             Trace.CorrelationManager.ActivityId = activityId;
             Guid result = await grain.E2EActivityId();
@@ -371,7 +372,7 @@ namespace UnitTests.General
         }
     }
 
-    public class Halo_RequestContextTests : OrleansTestingBase
+    public class Halo_RequestContextTests
     {
         private readonly ITestOutputHelper output;
 
@@ -416,7 +417,7 @@ namespace UnitTests.General
         }
     }
 
-    public class Halo_CallContextTests : OrleansTestingBase
+    public class Halo_CallContextTests
     {
         private readonly ITestOutputHelper output;
 

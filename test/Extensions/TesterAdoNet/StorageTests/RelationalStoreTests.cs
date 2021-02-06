@@ -112,7 +112,7 @@ namespace UnitTests.StorageTests.AdoNet
                 streamChecks[i] = Task.Run(async () =>
                 {
                     var rb = new byte[streamSize];
-                    ThreadSafeRandom.NextBytes(rb);
+                    SafeRandom.NextBytes(rb);
                     await InsertIntoDatabaseUsingStream(sut, streamId, rb, cancellationToken);
                     var dataStreamFromTheDb = await ReadFromDatabaseUsingAsyncStream(sut, streamId, cancellationToken);
                     return dataStreamFromTheDb.StreamData.SequenceEqual(rb);

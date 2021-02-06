@@ -4,14 +4,13 @@ using Microsoft.Extensions.Options;
 using Orleans.Configuration;
 using Orleans.Hosting;
 using Orleans.TestingHost;
-using TestExtensions;
 using UnitTests.GrainInterfaces;
 using Xunit;
 
 namespace Tester.AzureUtils.General
 {
     [TestCategory("Azure"), TestCategory("Generics")]
-    public class GenericGrainsInAzureTableStorageTests : OrleansTestingBase, IClassFixture<GenericGrainsInAzureTableStorageTests.Fixture>
+    public class GenericGrainsInAzureTableStorageTests : IClassFixture<GenericGrainsInAzureTableStorageTests.Fixture>
     {
         private readonly Fixture fixture;
 
@@ -67,7 +66,7 @@ namespace Tester.AzureUtils.General
     }
 
     [TestCategory("Azure"), TestCategory("Generics")]
-    public class GenericGrainsInAzureBlobStorageTests : OrleansTestingBase, IClassFixture<GenericGrainsInAzureBlobStorageTests.Fixture>
+    public class GenericGrainsInAzureBlobStorageTests : IClassFixture<GenericGrainsInAzureBlobStorageTests.Fixture>
     {
         private readonly Fixture fixture;
 

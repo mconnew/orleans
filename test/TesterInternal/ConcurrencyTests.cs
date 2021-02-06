@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Orleans;
 using Orleans.Configuration;
 using Orleans.Hosting;
+using Orleans.Internal;
 using Orleans.TestingHost;
 using TestExtensions;
 using UnitTests.GrainInterfaces;
@@ -13,7 +14,7 @@ namespace UnitTests.ConcurrencyTests
     /// <summary>
     /// Summary description for PersistenceTest
     /// </summary>
-    public class ConcurrencyTests : OrleansTestingBase, IClassFixture<ConcurrencyTests.Fixture>
+    public class ConcurrencyTests : IClassFixture<ConcurrencyTests.Fixture>
     {
         private readonly Fixture fixture;
 
@@ -29,7 +30,7 @@ namespace UnitTests.ConcurrencyTests
         [Fact, TestCategory("Functional"), TestCategory("ReadOnly"), TestCategory("AsynchronyPrimitives")]
         public async Task ConcurrencyTest_ReadOnly()
         {
-            IConcurrentGrain first = this.fixture.GrainFactory.GetGrain<IConcurrentGrain>(GetRandomGrainId());
+            IConcurrentGrain first = this.fixture.GrainFactory.GetGrain<IConcurrentGrain>(SafeRandom.Next());
             first.Initialize(0).Wait();
 
             List<Task> promises = new List<Task>();
@@ -44,7 +45,7 @@ namespace UnitTests.ConcurrencyTests
         [Fact, TestCategory("Functional"), TestCategory("ReadOnly"), TestCategory("AsynchronyPrimitives")]
         public void ConcurrencyTest_ModifyReturnList()
         {
-            IConcurrentGrain grain = this.fixture.GrainFactory.GetGrain<IConcurrentGrain>(GetRandomGrainId());
+            IConcurrentGrain grain = this.fixture.GrainFactory.GetGrain<IConcurrentGrain>(SafeRandom.Next());
 
             Task<List<int>>[] ll = new Task<List<int>>[20];
             for (int i = 0; i < 2000; i++)

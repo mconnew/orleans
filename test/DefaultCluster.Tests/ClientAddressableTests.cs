@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Orleans;
+using Orleans.Internal;
 using Orleans.Runtime;
 using TestExtensions;
 using UnitTests.GrainInterfaces;
@@ -80,7 +81,7 @@ namespace DefaultCluster.Tests
             var myOb = new MyPseudoGrain();
             this.anchor = myOb;
             var myRef = ((IInternalGrainFactory)this.GrainFactory).CreateObjectReference<IClientAddressableTestClientObject>(myOb);
-            var proxy = this.GrainFactory.GetGrain<IClientAddressableTestGrain>(GetRandomGrainId());
+            var proxy = this.GrainFactory.GetGrain<IClientAddressableTestGrain>(SafeRandom.Next());
             const string expected = "o hai!";
             await proxy.SetTarget(myRef);
             var actual = await proxy.HappyPath(expected);
@@ -97,7 +98,7 @@ namespace DefaultCluster.Tests
             var myOb = new MyPseudoGrain();
             this.anchor = myOb;
             var myRef = ((IInternalGrainFactory)this.GrainFactory).CreateObjectReference<IClientAddressableTestClientObject>(myOb);
-            var proxy = this.GrainFactory.GetGrain<IClientAddressableTestGrain>(GetRandomGrainId());
+            var proxy = this.GrainFactory.GetGrain<IClientAddressableTestGrain>(SafeRandom.Next());
             await proxy.SetTarget(myRef);
 
             await Assert.ThrowsAsync<ApplicationException>(() =>
@@ -132,7 +133,7 @@ namespace DefaultCluster.Tests
             var myOb = new MyPseudoGrain();
             this.anchor = myOb;
             var myRef = ((IInternalGrainFactory)this.GrainFactory).CreateObjectReference<IClientAddressableTestClientObject>(myOb);
-            var proxy = this.GrainFactory.GetGrain<IClientAddressableTestGrain>(GetRandomGrainId());
+            var proxy = this.GrainFactory.GetGrain<IClientAddressableTestGrain>(SafeRandom.Next());
             await proxy.SetTarget(myRef);
             await proxy.MicroSerialStressTest(iterationCount);
 
@@ -147,7 +148,7 @@ namespace DefaultCluster.Tests
             var myOb = new MyPseudoGrain();
             this.anchor = myOb;
             var myRef = ((IInternalGrainFactory)this.GrainFactory).CreateObjectReference<IClientAddressableTestClientObject>(myOb);
-            var proxy = this.GrainFactory.GetGrain<IClientAddressableTestGrain>(GetRandomGrainId());
+            var proxy = this.GrainFactory.GetGrain<IClientAddressableTestGrain>(SafeRandom.Next());
             await proxy.SetTarget(myRef);
             await proxy.MicroParallelStressTest(iterationCount);
 

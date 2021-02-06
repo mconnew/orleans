@@ -37,7 +37,7 @@ namespace UnitTests
         {
             bool finished = false;
             var grainName = typeof (ErrorGrain).FullName;
-            IErrorGrain grain = this.GrainFactory.GetGrain<IErrorGrain>(GetRandomGrainId(), grainName);
+            IErrorGrain grain = this.GrainFactory.GetGrain<IErrorGrain>(SafeRandom.Next(), grainName);
             TimeSpan timeout = TimeSpan.FromMilliseconds(1000);
             this.runtimeClient.SetResponseTimeout(timeout);
 

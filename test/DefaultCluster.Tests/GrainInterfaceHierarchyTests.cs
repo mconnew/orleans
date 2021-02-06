@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Orleans;
+using Orleans.Internal;
 using TestExtensions;
 using TestGrainInterfaces;
 using Xunit;
@@ -14,7 +15,7 @@ namespace DefaultCluster.Tests
 
         private T GetHierarchyGrain<T>() where T : IDoSomething, IGrainWithIntegerKey
         {
-            return GrainFactory.GetGrain<T>(GetRandomGrainId());
+            return GrainFactory.GetGrain<T>(SafeRandom.Next());
         }
 
         [Fact, TestCategory("BVT")]

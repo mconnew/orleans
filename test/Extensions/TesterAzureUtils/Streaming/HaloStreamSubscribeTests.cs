@@ -21,7 +21,7 @@ using Xunit;
 namespace UnitTests.HaloTests.Streaming
 {
     [TestCategory("Streaming"), TestCategory("Halo")]
-    public class HaloStreamSubscribeTests : OrleansTestingBase, IClassFixture<HaloStreamSubscribeTests.Fixture>
+    public class HaloStreamSubscribeTests : IClassFixture<HaloStreamSubscribeTests.Fixture>
     {
         private readonly Fixture fixture;
         private const int queueCount = 8;

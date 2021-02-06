@@ -89,7 +89,7 @@ namespace Orleans.Runtime.GrainDirectory
                 }
             }
             Instances[act] = new ActivationInfo(silo);
-            VersionTag = ThreadSafeRandom.Next();
+            VersionTag = SafeRandom.Next();
             return true;
         }
 
@@ -104,7 +104,7 @@ namespace Orleans.Runtime.GrainDirectory
             else
             {
                 Instances.Add(act, new ActivationInfo(silo));
-                VersionTag = ThreadSafeRandom.Next();
+                VersionTag = SafeRandom.Next();
                 return ActivationAddress.GetAddress(silo, grain, act);
             }
         }
@@ -116,7 +116,7 @@ namespace Orleans.Runtime.GrainDirectory
             {
                 Instances.Remove(act);
                 wasRemoved = true;
-                VersionTag = ThreadSafeRandom.Next();
+                VersionTag = SafeRandom.Next();
             }
             return Instances.Count == 0;
         }
@@ -134,7 +134,7 @@ namespace Orleans.Runtime.GrainDirectory
 
             if (modified)
             {
-                VersionTag = ThreadSafeRandom.Next();
+                VersionTag = SafeRandom.Next();
             }
             
             if (SingleInstance && (Instances.Count > 0))

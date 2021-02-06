@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Orleans;
+using Orleans.Internal;
 using Orleans.Runtime;
 using TestExtensions;
 using UnitTests.GrainInterfaces;
@@ -26,8 +27,8 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("ActivateDeactivate"), TestCategory("GetGrain")]
         public void BasicActivation_ActivateAndUpdate()
         {
-            long g1Key = GetRandomGrainId();
-            long g2Key = GetRandomGrainId();
+            long g1Key = SafeRandom.Next();
+            long g2Key = SafeRandom.Next();
             ITestGrain g1 = this.GrainFactory.GetGrain<ITestGrain>(g1Key);
             ITestGrain g2 = this.GrainFactory.GetGrain<ITestGrain>(g2Key);
             Assert.Equal(g1Key, g1.GetPrimaryKeyLong());
@@ -203,7 +204,7 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("ActivateDeactivate")]
         public void BasicActivation_MultipleGrainInterfaces()
         {
-            ITestGrain simple = this.GrainFactory.GetGrain<ITestGrain>(GetRandomGrainId());
+            ITestGrain simple = this.GrainFactory.GetGrain<ITestGrain>(SafeRandom.Next());
 
             simple.GetMultipleGrainInterfaces_List().Wait();
             this.Logger.Info("GetMultipleGrainInterfaces_List() worked");
@@ -225,7 +226,7 @@ namespace DefaultCluster.Tests.General
                 TimeSpan shortTimeout = TimeSpan.FromMilliseconds(1000);
                 this.SetResponseTimeout(shortTimeout);
 
-                ITestGrain grain = this.GrainFactory.GetGrain<ITestGrain>(GetRandomGrainId());
+                ITestGrain grain = this.GrainFactory.GetGrain<ITestGrain>(SafeRandom.Next());
                 int num = 10;
                 for (long i = 0; i < num; i++)
                 {
@@ -263,7 +264,7 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("RequestContext"), TestCategory("GetGrain")]
         public void BasicActivation_TestRequestContext()
         {
-            ITestGrain g1 = this.GrainFactory.GetGrain<ITestGrain>(GetRandomGrainId());
+            ITestGrain g1 = this.GrainFactory.GetGrain<ITestGrain>(SafeRandom.Next());
             Task<Tuple<string, string>> promise1 = g1.TestRequestContext();
             Tuple<string, string> requstContext = promise1.Result;
             this.Logger.Info("Request Context is: " + requstContext);

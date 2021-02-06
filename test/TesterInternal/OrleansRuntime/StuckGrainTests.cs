@@ -14,7 +14,7 @@ namespace UnitTests.StuckGrainTests
     /// <summary>
     /// Summary description for PersistenceTest
     /// </summary>
-    public class StuckGrainTests : OrleansTestingBase, IClassFixture<StuckGrainTests.Fixture>
+    public class StuckGrainTests : IClassFixture<StuckGrainTests.Fixture>
     {
         private readonly Fixture fixture;
 

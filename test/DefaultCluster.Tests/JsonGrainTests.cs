@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using Orleans.CodeGeneration;
 using Orleans.Serialization;
@@ -6,6 +6,7 @@ using TestExtensions;
 using UnitTests.GrainInterfaces;
 using Xunit;
 using System;
+using Orleans.Internal;
 
 namespace DefaultCluster.Tests.General
 {
@@ -21,7 +22,7 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("JSON"), TestCategory("GetGrain")]
         public async Task JSON_GetGrain()
         {
-            int id = random.Next();
+            int id = SafeRandom.Next();
             var grain = this.GrainFactory.GetGrain<IJsonEchoGrain>(id);
             await grain.Ping();
         }
@@ -29,7 +30,7 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT"), TestCategory("JSON"), TestCategory("Echo")]
         public async Task JSON_EchoJson()
         {
-            int id = random.Next();
+            int id = SafeRandom.Next();
             var grain = this.GrainFactory.GetGrain<IJsonEchoGrain>(id);
 
             // Compare to: SerializationTests_JObject_Example1

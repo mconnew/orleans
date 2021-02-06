@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Orleans.Internal;
 using TestExtensions;
 using UnitTests.GrainInterfaces;
 using UnitTests.Grains;
@@ -17,7 +18,7 @@ namespace DefaultCluster.Tests.General
 
         public ISimpleGrain GetSimpleGrain()
         {
-            return this.GrainFactory.GetGrain<ISimpleGrain>(GetRandomGrainId(), SimpleGrain.SimpleGrainNamePrefix);
+            return this.GrainFactory.GetGrain<ISimpleGrain>(SafeRandom.Next(), SimpleGrain.SimpleGrainNamePrefix);
         }
 
         [Fact, TestCategory("BVT")]
@@ -59,7 +60,7 @@ namespace DefaultCluster.Tests.General
         [TestCategory("BVT")]
         public async Task GettingGrainWithMultipleConstructorsActivesViaDefaultConstructor()
         {
-            ISimpleGrain grain = this.GrainFactory.GetGrain<ISimpleGrain>(GetRandomGrainId(), grainClassNamePrefix: MultipleConstructorsSimpleGrain.MultipleConstructorsSimpleGrainPrefix);
+            ISimpleGrain grain = this.GrainFactory.GetGrain<ISimpleGrain>(SafeRandom.Next(), grainClassNamePrefix: MultipleConstructorsSimpleGrain.MultipleConstructorsSimpleGrainPrefix);
 
             var actual = await grain.GetA();
             Assert.Equal(MultipleConstructorsSimpleGrain.ValueUsedByParameterlessConstructor, actual);

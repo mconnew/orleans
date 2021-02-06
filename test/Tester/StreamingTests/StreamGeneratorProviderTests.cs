@@ -17,7 +17,7 @@ using Xunit;
 
 namespace UnitTests.StreamingTests
 {
-    public class StreamGeneratorProviderTests : OrleansTestingBase, IClassFixture<StreamGeneratorProviderTests.Fixture>
+    public class StreamGeneratorProviderTests : IClassFixture<StreamGeneratorProviderTests.Fixture>
     {
         private const int TotalQueueCount = 4;
         private readonly Fixture fixture;

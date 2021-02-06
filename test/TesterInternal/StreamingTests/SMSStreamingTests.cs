@@ -8,7 +8,7 @@ using Xunit;
 
 namespace UnitTests.StreamingTests
 {
-    public class SMSStreamingTests : OrleansTestingBase, IClassFixture<SMSStreamingTests.Fixture>
+    public class SMSStreamingTests : IClassFixture<SMSStreamingTests.Fixture>
     {
         public class Fixture : BaseTestClusterFixture
         {

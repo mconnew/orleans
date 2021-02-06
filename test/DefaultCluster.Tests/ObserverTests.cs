@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Orleans;
+using Orleans.Internal;
 using Orleans.Runtime;
 using Orleans.TestingHost.Utils;
 using TestExtensions;
@@ -41,7 +42,7 @@ namespace DefaultCluster.Tests.General
 
         private ISimpleObserverableGrain GetGrain()
         {
-            return this.GrainFactory.GetGrain<ISimpleObserverableGrain>(GetRandomGrainId());
+            return this.GrainFactory.GetGrain<ISimpleObserverableGrain>(SafeRandom.Next());
         }
 
         [Fact, TestCategory("BVT")]

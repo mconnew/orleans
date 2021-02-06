@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Orleans.Internal;
 using Orleans.Runtime;
 using TestExtensions;
 using UnitTests.GrainInterfaces;
@@ -16,7 +17,7 @@ namespace DefaultCluster.Tests.General
         [Fact, TestCategory("BVT")]
         public async Task DeactivateReactivateTiming()
         {
-            var x = GetRandomGrainId();
+            var x = (long) SafeRandom.Next();
             var grain = this.GrainFactory.GetGrain<ISimplePersistentGrain>(x);
             var originalVersion = await grain.GetVersion();
 

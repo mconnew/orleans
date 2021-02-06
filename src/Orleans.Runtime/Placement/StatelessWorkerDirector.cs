@@ -26,7 +26,7 @@ namespace Orleans.Runtime.Placement
             }
 
             // otherwise, place somewhere else
-            return Task.FromResult(compatibleSilos[ThreadSafeRandom.Next(compatibleSilos.Length)]);
+            return Task.FromResult(compatibleSilos[SafeRandom.Next(compatibleSilos.Length)]);
         }
 
         private PlacementResult SelectActivationCore(PlacementStrategy strategy, GrainId target, IPlacementRuntime context)
@@ -58,7 +58,7 @@ namespace Orleans.Runtime.Placement
 
             if (local.Count >= placement.MaxLocal)
             {
-                var id = local[local.Count == 1 ? 0 : ThreadSafeRandom.Next(local.Count)].ActivationId;
+                var id = local[local.Count == 1 ? 0 : SafeRandom.Next(local.Count)].ActivationId;
                 return PlacementResult.IdentifySelection(ActivationAddress.GetAddress(context.LocalSilo, target, id));
             }
 
@@ -67,7 +67,7 @@ namespace Orleans.Runtime.Placement
 
         internal static ActivationData PickRandom(List<ActivationData> local)
         {
-            return local[local.Count == 1 ? 0 : ThreadSafeRandom.Next(local.Count)];
+            return local[local.Count == 1 ? 0 : SafeRandom.Next(local.Count)];
         }
     }
 }

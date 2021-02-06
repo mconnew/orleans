@@ -90,11 +90,11 @@ namespace UnitTests.StorageTests.Relational
         private static Dictionary<Type, object> RandomGenerators { get; } = new Dictionary<Type, object>
         {
             [typeof(Guid)] = new Func<object, Guid>(state => { return Guid.NewGuid(); }),
-            [typeof(int)] = new Func<object, int>(state => { return ThreadSafeRandom.Next(); }),
+            [typeof(int)] = new Func<object, int>(state => { return SafeRandom.Next(); }),
             [typeof(long)] = new Func<object, long>(state =>
             {
                 var bufferInt64 = new byte[sizeof(long)];
-                ThreadSafeRandom.NextBytes(bufferInt64);
+                SafeRandom.NextBytes(bufferInt64);
                 return BitConverter.ToInt64(bufferInt64, 0);
             }),
             [typeof(string)] = new Func<object, string>(symbolSet =>
@@ -104,8 +104,8 @@ namespace UnitTests.StorageTests.Relational
                 var builder = new StringBuilder();
                 for(long i = 0; i < count; ++i)
                 {
-                    var symbolRange = symbols.SetRanges[ThreadSafeRandom.Next(symbols.SetRanges.Count)];
-                    builder.Append((char)ThreadSafeRandom.Next(symbolRange.Start, symbolRange.End));
+                    var symbolRange = symbols.SetRanges[SafeRandom.Next(symbols.SetRanges.Count)];
+                    builder.Append((char)SafeRandom.Next(symbolRange.Start, symbolRange.End));
                 }
 
                 return builder.ToString();

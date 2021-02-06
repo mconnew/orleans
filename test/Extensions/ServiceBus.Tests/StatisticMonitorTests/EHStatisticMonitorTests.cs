@@ -16,7 +16,7 @@ using Orleans.Configuration;
 namespace ServiceBus.Tests.MonitorTests
 {
     [TestCategory("EventHub"), TestCategory("Streaming")]
-    public class EHStatisticMonitorTests : OrleansTestingBase, IClassFixture<EHStatisticMonitorTests.Fixture>
+    public class EHStatisticMonitorTests : IClassFixture<EHStatisticMonitorTests.Fixture>
     {
         private const string StreamProviderName = "EventHubStreamProvider";
         private const string StreamNamespace = "EHTestsNamespace";

@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Orleans.Internal;
 using TestExtensions;
 using UnitTests.GrainInterfaces;
 using Xunit;
@@ -25,7 +26,7 @@ namespace DefaultCluster.Tests.General
 
         private async Task StateClassTests_Test(string grainClass)
         {
-            var grain = this.GrainFactory.GetGrain<ISimplePersistentGrain>(GetRandomGrainId(), grainClass);
+            var grain = this.GrainFactory.GetGrain<ISimplePersistentGrain>(SafeRandom.Next(), grainClass);
             var originalVersion = await grain.GetVersion();
             await grain.SetA(98, true); // deactivate grain after setting A
 

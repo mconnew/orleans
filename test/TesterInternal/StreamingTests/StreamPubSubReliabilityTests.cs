@@ -17,7 +17,7 @@ using Xunit;
 
 namespace UnitTests.StreamingTests
 {
-    public class StreamPubSubReliabilityTests : OrleansTestingBase, IClassFixture<StreamPubSubReliabilityTests.Fixture>
+    public class StreamPubSubReliabilityTests : IClassFixture<StreamPubSubReliabilityTests.Fixture>
     {
         public class Fixture : BaseTestClusterFixture
         {

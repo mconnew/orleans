@@ -7,7 +7,7 @@ using Orleans.Configuration;
 
 namespace UnitTests
 {
-    public class DisabledCallChainReentrancyTests : OrleansTestingBase, IClassFixture<DisabledCallChainReentrancyTests.Fixture>
+    public class DisabledCallChainReentrancyTests : IClassFixture<DisabledCallChainReentrancyTests.Fixture>
     {
         private readonly DisabledCallChainReentrancyTestRunner runner;
 

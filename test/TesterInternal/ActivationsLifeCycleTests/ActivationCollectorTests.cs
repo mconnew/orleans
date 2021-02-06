@@ -11,14 +11,13 @@ using Orleans.Runtime;
 using Orleans.TestingHost;
 using Orleans.Internal;
 using Tester;
-using TestExtensions;
 using UnitTests.GrainInterfaces;
 using UnitTests.Grains;
 using Xunit;
 
 namespace UnitTests.ActivationsLifeCycleTests
 {
-    public class ActivationCollectorTests : OrleansTestingBase, IAsyncLifetime
+    public class ActivationCollectorTests : IAsyncLifetime
     {
         private static readonly TimeSpan DEFAULT_COLLECTION_QUANTUM = TimeSpan.FromSeconds(10);
         private static readonly TimeSpan DEFAULT_IDLE_TIMEOUT = DEFAULT_COLLECTION_QUANTUM + TimeSpan.FromSeconds(1);

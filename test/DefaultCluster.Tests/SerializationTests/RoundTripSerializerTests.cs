@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Orleans;
+using Orleans.Internal;
 using TestExtensions;
 using UnitTests.GrainInterfaces;
 using Xunit;
@@ -16,7 +17,7 @@ namespace UnitTests.SerializerTests
         [Fact]
         public async Task Serialize_TestMethodResultEnum()
         {
-            var grain = this.GrainFactory.GetGrain<IRoundtripSerializationGrain>(GetRandomGrainId());
+            var grain = this.GrainFactory.GetGrain<IRoundtripSerializationGrain>(SafeRandom.Next());
             CampaignEnemyTestType result = await grain.GetEnemyType();
             Assert.Equal(CampaignEnemyTestType.Enemy2, result); //Enum return value wasn't transmitted properly
         }
@@ -24,7 +25,7 @@ namespace UnitTests.SerializerTests
         [Fact]
         public async Task Serialize_TestMethodResultWithInheritedClosedGeneric()
         {
-            var grain = this.GrainFactory.GetGrain<IRoundtripSerializationGrain>(GetRandomGrainId());
+            var grain = this.GrainFactory.GetGrain<IRoundtripSerializationGrain>(SafeRandom.Next());
             object result = await grain.GetClosedGenericValue();
             Assert.NotNull(result);
         }

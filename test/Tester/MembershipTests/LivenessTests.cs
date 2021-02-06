@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Orleans;
 using Orleans.Configuration;
+using Orleans.Internal;
 using Orleans.Runtime;
 using Orleans.TestingHost;
 using TestExtensions;
@@ -144,7 +145,7 @@ namespace UnitTests.MembershipTests
             // new random grains
             for (int i = 0; i < numGrains; i++)
             {
-                await SendTraffic(random.Next(10000));
+                await SendTraffic(SafeRandom.Next(10000));
             }
         }
 
