@@ -1,4 +1,4 @@
-﻿using Orleans.LogConsistency;
+﻿using Orleans.EventSourcing;
 using Orleans.Providers;
 using Orleans.Runtime;
 using Orleans.Storage;

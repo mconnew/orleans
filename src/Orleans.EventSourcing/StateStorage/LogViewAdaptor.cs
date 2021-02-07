@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Orleans;
-using Orleans.LogConsistency;
+using Orleans.EventSourcing;
 using Orleans.Storage;
 using Orleans.EventSourcing.Common;
 using Orleans.Runtime;

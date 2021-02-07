@@ -11,7 +11,6 @@ using Orleans.Configuration;
 using Orleans.GrainDirectory;
 using Orleans.Internal;
 using Orleans.Metadata;
-using Orleans.MultiCluster;
 using Orleans.Runtime.GrainDirectory;
 using Orleans.Runtime.Messaging;
 using Orleans.Runtime.Placement;
@@ -986,11 +985,6 @@ namespace Orleans.Runtime
                     {
                         logger.Warn(ErrorCode.Catalog_DeactivateStreamResources_Exception, String.Format("DeactivateStreamResources Grain type = {0} Activation = {1} failed.", grainTypeName, activation), exc);
                     }
-                }
-
-                if (activation.GrainInstance is ILogConsistencyProtocolParticipant)
-                {
-                    await ((ILogConsistencyProtocolParticipant)activation.GrainInstance).DeactivateProtocolParticipant();
                 }
             }
             catch (Exception exc)

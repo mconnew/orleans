@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Orleans.CodeGeneration")]
 [assembly: InternalsVisibleTo("Orleans.CodeGeneration.Build")]
 [assembly: InternalsVisibleTo("Orleans.Runtime")]
+[assembly: InternalsVisibleTo("Orleans.EventSourcing")]
 [assembly: InternalsVisibleTo("Orleans.Runtime.Abstractions")]
 [assembly: InternalsVisibleTo("Orleans.TelemetryConsumers.Counters")]
 [assembly: InternalsVisibleTo("Orleans.TelemetryConsumers.Linux")]

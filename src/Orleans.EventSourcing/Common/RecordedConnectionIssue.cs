@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Orleans.LogConsistency;
+using Orleans.EventSourcing;
 
 namespace Orleans.EventSourcing.Common
 {
