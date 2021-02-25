@@ -18,7 +18,7 @@
     <RepositoryType>git</RepositoryType>
     <IncludeSymbols>true</IncludeSymbols>
     <IncludeSource>true</IncludeSource>
-    <LangVersion>latest</LangVersion>
+    <LangVersion>9.0</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -44,41 +44,42 @@
   <PropertyGroup>
     <!-- System packages -->
     <SystemDataSqlClientVersion>4.8.0</SystemDataSqlClientVersion>
-    <SystemDiagnosticsEventLogVersion>4.7.0</SystemDiagnosticsEventLogVersion>
-    <SystemCollectionsImmutableVersion>1.7.0</SystemCollectionsImmutableVersion>
-    <SystemRuntimeCompilerServicesUnsafeVersion>4.7.0</SystemRuntimeCompilerServicesUnsafeVersion>
-    <SystemDiagnosticsPerformanceCounterVersion>4.7.0</SystemDiagnosticsPerformanceCounterVersion>
+    <SystemDiagnosticsEventLogVersion>5.0.0</SystemDiagnosticsEventLogVersion>
+    <SystemDiagnosticsTracingVersion>4.3.0</SystemDiagnosticsTracingVersion>
+    <SystemCollectionsImmutableVersion>5.0.0</SystemCollectionsImmutableVersion>
+    <SystemRuntimeCompilerServicesUnsafeVersion>5.0.0</SystemRuntimeCompilerServicesUnsafeVersion>
+    <SystemDiagnosticsPerformanceCounterVersion>5.0.0</SystemDiagnosticsPerformanceCounterVersion>
     <SystemNetNameResolutionVersion>4.3.0</SystemNetNameResolutionVersion>
     <SystemReflectionMetadataVersion>1.8.0</SystemReflectionMetadataVersion>
     <SystemValueTupleVersion>4.5.0</SystemValueTupleVersion>
     <SystemReflectionEmitVersion>4.7.0</SystemReflectionEmitVersion>
-    <SystemThreadingChannelsVersion>4.7.0</SystemThreadingChannelsVersion>
-    <SystemIOPipelinesVersion>4.7.0</SystemIOPipelinesVersion>
-    <SystemCodeDomVersion>4.7.0</SystemCodeDomVersion>
-    <SystemDiagnosticsDiagnosticsSourceVersion>4.7.0</SystemDiagnosticsDiagnosticsSourceVersion>
-    <SystemSecurityCryptographyVersion>4.7.0</SystemSecurityCryptographyVersion>
+    <SystemThreadingChannelsVersion>5.0.0</SystemThreadingChannelsVersion>
+    <SystemIOPipelinesVersion>5.0.0</SystemIOPipelinesVersion>
+    <SystemCodeDomVersion>5.0.0</SystemCodeDomVersion>
+    <SystemDiagnosticsDiagnosticsSourceVersion>5.0.0</SystemDiagnosticsDiagnosticsSourceVersion>
+    <SystemSecurityCryptographyVersion>5.0.0</SystemSecurityCryptographyVersion>
 
     <!-- Microsoft packages -->
-    <MicrosoftBuildVersion>16.4.0</MicrosoftBuildVersion>
-    <MicrosoftCodeAnalysisVersion>3.4.0</MicrosoftCodeAnalysisVersion>
+    <MicrosoftBuildVersion>16.8.0</MicrosoftBuildVersion>
+    <MicrosoftCodeAnalysisVersion>3.8.0</MicrosoftCodeAnalysisVersion>
     <MicrosoftCSharpVersion>4.7.0</MicrosoftCSharpVersion>
-    <MicrosoftBclAsyncInterfacesVersion>1.1.1</MicrosoftBclAsyncInterfacesVersion>
+    <MicrosoftBclAsyncInterfacesVersion>5.0.0</MicrosoftBclAsyncInterfacesVersion>
     <MicrosoftNETFrameworkReferenceAssembliesVersion>1.0.0</MicrosoftNETFrameworkReferenceAssembliesVersion>
-    <MicrosoftBclHashCodeVersion>1.0.0</MicrosoftBclHashCodeVersion>
+    <MicrosoftBclHashCodeVersion>1.1.0</MicrosoftBclHashCodeVersion>
 
-    <MicrosoftAspNetCoreConnectionsAbstractionsVersion>3.0.0</MicrosoftAspNetCoreConnectionsAbstractionsVersion>
-    <MicrosoftExtensionsConfigurationBinderVersion>3.0.0</MicrosoftExtensionsConfigurationBinderVersion>
-    <MicrosoftExtensionsConfigurationEnvironmentVariablesVersion>3.0.0</MicrosoftExtensionsConfigurationEnvironmentVariablesVersion>
-    <MicrosoftExtensionsConfigurationJsonVersion>3.0.0</MicrosoftExtensionsConfigurationJsonVersion>
-    <MicrosoftExtensionsConfigurationVersion>3.0.0</MicrosoftExtensionsConfigurationVersion>
-    <MicrosoftExtensionsDependencyInjectionVersion>3.0.0</MicrosoftExtensionsDependencyInjectionVersion>
-    <MicrosoftExtensionsDependencyModelVersion>3.0.0</MicrosoftExtensionsDependencyModelVersion>
-    <MicrosoftExtensionsLoggingVersion>3.0.0</MicrosoftExtensionsLoggingVersion>
-    <MicrosoftExtensionsObjectPoolVersion>3.0.0</MicrosoftExtensionsObjectPoolVersion>
-    <MicrosoftExtensionsOptionsVersion>3.0.0</MicrosoftExtensionsOptionsVersion>
-    <MicrosoftExtensionsHttpVersion>3.0.0</MicrosoftExtensionsHttpVersion>
-    <MicrosoftExtensionsHostingAbstractionsVersion>3.0.0</MicrosoftExtensionsHostingAbstractionsVersion>
-    <MicrosoftExtensionsHostingVersion>3.0.0</MicrosoftExtensionsHostingVersion>
+    <MicrosoftAspNetCoreConnectionsAbstractionsVersion>5.0.0</MicrosoftAspNetCoreConnectionsAbstractionsVersion>
+    <MicrosoftExtensionsConfigurationBinderVersion>5.0.0</MicrosoftExtensionsConfigurationBinderVersion>
+    <MicrosoftExtensionsConfigurationEnvironmentVariablesVersion>5.0.0</MicrosoftExtensionsConfigurationEnvironmentVariablesVersion>
+    <MicrosoftExtensionsConfigurationJsonVersion>5.0.0</MicrosoftExtensionsConfigurationJsonVersion>
+    <MicrosoftExtensionsConfigurationVersion>5.0.0</MicrosoftExtensionsConfigurationVersion>
+    <MicrosoftExtensionsDependencyInjectionVersion>5.0.0</MicrosoftExtensionsDependencyInjectionVersion>
+    <MicrosoftExtensionsDependencyModelVersion>5.0.0</MicrosoftExtensionsDependencyModelVersion>
+    <MicrosoftExtensionsLoggingVersion>5.0.0</MicrosoftExtensionsLoggingVersion>
+    <MicrosoftExtensionsObjectPoolVersion>5.0.1</MicrosoftExtensionsObjectPoolVersion>
+    <MicrosoftExtensionsOptionsVersion>5.0.0</MicrosoftExtensionsOptionsVersion>
+    <MicrosoftExtensionsHttpVersion>5.0.0</MicrosoftExtensionsHttpVersion>
+    <MicrosoftExtensionsHostingAbstractionsVersion>5.0.0</MicrosoftExtensionsHostingAbstractionsVersion>
+    <MicrosoftExtensionsHostingVersion>5.0.0</MicrosoftExtensionsHostingVersion>
 
     <MicrosoftApplicationInsightsVersion>2.4.0</MicrosoftApplicationInsightsVersion>
     <MicrosoftAzureCosmosTableVersion>1.0.5</MicrosoftAzureCosmosTableVersion>
