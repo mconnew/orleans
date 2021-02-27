@@ -1,6 +1,14 @@
 using System;
-using System.Runtime.Serialization;
+using System.Diagnostics;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Hagar;
+using Hagar.Cloning;
+using Hagar.Codecs;
+using Hagar.Invocation;
+using Hagar.Serializers;
+using Microsoft.Extensions.DependencyInjection;
 using Orleans.CodeGeneration;
 
 namespace Orleans.Runtime
@@ -13,22 +21,109 @@ namespace Orleans.Runtime
         public GrainReferenceShared(
             GrainType graintype,
             GrainInterfaceType grainInterfaceType,
+            ushort interfaceVersion,
             IGrainReferenceRuntime runtime,
-            InvokeMethodOptions invokeMethodOptions)
+            InvokeMethodOptions invokeMethodOptions,
+            IServiceProvider serviceProvider)
         {
             this.GrainType = graintype;
             this.InterfaceType = grainInterfaceType;
             this.Runtime = runtime;
             this.InvokeMethodOptions = invokeMethodOptions;
+            this.ServiceProvider = serviceProvider;
+            this.InterfaceVersion = interfaceVersion;
         }
 
         public IGrainReferenceRuntime Runtime { get; }
-
         public GrainType GrainType { get; }
-
         public GrainInterfaceType InterfaceType { get; }
-
         public InvokeMethodOptions InvokeMethodOptions { get; }
+        public IServiceProvider ServiceProvider { get; }
+        public ushort InterfaceVersion { get; }
+    }
+
+    [Hagar.RegisterSerializer]
+    internal class GrainReferenceCodec : GeneralizedReferenceTypeSurrogateCodec<IAddressable, GrainReferenceSurrogate>
+    {
+        private readonly IGrainFactory _grainFactory;
+        public GrainReferenceCodec(IGrainFactory grainFactory, IValueSerializer<GrainReferenceSurrogate> surrogateSerializer) : base(surrogateSerializer)
+        {
+            _grainFactory = grainFactory;
+        }
+
+        public override IAddressable ConvertFromSurrogate(ref GrainReferenceSurrogate surrogate)
+        {
+            return _grainFactory.GetGrain(surrogate.GrainId, surrogate.GrainInterfaceType);
+        }
+
+        public override void ConvertToSurrogate(IAddressable value, ref GrainReferenceSurrogate surrogate)
+        {
+            var refValue = value.AsReference();
+            surrogate = new GrainReferenceSurrogate
+            {
+                GrainId = refValue.GrainId,
+                GrainInterfaceType = refValue.InterfaceType
+            };
+        }
+    }
+
+    internal class GrainReferenceCopier : IGeneralizedCopier
+    {
+        public object DeepCopy(object input, CopyContext context) => input;
+        public bool IsSupportedType(Type type) => typeof(IAddressable).IsAssignableFrom(type);
+    }
+
+    internal class GrainReferenceCodecProvider : ISpecializableCodec
+    {
+        private readonly IServiceProvider _serviceProvider;
+        public GrainReferenceCodecProvider(IServiceProvider serviceProvider) => _serviceProvider = serviceProvider;
+
+        public IFieldCodec GetSpecializedCodec(Type type) => (IFieldCodec)ActivatorUtilities.GetServiceOrCreateInstance(_serviceProvider, typeof(TypedGrainReferenceCodec<>).MakeGenericType(type));
+        public bool IsSupportedType(Type type) => typeof(IAddressable).IsAssignableFrom(type);
+    }
+
+    internal class TypedGrainReferenceCodec<T> : GeneralizedReferenceTypeSurrogateCodec<T, GrainReferenceSurrogate> where T : class, IAddressable
+    {
+        private readonly IGrainFactory _grainFactory;
+        public TypedGrainReferenceCodec(IGrainFactory grainFactory, IValueSerializer<GrainReferenceSurrogate> surrogateSerializer) : base(surrogateSerializer)
+        {
+            _grainFactory = grainFactory;
+        }
+
+        public override T ConvertFromSurrogate(ref GrainReferenceSurrogate surrogate)
+        {
+            return (T)_grainFactory.GetGrain(surrogate.GrainId, surrogate.GrainInterfaceType);
+        }
+
+        public override void ConvertToSurrogate(T value, ref GrainReferenceSurrogate surrogate)
+        {
+            // Check that the typical case is false before performing the more expensive interface check
+            if (value is not GrainReference and IGrainObserver observer)
+            {
+                ThrowGrainObserverInvalidException(observer);
+            }
+
+            var refValue = (GrainReference)(object)value.AsReference<T>();
+            surrogate = new GrainReferenceSurrogate
+            {
+                GrainId = refValue.GrainId,
+                GrainInterfaceType = refValue.InterfaceType
+            };
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowGrainObserverInvalidException(IGrainObserver observer)
+            => throw new NotSupportedException($"IGrainObserver parameters must be GrainReference or Grain and cannot be type {observer.GetType()}. Did you forget to CreateObjectReference?");
+    }
+
+    [Hagar.GenerateSerializer]
+    internal struct GrainReferenceSurrogate
+    {
+        [Id(1)]
+        public GrainId GrainId { get; set; }
+
+        [Id(2)]
+        public GrainInterfaceType GrainInterfaceType { get; set; }
     }
 
     /// <summary>
@@ -79,6 +174,7 @@ namespace Orleans.Runtime
         public bool Equals(GrainReference other) => other is GrainReference && this.GrainId.Equals(other.GrainId);
 
         /// <summary> Calculates a hash code for a grain reference. </summary>
+
         public override int GetHashCode() => this.GrainId.GetHashCode();
 
         /// <summary>Get a uniform hash code for this grain reference.</summary>
@@ -112,6 +208,7 @@ namespace Orleans.Runtime
         public static bool operator !=(GrainReference reference1, GrainReference reference2)
         {
             if (reference1 is null) return !(reference2 is null);
+
 
             return !reference1.Equals(reference2);
         }
@@ -149,6 +246,7 @@ namespace Orleans.Runtime
             }
         }
 
+
         /// <summary>
         /// Return the name of the interface for this GrainReference.
         /// Implemented in Orleans generated code.
@@ -173,5 +271,231 @@ namespace Orleans.Runtime
         {
             return this.Runtime.InvokeMethodAsync<T>(this, methodId, arguments, options | _shared.InvokeMethodOptions);
         }
+    }
+
+    [DefaultInvokableBaseType(typeof(ValueTask<>), typeof(Request<>))]
+    [DefaultInvokableBaseType(typeof(ValueTask), typeof(Request))]
+    [DefaultInvokableBaseType(typeof(Task<>), typeof(TaskRequest<>))]
+    [DefaultInvokableBaseType(typeof(Task), typeof(TaskRequest))]
+    [DefaultInvokableBaseType(typeof(void), typeof(VoidRequest))]
+    public abstract class NewGrainReference : GrainReference
+    {
+        protected NewGrainReference(GrainReferenceShared shared, IdSpan key) : base(shared, key)
+        {
+        }
+
+        public override ushort InterfaceVersion => Shared.InterfaceVersion;
+
+        protected TInvokable GetInvokable<TInvokable>() => ActivatorUtilities.GetServiceOrCreateInstance<TInvokable>(Shared.ServiceProvider);
+
+        protected void SendRequest(IResponseCompletionSource callback, IInvokable body)
+        {
+            var request = (RequestBase)body;
+            this.Runtime.SendRequest(this, callback, body, request.Options);
+        }
+
+        protected ValueTask<T> InvokeAsync<T>(IInvokable body)
+        {
+            var request = (RequestBase)body;
+            return this.Runtime.InvokeMethodAsync<T>(this, body, request.Options);
+        }
+    }
+
+    public abstract class RequestBase : IInvokable
+    {
+        public InvokeMethodOptions Options { get; private set; }
+
+        public abstract int ArgumentCount { get; }
+
+        public void AddInvokeMethodOptions(InvokeMethodOptions options)
+        {
+            Options |= options;
+        }
+
+        public abstract ValueTask<Response> Invoke();
+
+        public abstract TTarget GetTarget<TTarget>();
+        public abstract void SetTarget<TTargetHolder>(TTargetHolder holder) where TTargetHolder : ITargetHolder;
+        public abstract TArgument GetArgument<TArgument>(int index);
+        public abstract void SetArgument<TArgument>(int index, in TArgument value);
+        public abstract void Dispose();
+        public abstract string MethodName { get; }
+        public abstract Type[] MethodTypeArguments { get; }
+        public abstract string InterfaceName { get; }
+        public abstract Type InterfaceType { get; }
+        public abstract Type[] InterfaceTypeArguments { get; }
+        public abstract Type[] ParameterTypes { get; }
+        public abstract MethodInfo Method { get; }
+    }
+
+    public abstract class Request : RequestBase 
+    {
+        public override ValueTask<Response> Invoke()
+        {
+            try
+            {
+                var resultTask = InvokeInner();
+                if (resultTask.IsCompleted)
+                {
+                    resultTask.GetAwaiter().GetResult();
+                    return new ValueTask<Response>(Response.Completed);
+                }
+
+                return CompleteInvokeAsync(resultTask);
+            }
+            catch (Exception exception)
+            {
+                return new ValueTask<Response>(Response.FromException(exception));
+            }
+        }
+
+        private static async ValueTask<Response> CompleteInvokeAsync(ValueTask resultTask)
+        {
+            try
+            {
+                await resultTask;
+                return Response.Completed;
+            }
+            catch (Exception exception)
+            {
+                return Response.FromException(exception);
+            }
+        }
+
+        // Generated
+        protected abstract ValueTask InvokeInner();
+    }
+
+    public abstract class Request<TResult> : RequestBase
+    {
+        public override ValueTask<Response> Invoke()
+        {
+            try
+            {
+                var resultTask = InvokeInner();
+                if (resultTask.IsCompleted)
+                {
+                    return new ValueTask<Response>(Response.FromResult(resultTask.Result));
+                }
+
+                return CompleteInvokeAsync(resultTask);
+            }
+            catch (Exception exception)
+            {
+                return new ValueTask<Response>(Response.FromException(exception));
+            }
+        }
+
+        private static async ValueTask<Response> CompleteInvokeAsync(ValueTask<TResult> resultTask)
+        {
+            try
+            {
+                var result = await resultTask;
+                return Response.FromResult(result);
+            }
+            catch (Exception exception)
+            {
+                return Response.FromException(exception);
+            }
+        }
+
+        // Generated
+        protected abstract ValueTask<TResult> InvokeInner();
+    }
+
+    public abstract class TaskRequest<TResult> : RequestBase
+    {
+        public override ValueTask<Response> Invoke()
+        {
+            try
+            {
+                var resultTask = InvokeInner();
+                var status = resultTask.Status;
+                if (resultTask.IsCompleted)
+                {
+                    return new ValueTask<Response>(Response.FromResult(resultTask.GetAwaiter().GetResult()));
+                }
+
+                return CompleteInvokeAsync(resultTask);
+            }
+            catch (Exception exception)
+            {
+                return new ValueTask<Response>(Response.FromException(exception));
+            }
+        }
+
+        private static async ValueTask<Response> CompleteInvokeAsync(Task<TResult> resultTask)
+        {
+            try
+            {
+                var result = await resultTask;
+                return Response.FromResult(result);
+            }
+            catch (Exception exception)
+            {
+                return Response.FromException(exception);
+            }
+        }
+
+        // Generated
+        protected abstract Task<TResult> InvokeInner();
+    }
+
+    public abstract class TaskRequest : RequestBase 
+    {
+        public override ValueTask<Response> Invoke()
+        {
+            try
+            {
+                var resultTask = InvokeInner();
+                var status = resultTask.Status;
+                if (resultTask.IsCompleted)
+                {
+                    resultTask.GetAwaiter().GetResult();
+                    return new ValueTask<Response>(Response.Completed);
+                }
+
+                return CompleteInvokeAsync(resultTask);
+            }
+            catch (Exception exception)
+            {
+                return new ValueTask<Response>(Response.FromException(exception));
+            }
+        }
+
+        private static async ValueTask<Response> CompleteInvokeAsync(Task resultTask)
+        {
+            try
+            {
+                await resultTask;
+                return Response.Completed;
+            }
+            catch (Exception exception)
+            {
+                return Response.FromException(exception);
+            }
+        }
+
+        // Generated
+        protected abstract Task InvokeInner();
+    }
+
+    public abstract class VoidRequest : RequestBase
+    {
+        public override ValueTask<Response> Invoke()
+        {
+            try
+            {
+                InvokeInner();
+                return new ValueTask<Response>(Response.Completed);
+            }
+            catch (Exception exception)
+            {
+                return new ValueTask<Response>(Response.FromException(exception));
+            }
+        }
+
+        // Generated
+        protected abstract void InvokeInner();
     }
 }

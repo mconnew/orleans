@@ -38,7 +38,7 @@ namespace UnitTests.SchedulerTests
         IAddressable IGrainContext.GrainInstance => throw new NotImplementedException();
 
         public TComponent GetComponent<TComponent>() => throw new NotImplementedException();
-
+        public TTarget GetTarget<TTarget>() => throw new NotImplementedException();
         public void ReceiveMessage(object message) => throw new NotImplementedException();
 
         public void SetComponent<TComponent>(TComponent value) => throw new NotImplementedException();

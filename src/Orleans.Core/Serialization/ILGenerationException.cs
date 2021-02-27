@@ -5,6 +5,7 @@ namespace Orleans.Serialization
     using Orleans.Runtime;
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class ILGenerationException : OrleansException
     {
         public ILGenerationException()

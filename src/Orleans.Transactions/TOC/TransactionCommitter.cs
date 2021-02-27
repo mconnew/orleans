@@ -54,7 +54,7 @@ namespace Orleans.Transactions
                 throw new LockRecursionException("cannot perform an update operation from within another operation");
             }
 
-            var info = (TransactionInfo)TransactionContext.GetRequiredTransactionInfo<TransactionInfo>();
+            var info = TransactionContext.GetRequiredTransactionInfo();
 
             if (logger.IsEnabled(LogLevel.Trace))
                 logger.Trace($"StartWrite {info}");
@@ -147,8 +147,10 @@ namespace Orleans.Transactions
         }
 
         [Serializable]
+        [Hagar.GenerateSerializer]
         public class OperationState
         {
+            [Hagar.Id(0)]
             public ITransactionCommitOperation<TService> Operation { get; set; }
         }
     }

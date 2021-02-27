@@ -55,12 +55,18 @@ namespace UnitTests.StorageTests
             ResetHistory
         }
         [Serializable]
+        [Hagar.GenerateSerializer]
         public class StateForTest 
         {
+            [Hagar.Id(0)]
             public int InitCount { get; set; }
+            [Hagar.Id(1)]
             public int CloseCount { get; set; }
+            [Hagar.Id(2)]
             public int ReadCount { get; set; }
+            [Hagar.Id(3)]
             public int WriteCount { get; set; }
+            [Hagar.Id(4)]
             public int DeleteCount { get; set; }
         }
 
@@ -116,12 +122,18 @@ namespace UnitTests.StorageTests
         }
 
         [Serializable]
+        [Hagar.GenerateSerializer]
         public class SetValueArgs
         {
+            [Hagar.Id(0)]
             public Type StateType { get; set; }
+            [Hagar.Id(1)]
             public string GrainType { get; set; }
+            [Hagar.Id(2)]
             public GrainReference GrainReference { get; set; }
+            [Hagar.Id(3)]
             public string Name { get; set; }
+            [Hagar.Id(4)]
             public object Val { get; set; }
 
         }

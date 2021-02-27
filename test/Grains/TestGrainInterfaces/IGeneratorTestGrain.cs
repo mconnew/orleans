@@ -11,10 +11,14 @@ namespace UnitTests.GrainInterfaces
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public struct MemberVariables
     {
+        [Hagar.Id(0)]
         public byte[] byteArray;
+        [Hagar.Id(1)]
         public string stringVar;
+        [Hagar.Id(2)]
         public ReturnCode code;
 
         public MemberVariables(byte[] bytes, string str, ReturnCode codeInput)

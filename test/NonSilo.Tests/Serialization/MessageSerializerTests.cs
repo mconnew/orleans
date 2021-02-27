@@ -42,8 +42,7 @@ namespace UnitTests.Serialization
         [Fact, TestCategory("Functional")]
         public async Task MessageTest_TtlUpdatedOnAccess()
         {
-            var request = new InvokeMethodRequest(0, 0, null);
-            var message = this.messageFactory.CreateMessage(request, InvokeMethodOptions.None);
+            var message = this.messageFactory.CreateMessage(null, InvokeMethodOptions.None);
 
             message.TimeToLive = TimeSpan.FromSeconds(1);
             await Task.Delay(TimeSpan.FromMilliseconds(500));
@@ -53,8 +52,7 @@ namespace UnitTests.Serialization
         [Fact, TestCategory("Functional"), TestCategory("Serialization")]
         public async Task MessageTest_TtlUpdatedOnSerialization()
         {
-            var request = new InvokeMethodRequest(0, 0, null);
-            var message = this.messageFactory.CreateMessage(request, InvokeMethodOptions.None);
+            var message = this.messageFactory.CreateMessage(null, InvokeMethodOptions.None);
 
             message.TimeToLive = TimeSpan.FromSeconds(1);
             await Task.Delay(TimeSpan.FromMilliseconds(500));
@@ -73,8 +71,7 @@ namespace UnitTests.Serialization
                 var maxHeaderSize = this.fixture.Services.GetService<IOptions<SiloMessagingOptions>>().Value.MaxMessageHeaderSize;
                 RequestContext.Set("big_object", new byte[maxHeaderSize + 1]);
 
-                var request = new InvokeMethodRequest(0, 0, null);
-                var message = this.messageFactory.CreateMessage(request, InvokeMethodOptions.None);
+                var message = this.messageFactory.CreateMessage(null, InvokeMethodOptions.None);
 
                 var pipe = new Pipe(new PipeOptions(pauseWriterThreshold: 0));
                 var writer = pipe.Writer;
@@ -93,7 +90,7 @@ namespace UnitTests.Serialization
 
             // Create a request with a ridiculously big argument
             var arg = new byte[maxBodySize + 1];
-            var request = new InvokeMethodRequest(0, 0, new[] { arg });
+            var request = new[] { arg };
             var message = this.messageFactory.CreateMessage(request, InvokeMethodOptions.None);
 
             var pipe = new Pipe(new PipeOptions(pauseWriterThreshold: 0));

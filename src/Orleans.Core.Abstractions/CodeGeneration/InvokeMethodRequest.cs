@@ -7,15 +7,23 @@ namespace Orleans.CodeGeneration
     /// Data object holding metadata associated with a grain Invoke request.
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
+    [Hagar.WellKnownId(102)]
+    [Hagar.SuppressReferenceTracking]
     public sealed class InvokeMethodRequest
     {
         internal static IInvokeMethodRequestLoggingHelper Helper { get; set; }
 
         /// <summary> InterfaceId for this Invoke request. </summary>
+        [Hagar.Id(1)]
         public int InterfaceTypeCode { get; private set; }
+
         /// <summary> MethodId for this Invoke request. </summary>
+        [Hagar.Id(2)]
         public int MethodId { get; private set; }
+
         /// <summary> Arguments for this Invoke request. </summary>
+        [Hagar.Id(3)]
         public object[] Arguments { get; private set; }
 
         internal InvokeMethodRequest(int interfaceTypeCode, int methodId, object[] arguments)
@@ -51,6 +59,7 @@ namespace Orleans.CodeGeneration
     /// <remarks>
     /// These flag values are used in Orleans generated invoker code, and should not be altered. </remarks>
     [Flags]
+    [Hagar.GenerateSerializer]
     public enum InvokeMethodOptions
     {
         /// <summary>No options defined.</summary>
@@ -67,29 +76,5 @@ namespace Orleans.CodeGeneration
 
         /// <summary>The invocation can interleave with any other request type, including write requests.</summary>
         AlwaysInterleave = 0x100,
-
-        // Transactional method options.  
-        // NOTE: keep in sync with TransactionOption enum.
-        // We use a mask to define a set of bits we use for transaction options.
-        TransactionMask = 0xE00,
-        TransactionSuppress = 0x200,
-        TransactionCreateOrJoin = 0x400,
-        TransactionCreate = 0x600,
-        TransactionJoin = 0x800,
-        TransactionSupported = 0xA00,
-        TransactionNotAllowed = 0xC00,
-    }
-
-    public static class InvokeMethodOptionsExtensions
-    {
-        public static bool IsTransactional(this InvokeMethodOptions options)
-        {
-            return (options & InvokeMethodOptions.TransactionMask) != 0;
-        }
-
-        public static bool IsTransactionOption(this InvokeMethodOptions options, InvokeMethodOptions test)
-        {
-            return (options & InvokeMethodOptions.TransactionMask) == test;
-        }
     }
 }

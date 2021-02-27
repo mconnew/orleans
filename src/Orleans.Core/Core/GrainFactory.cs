@@ -21,7 +21,6 @@ namespace Orleans
         /// </summary>
         private readonly Dictionary<(GrainId, Type), ISystemTarget> typedSystemTargetReferenceCache = new Dictionary<(GrainId, Type), ISystemTarget>();
 
-        private readonly ImrGrainMethodInvokerProvider invokers;
         private readonly GrainReferenceActivator referenceActivator;
         private readonly GrainInterfaceTypeResolver interfaceTypeResolver;
         private readonly GrainInterfaceTypeToGrainTypeResolver interfaceTypeToGrainTypeResolver;
@@ -31,14 +30,12 @@ namespace Orleans
             IRuntimeClient runtimeClient,
             GrainReferenceActivator referenceActivator,
             GrainInterfaceTypeResolver interfaceTypeResolver,
-            GrainInterfaceTypeToGrainTypeResolver interfaceToTypeResolver,
-            ImrGrainMethodInvokerProvider invokers)
+            GrainInterfaceTypeToGrainTypeResolver interfaceToTypeResolver)
         {
             this.runtimeClient = runtimeClient;
             this.referenceActivator = referenceActivator;
             this.interfaceTypeResolver = interfaceTypeResolver;
             this.interfaceTypeToGrainTypeResolver = interfaceToTypeResolver;
-            this.invokers = invokers;
         }
 
         private GrainReferenceRuntime GrainReferenceRuntime => this.grainReferenceRuntime ??= (GrainReferenceRuntime)this.runtimeClient.GrainReferenceRuntime;
@@ -249,13 +246,7 @@ namespace Orleans
                 throw new ArgumentException($"The provided object must implement '{interfaceType.FullName}'.", nameof(obj));
             }
 
-            var grainInterfaceType = this.interfaceTypeResolver.GetGrainInterfaceType(interfaceType);
-            if (!this.invokers.TryGet(grainInterfaceType, out var invoker))
-            {
-                throw new KeyNotFoundException($"Could not find an invoker for interface {grainInterfaceType}");
-            }
-
-            return this.Cast(this.runtimeClient.CreateObjectReference(obj, invoker), interfaceType);
+            return this.Cast(this.runtimeClient.CreateObjectReference(obj), interfaceType);
         }
 
         private static void DisallowNullOrWhiteSpaceKeyExtensions(string keyExt)

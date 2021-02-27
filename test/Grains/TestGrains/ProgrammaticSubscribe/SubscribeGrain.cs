@@ -25,6 +25,7 @@ namespace UnitTests.Grains.ProgrammaticSubscribe
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class FullStreamIdentity : IStreamIdentity
     {
         public FullStreamIdentity(Guid streamGuid, string streamNamespace, string providerName)
@@ -34,15 +35,19 @@ namespace UnitTests.Grains.ProgrammaticSubscribe
             this.ProviderName = providerName;
         }
 
+        [Hagar.Id(0)]
         public string ProviderName;
+
         /// <summary>
         /// Stream primary key guid.
         /// </summary>
+        [Hagar.Id(1)]
         public Guid Guid { get; }
 
         /// <summary>
         /// Stream namespace.
         /// </summary>
+        [Hagar.Id(2)]
         public string Namespace { get; }
 
         public static implicit operator StreamId(FullStreamIdentity identity) => StreamId.Create(identity);

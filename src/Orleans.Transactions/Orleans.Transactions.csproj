@@ -1,10 +1,12 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <PackageId>Microsoft.Orleans.Transactions</PackageId>
     <Title>Microsoft Orleans Transactions support</Title>
     <Description>Core Transaction library of Microsoft Orleans used on the server.</Description>
     <PackageTags>$(PackageTags) Transactions</PackageTags>
     <TargetFrameworks>$(StandardTargetFrameworks)</TargetFrameworks>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <Hagar_AttachDebugger>false</Hagar_AttachDebugger>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -12,5 +14,9 @@
     <RootNamespace>Orleans.Transactions</RootNamespace>
     <OrleansBuildTimeCodeGen>true</OrleansBuildTimeCodeGen>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Hagar.Sdk" Version="0.6.6" />
+  </ItemGroup>
 
 </Project>

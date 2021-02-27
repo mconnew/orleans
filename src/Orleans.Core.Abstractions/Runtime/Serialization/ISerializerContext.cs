@@ -12,7 +12,7 @@ namespace Orleans.Serialization
         /// <summary>
         /// Gets additional context associated with this instance.
         /// </summary>
-        object AdditionalContext { get; }
+        object RuntimeClient { get; }
     }
 
     public interface ICopyContext : ISerializerContext

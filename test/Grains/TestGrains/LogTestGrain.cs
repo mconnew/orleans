@@ -14,10 +14,14 @@ namespace TestGrains
     /// it started from SimpleGrain, but a lot of stuff got added over time 
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class MyGrainState
     {
+        [Hagar.Id(0)]
         public int A;
+        [Hagar.Id(1)]
         public int B;
+        [Hagar.Id(2)]
         public Dictionary<String, int> Reservations;
 
         public MyGrainState()
@@ -41,15 +45,20 @@ namespace TestGrains
  
 
     [Serializable]
-    public class UpdateA { public int Val; }
+    [Hagar.GenerateSerializer]
+    public class UpdateA {[Hagar.Id(0)] public int Val; }
     [Serializable]
-    public class UpdateB  { public int Val; }
+    [Hagar.GenerateSerializer]
+    public class UpdateB  {[Hagar.Id(0)] public int Val; }
     [Serializable]
-    public class IncrementA  { public int Val; }
+    [Hagar.GenerateSerializer]
+    public class IncrementA  {[Hagar.Id(0)] public int Val; }
     [Serializable]
-    public class AddReservation { public int Val; }
+    [Hagar.GenerateSerializer]
+    public class AddReservation {[Hagar.Id(0)] public int Val; }
     [Serializable]
-    public class RemoveReservation { public int Val; }
+    [Hagar.GenerateSerializer]
+    public class RemoveReservation {[Hagar.Id(0)] public int Val; }
 
 
 

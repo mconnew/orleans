@@ -25,8 +25,10 @@ namespace TestGrains
         /// The state of this grain is just the current balance.
         /// </summary>
         [Serializable]
+        [Hagar.GenerateSerializer]
         public class GrainState
         {
+            [Hagar.Id(0)]
             public uint Balance { get; set; }
 
             public void Apply(DepositTransaction d)

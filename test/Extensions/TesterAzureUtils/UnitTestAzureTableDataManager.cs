@@ -9,9 +9,12 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace Tester.AzureUtils
 {
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class UnitTestAzureTableData : TableEntity
     {
+        [Hagar.Id(0)]
         public byte[] Data { get; set; }
+        [Hagar.Id(1)]
         public string StringData { get; set; }
 
         public UnitTestAzureTableData()

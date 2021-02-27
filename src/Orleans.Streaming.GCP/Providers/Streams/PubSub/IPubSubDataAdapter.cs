@@ -1,5 +1,6 @@
 using Google.Cloud.PubSub.V1;
 using Google.Protobuf;
+using Microsoft.Extensions.DependencyInjection;
 using Orleans.Providers.Streams.Common;
 using Orleans.Runtime;
 using Orleans.Serialization;
@@ -26,23 +27,24 @@ namespace Orleans.Providers.GCP.Streams.PubSub
         IBatchContainer FromPullResponseMessage(PubsubMessage msg, long sequenceId);
     }
 
+    [Hagar.SerializationCallbacks(typeof(OnDeserializedCallbacks))]
     public class PubSubDataAdapter : IPubSubDataAdapter, IOnDeserialized
     {
-        private SerializationManager _serializationManager;
+        private Hagar.Serializer<PubSubBatchContainer> _serializer;
 
         /// <summary>
         /// Initializes a new instance of the <seealso cref="PubSubDataAdapter"/> class.
         /// </summary>
-        /// <param name="serializationManager">The <seealso cref="SerializationManager"/> injected at runtime.</param>
-        public PubSubDataAdapter(SerializationManager serializationManager)
+        /// <param name="serializer">The <seealso cref="SerializationManager"/> injected at runtime.</param>
+        public PubSubDataAdapter(Hagar.Serializer<PubSubBatchContainer> serializer)
         {
-            _serializationManager = serializationManager;
+            _serializer = serializer;
         }
 
         /// <inherithdoc/>
         public IBatchContainer FromPullResponseMessage(PubsubMessage msg, long sequenceId)
         {
-            var batchContainer = _serializationManager.DeserializeFromByteArray<PubSubBatchContainer>(msg.Data.ToByteArray());
+            var batchContainer = _serializer.Deserialize(msg.Data.ToByteArray());
             batchContainer.RealSequenceToken = new EventSequenceTokenV2(sequenceId);
             return batchContainer;
         }
@@ -51,14 +53,14 @@ namespace Orleans.Providers.GCP.Streams.PubSub
         public PubsubMessage ToPubSubMessage<T>(StreamId streamId, IEnumerable<T> events, Dictionary<string, object> requestContext)
         {
             var batchMessage = new PubSubBatchContainer(streamId, events.Cast<object>().ToList(), requestContext);
-            var rawBytes = _serializationManager.SerializeToByteArray(batchMessage);
+            var rawBytes = _serializer.SerializeToArray(batchMessage);
 
             return new PubsubMessage { Data = ByteString.CopyFrom(rawBytes) };
         }
 
         void IOnDeserialized.OnDeserialized(ISerializerContext context)
         {
-            _serializationManager = context.GetSerializationManager();
+            _serializer = context.ServiceProvider.GetRequiredService<Hagar.Serializer<PubSubBatchContainer>>();
         }
     }
 }

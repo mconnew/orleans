@@ -6,7 +6,7 @@ namespace Orleans.Runtime
     /// <summary>
     /// Represents a grain from the perspective of the runtime.
     /// </summary>
-    public interface IGrainContext : IEquatable<IGrainContext>
+    public interface IGrainContext : Hagar.Invocation.ITargetHolder, IEquatable<IGrainContext>
     {
         /// <summary>
         /// Gets a reference to this grain.
@@ -50,7 +50,7 @@ namespace Orleans.Runtime
         /// <summary>
         /// Gets the component of the specified type.
         /// </summary>
-        TComponent GetComponent<TComponent>();
+        //TComponent GetComponent<TComponent>();
 
         void ReceiveMessage(object message);
     }

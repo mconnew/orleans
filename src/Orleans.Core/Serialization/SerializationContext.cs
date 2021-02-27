@@ -125,7 +125,7 @@ namespace Orleans.Serialization
 
         public int CurrentOffset => this.StreamWriter.CurrentOffset;
 
-        public override object AdditionalContext => this.SerializationManager.RuntimeClient;
+        public override object RuntimeClient => this.SerializationManager.RuntimeClient;
 
         public object DeepCopyInner(object original)
         {
@@ -156,7 +156,7 @@ namespace Orleans.Serialization
             }
             
             public IServiceProvider ServiceProvider => this.parentContext.ServiceProvider;
-            public object AdditionalContext => this.parentContext.ServiceProvider;
+            public object RuntimeClient => this.parentContext.ServiceProvider;
             public IBinaryTokenStreamWriter StreamWriter { get; }
             public int CurrentOffset => this.initialOffset + this.StreamWriter.CurrentOffset;
             public void SerializeInner(object obj, Type expected) => SerializationManager.SerializeInner(obj, this, expected);

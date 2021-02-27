@@ -9,16 +9,22 @@ using Orleans.AWSUtils.Tests;
 namespace AWSUtils.Tests.StorageTests
 {
     [Serializable]
+    [Hagar.GenerateSerializer]
     internal class UnitTestDynamoDBTableData
     {
         private const string DATA_FIELD = "Data";
         private const string STRING_DATA_FIELD = "StringData";
 
+        [Hagar.Id(0)]
         public string PartitionKey { get; set; }
+        [Hagar.Id(1)]
         public string RowKey { get; set; }
+        [Hagar.Id(2)]
         public int ETag { get; set; }
+        [Hagar.Id(3)]
         public byte[] BinaryData { get; set; }
 
+        [Hagar.Id(4)]
         public string StringData { get; set; }
 
         public UnitTestDynamoDBTableData()

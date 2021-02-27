@@ -1,4 +1,4 @@
-﻿namespace UnitTests.FSharpTypes
+namespace UnitTests.FSharpTypes
 
 open System
 open Orleans.Concurrency

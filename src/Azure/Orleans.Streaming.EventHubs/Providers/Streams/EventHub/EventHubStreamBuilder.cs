@@ -6,6 +6,7 @@ using Orleans.ServiceBus.Providers;
 using Orleans.Providers.Streams.Common;
 using Orleans.ApplicationParts;
 using Orleans.Streams;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Orleans.Hosting
 {
@@ -66,7 +67,8 @@ namespace Orleans.Hosting
                 .ConfigureNamedOptionForLogging<EventHubReceiverOptions>(name)
                 .ConfigureNamedOptionForLogging<EventHubStreamCachePressureOptions>(name)
                 .AddTransient<IConfigurationValidator>(sp => new EventHubOptionsValidator(sp.GetOptionsByName<EventHubOptions>(name), name))
-                .AddTransient<IConfigurationValidator>(sp => new StreamCheckpointerConfigurationValidator(sp, name)));
+                .AddTransient<IConfigurationValidator>(sp => new StreamCheckpointerConfigurationValidator(sp, name))
+                .TryAddSingleton<EventHubBatchContainerSerializationCallbacks>());
         }
     }
 
@@ -83,7 +85,8 @@ namespace Orleans.Hosting
                         .AddFrameworkPart(typeof(EventSequenceTokenV2).Assembly);
                 })
                 .ConfigureServices(services => services.ConfigureNamedOptionForLogging<EventHubOptions>(name)
-                .AddTransient<IConfigurationValidator>(sp => new EventHubOptionsValidator(sp.GetOptionsByName<EventHubOptions>(name), name)));
+                .AddTransient<IConfigurationValidator>(sp => new EventHubOptionsValidator(sp.GetOptionsByName<EventHubOptions>(name), name))
+                .TryAddSingleton<EventHubBatchContainerSerializationCallbacks>());
         }
     }
 }

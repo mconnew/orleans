@@ -106,6 +106,26 @@ namespace Orleans.Runtime
             }
         }
 
+        public TTarget GetTarget<TTarget>() => (TTarget)(object)this.GrainInstance;
+
+        TComponent Hagar.Invocation.ITargetHolder.GetComponent<TComponent>()
+        {
+            var result = this.GetComponent<TComponent>();
+            if (result is null && typeof(IGrainExtension).IsAssignableFrom(typeof(TComponent)))
+            {
+                var implementation = this.ActivationServices.GetServiceByKey<Type, IGrainExtension>(typeof(TComponent));
+                if (implementation is not TComponent typedResult)
+                {
+                    throw new GrainExtensionNotInstalledException($"No extension of type {typeof(TComponent)} is installed on this instance and no implementations are registered for automated install");
+                }
+
+                this.SetComponent<TComponent>(typedResult);
+                result = typedResult;
+            }
+
+            return result;
+        }
+
         public TComponent GetComponent<TComponent>()
         {
             TComponent result;
@@ -125,6 +145,7 @@ namespace Orleans.Runtime
             {
                 result = _shared.GetComponent<TComponent>();
             }
+
 
             return result;
         }

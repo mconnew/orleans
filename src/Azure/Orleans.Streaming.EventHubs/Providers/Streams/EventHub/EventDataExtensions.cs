@@ -41,28 +41,18 @@ namespace Orleans.ServiceBus.Providers
         /// <summary>
         /// Serializes event data properties
         /// </summary>
-        /// <param name="eventData"></param>
-        /// <param name="serializationManager"></param>
-        /// <returns></returns>
-        public static byte[] SerializeProperties(this EventData eventData, SerializationManager serializationManager)
+        public static byte[] SerializeProperties(this EventData eventData, Hagar.Serializer serializer)
         {
-            var writeStream = new BinaryTokenStreamWriter();
-            serializationManager.Serialize(eventData.Properties.Where(kvp => !string.Equals(kvp.Key, EventDataPropertyStreamNamespaceKey, StringComparison.Ordinal)).ToList(), writeStream);
-            var result = writeStream.ToByteArray();
-            writeStream.ReleaseBuffers();
+            var result = serializer.SerializeToArray(eventData.Properties.Where(kvp => !string.Equals(kvp.Key, EventDataPropertyStreamNamespaceKey, StringComparison.Ordinal)).ToList());
             return result;
         }
 
         /// <summary>
         /// Deserializes event data properties
         /// </summary>
-        /// <param name="bytes"></param>
-        /// <param name="serializationManager"></param>
-        /// <returns></returns>
-        public static IDictionary<string, object> DeserializeProperties(this ArraySegment<byte> bytes, SerializationManager serializationManager)
+        public static IDictionary<string, object> DeserializeProperties(this ArraySegment<byte> bytes, Hagar.Serializer serializer)
         {
-            var stream = new BinaryTokenStreamReader(bytes);
-            return serializationManager.Deserialize<List<KeyValuePair<string, object>>>(stream).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            return serializer.Deserialize<List<KeyValuePair<string, object>>>(bytes.AsSpan()).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
         }
     }
 }

@@ -45,21 +45,28 @@ namespace UnitTests.GrainInterfaces
     //------- STATE interfaces ----//
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class Streaming_ProducerGrain_State
     {
+        [Hagar.Id(0)]
         public List<IProducerObserver> Producers { get; set; }
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class Streaming_ConsumerGrain_State
     {
+        [Hagar.Id(0)]
         public List<IConsumerObserver> Consumers { get; set; }
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class Streaming_ProducerConsumerGrain_State
     {
+        [Hagar.Id(0)]
         public List<IProducerObserver> Producers { get; set; }
+        [Hagar.Id(1)]
         public List<IConsumerObserver> Consumers { get; set; }
     }
 

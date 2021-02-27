@@ -314,49 +314,6 @@ namespace Orleans.CodeGenerator.Generators
                 options.Add(imo.Member("AlwaysInterleave"));
             }
 
-            if (method.GetAttribute(wellKnownTypes.TransactionAttribute, out var attr))
-            {
-                var enumType = wellKnownTypes.TransactionOption;
-                var txRequirement = (int)attr.ConstructorArguments.First().Value;
-                var values = enumType.GetMembers().OfType<IFieldSymbol>().ToList();
-                var mapping = new Dictionary<int, string>();
-                foreach (var val in values)
-                {
-                    mapping[(int)val.ConstantValue] = val.Name;
-                }
-
-                if (!mapping.TryGetValue(txRequirement, out var value))
-                {
-                    throw new NotSupportedException(
-                        $"Transaction requirement {txRequirement} on method {method} was not understood."
-                        + $" Known values: {string.Join(", ", mapping.Select(kv => $"{kv.Key} ({kv.Value})"))}");
-                }
-
-                switch (value)
-                {
-                    case "Suppress":
-                        options.Add(imo.Member("TransactionSuppress"));
-                        break;
-                    case "CreateOrJoin":
-                        options.Add(imo.Member("TransactionCreateOrJoin"));
-                        break;
-                    case "Create":
-                        options.Add(imo.Member("TransactionCreate"));
-                        break;
-                    case "Join":
-                        options.Add(imo.Member("TransactionJoin"));
-                        break;
-                    case "Supported":
-                        options.Add(imo.Member("TransactionSupported"));
-                        break;
-                    case "NotAllowed":
-                        options.Add(imo.Member("TransactionNotAllowed"));
-                        break;
-                    default:
-                        throw new NotSupportedException($"Transaction requirement {value} on method {method} was not understood.");
-                }
-            }
-
             ExpressionSyntax allOptions;
             if (options.Count <= 1)
             {

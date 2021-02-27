@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Hagar;
 using Orleans;
 using UnitTests.GrainInterfaces;
 
@@ -32,6 +33,7 @@ namespace UnitTests.Grains
         }
     }
 
+    [GenerateSerializer]
     public class ThirdGrainState
     {
     }

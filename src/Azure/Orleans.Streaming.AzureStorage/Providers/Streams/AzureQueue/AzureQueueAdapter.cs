@@ -15,7 +15,6 @@ namespace Orleans.Providers.Streams.AzureQueue
     internal class AzureQueueAdapter : IQueueAdapter
     {
         protected readonly string ServiceId;
-        private readonly SerializationManager serializationManager;
         protected readonly AzureQueueOptions queueOptions;
         private readonly IAzureStreamQueueMapper streamQueueMapper;
         private readonly ILoggerFactory loggerFactory;
@@ -29,14 +28,12 @@ namespace Orleans.Providers.Streams.AzureQueue
 
         public AzureQueueAdapter(
             IQueueDataAdapter<string, IBatchContainer> dataAdapter,
-            SerializationManager serializationManager,
             IAzureStreamQueueMapper streamQueueMapper,
             ILoggerFactory loggerFactory,
             AzureQueueOptions queueOptions,
             string serviceId,
             string providerName)
         {
-            this.serializationManager = serializationManager;
             this.queueOptions = queueOptions;
             ServiceId = serviceId;
             Name = providerName;
@@ -47,7 +44,7 @@ namespace Orleans.Providers.Streams.AzureQueue
 
         public IQueueAdapterReceiver CreateReceiver(QueueId queueId)
         {
-            return AzureQueueAdapterReceiver.Create(this.serializationManager, this.loggerFactory, this.streamQueueMapper.PartitionToAzureQueue(queueId),
+            return AzureQueueAdapterReceiver.Create(this.loggerFactory, this.streamQueueMapper.PartitionToAzureQueue(queueId),
                 queueOptions, this.dataAdapter);
         }
 

@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 namespace Orleans.Runtime
 {
     [Serializable]
+    [Hagar.GenerateSerializer]
     public sealed class ClusterMembershipUpdate
     {
         public ClusterMembershipUpdate(ClusterMembershipSnapshot snapshot, ImmutableArray<ClusterMember> changes)
@@ -13,7 +14,10 @@ namespace Orleans.Runtime
         }
 
         public bool HasChanges => !this.Changes.IsDefaultOrEmpty;
+
+        [Hagar.Id(1)]
         public ImmutableArray<ClusterMember> Changes { get; }
+        [Hagar.Id(2)]
         public ClusterMembershipSnapshot Snapshot { get; }
     }
 }

@@ -16,7 +16,7 @@ namespace Orleans.Serialization
     {
         public SerializationManager SerializationManager { get; }
         public IServiceProvider ServiceProvider => this.SerializationManager.ServiceProvider;
-        public abstract object AdditionalContext { get; }
+        public abstract object RuntimeClient { get; }
 
         protected int MaxSustainedSerializationContextCapacity { get; }
 

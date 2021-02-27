@@ -71,6 +71,7 @@ namespace UnitTests.GrainInterfaces
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class Apple { }
 
     public interface ICaterpillarGrain : IHungryGrain<Apple>, IOmnivoreGrain

@@ -1,3 +1,11 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
+using Hagar;
+using Hagar.Configuration;
+using Hagar.Serializers;
+using Hagar.TypeSystem;
 using Microsoft.AspNetCore.Connections;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -13,6 +21,7 @@ using Orleans.Networking.Shared;
 using Orleans.Providers;
 using Orleans.Runtime;
 using Orleans.Runtime.Messaging;
+using Orleans.Runtime.Versions;
 using Orleans.Serialization;
 using Orleans.Statistics;
 
@@ -47,16 +56,15 @@ namespace Orleans
             services.TryAddSingleton<GrainFactory>();
             services.TryAddSingleton<GrainInterfaceTypeToGrainTypeResolver>();
             services.TryAddSingleton<GrainReferenceActivator>();
-            services.AddSingleton<IGrainReferenceActivatorProvider, ImrGrainReferenceActivatorProvider>();
+            services.AddSingleton<IGrainReferenceActivatorProvider, NewGrainReferenceActivatorProvider>();
             services.AddSingleton<IGrainReferenceActivatorProvider, UntypedGrainReferenceActivatorProvider>();
-            services.TryAddSingleton<ImrRpcProvider>();
-            services.TryAddSingleton<ImrGrainMethodInvokerProvider>();
+            services.TryAddSingleton<NewRpcProvider>();
             services.TryAddSingleton<GrainReferenceSerializer>();
             services.TryAddSingleton<GrainReferenceKeyStringConverter>();
             services.TryAddSingleton<IGrainReferenceRuntime, GrainReferenceRuntime>();
             services.TryAddSingleton<GrainInterfaceTypeResolver>();
             services.TryAddSingleton<GrainPropertiesResolver>();
-            services.TryAddSingleton<TypeConverter>();
+            services.TryAddSingleton<Orleans.Runtime.TypeConverter>();
             services.TryAddSingleton<IGrainCancellationTokenRuntime, GrainCancellationTokenRuntime>();
             services.TryAddFromExisting<IGrainFactory, GrainFactory>();
             services.TryAddFromExisting<IInternalGrainFactory, GrainFactory>();
@@ -69,7 +77,7 @@ namespace Orleans
             // Serialization
             services.TryAddSingleton<SerializationManager>(sp => ActivatorUtilities.CreateInstance<SerializationManager>(sp,
                 sp.GetRequiredService<IOptions<ClientMessagingOptions>>().Value.LargeMessageWarningThreshold));
-            services.TryAddSingleton<ITypeResolver, CachedTypeResolver>();
+            services.TryAddSingleton<ITypeResolver, Orleans.Runtime.CachedTypeResolver>();
             services.TryAddSingleton<IFieldUtils, FieldUtils>();
 
             // Register the ISerializable serializer first, so that it takes precedence
@@ -112,9 +120,23 @@ namespace Orleans
                 ClientOutboundConnectionFactory.ServicesKey,
                 (sp, key) => ActivatorUtilities.CreateInstance<SocketConnectionFactory>(sp));
 
-            services.TryAddTransient<IMessageSerializer>(sp => ActivatorUtilities.CreateInstance<MessageSerializer>(sp,
+#if true
+            services.AddHagar();
+            services.AddSingleton<ITypeFilter, AllowOrleansTypes>();
+            services.AddSingleton<ISpecializableCodec, GrainReferenceCodecProvider>();
+            services.AddSingleton<Hagar.Cloning.IGeneralizedCopier, GrainReferenceCopier>();
+            services.AddSingleton<OnDeserializedCallbacks>();
+
+            services.TryAddTransient<IMessageSerializer>(sp => ActivatorUtilities.CreateInstance<HagarMessageSerializer>(
+                sp,
                 sp.GetRequiredService<IOptions<ClientMessagingOptions>>().Value.MaxMessageHeaderSize,
                 sp.GetRequiredService<IOptions<ClientMessagingOptions>>().Value.MaxMessageBodySize));
+#else
+            services.TryAddTransient<IMessageSerializer>(sp => ActivatorUtilities.CreateInstance<MessageSerializer>(
+                sp,
+                sp.GetRequiredService<IOptions<ClientMessagingOptions>>().Value.MaxMessageHeaderSize,
+                sp.GetRequiredService<IOptions<ClientMessagingOptions>>().Value.MaxMessageBodySize));
+#endif
             services.TryAddSingleton<ConnectionFactory, ClientOutboundConnectionFactory>();
             services.TryAddSingleton<ClientMessageCenter>(sp => sp.GetRequiredService<OutsideRuntimeClient>().MessageCenter);
             services.TryAddFromExisting<IMessageCenter, ClientMessageCenter>();
@@ -131,6 +153,7 @@ namespace Orleans
             services.AddSingleton<IGrainTypeProvider, AttributeGrainTypeProvider>();
             services.AddSingleton<IGrainTypeProvider, LegacyGrainTypeResolver>();
             services.AddSingleton<GrainPropertiesResolver>();
+            services.AddSingleton<GrainVersionManifest>();
             services.AddSingleton<GrainInterfaceTypeResolver>();
             services.AddSingleton<IGrainInterfacePropertiesProvider, AttributeGrainInterfacePropertiesProvider>();
             services.AddSingleton<IGrainPropertiesProvider, AttributeGrainPropertiesProvider>();
@@ -142,6 +165,19 @@ namespace Orleans
             services.AddFromExisting<ILifecycleParticipant<IClusterClientLifecycle>, ClientLoggingHelper>();
             services.AddFromExisting<IGrainIdLoggingHelper, ClientLoggingHelper>();
             services.AddFromExisting<IInvokeMethodRequestLoggingHelper, ClientLoggingHelper>();
+        }
+
+        private class AllowOrleansTypes : ITypeFilter
+        {
+            public bool? IsTypeNameAllowed(string typeName, string assemblyName)
+            {
+                if (assemblyName is { Length: > 0} && assemblyName.Contains("Orleans"))
+                {
+                    return true;
+                }
+
+                return null;
+            }
         }
     }
 }

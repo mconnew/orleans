@@ -27,27 +27,35 @@ namespace TestGrainInterfaces
     // (so they can be sent over the wire and persisted in a log).
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public abstract class Transaction
     {
         /// <summary> A unique identifier for this transaction  </summary>
+        [Hagar.Id(0)]
         public Guid Guid { get; set; }
 
         /// <summary> A description for this transaction  </summary>
+        [Hagar.Id(1)]
         public String Description { get; set; }
 
         /// <summary> time on which the request entered the system  </summary>
+        [Hagar.Id(2)]
         public DateTime IssueTime { get; set; }
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class DepositTransaction : Transaction
     {
+        [Hagar.Id(0)]
         public uint DepositAmount { get; set; }
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class WithdrawalTransaction : Transaction
     {
+        [Hagar.Id(0)]
         public uint WithdrawalAmount { get; set; }
     }
 

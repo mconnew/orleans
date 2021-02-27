@@ -44,16 +44,22 @@ namespace UnitTests.Grains
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class Unrecognized
     {
+        [Hagar.Id(0)]
         public int A { get; set; }
+        [Hagar.Id(1)]
         public int B { get; set; }
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class ClassWithCustomCopier
     {
+        [Hagar.Id(0)]
         public int IntProperty { get; set; }
+        [Hagar.Id(1)]
         public string StringProperty { get; set; }
 
         public static int CopyCounter { get; set; }
@@ -73,9 +79,12 @@ namespace UnitTests.Grains
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class ClassWithCustomSerializer
     {
+        [Hagar.Id(0)]
         public int IntProperty { get; set; }
+        [Hagar.Id(1)]
         public string StringProperty { get; set; }
 
         public static int SerializeCounter { get; set; }

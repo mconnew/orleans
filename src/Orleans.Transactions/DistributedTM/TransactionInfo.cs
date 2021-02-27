@@ -2,13 +2,13 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using Orleans.Serialization;
 using Orleans.Transactions.Abstractions;
 
 namespace Orleans.Transactions
 {
+    [Hagar.GenerateSerializer]
     [Serializable]
-    public class TransactionInfo : ITransactionInfo
+    public class TransactionInfo
     {
         public TransactionInfo()
         {
@@ -16,8 +16,7 @@ namespace Orleans.Transactions
             this.joined = new ConcurrentQueue<TransactionInfo>();
         }
 
-        public TransactionInfo(Guid id, DateTime timeStamp, DateTime priority, bool readOnly = false)
-        : this()
+        public TransactionInfo(Guid id, DateTime timeStamp, DateTime priority, bool readOnly = false) : this()
         {
             this.TransactionId = id;
             this.IsReadOnly = readOnly;
@@ -29,8 +28,7 @@ namespace Orleans.Transactions
         /// Constructor used when TransactionInfo is transferred to a request
         /// </summary>
         /// <param name="other"></param>
-        public TransactionInfo(TransactionInfo other)
-        : this()
+        public TransactionInfo(TransactionInfo other) : this()
         {
             this.TransactionId = other.TransactionId;
             this.IsReadOnly = other.IsReadOnly;
@@ -40,18 +38,24 @@ namespace Orleans.Transactions
 
         public string Id => TransactionId.ToString();
 
+        [Hagar.Id(0)]
         public Guid TransactionId { get; }
 
+        [Hagar.Id(1)]
         public DateTime TimeStamp { get; set; }
 
+        [Hagar.Id(2)]
         public DateTime Priority { get; set; }
 
+        [Hagar.Id(3)]
         public bool IsReadOnly { get; }
 
+        [Hagar.Id(4)]
         public byte[] OriginalException { get; set; }
 
         // counts how many writes were done per each accessed resource
         // zero means the resource was only read
+        [Hagar.Id(5)]
         public Dictionary<ParticipantId, AccessCounter> Participants { get; }
 
         [NonSerialized]
@@ -60,23 +64,22 @@ namespace Orleans.Transactions
         [NonSerialized]
         private readonly ConcurrentQueue<TransactionInfo> joined;
 
-        public ITransactionInfo Fork()
+        public TransactionInfo Fork()
         {
             PendingCalls++;
             return new TransactionInfo(this);
         }
 
-        public void Join(ITransactionInfo x)
+        public void Join(TransactionInfo x)
         {
-            this.joined.Enqueue((TransactionInfo)x);
+            joined.Enqueue(x);
         }
 
-        public OrleansTransactionAbortedException MustAbort(SerializationManager sm)
+        public OrleansTransactionAbortedException MustAbort(Hagar.Serializer<OrleansTransactionAbortedException> serializer)
         {
             if (OriginalException != null)
             {
-                var reader = new BinaryTokenStreamReader(OriginalException);
-                return sm.Deserialize<OrleansTransactionAbortedException>(reader);
+                return serializer.Deserialize(OriginalException);
             }
             else if (PendingCalls != 0)
             {
@@ -88,16 +91,14 @@ namespace Orleans.Transactions
             }
         }
 
-        public void RecordException(Exception e, SerializationManager sm)
+        public void RecordException(Exception e, Hagar.Serializer<OrleansTransactionAbortedException> sm)
         {
             if (OriginalException == null)
             {
                 var exception = (e as OrleansTransactionAbortedException)
                     ?? new OrleansTransactionAbortedException(TransactionId.ToString(), e);
 
-                var writer = new BinaryTokenStreamWriter();
-                sm.Serialize(exception, writer);
-                OriginalException = writer.ToByteArray();
+                OriginalException = sm.SerializeToArray(exception);
             }
         }
 

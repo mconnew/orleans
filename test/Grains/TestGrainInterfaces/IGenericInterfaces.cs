@@ -315,10 +315,5 @@ namespace UnitTests.GrainInterfaces
 
         public interface IYetOneMoreReceivingFurtherSpecializedGenArg<T> : IBasicGrain
         { }
-
-
     }
-
-
-
 }

@@ -7,10 +7,15 @@ using Orleans.Runtime;
 namespace Orleans.Streams
 {
     [Serializable]
+    [Hagar.GenerateSerializer]
     internal class StreamConsumerCollection
     {
+        [Hagar.Id(1)]
         private readonly Dictionary<GuidId, StreamConsumerData> queueData; // map of consumers for one stream: from Guid ConsumerId to StreamConsumerData
+        [Hagar.Id(2)]
         private DateTime lastActivityTime;
+
+        [Hagar.Id(3)]
         public bool StreamRegistered { get; set; }
 
         public StreamConsumerCollection(DateTime now)

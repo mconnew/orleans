@@ -16,19 +16,26 @@ using UnitTests.GrainInterfaces;
 namespace UnitTests.Grains
 {
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class StreamLifecycleTestGrainState
     {
         // For producer and consumer 
         // -- only need to store this because of how we run our unit tests against multiple providers
+        [Hagar.Id(0)]
         public string StreamProviderName { get; set; }
 
         // For producer only.
+        [Hagar.Id(1)]
         public IAsyncStream<int> Stream { get; set; }
+        [Hagar.Id(2)]
         public bool IsProducer { get; set; }
+        [Hagar.Id(3)]
         public int NumMessagesSent { get; set; }
+        [Hagar.Id(4)]
         public int NumErrors { get; set; }
 
         // For consumer only.
+        [Hagar.Id(5)]
         public HashSet<StreamSubscriptionHandle<int>> ConsumerSubscriptionHandles { get; set; }
 
         public StreamLifecycleTestGrainState()
@@ -385,11 +392,15 @@ namespace UnitTests.Grains
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class MyStreamObserver<T> : IAsyncObserver<T>
     {
+        [Hagar.Id(0)]
         internal int NumItems { get; private set; }
+        [Hagar.Id(1)]
         internal int NumErrors { get; private set; }
 
+        [Hagar.Id(2)]
         private readonly ILogger logger;
 
         internal MyStreamObserver(ILogger logger)
