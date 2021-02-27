@@ -1,13 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Hagar.Buffers;
 using Orleans.CodeGeneration;
 using Orleans.Serialization;
 using Orleans.Transactions;
 
 namespace Orleans.Runtime
 {
-    internal class Message
+    [Hagar.GenerateSerializer]
+    [Hagar.WellKnownId(101)]
+    internal sealed class Message
     {
         public const int LENGTH_HEADER_SIZE = 8;
         public const int LENGTH_META_HEADER = 4;
@@ -47,6 +50,7 @@ namespace Orleans.Runtime
         {
         }
 
+        [Hagar.GenerateSerializer]
         public enum Categories
         {
             Ping,
@@ -54,6 +58,7 @@ namespace Orleans.Runtime
             Application,
         }
 
+        [Hagar.GenerateSerializer]
         public enum Directions
         {
             Request,
@@ -61,6 +66,7 @@ namespace Orleans.Runtime
             OneWay
         }
 
+        [Hagar.GenerateSerializer]
         public enum ResponseTypes
         {
             Success,
@@ -69,6 +75,7 @@ namespace Orleans.Runtime
             Status
         }
 
+        [Hagar.GenerateSerializer]
         public enum RejectionTypes
         {
             Transient,
@@ -514,6 +521,9 @@ namespace Orleans.Runtime
         }
 
         [Serializable]
+        [Hagar.GenerateSerializer]
+        [Hagar.SuppressReferenceTracking]
+        [Hagar.OmitDefaultMemberValues]
         public class HeadersContainer
         {
             [Flags]
@@ -536,7 +546,7 @@ namespace Orleans.Runtime
                 READ_ONLY = 1 << 13,
                 RESEND_COUNT = 1 << 14, // Support removed. Value retained for backwards compatibility.
                 SENDING_ACTIVATION = 1 << 15,
-                SENDING_GRAIN = 1 <<16,
+                SENDING_GRAIN = 1 << 16,
                 SENDING_SILO = 1 << 17,
                 IS_NEW_PLACEMENT = 1 << 18,
 
@@ -561,34 +571,62 @@ namespace Orleans.Runtime
                 // Do not add over int.MaxValue of these.
             }
 
-            private Categories _category;
-            private Directions? _direction;
-            private bool _isReadOnly;
-            private bool _isAlwaysInterleave;
-            private bool _isUnordered;
-            private bool _isReturnedFromRemoteCluster;
-            private bool _isTransactionRequired;
-            private CorrelationId _id;
-            private int _forwardCount;
-            private SiloAddress _targetSilo;
-            private GrainId _targetGrain;
-            private ActivationId _targetActivation;
-            private SiloAddress _sendingSilo;
-            private GrainId _sendingGrain;
-            private ActivationId _sendingActivation;
-            private bool _isNewPlacement;
-            private ushort _interfaceVersion;
-            private ResponseTypes _result;
-            private ITransactionInfo _transactionInfo;
-            private TimeSpan? _timeToLive;
-            private List<ActivationAddress> _cacheInvalidationHeader;
-            private RejectionTypes _rejectionType;
-            private string _rejectionInfo;
-            private Dictionary<string, object> _requestContextData;
-            private CorrelationId _callChainId;
-            private readonly DateTime _localCreationTime;
-            private TraceContext _traceContext;
-            private GrainInterfaceType interfaceType;
+            [Hagar.Id(1)]
+            public Categories _category;
+            [Hagar.Id(2)]
+            public Directions? _direction;
+            [Hagar.Id(3)]
+            public bool _isReadOnly;
+            [Hagar.Id(4)]
+            public bool _isAlwaysInterleave;
+            [Hagar.Id(5)]
+            public bool _isUnordered;
+            [Hagar.Id(6)]
+            public bool _isReturnedFromRemoteCluster;
+            [Hagar.Id(7)]
+            public bool _isTransactionRequired;
+            [Hagar.Id(8)]
+            public CorrelationId _id;
+            [Hagar.Id(9)]
+            public int _forwardCount;
+            [Hagar.Id(10)]
+            public SiloAddress _targetSilo;
+            [Hagar.Id(11)]
+            public GrainId _targetGrain;
+            [Hagar.Id(12)]
+            public ActivationId _targetActivation;
+            [Hagar.Id(13)]
+            public SiloAddress _sendingSilo;
+            [Hagar.Id(14)]
+            public GrainId _sendingGrain;
+            [Hagar.Id(15)]
+            public ActivationId _sendingActivation;
+            [Hagar.Id(16)]
+            public bool _isNewPlacement;
+            [Hagar.Id(17)]
+            public ushort _interfaceVersion;
+            [Hagar.Id(18)]
+            public ResponseTypes _result;
+            [Hagar.Id(19)]
+            public ITransactionInfo _transactionInfo;
+            [Hagar.Id(20)]
+            public TimeSpan? _timeToLive;
+            [Hagar.Id(21)]
+            public List<ActivationAddress> _cacheInvalidationHeader;
+            [Hagar.Id(22)]
+            public RejectionTypes _rejectionType;
+            [Hagar.Id(23)]
+            public string _rejectionInfo;
+            [Hagar.Id(24)]
+            public Dictionary<string, object> _requestContextData;
+            [Hagar.Id(25)]
+            public CorrelationId _callChainId;
+            [Hagar.Id(26)]
+            public readonly DateTime _localCreationTime;
+            [Hagar.Id(27)]
+            public TraceContext _traceContext;
+            [Hagar.Id(28)]
+            public GrainInterfaceType interfaceType;
 
             public HeadersContainer()
             {
@@ -841,7 +879,7 @@ namespace Orleans.Runtime
             internal Headers GetHeadersMask()
             {
                 Headers headers = Headers.NONE;
-                if(Category != default(Categories))
+                if (Category != default(Categories))
                     headers = headers | Headers.CATEGORY;
 
                 headers = _direction == null ? headers & ~Headers.DIRECTION : headers | Headers.DIRECTION;
@@ -849,12 +887,12 @@ namespace Orleans.Runtime
                     headers = headers | Headers.READ_ONLY;
                 if (IsAlwaysInterleave)
                     headers = headers | Headers.ALWAYS_INTERLEAVE;
-                if(IsUnordered)
+                if (IsUnordered)
                     headers = headers | Headers.IS_UNORDERED;
 
                 headers = _id == null ? headers & ~Headers.CORRELATION_ID : headers | Headers.CORRELATION_ID;
 
-                if(_forwardCount != default (int))
+                if (_forwardCount != default(int))
                     headers = headers | Headers.FORWARD_COUNT;
 
                 headers = _targetSilo == null ? headers & ~Headers.TARGET_SILO : headers | Headers.TARGET_SILO;
@@ -866,14 +904,14 @@ namespace Orleans.Runtime
                 headers = _isNewPlacement == default(bool) ? headers & ~Headers.IS_NEW_PLACEMENT : headers | Headers.IS_NEW_PLACEMENT;
                 headers = _isReturnedFromRemoteCluster == default(bool) ? headers & ~Headers.IS_RETURNED_FROM_REMOTE_CLUSTER : headers | Headers.IS_RETURNED_FROM_REMOTE_CLUSTER;
                 headers = _interfaceVersion == 0 ? headers & ~Headers.INTERFACE_VERSION : headers | Headers.INTERFACE_VERSION;
-                headers = _result == default(ResponseTypes)? headers & ~Headers.RESULT : headers | Headers.RESULT;
+                headers = _result == default(ResponseTypes) ? headers & ~Headers.RESULT : headers | Headers.RESULT;
                 headers = _timeToLive == null ? headers & ~Headers.TIME_TO_LIVE : headers | Headers.TIME_TO_LIVE;
                 headers = _cacheInvalidationHeader == null || _cacheInvalidationHeader.Count == 0 ? headers & ~Headers.CACHE_INVALIDATION_HEADER : headers | Headers.CACHE_INVALIDATION_HEADER;
                 headers = _rejectionType == default(RejectionTypes) ? headers & ~Headers.REJECTION_TYPE : headers | Headers.REJECTION_TYPE;
                 headers = string.IsNullOrEmpty(_rejectionInfo) ? headers & ~Headers.REJECTION_INFO : headers | Headers.REJECTION_INFO;
                 headers = _requestContextData == null || _requestContextData.Count == 0 ? headers & ~Headers.REQUEST_CONTEXT : headers | Headers.REQUEST_CONTEXT;
                 headers = _callChainId == null ? headers & ~Headers.CALL_CHAIN_ID : headers | Headers.CALL_CHAIN_ID;
-                headers = _traceContext == null? headers & ~Headers.TRACE_CONTEXT : headers | Headers.TRACE_CONTEXT;
+                headers = _traceContext == null ? headers & ~Headers.TRACE_CONTEXT : headers | Headers.TRACE_CONTEXT;
                 headers = IsTransactionRequired ? headers | Headers.IS_TRANSACTION_REQUIRED : headers & ~Headers.IS_TRANSACTION_REQUIRED;
                 headers = _transactionInfo == null ? headers & ~Headers.TRANSACTION_INFO : headers | Headers.TRANSACTION_INFO;
                 headers = interfaceType.IsDefault ? headers & ~Headers.INTERFACE_TYPE : headers | Headers.INTERFACE_TYPE;
@@ -1023,7 +1061,7 @@ namespace Orleans.Runtime
                     var n = reader.ReadInt();
                     if (n > 0)
                     {
-                       var list = result.CacheInvalidationHeader = new List<ActivationAddress>(n);
+                        var list = result.CacheInvalidationHeader = new List<ActivationAddress>(n);
                         for (int i = 0; i < n; i++)
                         {
                             list.Add((ActivationAddress)ReadObj(sm, typeof(ActivationAddress), context));
@@ -1105,7 +1143,7 @@ namespace Orleans.Runtime
                 if ((headers & Headers.SENDING_SILO) != Headers.NONE)
                     result.SendingSilo = reader.ReadSiloAddress();
 
-                if ((headers & Headers.TARGET_ACTIVATION) != Headers.NONE) 
+                if ((headers & Headers.TARGET_ACTIVATION) != Headers.NONE)
                     result.TargetActivation = reader.ReadActivationId();
 
                 if ((headers & Headers.TARGET_GRAIN) != Headers.NONE)

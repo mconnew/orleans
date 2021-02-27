@@ -38,7 +38,9 @@ namespace Orleans.Runtime
     [Serializable]
     internal sealed class SingleRange : IRingRangeInternal, IEquatable<SingleRange>, ISingleRange
     {
+        [Hagar.Id(1)]
         private readonly uint begin;
+        [Hagar.Id(2)]
         private readonly uint end;
 
         /// <summary>
@@ -198,8 +200,11 @@ namespace Orleans.Runtime
     [Serializable]
     internal sealed class GeneralMultiRange : IRingRangeInternal
     {
+        [Hagar.Id(1)]
         private readonly List<SingleRange> ranges;
+        [Hagar.Id(2)]
         private readonly long rangeSize;
+        [Hagar.Id(3)]
 
         internal List<SingleRange> Ranges => ranges;
 

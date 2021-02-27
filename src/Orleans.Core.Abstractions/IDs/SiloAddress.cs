@@ -18,15 +18,23 @@ namespace Orleans.Runtime
     /// </summary>
     [Serializable, Immutable]
     [DebuggerDisplay("SiloAddress {ToString()}")]
+    [Hagar.GenerateSerializer]
+    [Hagar.SuppressReferenceTracking]
     public sealed class SiloAddress : IEquatable<SiloAddress>, IComparable<SiloAddress>, IComparable
     {
+        [NonSerialized]
         private int hashCode = 0;
+
+        [NonSerialized]
         private bool hashCodeSet = false;
 
         [NonSerialized]
         private List<uint> uniformHashCache;
 
+        [Hagar.Id(0)]
         public IPEndPoint Endpoint { get; private set; }
+
+        [Hagar.Id(1)]
         public int Generation { get; private set; }
 
         [NonSerialized]

@@ -169,6 +169,7 @@ namespace Orleans.Providers
     /// Exception thrown whenever a provider has failed to be initialized.
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class ProviderInitializationException : OrleansException
     {
         public ProviderInitializationException()

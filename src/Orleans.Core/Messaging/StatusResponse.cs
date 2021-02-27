@@ -7,8 +7,10 @@ namespace Orleans.Runtime
 {
     [Immutable]
     [Serializable]
+    [Hagar.GenerateSerializer]
     internal class StatusResponse
     {
+        [Hagar.Id(1)]
         private readonly uint _statusFlags;
 
         public StatusResponse(bool isExecuting, bool isWaiting, List<string> diagnostics)
@@ -19,6 +21,7 @@ namespace Orleans.Runtime
             Diagnostics = diagnostics;
         }
 
+        [Hagar.Id(2)]
         public List<string> Diagnostics { get; }
 
         public bool IsExecuting => (_statusFlags & 0x1) != 0;

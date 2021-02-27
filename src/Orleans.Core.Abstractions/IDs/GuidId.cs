@@ -11,10 +11,11 @@ namespace Orleans.Runtime
     /// </summary>
     [Serializable]
     [Immutable]
+    [Hagar.GenerateSerializer]
     public sealed class GuidId : IEquatable<GuidId>, IComparable<GuidId>, ISerializable
     {
         private static readonly Interner<Guid, GuidId> guidIdInternCache = new Interner<Guid, GuidId>(InternerConstants.SIZE_LARGE);
-
+        [Hagar.Id(1)]
         public readonly Guid Guid;
 
         public static GuidId Default { get; } = new GuidId(Guid.Empty);

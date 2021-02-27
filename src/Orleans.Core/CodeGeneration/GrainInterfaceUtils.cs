@@ -15,6 +15,7 @@ namespace Orleans.CodeGeneration
         private static readonly MethodInfoComparer MethodComparer = new MethodInfoComparer();
 
         [Serializable]
+        [Hagar.GenerateSerializer]
         internal sealed class RulesViolationException : ArgumentException
         {
             public RulesViolationException(string message, List<string> violations)
@@ -34,6 +35,7 @@ namespace Orleans.CodeGeneration
                 info.AddValue(nameof(Violations), this.Violations);
             }
 
+            [Hagar.Id(1)]
             public List<string> Violations { get; }
         }
 
