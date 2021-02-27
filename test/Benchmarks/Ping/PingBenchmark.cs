@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO.Pipelines;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -7,9 +8,14 @@ using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using BenchmarkGrainInterfaces.Ping;
 using BenchmarkGrains.Ping;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Orleans;
 using Orleans.Configuration;
 using Orleans.Hosting;
+using Orleans.Runtime;
+using Orleans.Runtime.Messaging;
 
 namespace Benchmarks.Ping
 {
@@ -29,6 +35,14 @@ namespace Benchmarks.Ping
                 var primary = i == 0 ? null : new IPEndPoint(IPAddress.Loopback, 11111);
                 var siloBuilder = new SiloHostBuilder()
                     .ConfigureDefaults()
+                    /*
+                    .ConfigureLogging(logging =>
+                    {
+                        logging.SetMinimumLevel(LogLevel.Warning);
+                        logging.AddConsole();
+                    })
+                    */
+                    //.Configure<ConnectionOptions>(options => { options.ConnectionsPerEndpoint = 10; options.ProtocolVersion = NetworkProtocolVersion.Version2; })
                     .UseLocalhostClustering(
                         siloPort: 11111 + i,
                         gatewayPort: 30000 + i,
@@ -37,7 +51,7 @@ namespace Benchmarks.Ping
                 if (i == 0 && grainsOnSecondariesOnly)
                 {
                     siloBuilder.ConfigureApplicationParts(parts =>
-                        parts.AddApplicationPart(typeof(IPingGrain).Assembly));
+                        parts.AddApplicationPart(typeof(IPingGrain).Assembly).WithReferences());
                     siloBuilder.ConfigureServices(services =>
                     {
                         services.Remove(services.First(s => s.ImplementationType?.Name == "ApplicationPartValidator"));
@@ -46,11 +60,12 @@ namespace Benchmarks.Ping
                 else
                 {
                     siloBuilder.ConfigureApplicationParts(parts =>
-                        parts.AddApplicationPart(typeof(IPingGrain).Assembly)
+                        parts.AddApplicationPart(typeof(IPingGrain).Assembly).WithReferences()
                              .AddApplicationPart(typeof(PingGrain).Assembly));
                 }
 
                 var silo = siloBuilder.Build();
+
                 silo.StartAsync().GetAwaiter().GetResult();
                 this.hosts.Add(silo);
             }
@@ -60,7 +75,15 @@ namespace Benchmarks.Ping
             if (startClient)
             {
                 var clientBuilder = new ClientBuilder()
-                    .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(IPingGrain).Assembly))
+                    .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(IPingGrain).Assembly).WithReferences())
+                    /*
+                    .ConfigureLogging(logging =>
+                    {
+                        logging.SetMinimumLevel(LogLevel.Warning);
+                        logging.AddConsole();
+                    })
+                    */
+                    //.Configure<ConnectionOptions>(options => { options.ConnectionsPerEndpoint = 10; options.ProtocolVersion = NetworkProtocolVersion.Version2; })
                     .Configure<ClusterOptions>(options => options.ClusterId = options.ServiceId = "dev");
 
                 if (numSilos == 1)
@@ -92,6 +115,11 @@ namespace Benchmarks.Ping
                 await grain.Run();
             }
         }
+
+        public Task PingConcurrentForever() => this.Run(
+            runs: int.MaxValue,
+            grainFactory: this.client,
+            blocksPerWorker: 10);
 
         public Task PingConcurrent() => this.Run(
             runs: 3,

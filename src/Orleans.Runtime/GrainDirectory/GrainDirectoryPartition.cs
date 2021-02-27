@@ -11,10 +11,13 @@ using Orleans.Internal;
 namespace Orleans.Runtime.GrainDirectory
 {
     [Serializable]
+    [Hagar.GenerateSerializer]
     internal class ActivationInfo : IActivationInfo
     {
+        [Hagar.Id(1)]
         public SiloAddress SiloAddress { get; private set; }
 
+        [Hagar.Id(2)]
         public DateTime TimeCreated { get; private set; }
 
         public ActivationInfo(SiloAddress siloAddress)
@@ -57,10 +60,14 @@ namespace Orleans.Runtime.GrainDirectory
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     internal class GrainInfo : IGrainInfo
     {
+        [Hagar.Id(1)]
         public Dictionary<ActivationId, IActivationInfo> Instances { get; private set; }
+        [Hagar.Id(2)]
         public int VersionTag { get; private set; }
+        [Hagar.Id(3)]
         public bool SingleInstance { get; private set; }
 
         internal const int NO_ETAG = -1;

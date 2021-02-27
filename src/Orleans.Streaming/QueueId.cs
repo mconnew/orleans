@@ -10,12 +10,15 @@ namespace Orleans.Streams
     /// </summary>
     [Serializable]
     [Immutable]
+    [Hagar.GenerateSerializer]
     public sealed class QueueId : IRingIdentifier<QueueId>, IEquatable<QueueId>, IComparable<QueueId>
     {
         private static readonly Interner<QueueId, QueueId> queueIdInternCache = new Interner<QueueId, QueueId>(InternerConstants.SIZE_LARGE);
-
+        [Hagar.Id(1)]
         private readonly string queueNamePrefix;
+        [Hagar.Id(2)]
         private readonly uint queueId;
+        [Hagar.Id(3)]
         private readonly uint uniformHashCache;
 
         // TODO: Need to integrate with Orleans serializer to really use Interner.

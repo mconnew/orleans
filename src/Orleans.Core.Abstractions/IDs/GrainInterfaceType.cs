@@ -7,8 +7,10 @@ namespace Orleans.Runtime
     /// Uniquely identifies a grain interface.
     /// </summary>
     [Serializable, Immutable]
+    [Hagar.GenerateSerializer]
     public readonly struct GrainInterfaceType : IEquatable<GrainInterfaceType>
     {
+        [Hagar.Id(1)]
         private readonly IdSpan _value;
 
         /// <summary>

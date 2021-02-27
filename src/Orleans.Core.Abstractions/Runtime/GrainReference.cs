@@ -1,6 +1,9 @@
 using System;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
+using Hagar;
+using Hagar.Codecs;
+using Hagar.Serializers;
 using Orleans.CodeGeneration;
 
 namespace Orleans.Runtime
@@ -29,6 +32,40 @@ namespace Orleans.Runtime
         public GrainInterfaceType InterfaceType { get; }
 
         public InvokeMethodOptions InvokeMethodOptions { get; }
+    }
+
+    [Hagar.RegisterSerializer]
+    internal class GrainReferenceCodec : GeneralizedReferenceTypeSurrogateCodec<GrainReference, GrainReferenceSurrogate>
+    {
+        private readonly IGrainFactory _grainFactory;
+        public GrainReferenceCodec(IGrainFactory grainFactory, IValueSerializer<GrainReferenceSurrogate> surrogateSerializer) : base (surrogateSerializer)
+        {
+            _grainFactory = grainFactory;
+        }
+
+        public override GrainReference ConvertFromSurrogate(ref GrainReferenceSurrogate surrogate)
+        {
+            return (GrainReference)_grainFactory.GetGrain(surrogate.GrainId, surrogate.GrainInterfaceType);
+        }
+
+        public override void ConvertToSurrogate(GrainReference value, ref GrainReferenceSurrogate surrogate)
+        {
+            surrogate = new GrainReferenceSurrogate
+            {
+                GrainId = value.GrainId,
+                GrainInterfaceType = value.InterfaceType
+            };
+        }
+    }
+
+    [Hagar.GenerateSerializer]
+    internal struct GrainReferenceSurrogate
+    {
+        [Id(1)]
+        public GrainId GrainId { get; set; }
+
+        [Id(2)]
+        public GrainInterfaceType GrainInterfaceType { get; set; }
     }
 
     /// <summary>

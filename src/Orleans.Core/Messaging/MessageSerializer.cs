@@ -8,7 +8,7 @@ using Orleans.Serialization;
 
 namespace Orleans.Runtime.Messaging
 {
-    internal sealed class MessageSerializer : IMessageSerializer
+    internal sealed class MessageSerializer : IMessageSerializer, IDisposable
     {
         private const int FramingLength = Message.LENGTH_HEADER_SIZE;
         private const int MessageSizeHint = 4096;
@@ -30,6 +30,11 @@ namespace Orleans.Runtime.Messaging
             this.memoryPool = memoryPool.Pool;
             this.maxHeaderLength = maxHeaderSize;
             this.maxBodyLength = maxBodySize;
+        }
+
+        public void Dispose()
+        {
+            (bufferWriter as IDisposable)?.Dispose();
         }
 
         public (int RequiredBytes, int HeaderLength, int BodyLength) TryRead(ref ReadOnlySequence<byte> input, out Message message)
@@ -180,7 +185,7 @@ namespace Orleans.Runtime.Messaging
             }
         }
 
-        private sealed class HeadersSerializer
+        internal sealed class HeadersSerializer
         {
             private readonly BinaryTokenStreamReader2 reader = new BinaryTokenStreamReader2();
             private readonly SerializationContext serializationContext;

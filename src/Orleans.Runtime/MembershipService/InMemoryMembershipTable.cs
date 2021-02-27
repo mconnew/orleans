@@ -7,11 +7,16 @@ using Orleans.Serialization;
 namespace Orleans.Runtime.MembershipService
 {
     [Serializable]
+    [Hagar.GenerateSerializer]
     internal class InMemoryMembershipTable
     {
+        [Hagar.Id(1)]
         private readonly SerializationManager serializationManager;
+        [Hagar.Id(2)]
         private readonly Dictionary<SiloAddress, Tuple<MembershipEntry, string>> siloTable;
+        [Hagar.Id(3)]
         private TableVersion tableVersion;
+        [Hagar.Id(4)]
         private long lastETagCounter;
 
         public InMemoryMembershipTable(SerializationManager serializationManager)

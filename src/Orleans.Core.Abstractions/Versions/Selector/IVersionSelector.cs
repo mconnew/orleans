@@ -10,6 +10,7 @@ namespace Orleans.Versions.Selector
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public abstract class VersionSelectorStrategy
     {
     }

@@ -7,15 +7,23 @@ namespace Orleans.CodeGeneration
     /// Data object holding metadata associated with a grain Invoke request.
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
+    [Hagar.WellKnownId(102)]
+    [Hagar.SuppressReferenceTracking]
     public sealed class InvokeMethodRequest
     {
         internal static IInvokeMethodRequestLoggingHelper Helper { get; set; }
 
         /// <summary> InterfaceId for this Invoke request. </summary>
+        [Hagar.Id(1)]
         public int InterfaceTypeCode { get; private set; }
+
         /// <summary> MethodId for this Invoke request. </summary>
+        [Hagar.Id(2)]
         public int MethodId { get; private set; }
+
         /// <summary> Arguments for this Invoke request. </summary>
+        [Hagar.Id(3)]
         public object[] Arguments { get; private set; }
 
         internal InvokeMethodRequest(int interfaceTypeCode, int methodId, object[] arguments)
@@ -51,6 +59,7 @@ namespace Orleans.CodeGeneration
     /// <remarks>
     /// These flag values are used in Orleans generated invoker code, and should not be altered. </remarks>
     [Flags]
+    [Hagar.GenerateSerializer]
     public enum InvokeMethodOptions
     {
         /// <summary>No options defined.</summary>

@@ -11,12 +11,14 @@ namespace Orleans.Streams
     /// </summary>
     [Serializable]
     [Immutable]
+    [Hagar.GenerateSerializer]
     internal sealed class LegacyStreamId : IStreamIdentity, IRingIdentifier<LegacyStreamId>, IEquatable<LegacyStreamId>, IComparable<LegacyStreamId>, ISerializable
     {
         private static readonly Interner<StreamIdInternerKey, LegacyStreamId> streamIdInternCache = new Interner<StreamIdInternerKey, LegacyStreamId>(InternerConstants.SIZE_LARGE);
 
         [NonSerialized]
         private uint uniformHashCache;
+        [Hagar.Id(1)]
         private readonly StreamIdInternerKey key;
 
         // Keep public, similar to GrainId.GetPrimaryKey. Some app scenarios might need that.
@@ -113,10 +115,14 @@ namespace Orleans.Streams
 
     [Serializable]
     [Immutable]
+    [Hagar.GenerateSerializer]
     internal readonly struct StreamIdInternerKey : IComparable<StreamIdInternerKey>, IEquatable<StreamIdInternerKey>
     {
+        [Hagar.Id(1)]
         internal readonly Guid Guid;
+        [Hagar.Id(2)]
         internal readonly string ProviderName;
+        [Hagar.Id(3)]
         internal readonly string Namespace;
 
         public StreamIdInternerKey(Guid guid, string providerName, string streamNamespace)
