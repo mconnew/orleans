@@ -10,9 +10,12 @@ namespace Orleans.Streams
 {
     [Serializable]
     [Immutable]
+    [Hagar.GenerateSerializer]
     internal sealed class StreamImpl<T> : IAsyncStream<T>, IStreamControl, ISerializable, IOnDeserialized
     {
+        [Hagar.Id(1)]
         private readonly InternalStreamId                       streamId;
+        [Hagar.Id(2)]
         private readonly bool                                   isRewindable;
         [NonSerialized]
         private IInternalStreamProvider                         provider;

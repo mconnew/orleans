@@ -1,7 +1,9 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -27,6 +29,7 @@ namespace Orleans.Runtime.Messaging
         };
 
         private static readonly ObjectPool<MessageHandler> MessageHandlerPool = ObjectPool.Create(new MessageHandlerPoolPolicy());
+        private readonly MemoryPool<byte> memoryPool = MemoryPool<byte>.Shared;
         private readonly ConnectionCommon shared;
         private readonly ConnectionDelegate middleware;
         private readonly Channel<Message> outgoingMessages;
@@ -311,6 +314,7 @@ namespace Orleans.Runtime.Messaging
             finally
             {
                 this.StartClosing(error);
+                (serializer as IDisposable)?.Dispose();
             }
         }
 
@@ -365,6 +369,7 @@ namespace Orleans.Runtime.Messaging
                         exception,
                         "Exception while processing messages to remote endpoint {EndPoint}",
                         this.RemoteEndPoint);
+                (serializer as IDisposable)?.Dispose();
                 }
 
                 error = exception;

@@ -7,7 +7,18 @@
     <OrleansBuildTimeCodeGen>true</OrleansBuildTimeCodeGen>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETStandard'">
-    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
+  <ItemGroup>
+    <PackageReference Include="Hagar" Version="0.5.2" />
+    <PackageReference Include="Hagar.Abstractions" Version="0.5.2" />
+    <PackageReference Include="Hagar.Analyzers" Version="0.5.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Hagar.CodeGenerator.MSBuild" Version="0.5.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Hagar.ISerializable" Version="0.5.2" />
   </ItemGroup>
+
 </Project>

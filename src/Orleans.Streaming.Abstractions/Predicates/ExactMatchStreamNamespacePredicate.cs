@@ -3,9 +3,11 @@ using System;
 namespace Orleans.Streams
 {
     [Serializable]
+    [Hagar.GenerateSerializer]
     internal class ExactMatchStreamNamespacePredicate : IStreamNamespacePredicate
     {
         internal const string Prefix = "namespace:";
+        [Hagar.Id(1)]
         private readonly string targetStreamNamespace;
 
         public ExactMatchStreamNamespacePredicate(string targetStreamNamespace)

@@ -10,6 +10,7 @@ namespace Orleans.Metadata
     /// Information about a communication interface.
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class GrainInterfaceProperties
     {
         /// <summary>
@@ -23,6 +24,7 @@ namespace Orleans.Metadata
         /// <summary>
         /// Gets the properties.
         /// </summary>
+        [Hagar.Id(1)]
         public ImmutableDictionary<string, string> Properties { get; }
 
         /// <summary>

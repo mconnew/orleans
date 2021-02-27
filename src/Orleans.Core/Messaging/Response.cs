@@ -3,10 +3,18 @@ using System;
 namespace Orleans.Runtime
 {
     [Serializable]
-    internal class Response
+    [Hagar.GenerateSerializer]
+    [Hagar.WellKnownId(103)]
+    [Hagar.SuppressReferenceTracking]
+    internal sealed class Response
     {
+        [Hagar.Id(1)]
         public bool ExceptionFlag { get; private set; }
+
+        [Hagar.Id(2)]
         public Exception Exception { get; private set; }
+
+        [Hagar.Id(3)]
         public object Data { get; private set; }
 
         public Response(object data)
