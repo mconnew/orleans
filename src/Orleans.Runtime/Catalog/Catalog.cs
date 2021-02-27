@@ -668,6 +668,9 @@ namespace Orleans.Runtime
                         {
                             await DestroyActivation(activationData, cts.Token);
                         }
+                        catch
+                        {
+                        }
                         finally
                         {
                             mtcs.SetOneResult();
@@ -766,6 +769,9 @@ namespace Orleans.Runtime
                     try
                     {
                         await DestroyActivation(activationData, cts.Token);
+                    }
+                    catch
+                    {
                     }
                     finally
                     {

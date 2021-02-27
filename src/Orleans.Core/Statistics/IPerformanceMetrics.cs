@@ -12,56 +12,70 @@ namespace Orleans.Runtime
     /// Snapshot of current runtime statistics for a silo
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class SiloRuntimeStatistics
     {
         /// <summary>
         /// Total number of activations in a silo.
         /// </summary>
+        [Hagar.Id(1)]
         public int ActivationCount { get; internal set; }
 
         /// <summary>
         /// Number of activations in a silo that have been recently used.
         /// </summary>
+        [Hagar.Id(2)]
         public int RecentlyUsedActivationCount { get; internal set; }
 
         /// <summary>
+        [Hagar.Id(3)]
+        [Hagar.Id(4)]
         /// The CPU utilization.
         /// </summary>
+        [Hagar.Id(5)]
         public float? CpuUsage { get; internal set; }
 
         /// <summary>
         /// The amount of memory available in the silo [bytes].
         /// </summary>
+        [Hagar.Id(6)]
         public float? AvailableMemory { get; internal set; }
 
         /// <summary>
         /// The used memory size.
         /// </summary>
+        [Hagar.Id(7)]
         public long? MemoryUsage { get; internal set; }
 
         /// <summary>
         /// The total physical memory available [bytes].
         /// </summary>
+        [Hagar.Id(8)]
         public long? TotalPhysicalMemory { get; internal set; }
 
         /// <summary>
         /// Is this silo overloaded.
         /// </summary>
+        [Hagar.Id(9)]
         public bool IsOverloaded { get; internal set; }
 
         /// <summary>
         /// The number of clients currently connected to that silo.
         /// </summary>
+        [Hagar.Id(10)]
         public long ClientCount { get; internal set; }
 
+        [Hagar.Id(11)]
         public long ReceivedMessages { get; internal set; }
 
+        [Hagar.Id(12)]
         public long SentMessages { get; internal set; }
 
 
         /// <summary>
         /// The DateTime when this statistics was created.
         /// </summary>
+        [Hagar.Id(13)]
         public DateTime DateTime { get; private set; }
 
         internal SiloRuntimeStatistics() { }
@@ -107,26 +121,31 @@ namespace Orleans.Runtime
     /// Snapshot of current statistics for a given grain type.
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     internal class GrainStatistic
     {
         /// <summary>
         /// The type of the grain for this GrainStatistic.
         /// </summary>
+        [Hagar.Id(1)]
         public string GrainType { get; set; }
 
         /// <summary>
         /// Number of grains of a this type.
         /// </summary>
+        [Hagar.Id(2)]
         public int GrainCount { get; set; }
 
         /// <summary>
         /// Number of activation of a grain of this type.
         /// </summary>
+        [Hagar.Id(3)]
         public int ActivationCount { get; set; }
 
         /// <summary>
         /// Number of silos that have activations of this grain type.
         /// </summary>
+        [Hagar.Id(4)]
         public int SiloCount { get; set; }
 
         /// <summary>
@@ -142,21 +161,25 @@ namespace Orleans.Runtime
     /// Simple snapshot of current statistics for a given grain type on a given silo.
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class SimpleGrainStatistic
-    { 
+    {
         /// <summary>
         /// The type of the grain for this SimpleGrainStatistic.
         /// </summary>
+        [Hagar.Id(1)]
         public string GrainType { get; set; }
 
         /// <summary>
         /// The silo address for this SimpleGrainStatistic.
         /// </summary>
+        [Hagar.Id(2)]
         public SiloAddress SiloAddress { get; set; }
 
         /// <summary>
         /// The number of activations of this grain type on this given silo.
         /// </summary>
+        [Hagar.Id(3)]
         public int ActivationCount { get; set; }
 
         /// <summary>
@@ -169,46 +192,67 @@ namespace Orleans.Runtime
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class DetailedGrainStatistic
     {
         /// <summary>
         /// The type of the grain for this DetailedGrainStatistic.
         /// </summary>
+        [Hagar.Id(1)]
         public string GrainType { get; set; }
 
         /// <summary>
         /// The silo address for this DetailedGrainStatistic.
         /// </summary>
+        [Hagar.Id(2)]
         public SiloAddress SiloAddress { get; set; }
 
         /// <summary>
         /// Unique Id for the grain.
         /// </summary>
+        [Hagar.Id(3)]
         public GrainId GrainId { get; set; }
 
         /// <summary>
         /// The grains Category
         /// </summary>
+        [Hagar.Id(4)]
         public string Category { get; set; }
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     internal class DetailedGrainReport
     {
+        [Hagar.Id(1)]
         public GrainId Grain { get; set; }
+
         /// <summary>silo on which these statistics come from</summary>
+        [Hagar.Id(2)]
         public SiloAddress SiloAddress { get; set; }
+
         /// <summary>silo on which these statistics come from</summary>
+        [Hagar.Id(3)]
         public string SiloName { get; set; }
+
         /// <summary>activation addresses in the local directory cache</summary>
+        [Hagar.Id(4)]
         public ActivationAddress LocalCacheActivationAddress { get; set; }
+
         /// <summary>activation addresses in the local directory.</summary>
+        [Hagar.Id(5)]
         public ActivationAddress LocalDirectoryActivationAddress { get; set; }
+
         /// <summary>primary silo for this grain</summary>
+        [Hagar.Id(6)]
         public SiloAddress PrimaryForGrain { get; set; }
+
         /// <summary>the name of the class that implements this grain.</summary>
+        [Hagar.Id(7)]
         public string GrainClassTypeName { get; set; }
+
         /// <summary>activations on this silo</summary>
+        [Hagar.Id(8)]
         public List<string> LocalActivations { get; set; }
 
         public override string ToString()

@@ -14,9 +14,12 @@ using UnitTests.GrainInterfaces;
 namespace UnitTests.Grains
 {
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class SimpleGenericGrainState<T>
     {
+        [Hagar.Id(0)]
         public T A { get; set; }
+        [Hagar.Id(1)]
         public T B { get; set; }
     }
 
@@ -86,9 +89,12 @@ namespace UnitTests.Grains
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class SimpleGenericGrainUState<U>
     {
+        [Hagar.Id(0)]
         public U A { get; set; }
+        [Hagar.Id(1)]
         public U B { get; set; }
     }
 
@@ -126,9 +132,12 @@ namespace UnitTests.Grains
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class SimpleGenericGrain2State<T, U>
     {
+        [Hagar.Id(0)]
         public T A { get; set; }
+        [Hagar.Id(1)]
         public U B { get; set; }
     }
 
@@ -183,8 +192,10 @@ namespace UnitTests.Grains
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class IGrainWithListFieldsState
     {
+        [Hagar.Id(0)]
         public IList<string> Items { get; set; }
     }
 
@@ -211,8 +222,10 @@ namespace UnitTests.Grains
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class GenericGrainWithListFieldsState<T>
     {
+        [Hagar.Id(0)]
         public IList<T> Items { get; set; }
     }
 
@@ -240,30 +253,42 @@ namespace UnitTests.Grains
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class GenericReaderWriterState<T>
     {
+        [Hagar.Id(0)]
         public T Value { get; set; }
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class GenericReader2State<TOne, TTwo>
     {
+        [Hagar.Id(0)]
         public TOne Value1 { get; set; }
+        [Hagar.Id(1)]
         public TTwo Value2 { get; set; }
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class GenericReaderWriterGrain2State<TOne, TTwo>
     {
+        [Hagar.Id(0)]
         public TOne Value1 { get; set; }
+        [Hagar.Id(1)]
         public TTwo Value2 { get; set; }
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class GenericReader3State<TOne, TTwo, TThree>
     {
+        [Hagar.Id(0)]
         public TOne Value1 { get; set; }
+        [Hagar.Id(1)]
         public TTwo Value2 { get; set; }
+        [Hagar.Id(2)]
         public TThree Value3 { get; set; }
     }
 
@@ -750,9 +775,11 @@ namespace UnitTests.Grains
 
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class Reducer1Action { }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class Reducer2Action { }
 
     public class Reducer1 : IReducer<string, Reducer1Action>

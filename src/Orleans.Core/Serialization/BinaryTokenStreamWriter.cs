@@ -146,7 +146,6 @@ namespace Orleans.Serialization
             typeTokens[typeof(IPEndPoint).TypeHandle] = SerializationTokenType.IpEndPoint;
             typeTokens[typeof(CorrelationId).TypeHandle] = SerializationTokenType.CorrelationId;
             typeTokens[typeof(InvokeMethodRequest).TypeHandle] = SerializationTokenType.Request;
-            typeTokens[typeof(Response).TypeHandle] = SerializationTokenType.Response;
             typeTokens[typeof(Dictionary<string, object>).TypeHandle] = SerializationTokenType.StringObjDict;
             typeTokens[typeof(Object).TypeHandle] = SerializationTokenType.Object;
             typeTokens[typeof(List<>).TypeHandle] = SerializationTokenType.List;

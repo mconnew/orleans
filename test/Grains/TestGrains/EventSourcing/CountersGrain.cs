@@ -24,9 +24,11 @@ namespace TestGrains
         /// We define this as a nested class, just for scoping convenience.
         /// </summary>
         [Serializable]
+        [Hagar.GenerateSerializer]
         public class GrainState
         {
             /// <summary>  the current count </summary>
+            [Hagar.Id(0)]
             public Dictionary<string, int> Counts { get; set; }
 
             public GrainState()
@@ -52,9 +54,12 @@ namespace TestGrains
         /// An event representing a counter update
         /// </summary>
         [Serializable]
+        [Hagar.GenerateSerializer]
         public class UpdatedEvent
         {
+            [Hagar.Id(0)]
             public string Key { get; set; }
+            [Hagar.Id(1)]
             public int Amount { get; set; }
         }
 
@@ -62,6 +67,7 @@ namespace TestGrains
         /// An event representing a reset of all counters
         /// </summary>
         [Serializable]
+        [Hagar.GenerateSerializer]
         public class ResetAllEvent
         {
         }

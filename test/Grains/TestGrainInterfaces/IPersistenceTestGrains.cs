@@ -223,8 +223,10 @@ namespace UnitTests.GrainInterfaces
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class MyPredicate : IMyPredicate
     {
+        [Hagar.Id(0)]
         private readonly int filterValue;
 
         public MyPredicate(int filter)

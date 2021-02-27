@@ -55,8 +55,10 @@ namespace DefaultCluster.Tests
         }
 
         [Serializable]
+        [Hagar.GenerateSerializer]
         public class NodaTimeTestPoco
         {
+            [Hagar.Id(0)]
             public LocalDate Date { get; }
 
             public NodaTimeTestPoco(LocalDate date)

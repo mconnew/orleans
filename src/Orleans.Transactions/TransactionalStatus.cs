@@ -1,4 +1,4 @@
-﻿
+
 using System;
 
 namespace Orleans.Transactions
@@ -27,7 +27,6 @@ namespace Orleans.Transactions
         AssertionFailed,   // an internal assertion was violated
         CommitFailure,     // Unable to commit transaction
     }
-
 
     public static class TransactionalStatusExtensions
     {

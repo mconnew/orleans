@@ -11,6 +11,7 @@ namespace Orleans.Metadata
     /// Information about a logical grain type <see cref="GrainType"/>.
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class GrainProperties
     {
         /// <summary>
@@ -24,6 +25,7 @@ namespace Orleans.Metadata
         /// <summary>
         /// Gets the properties.
         /// </summary>
+        [Hagar.Id(1)]
         public ImmutableDictionary<string, string> Properties { get; }
 
         /// <summary>

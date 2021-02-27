@@ -8,11 +8,14 @@ namespace Orleans.Runtime
     [Immutable]
     [Serializable]
     [StructLayout(LayoutKind.Auto)]
+    [Hagar.GenerateSerializer]
     internal readonly struct InternalStreamId : IEquatable<InternalStreamId>, IComparable<InternalStreamId>, ISerializable
     {
-        public string ProviderName { get; }
-
+        [Hagar.Id(0)]
         public StreamId StreamId { get; }
+
+        [Hagar.Id(1)]
+        public string ProviderName { get; }
 
         public InternalStreamId(string providerName, StreamId streamId)
         {

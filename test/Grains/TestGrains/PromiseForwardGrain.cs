@@ -6,9 +6,12 @@ using UnitTests.GrainInterfaces;
 namespace UnitTests.Grains
 {
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class SimpleGrainState
     {
+        [Hagar.Id(0)]
         public int A { get; set; }
+        [Hagar.Id(1)]
         public int EventDelay { get; set; }
     }
 

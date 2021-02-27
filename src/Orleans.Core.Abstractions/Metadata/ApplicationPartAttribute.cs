@@ -1,14 +1,9 @@
-﻿using System;
+using System;
 
 namespace Orleans.Metadata
 {
     /// <summary>
     /// Specifies an assembly to be added as an application part.
-    /// <para>
-    /// In the ordinary case, MVC will generate <see cref="ApplicationPartAttribute" />
-    /// instances on the entry assembly for each dependency that references MVC.
-    /// Each of these assemblies is treated as an application part.
-    /// </para>
     /// </summary>
     [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
     public sealed class ApplicationPartAttribute : Attribute

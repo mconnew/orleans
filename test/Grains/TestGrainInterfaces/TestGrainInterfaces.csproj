@@ -3,6 +3,8 @@
     <RootNamespace>UnitTests.GrainInterfaces</RootNamespace>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <OrleansBuildTimeCodeGen>true</OrleansBuildTimeCodeGen>
+    <Hagar_AttachDebugger>false</Hagar_AttachDebugger>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Hagar.Sdk" Version="0.6.5-dev-202104020651" />
     <PackageReference Include="protobuf-net" Version="$(ProtobufNetVersion)" />
   </ItemGroup>
 </Project>

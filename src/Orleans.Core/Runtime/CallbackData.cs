@@ -1,32 +1,27 @@
 using System;
 using System.Threading;
-using System.Threading.Tasks;
-using Orleans.CodeGeneration;
-using Orleans.Transactions;
+using Hagar.Invocation;
 
 namespace Orleans.Runtime
 {
     internal class CallbackData
     {
         private readonly SharedCallbackData shared;
-        private readonly TaskCompletionSource<object> context;
+        private readonly IResponseCompletionSource context;
         private int completed;
         private StatusResponse lastKnownStatus;
         private ValueStopwatch stopwatch;
 
         public CallbackData(
             SharedCallbackData shared,
-            TaskCompletionSource<object> ctx, 
+            IResponseCompletionSource ctx, 
             Message msg)
         {
             this.shared = shared;
             this.context = ctx;
             this.Message = msg;
-            this.TransactionInfo = TransactionContext.GetTransactionInfo();
             this.stopwatch = ValueStopwatch.StartNew();
         }
-
-        public ITransactionInfo TransactionInfo { get; set; }
 
         public Message Message { get; } // might hold metadata used by response pipeline
 

@@ -6,6 +6,7 @@ namespace Orleans.Providers.Streams.Generator
     /// Event use in generated streams
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class GeneratedEvent
     {
         /// <summary>
@@ -26,11 +27,13 @@ namespace Orleans.Providers.Streams.Generator
         /// <summary>
         /// Event type
         /// </summary>
+        [Hagar.Id(0)]
         public GeneratedEventType EventType { get; set; }
 
         /// <summary>
         /// Event payload
         /// </summary>
+        [Hagar.Id(1)]
         public int[] Payload { get; set; }
     }
 }

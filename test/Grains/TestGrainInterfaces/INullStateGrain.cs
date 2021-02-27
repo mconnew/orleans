@@ -1,10 +1,12 @@
-﻿using Orleans;
+using Orleans;
 using System.Threading.Tasks;
 
 namespace UnitTests.GrainInterfaces
 {
+    [Hagar.GenerateSerializer]
     public class NullableState
     {
+        [Hagar.Id(0)]
         public string Name { get; set; }
     }
 

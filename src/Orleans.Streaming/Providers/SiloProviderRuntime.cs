@@ -83,15 +83,17 @@ namespace Orleans.Runtime.Providers
                 filter,
                 pullingAgentOptions,
                 this.loggerFactory,
-                this.siloDetails.SiloAddress);
+                this.siloDetails.SiloAddress,
+                queueAdapter);
 
             var catalog = this.ServiceProvider.GetRequiredService<Catalog>();
             catalog.RegisterSystemTarget(manager);
 
             // Init the manager only after it was registered locally.
             var pullingAgentManager = manager.AsReference<IPersistentStreamPullingManager>();
+
             // Need to call it as a grain reference though.
-            await pullingAgentManager.Initialize(queueAdapter.AsImmutable());
+            await pullingAgentManager.Initialize();
             return pullingAgentManager;
         }
 

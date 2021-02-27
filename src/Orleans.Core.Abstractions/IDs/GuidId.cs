@@ -11,10 +11,12 @@ namespace Orleans.Runtime
     /// </summary>
     [Serializable]
     [Immutable]
+    [Hagar.GenerateSerializer]
     public sealed class GuidId : IEquatable<GuidId>, IComparable<GuidId>, ISerializable
     {
         private static readonly Interner<Guid, GuidId> guidIdInternCache = new Interner<Guid, GuidId>(InternerConstants.SIZE_LARGE);
 
+        [Hagar.Id(1)]
         public readonly Guid Guid;
 
         // TODO: Need to integrate with Orleans serializer to really use Interner.

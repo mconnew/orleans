@@ -116,16 +116,6 @@ namespace Orleans.Serialization
             feature.AddSerializerDelegates(typeof(CultureInfo), BuiltInTypes.CopyCultureInfo, BuiltInTypes.SerializeCultureInfo, BuiltInTypes.DeserializeCultureInfo);
 
             // Built-in handlers: Orleans internal types
-            feature.AddSerializerDelegates(
-                    typeof(InvokeMethodRequest),
-                    BuiltInTypes.CopyInvokeMethodRequest,
-                    BuiltInTypes.SerializeInvokeMethodRequest,
-                    BuiltInTypes.DeserializeInvokeMethodRequest);
-            feature.AddSerializerDelegates(
-                    typeof(Response),
-                    BuiltInTypes.CopyOrleansResponse,
-                    BuiltInTypes.SerializeOrleansResponse,
-                    BuiltInTypes.DeserializeOrleansResponse);
             feature.AddSerializerDelegates(typeof(ActivationId), BuiltInTypes.CopyActivationId, BuiltInTypes.SerializeActivationId, BuiltInTypes.DeserializeActivationId);
             feature.AddSerializerDelegates(typeof(GrainId), BuiltInTypes.CopyGrainId, BuiltInTypes.SerializeGrainId, BuiltInTypes.DeserializeGrainId);
             feature.AddSerializerDelegates(typeof(ActivationAddress), BuiltInTypes.CopyActivationAddress, BuiltInTypes.SerializeActivationAddress, BuiltInTypes.DeserializeActivationAddress);
@@ -161,8 +151,6 @@ namespace Orleans.Serialization
             feature.AddKnownType(typeof(SiloAddress));
             feature.AddKnownType(typeof(ActivationAddress));
             feature.AddKnownType(typeof(CorrelationId));
-            feature.AddKnownType(typeof(InvokeMethodRequest));
-            feature.AddKnownType(typeof(Response));
 
             feature.AddKnownType(typeof(IList<>));
             feature.AddKnownType(typeof(IDictionary<,>));

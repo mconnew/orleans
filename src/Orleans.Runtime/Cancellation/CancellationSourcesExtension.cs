@@ -68,6 +68,31 @@ namespace Orleans.Runtime
             }
         }
 
+        /// <summary>
+        /// Adds CancellationToken to the grain extension
+        /// so that it can be canceled through remote call to the CancellationSourcesExtension.
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="request"></param>
+        internal static void RegisterCancellationTokens(
+            IGrainContext target,
+            Hagar.Invocation.IInvokable request)
+        {
+            for (var i = 0; i < request.ArgumentCount; i++)
+            {
+                var arg = request.GetArgument<object>(i);
+                if (arg is not GrainCancellationToken grainToken)
+                {
+                    continue;
+                }
+
+                var cancellationExtension = (CancellationSourcesExtension)target.GetGrainExtension<ICancellationSourcesExtension>();
+
+                // Replacing the half baked GrainCancellationToken that came from the wire with locally fully created one.
+                request.SetArgument(i, cancellationExtension.RecordCancellationToken(grainToken.Id, grainToken.IsCancellationRequested));
+            }
+        }
+
         private GrainCancellationToken RecordCancellationToken(Guid tokenId, bool isCancellationRequested)
         {
             if (_cancellationTokens.TryGetValue(tokenId, out var entry))

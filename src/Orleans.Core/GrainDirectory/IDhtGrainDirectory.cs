@@ -66,9 +66,13 @@ namespace Orleans.GrainDirectory
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     internal struct AddressAndTag
     {
+        [Hagar.Id(1)]
         public ActivationAddress Address;
+       
+        [Hagar.Id(2)]
         public int VersionTag;
     }
 

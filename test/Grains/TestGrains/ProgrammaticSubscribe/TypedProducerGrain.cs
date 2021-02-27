@@ -12,7 +12,6 @@ using UnitTests.GrainInterfaces;
 
 namespace UnitTests.Grains.ProgrammaticSubscribe
 {
-
     public class TypedProducerGrain<T> : Grain, ITypedProducerGrain
     {
         private IAsyncStream<T> producer;
@@ -121,9 +120,12 @@ namespace UnitTests.Grains.ProgrammaticSubscribe
         }
     }
 
+    [Hagar.GenerateSerializer]
     public class Apple : IFruit
     {
+        [Hagar.Id(0)]
         int number;
+
         public Apple(int number)
         {
             this.number = number;

@@ -3,17 +3,20 @@ using System;
 namespace Orleans.Runtime
 {
     [Serializable]
+    [Hagar.GenerateSerializer]
+    [Hagar.SuppressReferenceTracking]
     internal class CorrelationId : IEquatable<CorrelationId>, IComparable<CorrelationId>
     {
+        [Hagar.Id(1)]
         private readonly long id;
         private static long nextToUse = 1;
 
-        internal CorrelationId(long value)
+        public CorrelationId(long value)
         {
             id = value;
         }
 
-        internal CorrelationId() : this(0)
+        public CorrelationId() : this(0)
         {
         }
 

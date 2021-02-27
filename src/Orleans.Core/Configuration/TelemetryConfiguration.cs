@@ -6,19 +6,24 @@ using System.Reflection;
 namespace Orleans.Runtime.Configuration
 {
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class TelemetryConfiguration
     {
         [Serializable]
+        [Hagar.GenerateSerializer]
         public struct ConsumerConfiguration
         {
+            [Hagar.Id(1)]
             public Type ConsumerType { get; set; }
 
             /// <summary>
             /// Configuration properties for this provider instance, as name-value pairs.
             /// </summary>
+            [Hagar.Id(2)]
             public IReadOnlyDictionary<string, object> Properties { get; set; }
         }
 
+        [Hagar.Id(1)]
         public IList<ConsumerConfiguration> Consumers { get; private set; } = new List<ConsumerConfiguration>();
 
         public void Add(string typeName, string assemblyName, IEnumerable<KeyValuePair<string, object>> properties)

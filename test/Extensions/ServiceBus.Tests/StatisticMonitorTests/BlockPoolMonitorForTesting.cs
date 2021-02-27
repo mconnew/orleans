@@ -34,10 +34,14 @@ namespace ServiceBus.Tests.MonitorTests
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class ObjectPoolMonitorCounters
     {
+        [Hagar.Id(0)]
         public int TrackObjectAllocatedByCacheCallCounter;
+        [Hagar.Id(1)]
         public int TrackObjectReleasedFromCacheCallCounter;
+        [Hagar.Id(2)]
         public int ReportCallCounter;
     }
 }

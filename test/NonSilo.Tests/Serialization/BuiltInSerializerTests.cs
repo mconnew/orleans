@@ -124,39 +124,6 @@ namespace UnitTests.Serialization
                 $"Should be able to serialize internal type {nameof(ValueTuple<int, AddressAndTag>)}.");
         }
 
-        [Fact, TestCategory("BVT")]
-        public void Serialize_ComplexClass()
-        {
-            var environment = defaultFixture;
-            var expected = OuterClass.GetPrivateClassInstance();
-            expected.Int = 89;
-            expected.String = Guid.NewGuid().ToString();
-            expected.NonSerializedInt = 39;
-            expected.Classes = new SomeAbstractClass[]
-            {
-                expected,
-                new AnotherConcreteClass
-                {
-                    AnotherString = "hi",
-                    Interfaces = new List<ISomeInterface> { expected }
-                }
-            };
-            expected.Enum = SomeAbstractClass.SomeEnum.Something;
-            expected.SetObsoleteInt(38);
-
-            var actual = (SomeAbstractClass)OrleansSerializationLoop(environment.SerializationManager, expected);
-
-            Assert.Equal(expected.Int, actual.Int);
-            Assert.Equal(expected.Enum, actual.Enum);
-            Assert.Equal(expected.String, ((OuterClass.SomeConcreteClass)actual).String);
-            Assert.Equal(expected.Classes.Length, actual.Classes.Length);
-            Assert.Equal(expected.String, ((OuterClass.SomeConcreteClass)actual.Classes[0]).String);
-            Assert.Equal(expected.Classes[1].Interfaces[0].Int, actual.Classes[1].Interfaces[0].Int);
-            Assert.Equal(0, actual.NonSerializedInt);
-            Assert.Equal(expected.GetObsoleteInt(), actual.GetObsoleteInt());
-            Assert.Null(actual.SomeGrainReference);
-        }
-
         /// <summary>
         /// Tests that the default (non-fallback) serializer can handle complex classes.
         /// </summary>
@@ -1140,9 +1107,12 @@ namespace UnitTests.Serialization
         }
 
         [Serializable]
+        [Hagar.GenerateSerializer]
         private class SimpleISerializableObject : ISerializable, IDeserializationCallback
         {
+            [Hagar.Id(0)]
             private List<string> history;
+            [Hagar.Id(1)]
             private List<StreamingContext> contexts;
 
             public SimpleISerializableObject()
@@ -1160,6 +1130,7 @@ namespace UnitTests.Serialization
             public List<string> History => this.history ?? (this.history = new List<string>());
             public List<StreamingContext> Contexts => this.contexts ?? (this.contexts = new List<StreamingContext>());
 
+            [Hagar.Id(2)]
             public string Payload { get; set; }
 
             public void GetObjectData(SerializationInfo info, StreamingContext context)
@@ -1203,9 +1174,12 @@ namespace UnitTests.Serialization
         }
 
         [Serializable]
+        [Hagar.GenerateSerializer]
         private struct SimpleISerializableStruct : ISerializable, IDeserializationCallback
         {
+            [Hagar.Id(0)]
             private List<string> history;
+            [Hagar.Id(1)]
             private List<StreamingContext> contexts;
 
             public SimpleISerializableStruct(SerializationInfo info, StreamingContext context)
@@ -1220,6 +1194,7 @@ namespace UnitTests.Serialization
             public List<string> History => this.history ?? (this.history = new List<string>());
             public List<StreamingContext> Contexts => this.contexts ?? (this.contexts = new List<StreamingContext>());
 
+            [Hagar.Id(2)]
             public string Payload { get; set; }
 
             public void GetObjectData(SerializationInfo info, StreamingContext context)

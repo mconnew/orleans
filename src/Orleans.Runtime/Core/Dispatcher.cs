@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Hagar.Invocation;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Orleans.Configuration;
@@ -234,9 +235,7 @@ namespace Orleans.Runtime
         // (got here due to duplicate activation, outdated cache, silo is shutting down/overloaded, ...).
         private static bool MayForward(Message message, SiloMessagingOptions messagingOptions)
         {
-            return message.ForwardCount < messagingOptions.MaxForwardCount
-                // allow one more forward hop for multi-cluster case
-                + (message.IsReturnedFromRemoteCluster ? 1 : 0);
+            return message.ForwardCount < messagingOptions.MaxForwardCount;
         }
 
         /// <summary>

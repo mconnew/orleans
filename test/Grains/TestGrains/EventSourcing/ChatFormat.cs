@@ -1,4 +1,4 @@
-﻿using Orleans.Serialization;
+using Orleans.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -29,7 +29,7 @@ namespace TestGrains
 
         public static XElement GetPostsContainer(this XDocument document)
         {
-            return document.Element("root").Element("posts");
+            return document.Elements().Single(x => x.Name.LocalName == "root").Elements().Single(x => x.Name.LocalName == "posts");
         }
 
         public static XElement MakePost(Guid guid, string user, DateTime timestamp, string text)

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Hagar;
 using Orleans;
 
 namespace UnitTests.GrainInterfaces
@@ -69,6 +70,7 @@ public class Outsider { }
 namespace UnitTests.GrainInterfaces
 {
     [Serializable]
+    [GenerateSerializer]
     public class CaseInsensitiveStringEquality : EqualityComparer<string>
     {
         public override bool Equals(string x, string y)
@@ -83,6 +85,7 @@ namespace UnitTests.GrainInterfaces
     }
 
     [Serializable]
+    [GenerateSerializer]
     public class Mod5IntegerComparer : EqualityComparer<int>
     {
         public override bool Equals(int x, int y)
@@ -97,6 +100,7 @@ namespace UnitTests.GrainInterfaces
     }
 
     [Serializable]
+    [GenerateSerializer]
     public class CaseInsensitiveStringComparer : Comparer<string>
     {
         public override int Compare(string x, string y)
@@ -108,6 +112,7 @@ namespace UnitTests.GrainInterfaces
     }
 
     [Serializable]
+    [GenerateSerializer]
     public class RootType
     {
         public RootType()
@@ -118,6 +123,8 @@ namespace UnitTests.GrainInterfaces
             MyDictionary.Add("obj3", new InnerType());
             MyDictionary.Add("obj4", new InnerType());
         }
+
+        [Id(0)]
         public Dictionary<string, object> MyDictionary { get; set; }
 
         public override bool Equals(object obj)
@@ -143,15 +150,24 @@ namespace UnitTests.GrainInterfaces
     }
 
     [Serializable]
+    [GenerateSerializer]
     public struct SomeStruct
     {
+        [Id(0)]
         public Guid Id { get; set; }
+        [Id(1)]
         public int PublicValue { get; set; }
+        [Id(2)]
         public int ValueWithPrivateSetter { get; private set; }
+        [Id(3)]
         public int ValueWithPrivateGetter { private get; set; }
+        [Id(4)]
         private int PrivateValue { get; set; }
+
+        [Id(5)]
         public readonly int ReadonlyField;
 
+        [Id(6)]
         public IEchoGrain SomeGrainReference { get; set; }
 
         public SomeStruct(int readonlyField)
@@ -184,23 +200,30 @@ namespace UnitTests.GrainInterfaces
     public interface ISomeInterface { int Int { get; set; } }
 
     [Serializable]
+    [GenerateSerializer]
     public abstract class SomeAbstractClass : ISomeInterface
     {
         [NonSerialized]
         private int nonSerializedIntField;
 
+        [Id(0)]
         public abstract int Int { get; set; }
 
+        [Id(1)]
         public List<ISomeInterface> Interfaces { get; set; }
 
+        [Id(2)]
         public SomeAbstractClass[] Classes { get; set; }
 
         [Obsolete("This field should not be serialized", true)]
+        [Id(3)]
         public int ObsoleteIntWithError { get; set; }
 
         [Obsolete("This field should be serialized")]
+        [Id(4)]
         public int ObsoleteInt { get; set; }
 
+        [Id(5)]
         public IEchoGrain SomeGrainReference { get; set; }
         
 #pragma warning disable 618
@@ -209,8 +232,9 @@ namespace UnitTests.GrainInterfaces
         {
             this.ObsoleteInt = value;
         }
-        #pragma warning restore 618
+#pragma warning restore 618
 
+        [Id(6)]
         public SomeEnum Enum { get; set; }
 
         public int NonSerializedInt
@@ -237,53 +261,19 @@ namespace UnitTests.GrainInterfaces
         }
     }
 
-    public class OuterClass
-    {
-        public static SomeConcreteClass GetPrivateClassInstance() => new PrivateConcreteClass(Guid.NewGuid());
-
-        public static Type GetPrivateClassType() => typeof(PrivateConcreteClass);
-
-        [Serializable]
-        public class SomeConcreteClass : SomeAbstractClass
-        {
-            public override int Int { get; set; }
-
-            public string String { get; set; }
-
-            private PrivateConcreteClass secretPrivateClass;
-
-            public void ConfigureSecretPrivateClass()
-            {
-                this.secretPrivateClass = new PrivateConcreteClass(Guid.NewGuid());
-            }
-
-            public bool AreSecretBitsIdentitcal(SomeConcreteClass other)
-            {
-                return other.secretPrivateClass?.Identity == this.secretPrivateClass?.Identity;
-            }
-        }
-
-        [Serializable]
-        private class PrivateConcreteClass : SomeConcreteClass
-        {
-            public PrivateConcreteClass(Guid identity)
-            {
-                this.Identity = identity;
-            }
-
-            public readonly Guid Identity;
-        }
-    }
-
     [Serializable]
+    [GenerateSerializer]
     public class AnotherConcreteClass : SomeAbstractClass
     {
+        [Id(0)]
         public override int Int { get; set; }
 
+        [Id(1)]
         public string AnotherString { get; set; }
     }
 
     [Serializable]
+    [GenerateSerializer]
     public class InnerType
     {
         public InnerType()
@@ -291,7 +281,10 @@ namespace UnitTests.GrainInterfaces
             Id = Guid.NewGuid();
             Something = Id.ToString();
         }
+
+        [Id(0)]
         public Guid Id { get; set; }
+        [Id(1)]
         public string Something { get; set; }
 
         public override bool Equals(object obj)
@@ -311,9 +304,11 @@ namespace UnitTests.GrainInterfaces
     }
 
     [Serializable]
+    [GenerateSerializer]
     public class ClassWithStructConstraint<T>
         where T : struct
     {
+        [Id(0)]
         public T Value { get; set; }
     }
 
@@ -338,9 +333,11 @@ namespace UnitTests.GrainInterfaces
     /// Regression test for https://github.com/dotnet/orleans/issues/5243.
     /// </summary>
     [Serializable]
+    [GenerateSerializer]
     public readonly struct ReadOnlyStructWithReadOnlyArray
     {
 #pragma warning disable IDE0032 // Use auto property
+        [Id(0)]
         private readonly byte[] value;
 #pragma warning restore IDE0032 // Use auto property
 

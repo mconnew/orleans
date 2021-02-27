@@ -4,8 +4,10 @@ using System.Threading;
 namespace UnitTests.TestHelper
 {
     [Serializable]
+    [Hagar.GenerateSerializer]
     public sealed class InterlockedFlag
     {
+        [Hagar.Id(0)]
         private int _value;
 
         public InterlockedFlag()

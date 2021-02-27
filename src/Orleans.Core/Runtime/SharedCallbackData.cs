@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Hagar.Invocation;
 using Microsoft.Extensions.Logging;
 using Orleans.Configuration;
 
@@ -41,7 +42,7 @@ namespace Orleans.Runtime
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
-        public void ResponseCallback(Message message, TaskCompletionSource<object> context)
+        public void ResponseCallback(Message message, IResponseCompletionSource context)
         {
             Response response;
             if (message.Result != Message.ResponseTypes.Rejection)
@@ -52,8 +53,8 @@ namespace Orleans.Runtime
                 }
                 catch (Exception exc)
                 {
-                    //  catch the Deserialize exception and break the promise with it.
-                    response = Response.ExceptionResponse(exc);
+                    // catch the Deserialize exception and break the promise with it.
+                    response = Response.FromException(exc);
                 }
             }
             else
@@ -79,16 +80,16 @@ namespace Orleans.Runtime
                         }
                         break;
                 }
-                response = Response.ExceptionResponse(rejection);
+                response = Response.FromException(rejection);
             }
 
-            if (!response.ExceptionFlag)
+            try
             {
-                context.TrySetResult(response.Data);
+                context.Complete(response);
             }
-            else
+            catch (Exception exception)
             {
-                context.TrySetException(response.Exception);
+                Logger.LogError(exception, "Exception completing response");
             }
         }
     }

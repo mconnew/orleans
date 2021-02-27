@@ -9,4 +9,11 @@
     <RootNamespace>Orleans</RootNamespace>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Bcl.HashCode" Version="$(MicrosoftBclHashCodeVersion)" />
+    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
+    <PackageReference Include="Hagar.Sdk" Version="0.6.5-dev-202104020651" />
+  </ItemGroup>
+
 </Project>

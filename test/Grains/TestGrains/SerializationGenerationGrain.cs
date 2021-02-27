@@ -47,8 +47,10 @@ namespace TestGrains
         }
 
         [Serializable]
+        [Hagar.GenerateSerializer]
         public class MyState
         {
+            [Hagar.Id(0)]
             public IList<SomeAbstractClass> Classes { get; set; }
         }
     }

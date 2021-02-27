@@ -14,6 +14,7 @@ namespace Orleans.ServiceBus.Providers
     ///   and ordering of application layer events within an EventHub message.
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class EventHubSequenceTokenV2 : EventHubSequenceToken
     {
         /// <summary>

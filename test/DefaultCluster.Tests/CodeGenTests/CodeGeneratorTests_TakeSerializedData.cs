@@ -6,9 +6,6 @@ using Xunit;
 
 namespace DefaultCluster.Tests.General
 {
-    /// <summary>
-    /// Unit tests for grains implementing generic interfaces
-    /// </summary>
     public class CodeGeneratorTests_TakeSerializedData : HostedTestClusterEnsureDefaultStarted
     {
         public CodeGeneratorTests_TakeSerializedData(DefaultClusterFixture fixture) : base(fixture)
