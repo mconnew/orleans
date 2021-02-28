@@ -76,11 +76,11 @@
 
     <!-- used only in netstandard2.0 targets - dot not upgrade unless necessary -->
     <!-- on .NET Core 3.1+ runtimes these are inbox, so these versions are actually used only on .NET Framework 4.6.2+ -->
-    <SystemCollectionsImmutableVersion>1.7.0</SystemCollectionsImmutableVersion>
+    <SystemCollectionsImmutableVersion>5.0.0</SystemCollectionsImmutableVersion>
     <SystemReflectionEmitVersion>4.7.0</SystemReflectionEmitVersion>
     <SystemReflectionMetadataVersion>1.8.0</SystemReflectionMetadataVersion>
     <SystemThreadingChannelsVersion>4.7.0</SystemThreadingChannelsVersion>
-    <MicrosoftBclHashCodeVersion>1.0.0</MicrosoftBclHashCodeVersion>
+    <MicrosoftBclHashCodeVersion>1.1.1</MicrosoftBclHashCodeVersion>
 
     <!-- 3rd party packages -->
     <AWSSDKDynamoDBv2Version>3.3.102.2</AWSSDKDynamoDBv2Version>
