@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Orleans;
+using Orleans.ApplicationParts;
 using Orleans.Configuration;
 using Orleans.Hosting;
 using Orleans.Runtime;
@@ -50,18 +51,11 @@ namespace Benchmarks.Ping
 
                 if (i == 0 && grainsOnSecondariesOnly)
                 {
-                    siloBuilder.ConfigureApplicationParts(parts =>
-                        parts.AddApplicationPart(typeof(IPingGrain).Assembly).WithReferences());
+                    siloBuilder.ConfigureApplicationParts(parts => parts.RemoveApplicationParts(p => p is AssemblyPart asmPart && asmPart.Assembly.Equals(typeof(PingGrain).Assembly)));
                     siloBuilder.ConfigureServices(services =>
                     {
                         services.Remove(services.First(s => s.ImplementationType?.Name == "ApplicationPartValidator"));
                     });
-                }
-                else
-                {
-                    siloBuilder.ConfigureApplicationParts(parts =>
-                        parts.AddApplicationPart(typeof(IPingGrain).Assembly).WithReferences()
-                             .AddApplicationPart(typeof(PingGrain).Assembly));
                 }
 
                 var silo = siloBuilder.Build();
@@ -75,7 +69,6 @@ namespace Benchmarks.Ping
             if (startClient)
             {
                 var clientBuilder = new ClientBuilder()
-                    .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(IPingGrain).Assembly).WithReferences())
                     /*
                     .ConfigureLogging(logging =>
                     {

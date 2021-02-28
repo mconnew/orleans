@@ -500,7 +500,7 @@ namespace Orleans.Runtime.Messaging
 
             string result;
 #if NETCOREAPP
-            if (reader.TryReadBytes((int) length, out var span))
+            if (reader.TryReadBytes(length, out var span))
             {
                 result = Encoding.UTF8.GetString(span);
             }
@@ -586,7 +586,7 @@ namespace Orleans.Runtime.Messaging
                 return null;
             }
 #if NET5_0
-            if (reader.TryReadBytes((int)length, out var bytes))
+            if (reader.TryReadBytes(length, out var bytes))
             {
                 ip = new IPAddress(bytes);
             }
@@ -611,16 +611,18 @@ namespace Orleans.Runtime.Messaging
                 writer.WriteVarInt32(-1);
                 return;
             }
+
+            var ep = value.Endpoint;
 #if NET5_0
             Span<byte> buffer = stackalloc byte[64];
-            if (value.TryWriteBytes(buffer, out var length))
+            if (ep.Address.TryWriteBytes(buffer, out var length))
             {
                 var writable = writer.WritableSpan;
                 if (writable.Length > length)
                 {
                     // IP
                     writer.WriteVarInt32(length);
-                    buffer.Slice(0, length).CopyTo(writable.Slice(1));
+                    buffer.Slice(0, length).CopyTo(writable[1..]);
                     writer.AdvanceSpan(length);
 
                     // Port
@@ -633,7 +635,6 @@ namespace Orleans.Runtime.Messaging
                 }
             }
 #endif
-            var ep = value.Endpoint;
 
             // IP
             var bytes = ep.Address.GetAddressBytes();
