@@ -121,7 +121,7 @@ namespace Orleans
                 _manager.rootGrainContext.SetComponent(value);
             }
 
-            TComponent IGrainContext.GetComponent<TComponent>()
+            public TComponent GetComponent<TComponent>()
             {
                 if (this.LocalObject.Target is TComponent component)
                 {
@@ -130,6 +130,8 @@ namespace Orleans
 
                 return _manager.rootGrainContext.GetComponent<TComponent>();
             }
+
+            public TTarget GetTarget<TTarget>() => (TTarget)(object)this;
 
             bool IEquatable<IGrainContext>.Equals(IGrainContext other) => ReferenceEquals(this, other);
 

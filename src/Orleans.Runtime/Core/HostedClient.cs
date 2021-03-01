@@ -343,5 +343,7 @@ namespace Orleans.Runtime
                 return result;
             }
         }
+
+        public TTarget GetTarget<TTarget>() => throw new NotImplementedException();
     }
 }

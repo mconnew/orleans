@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Hagar;
 using Orleans.Concurrency;
 using Orleans.Runtime;
 
@@ -60,8 +61,11 @@ namespace Orleans
         Task TestOnlyClearTable();
     }
 
+    [Serializable]
+    [GenerateSerializer]
     public class ReminderTableData
     {
+        [Id(0)]
         public IList<ReminderEntry> Reminders { get; private set; }
 
         public ReminderTableData(IEnumerable<ReminderEntry> list)

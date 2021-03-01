@@ -21,7 +21,7 @@ namespace Orleans.Runtime
             this.messagingTrace = messagingTrace;
         }
 
-        public Message CreateMessage(InvokeMethodRequest request, InvokeMethodOptions options)
+        public Message CreateMessage(object body, InvokeMethodOptions options)
         {
             var message = new Message
             {
@@ -31,7 +31,7 @@ namespace Orleans.Runtime
                 IsReadOnly = (options & InvokeMethodOptions.ReadOnly) != 0,
                 IsUnordered = (options & InvokeMethodOptions.Unordered) != 0,
                 IsAlwaysInterleave = (options & InvokeMethodOptions.AlwaysInterleave) != 0,
-                BodyObject = request,
+                BodyObject = body,
                 RequestContextData = RequestContextExtensions.Export(this.serializationManager)
             };
 

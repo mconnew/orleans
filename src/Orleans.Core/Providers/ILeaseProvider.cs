@@ -1,4 +1,5 @@
-﻿using Orleans.Concurrency;
+using Hagar;
+using Orleans.Concurrency;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,24 +11,33 @@ namespace Orleans.LeaseProviders
     /// <summary>
     /// Acquired lease
     /// </summary>
-    [Immutable]
+    [Orleans.Concurrency.Immutable]
+    [Hagar.Immutable]
+    [GenerateSerializer]
     public class AcquiredLease 
     {
         /// <summary>
         /// The resource key which the lease is attached to 
         /// </summary>
+        [Id(0)]
         public string ResourceKey { get; }
+
         /// <summary>
         /// Duration of the acquired lease
         /// </summary>
+        [Id(1)]
         public TimeSpan Duration { get; }
+
         /// <summary>
         /// Lease token, which will be null if acquiring or renewing the lease failed
         /// </summary>
+        [Id(2)]
         public string Token { get; }
+
         /// <summary>
         /// Caller side start time for this lease, which is when the lease is acquired or renewed
         /// </summary>
+        [Id(3)]
         public DateTime StartTimeUtc { get; }
 
         /// <summary>
@@ -58,20 +68,27 @@ namespace Orleans.LeaseProviders
     /// <summary>
     /// AcquireLeaseResult class, which demonstrates result of acquiring or renewing lease operation
     /// </summary>
-    [Immutable]
+    [Orleans.Concurrency.Immutable]
+    [Hagar.Immutable]
+    [GenerateSerializer]
     public class AcquireLeaseResult
     {
         /// <summary>
         /// Acquired lease, which will be null if acquire or renew operation failed.
         /// </summary>
+        [Id(0)]
         public AcquiredLease AcquiredLease { get; }
+
         /// <summary>
         /// Response status
         /// </summary>
+        [Id(1)]
         public ResponseCode StatusCode { get; }
+
         /// <summary>
         /// If acquiring or renewing the lease failed, this is the exception which caused it. This field would be null if operation succeed.
         /// </summary>
+        [Id(2)]
         public Exception FailureException { get; }
 
         public AcquireLeaseResult(AcquiredLease acquiredLease, ResponseCode statusCode, Exception failureException)
@@ -82,6 +99,7 @@ namespace Orleans.LeaseProviders
         }
     }
 
+    [GenerateSerializer]
     public enum ResponseCode
     {
         /// <summary>
@@ -105,15 +123,19 @@ namespace Orleans.LeaseProviders
     /// <summary>
     /// Lease request where you can specify ResourceKey and duration of your lease. 
     /// </summary>
+    [GenerateSerializer]
     public class LeaseRequest
     {
         /// <summary>
         /// The key of the resource where you want to apply the lease on
         /// </summary>
+        [Id(0)]
         public string ResourceKey { get; set; }
+
         /// <summary>
         /// Duration of the lease
         /// </summary>
+        [Id(1)]
         public TimeSpan Duration { get; set; }
 
         /// <summary>

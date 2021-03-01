@@ -7,11 +7,13 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
+using Hagar.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Orleans.ApplicationParts;
 using Orleans.CodeGeneration;
 using Orleans.Metadata;
 using Orleans.Runtime;
+using Orleans.Runtime.Versions;
 
 namespace Orleans.GrainReferences
 {
@@ -85,11 +87,13 @@ namespace Orleans.GrainReferences
 
     internal class UntypedGrainReferenceActivatorProvider : IGrainReferenceActivatorProvider
     {
+        private readonly GrainVersionManifest _versionManifest;
         private readonly IServiceProvider _serviceProvider;
         private IGrainReferenceRuntime _grainReferenceRuntime;
 
-        public UntypedGrainReferenceActivatorProvider(IServiceProvider serviceProvider)
+        public UntypedGrainReferenceActivatorProvider(GrainVersionManifest manifest, IServiceProvider serviceProvider)
         {
+            _versionManifest = manifest;
             _serviceProvider = serviceProvider;
         }
 
@@ -100,9 +104,11 @@ namespace Orleans.GrainReferences
                 activator = default;
                 return false;
             }
+
+            var interfaceVersion = _versionManifest.GetLocalVersion(interfaceType);
        
             var runtime = _grainReferenceRuntime ??= _serviceProvider.GetRequiredService<IGrainReferenceRuntime>();
-            var shared = new GrainReferenceShared(grainType, interfaceType, runtime, InvokeMethodOptions.None);
+            var shared = new GrainReferenceShared(grainType, interfaceType, interfaceVersion, runtime, InvokeMethodOptions.None);
             activator = new UntypedGrainReferenceActivator(shared);
             return true;
         }
@@ -120,6 +126,80 @@ namespace Orleans.GrainReferences
             {
                 return GrainReference.FromGrainId(_shared, grainId);
             }
+        }
+    }
+
+    internal class NewRpcProvider
+    {
+        private readonly TypeConverter _typeConverter;
+        private readonly Dictionary<GrainInterfaceType, Type> _mapping;
+
+        public NewRpcProvider(
+            IConfiguration<SerializerConfiguration> config,
+            GrainInterfaceTypeResolver resolver,
+            TypeConverter typeConverter)
+        {
+            _typeConverter = typeConverter;
+            var proxyTypes = config.Value.InterfaceProxies;
+            _mapping = new Dictionary<GrainInterfaceType, Type>();
+            foreach (var proxyType in proxyTypes)
+            {
+                if (!typeof(IAddressable).IsAssignableFrom(proxyType))
+                {
+                    continue;
+                }
+
+                var grainInterface = GetMainInterface(proxyType);
+                var id = resolver.GetGrainInterfaceType(grainInterface);
+                _mapping[id] = proxyType;
+            }
+
+            static Type GetMainInterface(Type t)
+            {
+                var all = t.GetInterfaces();
+                Type result = null;
+                foreach (var candidate in all)
+                {
+                    if (result is null) result = candidate;
+                    else
+                    {
+                        if (result.IsAssignableFrom(candidate))
+                        {
+                            result = candidate;
+                        }
+                    }
+                }
+
+                return result;
+            }
+        }
+
+        public bool TryGet(GrainInterfaceType interfaceType, out Type result)
+        {
+            GrainInterfaceType lookupId;
+            Type[] args;
+            if (GenericGrainInterfaceType.TryParse(interfaceType, out var genericId))
+            {
+                lookupId = genericId.GetGenericGrainType().Value;
+                args = genericId.GetArguments(_typeConverter);
+            }
+            else
+            {
+                lookupId = interfaceType;
+                args = default;
+            }
+
+            if (!_mapping.TryGetValue(lookupId, out result))
+            {
+                return false;
+            }
+
+            if (args is Type[])
+            {
+                result = result.MakeGenericType(args);
+            }
+
+            return true;
         }
     }
 
@@ -242,7 +322,7 @@ namespace Orleans.GrainReferences
 
             var invokeMethodOptions = unordered ? InvokeMethodOptions.Unordered : InvokeMethodOptions.None;
             var runtime = _grainReferenceRuntime ??= _serviceProvider.GetRequiredService<IGrainReferenceRuntime>();
-            var shared = new GrainReferenceShared(grainType, interfaceType, runtime, invokeMethodOptions);
+            var shared = new GrainReferenceShared(grainType, interfaceType, 0, runtime, invokeMethodOptions);
             activator = new ImrGrainReferenceActivator(types.ReferenceType, shared);
             return true;
         }
@@ -263,6 +343,74 @@ namespace Orleans.GrainReferences
                 return (GrainReference)Activator.CreateInstance(
                     type: _referenceType,
                     bindingAttr: BindingFlags.Instance | BindingFlags.NonPublic,
+                    binder: null,
+                    args: new object[] { _shared, grainId.Key },
+                    culture: CultureInfo.InvariantCulture);
+            }
+        }
+    }
+
+    internal class NewGrainReferenceActivatorProvider : IGrainReferenceActivatorProvider
+    {
+        private readonly IServiceProvider _serviceProvider;
+        private readonly GrainPropertiesResolver _propertiesResolver;
+        private readonly NewRpcProvider _rpcProvider;
+        private readonly GrainVersionManifest _grainVersionManifest;
+        private IGrainReferenceRuntime _grainReferenceRuntime;
+
+        public NewGrainReferenceActivatorProvider(
+            IServiceProvider serviceProvider,
+            GrainPropertiesResolver propertiesResolver,
+            NewRpcProvider rpcProvider,
+            GrainVersionManifest grainVersionManifest)
+        {
+            _serviceProvider = serviceProvider;
+            _propertiesResolver = propertiesResolver;
+            _rpcProvider = rpcProvider;
+            _grainVersionManifest = grainVersionManifest;
+        }
+
+        public bool TryGet(GrainType grainType, GrainInterfaceType interfaceType, out IGrainReferenceActivator activator)
+        {
+            if (!_rpcProvider.TryGet(interfaceType, out var proxyType))
+            {
+                activator = default;
+                return false;
+            }
+
+            var unordered = false;
+            var properties = _propertiesResolver.GetGrainProperties(grainType);
+            if (properties.Properties.TryGetValue(WellKnownGrainTypeProperties.Unordered, out var unorderedString)
+                && string.Equals("true", unorderedString, StringComparison.OrdinalIgnoreCase))
+            {
+                unordered = true;
+            }
+
+            var interfaceVersion = _grainVersionManifest.GetLocalVersion(interfaceType);
+
+            var invokeMethodOptions = unordered ? InvokeMethodOptions.Unordered : InvokeMethodOptions.None;
+            var runtime = _grainReferenceRuntime ??= _serviceProvider.GetRequiredService<IGrainReferenceRuntime>();
+            var shared = new GrainReferenceShared(grainType, interfaceType, interfaceVersion, runtime, invokeMethodOptions);
+            activator = new NewGrainReferenceActivator(proxyType, shared);
+            return true;
+        }
+
+        private class NewGrainReferenceActivator : IGrainReferenceActivator
+        {
+            private readonly Type _referenceType;
+            private readonly GrainReferenceShared _shared;
+
+            public NewGrainReferenceActivator(Type referenceType, GrainReferenceShared shared)
+            {
+                _referenceType = referenceType;
+                _shared = shared;
+            }
+
+            public GrainReference CreateReference(GrainId grainId)
+            {
+                return (GrainReference)Activator.CreateInstance(
+                    type: _referenceType,
+                    bindingAttr: BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
                     binder: null,
                     args: new object[] { _shared, grainId.Key },
                     culture: CultureInfo.InvariantCulture);

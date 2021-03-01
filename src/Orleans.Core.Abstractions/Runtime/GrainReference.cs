@@ -3,8 +3,10 @@ using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using Hagar;
 using Hagar.Codecs;
+using Hagar.Invocation;
 using Hagar.Serializers;
 using Orleans.CodeGeneration;
+using Orleans.Metadata;
 
 namespace Orleans.Runtime
 {
@@ -16,6 +18,7 @@ namespace Orleans.Runtime
         public GrainReferenceShared(
             GrainType graintype,
             GrainInterfaceType grainInterfaceType,
+            ushort interfaceVersion,
             IGrainReferenceRuntime runtime,
             InvokeMethodOptions invokeMethodOptions)
         {
@@ -23,6 +26,7 @@ namespace Orleans.Runtime
             this.InterfaceType = grainInterfaceType;
             this.Runtime = runtime;
             this.InvokeMethodOptions = invokeMethodOptions;
+            this.InterfaceVersion = interfaceVersion;
         }
 
         public IGrainReferenceRuntime Runtime { get; }
@@ -32,6 +36,8 @@ namespace Orleans.Runtime
         public GrainInterfaceType InterfaceType { get; }
 
         public InvokeMethodOptions InvokeMethodOptions { get; }
+
+        public ushort InterfaceVersion { get; }
     }
 
     [Hagar.RegisterSerializer]
@@ -210,5 +216,16 @@ namespace Orleans.Runtime
         {
             return this.Runtime.InvokeMethodAsync<T>(this, methodId, arguments, options | _shared.InvokeMethodOptions);
         }
+    }
+
+    public abstract class NewGrainReference : GrainReference
+    {
+        protected NewGrainReference(GrainReferenceShared shared, IdSpan key) : base(shared, key)
+        {
+        }
+
+        public override ushort InterfaceVersion => Shared.InterfaceVersion;
+
+        protected void SendRequest(IResponseCompletionSource callback, IInvokable body) => this.Runtime.SendRequest(this, callback, body);
     }
 }

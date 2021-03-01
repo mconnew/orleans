@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Hagar.Invocation;
 using Microsoft.Extensions.Logging;
 using Orleans.Configuration;
 
@@ -41,7 +42,7 @@ namespace Orleans.Runtime
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
-        public void ResponseCallback(Message message, TaskCompletionSource<object> context)
+        public void ResponseCallback(Message message, object context)
         {
             Response response;
             if (message.Result != Message.ResponseTypes.Rejection)
@@ -82,13 +83,29 @@ namespace Orleans.Runtime
                 response = Response.ExceptionResponse(rejection);
             }
 
-            if (!response.ExceptionFlag)
+            if (context is TaskCompletionSource<object> tcs)
             {
-                context.TrySetResult(response.Data);
+                if (!response.ExceptionFlag)
+                {
+                    tcs.TrySetResult(response.Data);
+                }
+                else
+                {
+                    tcs.TrySetException(response.Exception);
+                }
             }
-            else
+            else if (context is IResponseCompletionSource rcs)
             {
-                context.TrySetException(response.Exception);
+                // TODO: receive the response as an object and propagate it here.
+                if (response.Data is Hagar.Invocation.Response r)
+                {
+                    rcs.Complete(r);
+                    (r as IDisposable)?.Dispose();
+                }
+                else
+                {
+                    rcs.Complete(Hagar.Invocation.Response.FromException<object>(response.Exception));
+                }
             }
         }
     }

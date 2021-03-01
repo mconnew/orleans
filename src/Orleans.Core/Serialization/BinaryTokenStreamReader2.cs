@@ -32,6 +32,7 @@ namespace Orleans.Serialization
         {
             this.PartialReset(input);
         }
+
         public long Length => this.input.Length;
         
         public long Position

@@ -106,6 +106,8 @@ namespace Orleans.Runtime
             }
         }
 
+        public TTarget GetTarget<TTarget>() => (TTarget)(object)this.GrainInstance;
+
         public TComponent GetComponent<TComponent>()
         {
             TComponent result;

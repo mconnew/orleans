@@ -240,6 +240,8 @@ namespace Orleans.Runtime
                     this.logger.LogError((int)ErrorCode.Runtime_Error_100097, "Invalid message: {Message}", msg);
                     break;
             }
-        } 
+        }
+
+        public TTarget GetTarget<TTarget>() => (TTarget)(object)this;
     }
 }

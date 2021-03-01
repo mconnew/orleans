@@ -1,3 +1,4 @@
+using Hagar.Invocation;
 using Orleans.CodeGeneration;
 using Orleans.GrainReferences;
 using Orleans.Internal;
@@ -76,6 +77,11 @@ namespace Orleans.Runtime
             }
 
             return resultTask.ToTypedTask<T>();
+        }
+
+        public void SendRequest(GrainReference reference, IResponseCompletionSource callback, IInvokable body)
+        {
+            this.RuntimeClient.SendRequest(reference, body, callback, InvokeMethodOptions.None);
         }
 
         public object Cast(IAddressable grain, Type grainInterface)

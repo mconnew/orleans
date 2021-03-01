@@ -19,6 +19,7 @@ using System.Threading;
 using Orleans.Configuration;
 using Orleans.GrainReferences;
 using Orleans.Metadata;
+using Hagar.Invocation;
 
 namespace Orleans.Runtime
 {
@@ -120,6 +121,72 @@ namespace Orleans.Runtime
         private Dispatcher Dispatcher => this.dispatcher ?? (this.dispatcher = this.ServiceProvider.GetRequiredService<Dispatcher>());
 
         public IGrainReferenceRuntime GrainReferenceRuntime => this.grainReferenceRuntime ?? (this.grainReferenceRuntime = this.ServiceProvider.GetRequiredService<IGrainReferenceRuntime>());
+
+        public void SendRequest(
+            GrainReference target,
+            Hagar.Invocation.IInvokable request,
+            Hagar.Invocation.IResponseCompletionSource context,
+            InvokeMethodOptions options)
+        {
+            var message = this.messageFactory.CreateMessage(request, options);
+            message.InterfaceType = target.InterfaceType;
+            message.InterfaceVersion = target.InterfaceVersion;
+
+            // fill in sender
+            if (message.SendingSilo == null)
+                message.SendingSilo = MySilo;
+
+            IGrainContext sendingActivation = RuntimeContext.CurrentGrainContext;
+
+            if (sendingActivation == null)
+            {
+                var clientAddress = this.HostedClient.Address;
+                message.SendingGrain = clientAddress.Grain;
+                message.SendingActivation = clientAddress.Activation;
+            }
+            else
+            {
+                message.SendingActivation = sendingActivation.ActivationId;
+                message.SendingGrain = sendingActivation.GrainId;
+            }
+
+            // fill in destination
+            var targetGrainId = target.GrainId;
+            message.TargetGrain = targetGrainId;
+            SharedCallbackData sharedData;
+            if (SystemTargetGrainId.TryParse(targetGrainId, out var systemTargetGrainId))
+            {
+                message.TargetSilo = systemTargetGrainId.GetSiloAddress();
+                message.TargetActivation = ActivationId.GetDeterministic(targetGrainId);
+                message.Category = targetGrainId.Type.Equals(Constants.MembershipServiceType) ?
+                    Message.Categories.Ping : Message.Categories.System;
+                sharedData = this.systemSharedCallbackData;
+            }
+            else
+            {
+                sharedData = this.sharedCallbackData;
+            }
+
+            var oneWay = (options & InvokeMethodOptions.OneWay) != 0;
+            if (context is null && !oneWay)
+            {
+                this.logger.Warn(ErrorCode.IGC_SendRequest_NullContext, "Null context {0}: {1}", message, Utils.GetStackTrace());
+            }
+
+            if (message.IsExpirableMessage(this.messagingOptions.DropExpiredMessages))
+            {
+                message.TimeToLive = sharedData.ResponseTimeout;
+            }
+
+            if (!oneWay)
+            {
+                var callbackData = new CallbackData(sharedData, context, message);
+                callbacks.TryAdd((message.SendingGrain, message.Id), callbackData);
+            }
+
+            this.messagingTrace.OnSendRequest(message);
+            this.Dispatcher.SendMessage(message, sendingActivation);
+        }
 
         public void SendRequest(
             GrainReference target,
@@ -284,21 +351,44 @@ namespace Orleans.Runtime
                 object resultObject;
                 try
                 {
-                    var request = (InvokeMethodRequest) message.BodyObject;
-                    if (request.Arguments != null)
+                    switch (message.BodyObject)
                     {
-                        CancellationSourcesExtension.RegisterCancellationTokens(target, request);
-                    }
+                        case InvokeMethodRequest request:
+                            {
 
-                    if (!this.invokers.TryGet(message.InterfaceType, out var invoker))
-                    {
-                        throw new KeyNotFoundException($"Could not find an invoker for interface {message.InterfaceType}");
-                    }
+                                if (request.Arguments != null)
+                                {
+                                    CancellationSourcesExtension.RegisterCancellationTokens(target, request);
+                                }
 
-                    messagingTrace.OnInvokeMessage(message);
-                    var requestInvoker = new GrainMethodInvoker(target, request, invoker, GrainCallFilters, interfaceToImplementationMapping);
-                    await requestInvoker.Invoke();
-                    resultObject = requestInvoker.Result;
+                                if (!this.invokers.TryGet(message.InterfaceType, out var invoker))
+                                {
+                                    throw new KeyNotFoundException($"Could not find an invoker for interface {message.InterfaceType}");
+                                }
+
+                                messagingTrace.OnInvokeMessage(message);
+                                var requestInvoker = new GrainMethodInvoker(target, request, invoker, GrainCallFilters, interfaceToImplementationMapping);
+                                await requestInvoker.Invoke();
+                                resultObject = requestInvoker.Result;
+                                break;
+                            }
+                        case Hagar.Invocation.IInvokable invokable:
+                            {
+                                try
+                                {
+                                    invokable.SetTarget(target);
+                                    resultObject = await invokable.Invoke();
+                                }
+                                finally
+                                {
+                                    (invokable as IDisposable)?.Dispose();
+                                }
+                                break;
+                            }
+                        default:
+                            throw new NotSupportedException();
+
+                    }
                 }
                 catch (Exception exc1)
                 {

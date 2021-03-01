@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Hagar;
 using Orleans;
 
 namespace UnitTests.GrainInterfaces
@@ -143,6 +144,7 @@ namespace UnitTests.GrainInterfaces
     }
 
     [Serializable]
+    [GenerateSerializer]
     public struct SomeStruct
     {
         public Guid Id { get; set; }

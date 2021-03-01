@@ -42,6 +42,7 @@ using Hagar;
 using System.Runtime.CompilerServices;
 using Hagar.Configuration;
 using System.Collections.Generic;
+using Hagar.TypeSystem;
 
 namespace Orleans.Hosting
 {
@@ -280,7 +281,7 @@ namespace Orleans.Hosting
             // Serialization
             services.TryAddSingleton<SerializationManager>(sp=>ActivatorUtilities.CreateInstance<SerializationManager>(sp,
                 sp.GetRequiredService<IOptions<SiloMessagingOptions>>().Value.LargeMessageWarningThreshold));
-            services.TryAddSingleton<ITypeResolver, CachedTypeResolver>();
+            services.TryAddSingleton<ITypeResolver, Orleans.Runtime.CachedTypeResolver>();
             services.TryAddSingleton<IFieldUtils, FieldUtils>();
 
             // Register the ISerializable serializer first, so that it takes precedence
@@ -321,7 +322,7 @@ namespace Orleans.Hosting
             services.AddSingleton<ClusterManifestProvider>();
             services.AddFromExisting<IClusterManifestProvider, ClusterManifestProvider>();
             services.AddFromExisting<ILifecycleParticipant<ISiloLifecycle>, ClusterManifestProvider>();
-            services.AddSingleton<TypeConverter>();
+            services.AddSingleton<Orleans.Runtime.TypeConverter>();
 
             //Add default option formatter if none is configured, for options which are required to be configured
             services.ConfigureFormatter<SiloOptions>();
@@ -404,8 +405,8 @@ namespace Orleans.Hosting
             services.AddHagar(hagarOptions =>
             {
                 hagarOptions.AddProvider(sp => ActivatorUtilities.CreateInstance<HagarAssemblyProvider>(sp));
-                hagarOptions.AddISerializableSupport();
             });
+            services.AddSingleton<ITypeFilter, AllowOrleansTypes>();
 
             services.TryAddTransient<IMessageSerializer>(sp => ActivatorUtilities.CreateInstance<HagarMessageSerializer>(
                 sp,
@@ -433,6 +434,19 @@ namespace Orleans.Hosting
             services.AddFromExisting<ILifecycleParticipant<ISiloLifecycle>, SiloLoggingHelper>();
             services.AddFromExisting<IGrainIdLoggingHelper, SiloLoggingHelper>();
             services.AddFromExisting<IInvokeMethodRequestLoggingHelper, SiloLoggingHelper>();
+        }
+
+        private class AllowOrleansTypes : ITypeFilter
+        {
+            public bool? IsTypeNameAllowed(string typeName, string assemblyName)
+            {
+                if (assemblyName is { Length: > 0} && assemblyName.Contains("Orleans"))
+                {
+                    return true;
+                }
+
+                return null;
+            }
         }
 
         private class HagarAssemblyProvider : IConfigurationProvider<SerializerConfiguration>

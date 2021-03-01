@@ -38,6 +38,7 @@ namespace Orleans.Runtime
         void SetResponseTimeout(TimeSpan timeout);
 
         void SendRequest(GrainReference target, InvokeMethodRequest request, TaskCompletionSource<object> context, InvokeMethodOptions options);
+        void SendRequest(GrainReference target, Hagar.Invocation.IInvokable request, Hagar.Invocation.IResponseCompletionSource context, InvokeMethodOptions options);
 
         void SendResponse(Message request, Response response);
 

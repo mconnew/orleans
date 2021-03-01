@@ -7,6 +7,7 @@ namespace Orleans
     /// <summary>
     /// Marker interface for grains
     /// </summary>
+    [Hagar.GenerateMethodSerializers(typeof(NewGrainReference))]
     public interface IGrain : IAddressable
     {
     }

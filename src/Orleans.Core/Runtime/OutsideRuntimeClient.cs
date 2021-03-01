@@ -254,7 +254,14 @@ namespace Orleans
             SendRequestMessage(target, message, context, options);
         }
 
-        private void SendRequestMessage(GrainReference target, Message message, TaskCompletionSource<object> context, InvokeMethodOptions options)
+        public void SendRequest(GrainReference target, Hagar.Invocation.IInvokable request, Hagar.Invocation.IResponseCompletionSource context, InvokeMethodOptions options)
+        {
+            var message = this.messageFactory.CreateMessage(request, options);
+            OrleansOutsideRuntimeClientEvent.Log.SendRequest(message);
+            SendRequestMessage(target, message, context, options);
+        }
+
+        private void SendRequestMessage(GrainReference target, Message message, object context, InvokeMethodOptions options)
         {
             message.InterfaceType = target.InterfaceType;
             message.InterfaceVersion = target.InterfaceVersion;
