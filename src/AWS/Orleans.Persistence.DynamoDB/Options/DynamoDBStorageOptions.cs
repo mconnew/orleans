@@ -13,21 +13,6 @@ namespace Orleans.Configuration
         public string ServiceId { get; set; } = string.Empty;
 
         /// <summary>
-        /// Use Provisioned Throughput for tables
-        /// </summary>
-        public bool UseProvisionedThroughput { get; set; } = true;
-
-        /// <summary>
-        /// Read capacity unit for DynamoDB storage
-        /// </summary>
-        public int ReadCapacityUnits { get; set; } = DynamoDBStorage.DefaultReadCapacityUnits;
-
-        /// <summary>
-        /// Write capacity unit for DynamoDB storage
-        /// </summary>
-        public int WriteCapacityUnits { get; set; } = DynamoDBStorage.DefaultWriteCapacityUnits;
-
-        /// <summary>
         /// DynamoDB table name.
         /// Defaults to 'OrleansGrainState'.
         /// </summary>

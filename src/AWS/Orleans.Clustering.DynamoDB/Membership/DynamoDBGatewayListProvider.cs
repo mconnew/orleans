@@ -35,15 +35,7 @@ namespace Orleans.Clustering.DynamoDB
 
         public Task InitializeGatewayListProvider()
         {
-            this.storage = new DynamoDBStorage(
-                this.logger,
-                this.options.Service,
-                this.options.AccessKey,
-                this.options.SecretKey,
-                this.options.Token,
-                this.options.ProfileName,
-                this.options.ReadCapacityUnits,
-                this.options.WriteCapacityUnits);
+            this.storage = new DynamoDBStorage(this.logger, this.options);
 
             return this.storage.InitializeTable(this.options.TableName,
                 new List<KeySchemaElement>

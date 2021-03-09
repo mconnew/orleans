@@ -8,16 +8,6 @@ namespace Orleans.Configuration
     public class DynamoDBReminderStorageOptions : DynamoDBClientOptions
     {
         /// <summary>
-        /// Read capacity unit for DynamoDB storage
-        /// </summary>
-        public int ReadCapacityUnits { get; set; } = DynamoDBStorage.DefaultReadCapacityUnits;
-
-        /// <summary>
-        /// Write capacity unit for DynamoDB storage
-        /// </summary>
-        public int WriteCapacityUnits { get; set; } = DynamoDBStorage.DefaultWriteCapacityUnits;
-
-        /// <summary>
         /// DynamoDB table name.
         /// Defaults to 'OrleansReminders'.
         /// </summary>
