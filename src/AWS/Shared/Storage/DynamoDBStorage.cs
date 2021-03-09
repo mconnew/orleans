@@ -31,7 +31,6 @@ namespace Orleans.Transactions.DynamoDB
     {
         private readonly DynamoDBClientOptions storageOptions;
         private readonly ILogger Logger;
-        private string profileName;
         private AmazonDynamoDBClient ddbClient;
 
         /// <summary>
@@ -40,15 +39,9 @@ namespace Orleans.Transactions.DynamoDB
         /// <param name="logger"></param>
         /// <param name="storageOptions"></param>
         public DynamoDBStorage(ILogger logger, DynamoDBClientOptions storageOptions)
-        /// <param name="token"></param>
-        /// <param name="profileName"></param>
-            string token = "",
-            string profileName = "",
         {
             // Kept as an ArgumentNullException for backwards compatability
             if (storageOptions?.Service is null) throw new ArgumentNullException(nameof(DynamoDBClientOptions.Service));
-            this.token = token;
-            this.profileName = profileName;
             Logger = logger;
             this.storageOptions = storageOptions;
             CreateClient();
@@ -79,48 +72,60 @@ namespace Orleans.Transactions.DynamoDB
 
         private void CreateClient()
         {
+            var ddbConfig = new AmazonDynamoDBConfig();
+
+            if (storageOptions.EndpointDiscoveryEnabled.HasValue)
+            {
+                // For backwards compatability, we shouldn't attempt to set it to a default value using .GetValueOrDefault
+                // so we take the underlying AWS SDK default behaviour, but still allow consumers to override.
+                ddbConfig.EndpointDiscoveryEnabled = storageOptions.EndpointDiscoveryEnabled.Value;
+            }
+
             if (this.storageOptions.Service.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
                 this.storageOptions.Service.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
             {
                 // Local DynamoDB instance (for testing)
                 var credentials = new BasicAWSCredentials("dummy", "dummyKey");
-                this.ddbClient = new AmazonDynamoDBClient(credentials, new AmazonDynamoDBConfig { ServiceURL = this.storageOptions.Service });
+                ddbConfig.ServiceURL = this.storageOptions.Service;
+                this.ddbClient = new AmazonDynamoDBClient(credentials, ddbConfig);
             }
             else if (!string.IsNullOrEmpty(this.storageOptions.AccessKey) && !string.IsNullOrEmpty(this.storageOptions.SecretKey) && !string.IsNullOrEmpty(this.storageOptions.Token))
             {
                 // AWS DynamoDB instance (auth via explicit credentials and token)
-                var credentials = new SessionAWSCredentials(this.storageOptoins.AccessKey, this.storageOptions.SecretKey, this.storageOptions.Token);
-                this.ddbClient = new AmazonDynamoDBClient(credentials, new AmazonDynamoDBConfig {RegionEndpoint = AWSUtils.GetRegionEndpoint(this.storageOptions.ervice)});
+                var credentials = new SessionAWSCredentials(this.storageOptions.AccessKey, this.storageOptions.SecretKey, this.storageOptions.Token);
+                this.ddbClient = new AmazonDynamoDBClient(credentials, new AmazonDynamoDBConfig {RegionEndpoint = AWSUtils.GetRegionEndpoint(this.storageOptions.Service)});
             }
             else if (!string.IsNullOrEmpty(this.storageOptions.AccessKey) && !string.IsNullOrEmpty(this.storageOptions.SecretKey))
             {
                 // AWS DynamoDB instance (auth via explicit credentials)
                 var credentials = new BasicAWSCredentials(this.storageOptions.AccessKey, this.storageOptions.SecretKey);
-                this.ddbClient = new AmazonDynamoDBClient(credentials, new AmazonDynamoDBConfig {RegionEndpoint = AWSUtils.GetRegionEndpoint(this.storageOptions.Service) });
+                ddbConfig.RegionEndpoint = AWSUtils.GetRegionEndpoint(this.storageOptions.Service);
+                this.ddbClient = new AmazonDynamoDBClient(credentials, ddbConfig);
             }
-            else if (!string.IsNullOrEmpty(this.profileName))
+            else if (!string.IsNullOrEmpty(this.storageOptions.ProfileName))
             {
                 // AWS DynamoDB instance (auth via explicit credentials and token found in a named profile)
                 var chain = new CredentialProfileStoreChain();
-                if (chain.TryGetAWSCredentials(this.profileName, out var credentials))
+                if (chain.TryGetAWSCredentials(this.storageOptions.ProfileName, out var credentials))
                 {
                     this.ddbClient = new AmazonDynamoDBClient(
                         credentials,
                         new AmazonDynamoDBConfig
                         {
-                            RegionEndpoint = AWSUtils.GetRegionEndpoint(this.service)
+                            RegionEndpoint = AWSUtils.GetRegionEndpoint(this.storageOptions.Service)
                         });
                 }
                 else
                 {
                     throw new InvalidOperationException(
-                        $"AWS named profile '{this.profileName}' provided, but credentials could not be retrieved");
+                        $"AWS named profile '{this.storageOptions.ProfileName}' provided, but credentials could not be retrieved");
                 }
             }
             else
             {
                 // AWS DynamoDB instance (implicit auth - EC2 IAM Roles etc)
-                this.ddbClient = new AmazonDynamoDBClient(new AmazonDynamoDBConfig {RegionEndpoint = AWSUtils.GetRegionEndpoint(this.storageOptions.Service) });
+                ddbConfig.RegionEndpoint = AWSUtils.GetRegionEndpoint(this.storageOptions.Service);
+                this.ddbClient = new AmazonDynamoDBClient(ddbConfig);
             }
         }
 
