@@ -18,13 +18,13 @@ namespace Orleans.Runtime
     [Hagar.GenerateSerializer]
     public readonly struct StreamId : IEquatable<StreamId>, IComparable<StreamId>, ISerializable
     {
-        [Hagar.Id(1)]
+        [Hagar.Id(0)]
         private readonly byte[] fullKey;
         
-        [Hagar.Id(2)]
+        [Hagar.Id(1)]
         private readonly ushort keyIndex;
         
-        [Hagar.Id(3)]
+        [Hagar.Id(2)]
         private readonly int hash;
 
         public ReadOnlyMemory<byte> FullKey => fullKey;

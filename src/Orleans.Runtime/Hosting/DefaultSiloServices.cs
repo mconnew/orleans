@@ -43,6 +43,7 @@ using System.Runtime.CompilerServices;
 using Hagar.Configuration;
 using System.Collections.Generic;
 using Hagar.TypeSystem;
+using Hagar.Serializers;
 
 namespace Orleans.Hosting
 {
@@ -402,11 +403,9 @@ namespace Orleans.Hosting
                 (sp, key) => ActivatorUtilities.CreateInstance<SocketConnectionListenerFactory>(sp));
 
 #if true
-            services.AddHagar(hagarOptions =>
-            {
-                hagarOptions.AddProvider(sp => ActivatorUtilities.CreateInstance<HagarAssemblyProvider>(sp));
-            });
+            services.AddHagar();
             services.AddSingleton<ITypeFilter, AllowOrleansTypes>();
+            services.AddSingleton<ISpecializableCodec, GrainReferenceCodecProvider>();
 
             services.TryAddTransient<IMessageSerializer>(sp => ActivatorUtilities.CreateInstance<HagarMessageSerializer>(
                 sp,
@@ -446,48 +445,6 @@ namespace Orleans.Hosting
                 }
 
                 return null;
-            }
-        }
-
-        private class HagarAssemblyProvider : IConfigurationProvider<SerializerConfiguration>
-        {
-            private readonly IServiceProvider _serviceProvider;
-            private readonly IApplicationPartManager _applicationPartManager;
-
-            public HagarAssemblyProvider(IServiceProvider serviceProvider, IApplicationPartManager applicationPartManager)
-            {
-                _serviceProvider = serviceProvider;
-                _applicationPartManager = applicationPartManager;
-            }
-
-            public void Configure(SerializerConfiguration configuration)
-            {
-                var asms = new HashSet<Assembly>();
-                foreach (var part in _applicationPartManager.ApplicationParts)
-                {
-                    if (part is not AssemblyPart asm) continue;
-                    asms.Add(asm.Assembly);
-                }
-
-                foreach (var asm in asms)
-                {
-                    AddAssembly(asm, configuration);
-                }
-
-                void AddAssembly(Assembly assembly, SerializerConfiguration configuration)
-                {
-                    var attrs = assembly.GetCustomAttributes<MetadataProviderAttribute>();
-                    foreach (var attr in attrs)
-                    {
-                        if (!typeof(IConfigurationProvider<SerializerConfiguration>).IsAssignableFrom(attr.ProviderType))
-                        {
-                            continue;
-                        }
-
-                        var provider = (IConfigurationProvider<SerializerConfiguration>)ActivatorUtilities.GetServiceOrCreateInstance(_serviceProvider, attr.ProviderType);
-                        provider.Configure(configuration);
-                    }
-                }
             }
         }
     }

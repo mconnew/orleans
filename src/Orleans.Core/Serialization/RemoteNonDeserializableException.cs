@@ -1,4 +1,4 @@
-﻿using System.Runtime.Serialization;
+using System.Runtime.Serialization;
 using Orleans.Runtime;
 
 namespace Orleans.Serialization
@@ -10,7 +10,6 @@ namespace Orleans.Serialization
     /// Represents an exception which cannot be fully deserialized.
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
     public class RemoteNonDeserializableException : OrleansException
     {
         public RemoteNonDeserializableException() { }
@@ -18,13 +17,11 @@ namespace Orleans.Serialization
         /// <summary>
         /// Gets the type name of the original <see cref="Exception"/> represented by this instance.
         /// </summary>
-        [Hagar.Id(1)]
         public string OriginalTypeName { get; internal set; }
 
         /// <summary>
         /// Gets or sets the additional data deserialized alongside this instance, for example, exception subclass fields.
         /// </summary>
-        [Hagar.Id(2)]
         public byte[] AdditionalData { get; internal set; }
 
         /// <summary>

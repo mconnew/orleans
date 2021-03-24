@@ -104,7 +104,7 @@ namespace Orleans.Runtime
                 }
                 else
                 {
-                    rcs.Complete(Hagar.Invocation.Response.FromException<object>(response.Exception));
+                    rcs.Complete(Hagar.Invocation.Response.FromException(response.Exception));
                 }
             }
         }

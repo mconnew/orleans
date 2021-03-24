@@ -8,16 +8,12 @@ namespace Orleans.Streams
     /// Exception indicates that the requested message is not in the queue cache.
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
     public class QueueCacheMissException : DataNotAvailableException
     {
         private const string MESSAGE_FORMAT = "Item not found in cache.  Requested: {0}, Low: {1}, High: {2}";
 
-        [Hagar.Id(1)]
         public string Requested { get; private set; }
-        [Hagar.Id(2)]
         public string Low { get; private set; }
-        [Hagar.Id(3)]
         public string High { get; private set; }
 
         public QueueCacheMissException() : this("Item no longer in cache") { }

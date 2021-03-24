@@ -1,12 +1,12 @@
 using System;
-using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using Hagar;
+using Hagar.Cloning;
 using Hagar.Codecs;
 using Hagar.Invocation;
 using Hagar.Serializers;
+using Microsoft.Extensions.DependencyInjection;
 using Orleans.CodeGeneration;
-using Orleans.Metadata;
 
 namespace Orleans.Runtime
 {
@@ -41,25 +41,66 @@ namespace Orleans.Runtime
     }
 
     [Hagar.RegisterSerializer]
-    internal class GrainReferenceCodec : GeneralizedReferenceTypeSurrogateCodec<GrainReference, GrainReferenceSurrogate>
+    internal class GrainReferenceCodec : GeneralizedReferenceTypeSurrogateCodec<IAddressable, GrainReferenceSurrogate>
     {
         private readonly IGrainFactory _grainFactory;
-        public GrainReferenceCodec(IGrainFactory grainFactory, IValueSerializer<GrainReferenceSurrogate> surrogateSerializer) : base (surrogateSerializer)
+        public GrainReferenceCodec(IGrainFactory grainFactory, IValueSerializer<GrainReferenceSurrogate> surrogateSerializer) : base(surrogateSerializer)
         {
             _grainFactory = grainFactory;
         }
 
-        public override GrainReference ConvertFromSurrogate(ref GrainReferenceSurrogate surrogate)
+        public override IAddressable ConvertFromSurrogate(ref GrainReferenceSurrogate surrogate)
         {
-            return (GrainReference)_grainFactory.GetGrain(surrogate.GrainId, surrogate.GrainInterfaceType);
+            return _grainFactory.GetGrain(surrogate.GrainId, surrogate.GrainInterfaceType);
         }
 
-        public override void ConvertToSurrogate(GrainReference value, ref GrainReferenceSurrogate surrogate)
+        public override void ConvertToSurrogate(IAddressable value, ref GrainReferenceSurrogate surrogate)
         {
+            var refValue = value.AsReference();
             surrogate = new GrainReferenceSurrogate
             {
-                GrainId = value.GrainId,
-                GrainInterfaceType = value.InterfaceType
+                GrainId = refValue.GrainId,
+                GrainInterfaceType = refValue.InterfaceType
+            };
+        }
+    }
+
+    [Hagar.RegisterCopier]
+    internal class GrainReferenceCopier : IGeneralizedCopier
+    {
+        public object DeepCopy(object input, CopyContext context) => input;
+        public bool IsSupportedType(Type type) => typeof(IAddressable).IsAssignableFrom(type);
+    }
+
+    internal class GrainReferenceCodecProvider : ISpecializableCodec
+    {
+        private readonly IServiceProvider _serviceProvider;
+        public GrainReferenceCodecProvider(IServiceProvider serviceProvider) => _serviceProvider = serviceProvider;
+
+        public IFieldCodec GetSpecializedCodec(Type type) => (IFieldCodec)ActivatorUtilities.GetServiceOrCreateInstance(_serviceProvider, typeof(TypedGrainReferenceCodec<>).MakeGenericType(type));
+        public bool IsSupportedType(Type type) => typeof(IAddressable).IsAssignableFrom(type);
+    }
+
+    internal class TypedGrainReferenceCodec<T> : GeneralizedReferenceTypeSurrogateCodec<T, GrainReferenceSurrogate> where T : class, IAddressable
+    {
+        private readonly IGrainFactory _grainFactory;
+        public TypedGrainReferenceCodec(IGrainFactory grainFactory, IValueSerializer<GrainReferenceSurrogate> surrogateSerializer) : base(surrogateSerializer)
+        {
+            _grainFactory = grainFactory;
+        }
+
+        public override T ConvertFromSurrogate(ref GrainReferenceSurrogate surrogate)
+        {
+            return (T)_grainFactory.GetGrain(surrogate.GrainId, surrogate.GrainInterfaceType);
+        }
+
+        public override void ConvertToSurrogate(T value, ref GrainReferenceSurrogate surrogate)
+        {
+            var refValue = (GrainReference)(object)value.AsReference<T>();
+            surrogate = new GrainReferenceSurrogate
+            {
+                GrainId = refValue.GrainId,
+                GrainInterfaceType = refValue.InterfaceType
             };
         }
     }
@@ -226,6 +267,10 @@ namespace Orleans.Runtime
 
         public override ushort InterfaceVersion => Shared.InterfaceVersion;
 
-        protected void SendRequest(IResponseCompletionSource callback, IInvokable body) => this.Runtime.SendRequest(this, callback, body);
+        protected void SendRequest(IResponseCompletionSource callback, IInvokable body) => this.Runtime.SendRequest(this, callback, body, InvokeMethodOptions.None);
+
+        protected void SendOneWay(IResponseCompletionSource callback, IInvokable body) => this.Runtime.SendRequest(this, callback, body, InvokeMethodOptions.OneWay);
+
+        protected void SendRequestWithOptions(IResponseCompletionSource callback, IInvokable body, InvokeMethodOptions options) => this.Runtime.SendRequest(this, callback, body, options);
     }
 }

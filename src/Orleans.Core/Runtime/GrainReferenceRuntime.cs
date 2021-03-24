@@ -79,9 +79,9 @@ namespace Orleans.Runtime
             return resultTask.ToTypedTask<T>();
         }
 
-        public void SendRequest(GrainReference reference, IResponseCompletionSource callback, IInvokable body)
+        public void SendRequest(GrainReference reference, IResponseCompletionSource callback, IInvokable body, InvokeMethodOptions options)
         {
-            this.RuntimeClient.SendRequest(reference, body, callback, InvokeMethodOptions.None);
+            this.RuntimeClient.SendRequest(reference, body, callback, options);
         }
 
         public object Cast(IAddressable grain, Type grainInterface)

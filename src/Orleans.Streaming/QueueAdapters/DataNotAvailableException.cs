@@ -8,7 +8,6 @@ namespace Orleans.Streams
     /// Exception indicates that the requested data is not available.
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
     public class DataNotAvailableException : OrleansException
     {
         public DataNotAvailableException() : this("Data not found") { }
@@ -22,7 +21,6 @@ namespace Orleans.Streams
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
     public class CacheFullException : OrleansException
     {
         public CacheFullException() : this("Queue message cache is full") { }

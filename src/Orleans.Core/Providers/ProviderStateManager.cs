@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -75,7 +75,6 @@ namespace Orleans.Providers
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
     public class ProviderStateException : OrleansException
     {
         public ProviderStateException() : base("Unexpected provider state")

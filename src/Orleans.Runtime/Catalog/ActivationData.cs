@@ -128,6 +128,18 @@ namespace Orleans.Runtime
                 result = _shared.GetComponent<TComponent>();
             }
 
+            if (result is null && typeof(IGrainExtension).IsAssignableFrom(typeof(TComponent)))
+            {
+                var implementation = this.ActivationServices.GetServiceByKey<Type, IGrainExtension>(typeof(TComponent));
+                if (!(implementation is TComponent typedResult))
+                {
+                    throw new GrainExtensionNotInstalledException($"No extension of type {typeof(TComponent)} is installed on this instance and no implementations are registered for automated install");
+                }
+
+                this.SetComponent<TComponent>(typedResult);
+                result = typedResult;
+            }
+
             return result;
         }
 

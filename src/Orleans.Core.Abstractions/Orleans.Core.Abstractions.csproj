@@ -13,7 +13,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Bcl.HashCode" Version="$(MicrosoftBclHashCodeVersion)" />
     <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
-    <PackageReference Include="Hagar.Sdk" Version="0.6.1-dev-20210322111110" />
+    <PackageReference Include="Hagar.Sdk" Version="0.6.1-dev-202103240938" />
   </ItemGroup>
 
 </Project>
