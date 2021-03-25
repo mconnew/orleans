@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Orleans.Concurrency;
 using Orleans.Runtime;
@@ -44,7 +45,8 @@ namespace Orleans.Transactions
             return $"ParticipantId.{Name}.{Reference}";
         }
 
-        private class IdComparer : IEqualityComparer<ParticipantId>
+        [Hagar.GenerateSerializer]
+        public class IdComparer : IEqualityComparer<ParticipantId>
         {
             public bool Equals(ParticipantId x, ParticipantId y)
             {

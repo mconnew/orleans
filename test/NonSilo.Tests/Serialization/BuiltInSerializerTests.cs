@@ -130,39 +130,6 @@ namespace UnitTests.Serialization
                 $"Should be able to serialize internal type {nameof(ValueTuple<int, AddressAndTag>)}.");
         }
 
-        [Fact, TestCategory("BVT")]
-        public void Serialize_ComplexClass()
-        {
-            var environment = defaultFixture;
-            var expected = OuterClass.GetPrivateClassInstance();
-            expected.Int = 89;
-            expected.String = Guid.NewGuid().ToString();
-            expected.NonSerializedInt = 39;
-            expected.Classes = new SomeAbstractClass[]
-            {
-                expected,
-                new AnotherConcreteClass
-                {
-                    AnotherString = "hi",
-                    Interfaces = new List<ISomeInterface> { expected }
-                }
-            };
-            expected.Enum = SomeAbstractClass.SomeEnum.Something;
-            expected.SetObsoleteInt(38);
-
-            var actual = (SomeAbstractClass)OrleansSerializationLoop(environment.SerializationManager, expected);
-
-            Assert.Equal(expected.Int, actual.Int);
-            Assert.Equal(expected.Enum, actual.Enum);
-            Assert.Equal(expected.String, ((OuterClass.SomeConcreteClass)actual).String);
-            Assert.Equal(expected.Classes.Length, actual.Classes.Length);
-            Assert.Equal(expected.String, ((OuterClass.SomeConcreteClass)actual.Classes[0]).String);
-            Assert.Equal(expected.Classes[1].Interfaces[0].Int, actual.Classes[1].Interfaces[0].Int);
-            Assert.Equal(0, actual.NonSerializedInt);
-            Assert.Equal(expected.GetObsoleteInt(), actual.GetObsoleteInt());
-            Assert.Null(actual.SomeGrainReference);
-        }
-
         /// <summary>
         /// Tests that the default (non-fallback) serializer can handle complex classes.
         /// </summary>

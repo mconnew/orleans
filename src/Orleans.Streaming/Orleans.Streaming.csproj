@@ -6,5 +6,6 @@
     <TargetFrameworks>$(MultiTargetFrameworks)</TargetFrameworks>
     <OrleansBuildTimeCodeGen>true</OrleansBuildTimeCodeGen>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
   </PropertyGroup>
 </Project>

@@ -61,7 +61,6 @@ namespace Benchmarks.Serialization
         [Params(SerializerToUse.IlBasedFallbackSerializer, SerializerToUse.Default, SerializerToUse.ProtoBufNet)]
         public SerializerToUse Serializer { get; set; }
 
-        private OuterClass.SomeConcreteClass complexClass;
         private Message.HeadersContainer messageHeaders;
         private byte[] serializedBytes;
         private ReadOnlySequence<byte> headerBytes;
@@ -74,39 +73,6 @@ namespace Benchmarks.Serialization
         public void BenchmarkSetup()
         {
             this.InitializeSerializer(this.Serializer);
-
-            this.complexClass = OuterClass.GetPrivateClassInstance();
-            this.complexClass.Int = 89;
-            this.complexClass.String = Guid.NewGuid().ToString();
-            this.complexClass.NonSerializedInt = 39;
-            var classes = new List<SomeAbstractClass>
-            {
-                this.complexClass,
-                new AnotherConcreteClass
-                {
-                    AnotherString = "hi",
-                    Interfaces = new List<ISomeInterface>
-                    {
-                        this.complexClass
-                    }
-                },
-                new AnotherConcreteClass(),
-                OuterClass.GetPrivateClassInstance()
-            };
-            
-            this.complexClass.Classes = classes.ToArray();
-            this.complexClass.Enum = SomeAbstractClass.SomeEnum.Something;
-            this.complexClass.SetObsoleteInt(38);
-
-            this.complexClass.Struct = new SomeStruct(10)
-            {
-                Id = Guid.NewGuid(),
-                PublicValue = 6,
-                ValueWithPrivateGetter = 7
-            };
-            this.complexClass.Struct.SetValueWithPrivateSetter(8);
-            this.complexClass.Struct.SetPrivateValue(9);
-
 
             this.largeTestData = new LargeTestData
             {
@@ -191,26 +157,6 @@ namespace Benchmarks.Serialization
         public object DeserializerBenchmark()
         {
             return this.serializationManager.DeserializeFromByteArray<LargeTestData>(this.serializedBytes);
-        }
-
-        /// <summary>
-        /// Performs a full serialization loop using a type which has not had code generation performed.
-        /// </summary>
-        /// <returns></returns>
-        //[Benchmark]
-        public object FallbackFullLoop()
-        {
-            return OrleansSerializationLoop(this.complexClass);
-        }
-
-        internal object OrleansSerializationLoop(object input, bool includeWire = true)
-        {
-            var copy = this.serializationManager.DeepCopy(input);
-            if (includeWire)
-            {
-                copy = this.serializationManager.RoundTripSerializationForTesting(copy);
-            }
-            return copy;
         }
     }
 
@@ -323,10 +269,6 @@ namespace Benchmarks.Serialization
 
     internal class OuterClass
     {
-        public static SomeConcreteClass GetPrivateClassInstance() => new PrivateConcreteClass(Guid.NewGuid());
-
-        public static Type GetPrivateClassType() => typeof(PrivateConcreteClass);
-
         [Serializable]
         [Hagar.GenerateSerializer]
         public class SomeConcreteClass : SomeAbstractClass
@@ -339,32 +281,6 @@ namespace Benchmarks.Serialization
 
             [Hagar.Id(2)]
             public SomeStruct Struct { get; set; }
-
-            [Hagar.Id(3)]
-            private PrivateConcreteClass secretPrivateClass;
-
-            public void ConfigureSecretPrivateClass()
-            {
-                this.secretPrivateClass = new PrivateConcreteClass(Guid.NewGuid());
-            }
-
-            public bool AreSecretBitsIdentitcal(SomeConcreteClass other)
-            {
-                return other.secretPrivateClass?.Identity == this.secretPrivateClass?.Identity;
-            }
-        }
-
-        [Serializable]
-        [Hagar.GenerateSerializer]
-        private class PrivateConcreteClass : SomeConcreteClass
-        {
-            public PrivateConcreteClass(Guid identity)
-            {
-                this.Identity = identity;
-            }
-
-            [Hagar.Id(0)]
-            public readonly Guid Identity;
         }
     }
 

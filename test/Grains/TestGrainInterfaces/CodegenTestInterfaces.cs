@@ -261,50 +261,6 @@ namespace UnitTests.GrainInterfaces
         }
     }
 
-    public class OuterClass
-    {
-        public static SomeConcreteClass GetPrivateClassInstance() => new PrivateConcreteClass(Guid.NewGuid());
-
-        public static Type GetPrivateClassType() => typeof(PrivateConcreteClass);
-
-        [Serializable]
-        [GenerateSerializer]
-        public class SomeConcreteClass : SomeAbstractClass
-        {
-            [Id(0)]
-            public override int Int { get; set; }
-
-            [Id(1)]
-            public string String { get; set; }
-
-            [Id(2)]
-            private PrivateConcreteClass secretPrivateClass;
-
-            public void ConfigureSecretPrivateClass()
-            {
-                this.secretPrivateClass = new PrivateConcreteClass(Guid.NewGuid());
-            }
-
-            public bool AreSecretBitsIdentitcal(SomeConcreteClass other)
-            {
-                return other.secretPrivateClass?.Identity == this.secretPrivateClass?.Identity;
-            }
-        }
-
-        [Serializable]
-        [GenerateSerializer]
-        private class PrivateConcreteClass : SomeConcreteClass
-        {
-            public PrivateConcreteClass(Guid identity)
-            {
-                this.Identity = identity;
-            }
-
-            [Id(0)]
-            public readonly Guid Identity;
-        }
-    }
-
     [Serializable]
     [GenerateSerializer]
     public class AnotherConcreteClass : SomeAbstractClass
@@ -359,10 +315,8 @@ namespace UnitTests.GrainInterfaces
     // This class should not have a serializer generated for it, since the serializer would not be able to access
     // the nested private class.
     [Serializable]
-    [GenerateSerializer]
     public class ClassWithNestedPrivateClassInListField
     {
-        [Id(0)]
         private readonly List<NestedPrivateClass> coolBeans = new List<NestedPrivateClass>
         {
             new NestedPrivateClass()
