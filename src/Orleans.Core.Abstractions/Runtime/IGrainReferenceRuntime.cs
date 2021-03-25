@@ -34,6 +34,6 @@ namespace Orleans.Runtime
         /// <returns>A reference to <paramref name="grain"/> which implements <paramref name="interfaceType"/>.</returns>
         object Cast(IAddressable grain, Type interfaceType);
 
-        void SendRequest(GrainReference reference, Hagar.Invocation.IResponseCompletionSource callback, Hagar.Invocation.IInvokable body);
+        void SendRequest(GrainReference reference, Hagar.Invocation.IResponseCompletionSource callback, Hagar.Invocation.IInvokable body, InvokeMethodOptions options);
     }
 }

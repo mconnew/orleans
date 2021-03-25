@@ -1,10 +1,13 @@
 using System;
+using Hagar;
+using Orleans.Runtime;
 
 namespace Orleans
 {
     /// <summary>
     /// The TransactionAttribute attribute is used to mark methods that start and join transactions.
     /// </summary>
+    [InvokableCustomInitializer(nameof(RequestBase.SetTransactionOptions))]
     [AttributeUsage(AttributeTargets.Method)]
     public sealed class TransactionAttribute : Attribute
     {

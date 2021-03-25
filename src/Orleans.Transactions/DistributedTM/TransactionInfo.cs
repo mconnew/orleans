@@ -7,6 +7,7 @@ using Orleans.Transactions.Abstractions;
 
 namespace Orleans.Transactions
 {
+    [Hagar.GenerateSerializer]
     [Serializable]
     public class TransactionInfo : ITransactionInfo
     {
@@ -40,18 +41,24 @@ namespace Orleans.Transactions
 
         public string Id => TransactionId.ToString();
 
+        [Hagar.Id(0)]
         public Guid TransactionId { get; }
 
+        [Hagar.Id(1)]
         public DateTime TimeStamp { get; set; }
 
+        [Hagar.Id(2)]
         public DateTime Priority { get; set; }
 
+        [Hagar.Id(3)]
         public bool IsReadOnly { get; }
 
+        [Hagar.Id(4)]
         public byte[] OriginalException { get; set; }
 
         // counts how many writes were done per each accessed resource
         // zero means the resource was only read
+        [Hagar.Id(5)]
         public Dictionary<ParticipantId, AccessCounter> Participants { get; }
 
         [NonSerialized]

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Hagar;
 using Hagar.Cloning;
@@ -163,6 +164,7 @@ namespace Orleans.Runtime
         public bool Equals(GrainReference other) => other is GrainReference && this.GrainId.Equals(other.GrainId);
 
         /// <summary> Calculates a hash code for a grain reference. </summary>
+
         public override int GetHashCode() => this.GrainId.GetHashCode();
 
         /// <summary>Get a uniform hash code for this grain reference.</summary>
@@ -196,6 +198,7 @@ namespace Orleans.Runtime
         public static bool operator !=(GrainReference reference1, GrainReference reference2)
         {
             if (reference1 is null) return !(reference2 is null);
+
 
             return !reference1.Equals(reference2);
         }
@@ -233,6 +236,7 @@ namespace Orleans.Runtime
             }
         }
 
+
         /// <summary>
         /// Return the name of the interface for this GrainReference.
         /// Implemented in Orleans generated code.
@@ -259,6 +263,11 @@ namespace Orleans.Runtime
         }
     }
 
+    [DefaultInvokableBaseType(typeof(ValueTask<>), typeof(Request<>))]
+    [DefaultInvokableBaseType(typeof(ValueTask), typeof(Request))]
+    [DefaultInvokableBaseType(typeof(Task<>), typeof(TaskRequest<>))]
+    [DefaultInvokableBaseType(typeof(Task), typeof(TaskRequest))]
+    [DefaultInvokableBaseType(typeof(void), typeof(VoidRequest))]
     public abstract class NewGrainReference : GrainReference
     {
         protected NewGrainReference(GrainReferenceShared shared, IdSpan key) : base(shared, key)
@@ -267,10 +276,237 @@ namespace Orleans.Runtime
 
         public override ushort InterfaceVersion => Shared.InterfaceVersion;
 
-        protected void SendRequest(IResponseCompletionSource callback, IInvokable body) => this.Runtime.SendRequest(this, callback, body, InvokeMethodOptions.None);
+        protected void SendRequest(IResponseCompletionSource callback, IInvokable body)
+        {
+            var request = (RequestBase)body;
+            this.Runtime.SendRequest(this, callback, body, request.Options);
+        }
 
-        protected void SendOneWay(IResponseCompletionSource callback, IInvokable body) => this.Runtime.SendRequest(this, callback, body, InvokeMethodOptions.OneWay);
+        protected void SendOneWay(IResponseCompletionSource callback, IInvokable body)
+        {
+            var request = (RequestBase)body;
+            this.Runtime.SendRequest(this, callback, body, request.Options);
+            callback.Complete();
+        }
+    }
 
-        protected void SendRequestWithOptions(IResponseCompletionSource callback, IInvokable body, InvokeMethodOptions options) => this.Runtime.SendRequest(this, callback, body, options);
+    public abstract class RequestBase : IInvokable
+    {
+        internal InvokeMethodOptions Options { get; private set; }
+
+        public abstract int ArgumentCount { get; }
+
+        public void AddInvokeMethodOptions(InvokeMethodOptions options)
+        {
+            Options |= options;
+        }
+
+        public void SetTransactionOptions(TransactionOptionAlias txOption) => SetTransactionOptions((TransactionOption)txOption);
+
+        public void SetTransactionOptions(TransactionOption txOption)
+        {
+            Options |= txOption switch
+            {
+                TransactionOption.Suppress => InvokeMethodOptions.TransactionSuppress,
+                TransactionOption.Supported => InvokeMethodOptions.TransactionSupported,
+                TransactionOption.CreateOrJoin => InvokeMethodOptions.TransactionCreateOrJoin,
+                TransactionOption.Create => InvokeMethodOptions.TransactionCreate,
+                TransactionOption.Join => InvokeMethodOptions.TransactionJoin,
+                TransactionOption.NotAllowed => InvokeMethodOptions.TransactionNotAllowed,
+                _ => InvokeMethodOptions.None
+            };
+        }
+
+        public abstract ValueTask<Response> Invoke();
+
+        public abstract TTarget GetTarget<TTarget>();
+        public abstract void SetTarget<TTargetHolder>(TTargetHolder holder) where TTargetHolder : ITargetHolder;
+        public abstract TArgument GetArgument<TArgument>(int index);
+        public abstract void SetArgument<TArgument>(int index, in TArgument value);
+        public abstract void Dispose();
+    }
+
+    public abstract class Request : RequestBase 
+    {
+        [DebuggerHidden]
+        public override ValueTask<Response> Invoke()
+        {
+            try
+            {
+                var resultTask = InvokeInner();
+                if (resultTask.IsCompleted)
+                {
+                    resultTask.GetAwaiter().GetResult();
+                    return new ValueTask<Response>(Response.Completed);
+                }
+
+                return CompleteInvokeAsync(resultTask);
+            }
+            catch (Exception exception)
+            {
+                return new ValueTask<Response>(Response.FromException(exception));
+            }
+        }
+
+        [DebuggerHidden]
+        private static async ValueTask<Response> CompleteInvokeAsync(ValueTask resultTask)
+        {
+            try
+            {
+                await resultTask;
+                return Response.FromResult<object>(null);
+            }
+            catch (Exception exception)
+            {
+                return Response.FromException(exception);
+            }
+        }
+
+        // Generated
+        [DebuggerHidden]
+        protected abstract ValueTask InvokeInner();
+    }
+
+    public abstract class Request<TResult> : RequestBase
+    {
+        [DebuggerHidden]
+        public override ValueTask<Response> Invoke()
+        {
+            try
+            {
+                var resultTask = InvokeInner();
+                if (resultTask.IsCompleted)
+                {
+                    return new ValueTask<Response>(Response.FromResult(resultTask.Result));
+                }
+
+                return CompleteInvokeAsync(resultTask);
+            }
+            catch (Exception exception)
+            {
+                return new ValueTask<Response>(Response.FromException(exception));
+            }
+        }
+
+        [DebuggerHidden]
+        private static async ValueTask<Response> CompleteInvokeAsync(ValueTask<TResult> resultTask)
+        {
+            try
+            {
+                var result = await resultTask;
+                return Response.FromResult(result);
+            }
+            catch (Exception exception)
+            {
+                return Response.FromException(exception);
+            }
+        }
+
+        // Generated
+        [DebuggerHidden]
+        protected abstract ValueTask<TResult> InvokeInner();
+    }
+
+    public abstract class TaskRequest<TResult> : RequestBase
+    {
+        [DebuggerHidden]
+        public override ValueTask<Response> Invoke()
+        {
+            try
+            {
+                var resultTask = InvokeInner();
+                var status = resultTask.Status;
+                if (resultTask.IsCompleted)
+                {
+                    return new ValueTask<Response>(Response.FromResult(resultTask.GetAwaiter().GetResult()));
+                }
+
+                return CompleteInvokeAsync(resultTask);
+            }
+            catch (Exception exception)
+            {
+                return new ValueTask<Response>(Response.FromException(exception));
+            }
+        }
+
+        [DebuggerHidden]
+        private static async ValueTask<Response> CompleteInvokeAsync(Task<TResult> resultTask)
+        {
+            try
+            {
+                var result = await resultTask;
+                return Response.FromResult(result);
+            }
+            catch (Exception exception)
+            {
+                return Response.FromException(exception);
+            }
+        }
+
+        // Generated
+        [DebuggerHidden]
+        protected abstract Task<TResult> InvokeInner();
+    }
+
+    public abstract class TaskRequest : RequestBase 
+    {
+        [DebuggerHidden]
+        public override ValueTask<Response> Invoke()
+        {
+            try
+            {
+                var resultTask = InvokeInner();
+                var status = resultTask.Status;
+                if (resultTask.IsCompleted)
+                {
+                    resultTask.GetAwaiter().GetResult();
+                    return new ValueTask<Response>(Response.Completed);
+                }
+
+                return CompleteInvokeAsync(resultTask);
+            }
+            catch (Exception exception)
+            {
+                return new ValueTask<Response>(Response.FromException(exception));
+            }
+        }
+
+        private static async ValueTask<Response> CompleteInvokeAsync(Task resultTask)
+        {
+            try
+            {
+                await resultTask;
+                return Response.FromResult<object>(null);
+            }
+            catch (Exception exception)
+            {
+                return Response.FromException(exception);
+            }
+        }
+
+        // Generated
+        [DebuggerHidden]
+        protected abstract Task InvokeInner();
+    }
+
+    public abstract class VoidRequest : RequestBase
+    {
+        [DebuggerHidden]
+        public override ValueTask<Response> Invoke()
+        {
+            try
+            {
+                InvokeInner();
+                return new ValueTask<Response>(Response.Completed);
+            }
+            catch (Exception exception)
+            {
+                return new ValueTask<Response>(Response.FromException(exception));
+            }
+        }
+
+        // Generated
+        [DebuggerHidden]
+        protected abstract void InvokeInner();
     }
 }
