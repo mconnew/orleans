@@ -30,6 +30,7 @@ namespace Orleans.Providers
     /// Default IMemoryMessageBodySerializer
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class DefaultMemoryMessageBodySerializer : IMemoryMessageBodySerializer, IOnDeserialized
     {
         [NonSerialized]
@@ -66,6 +67,7 @@ namespace Orleans.Providers
     /// Body of message sent over MemoryStreamProvider
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class MemoryMessageBody
     {
         /// <summary>
@@ -83,11 +85,13 @@ namespace Orleans.Providers
         /// <summary>
         /// Events in message
         /// </summary>
+        [Hagar.Id(0)]
         public List<object> Events { get; }
 
         /// <summary>
         /// Message context
         /// </summary>
+        [Hagar.Id(1)]
         public Dictionary<string, object> RequestContext { get; }
     }
 }

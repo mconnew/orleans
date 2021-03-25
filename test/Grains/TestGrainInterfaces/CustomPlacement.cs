@@ -28,10 +28,12 @@ namespace UnitTests.GrainInterfaces
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class TestCustomPlacementStrategy : PlacementStrategy
     {
         private const string ScenarioKey = "test-placement-scenario";
 
+        [Hagar.Id(0)]
         public CustomPlacementScenario Scenario { get; private set; }
 
         public static TestCustomPlacementStrategy FixedSilo { get; } = new TestCustomPlacementStrategy(CustomPlacementScenario.FixedSilo);

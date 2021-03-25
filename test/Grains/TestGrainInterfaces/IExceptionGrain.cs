@@ -65,6 +65,7 @@ namespace UnitTests.GrainInterfaces
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public struct UndeserializableType
     {
         public const string FailureMessage = "Can't do it, sorry.";
@@ -74,6 +75,7 @@ namespace UnitTests.GrainInterfaces
             this.Number = num;
         }
 
+        [Hagar.Id(0)]
         public int Number { get; }
 
         [CopierMethod]
@@ -98,6 +100,7 @@ namespace UnitTests.GrainInterfaces
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class UnserializableType
     {
         [CopierMethod]

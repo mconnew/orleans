@@ -4,6 +4,7 @@ using Orleans;
 namespace UnitTests.DtosRefOrleans
 {
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class ClassReferencingOrleansTypeDto
     {
         static ClassReferencingOrleansTypeDto()
@@ -11,6 +12,7 @@ namespace UnitTests.DtosRefOrleans
             typeof(IGrain).ToString();
         }
 
+        [Hagar.Id(0)]
         public string MyProperty { get; set; }
     }
 }

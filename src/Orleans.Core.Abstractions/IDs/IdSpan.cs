@@ -145,10 +145,12 @@ namespace Orleans.Runtime
     [Immutable]
     [Serializable]
     [StructLayout(LayoutKind.Auto)]
+    [Hagar.GenerateSerializer]
     public readonly struct IdSpan : IEquatable<IdSpan>, IComparable<IdSpan>, ISerializable
     {
+        [Hagar.Id(0)]
         private readonly int _hashCode;
-
+        [Hagar.Id(1)]
         private readonly byte[] _value;
 
         /// <summary>

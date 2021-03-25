@@ -147,8 +147,10 @@ namespace Orleans.Transactions
         }
 
         [Serializable]
+        [Hagar.GenerateSerializer]
         public class OperationState
         {
+            [Hagar.Id(0)]
             public ITransactionCommitOperation<TService> Operation { get; set; }
         }
     }

@@ -8,14 +8,19 @@ namespace UnitTests.StorageTests.Relational.TestDataSets
     /// A generic state used to test if saving, reading and clearing of the storage functions as expected.
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class TestStateGeneric1<T>: IEquatable<TestStateGeneric1<T>>
     {
+        [Hagar.Id(0)]
         public T SomeData { get; set; }
 
+        [Hagar.Id(1)]
         public string A { get; set; }
 
+        [Hagar.Id(2)]
         public int B { get; set; }
 
+        [Hagar.Id(3)]
         public long C { get; set; }
 
 

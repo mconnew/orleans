@@ -215,13 +215,21 @@ namespace Benchmarks.Serialization
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     internal struct SomeStruct
     {
+        [Hagar.Id(0)]
         public Guid Id { get; set; }
+        [Hagar.Id(1)]
         public int PublicValue { get; set; }
+        [Hagar.Id(2)]
         public int ValueWithPrivateSetter { get; private set; }
+        [Hagar.Id(3)]
         public int ValueWithPrivateGetter { private get; set; }
+        [Hagar.Id(4)]
         private int PrivateValue { get; set; }
+
+        [Hagar.Id(5)]
         public readonly int ReadonlyField;
 
         public SomeStruct(int readonlyField)
@@ -254,21 +262,27 @@ namespace Benchmarks.Serialization
     internal interface ISomeInterface { int Int { get; set; } }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     internal abstract class SomeAbstractClass : ISomeInterface
     {
         [NonSerialized]
         private int nonSerializedIntField;
 
+        [Hagar.Id(0)]
         public abstract int Int { get; set; }
 
+        [Hagar.Id(1)]
         public List<ISomeInterface> Interfaces { get; set; }
 
+        [Hagar.Id(2)]
         public SomeAbstractClass[] Classes { get; set; }
 
         [Obsolete("This field should not be serialized", true)]
+        [Hagar.Id(3)]
         public int ObsoleteIntWithError { get; set; }
 
         [Obsolete("This field should be serialized")]
+        [Hagar.Id(4)]
         public int ObsoleteInt { get; set; }
 
 
@@ -280,6 +294,7 @@ namespace Benchmarks.Serialization
         }
 #pragma warning restore 618
 
+        [Hagar.Id(5)]
         public SomeEnum Enum { get; set; }
 
         public int NonSerializedInt
@@ -313,14 +328,19 @@ namespace Benchmarks.Serialization
         public static Type GetPrivateClassType() => typeof(PrivateConcreteClass);
 
         [Serializable]
+        [Hagar.GenerateSerializer]
         public class SomeConcreteClass : SomeAbstractClass
         {
+            [Hagar.Id(0)]
             public override int Int { get; set; }
 
+            [Hagar.Id(1)]
             public string String { get; set; }
 
+            [Hagar.Id(2)]
             public SomeStruct Struct { get; set; }
 
+            [Hagar.Id(3)]
             private PrivateConcreteClass secretPrivateClass;
 
             public void ConfigureSecretPrivateClass()
@@ -335,6 +355,7 @@ namespace Benchmarks.Serialization
         }
 
         [Serializable]
+        [Hagar.GenerateSerializer]
         private class PrivateConcreteClass : SomeConcreteClass
         {
             public PrivateConcreteClass(Guid identity)
@@ -342,19 +363,24 @@ namespace Benchmarks.Serialization
                 this.Identity = identity;
             }
 
+            [Hagar.Id(0)]
             public readonly Guid Identity;
         }
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     internal class AnotherConcreteClass : SomeAbstractClass
     {
+        [Hagar.Id(0)]
         public override int Int { get; set; }
 
+        [Hagar.Id(1)]
         public string AnotherString { get; set; }
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     internal class InnerType
     {
         public InnerType()
@@ -362,7 +388,10 @@ namespace Benchmarks.Serialization
             this.Id = Guid.NewGuid();
             this.Something = this.Id.ToString();
         }
+
+        [Hagar.Id(0)]
         public Guid Id { get; set; }
+        [Hagar.Id(1)]
         public string Something { get; set; }
 
         public override bool Equals(object obj)

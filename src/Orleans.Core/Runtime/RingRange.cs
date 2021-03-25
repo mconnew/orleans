@@ -36,6 +36,7 @@ namespace Orleans.Runtime
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     internal sealed class SingleRange : IRingRangeInternal, IEquatable<SingleRange>, ISingleRange
     {
         [Hagar.Id(1)]
@@ -198,6 +199,7 @@ namespace Orleans.Runtime
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     internal sealed class GeneralMultiRange : IRingRangeInternal
     {
         [Hagar.Id(1)]

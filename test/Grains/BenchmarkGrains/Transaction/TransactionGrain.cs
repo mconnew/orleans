@@ -10,8 +10,10 @@ using BenchmarkGrainInterfaces.Transaction;
 namespace BenchmarkGrains.Transaction
 {
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class Info
     {
+        [Hagar.Id(0)]
         public int Value { get; set; }
     }
 

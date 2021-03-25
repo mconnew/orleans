@@ -13,9 +13,11 @@ namespace Orleans.ServiceBus.Providers
     /// Batch container that is delivers payload and stream position information for a set of events in an EventHub EventData.
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class EventHubBatchContainer : IBatchContainer, IOnDeserialized
     {
         [JsonProperty]
+        [Hagar.Id(0)]
         private readonly EventHubMessage eventHubMessage;
 
         [JsonIgnore]
@@ -23,6 +25,7 @@ namespace Orleans.ServiceBus.Providers
         private SerializationManager serializationManager;
 
         [JsonProperty]
+        [Hagar.Id(1)]
         private readonly EventHubSequenceToken token;
 
         /// <summary>
@@ -42,9 +45,12 @@ namespace Orleans.ServiceBus.Providers
         private Body GetPayload() => payload ?? (payload = this.serializationManager.DeserializeFromByteArray<Body>(eventHubMessage.Payload));
 
         [Serializable]
+        [Hagar.GenerateSerializer]
         private class Body
         {
+            [Hagar.Id(0)]
             public List<object> Events { get; set; }
+            [Hagar.Id(1)]
             public Dictionary<string, object> RequestContext { get; set; }
         }
 

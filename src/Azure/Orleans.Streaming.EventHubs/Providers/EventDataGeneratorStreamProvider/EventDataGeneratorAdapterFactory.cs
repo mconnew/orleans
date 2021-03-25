@@ -131,16 +131,19 @@ namespace Orleans.ServiceBus.Providers.Testing
         /// Args for RandomlyPlaceStreamToQueue method
         /// </summary>
         [Serializable]
+        [Hagar.GenerateSerializer]
         public class StreamRandomPlacementArg
         {
             /// <summary>
             /// StreamId
             /// </summary>
+            [Hagar.Id(0)]
             public StreamId StreamId { get; set; }
 
             /// <summary>
             /// A random number
             /// </summary>
+            [Hagar.Id(1)]
             public int RandomNumber { get; set; }
 
             /// <summary>

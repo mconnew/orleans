@@ -15,9 +15,12 @@ using Xunit;
 namespace UnitTests.Grains
 {
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class EchoTaskGrainState
     {
+        [Hagar.Id(0)]
         public int MyId { get; set; }
+        [Hagar.Id(1)]
         public string LastEcho { get; set; }
     }
 

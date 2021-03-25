@@ -41,9 +41,11 @@ namespace Orleans.Runtime
             get { return _retryCount; }
             set { _retryCount = value; }
         }
-        
+
         // Cache values of TargetAddess and SendingAddress as they are used very frequently
+        [Hagar.Id(0)]
         private ActivationAddress targetAddress;
+        [Hagar.Id(1)]
         private ActivationAddress sendingAddress;
         
         static Message()
@@ -86,6 +88,7 @@ namespace Orleans.Runtime
             CacheInvalidation
         }
 
+        [Hagar.Id(2)]
         internal HeadersContainer Headers { get; set; } = new HeadersContainer();
 
         public Categories Category
@@ -355,6 +358,7 @@ namespace Orleans.Runtime
             set { Headers.RequestContextData = value; }
         }
 
+        [Hagar.Id(3)]
         public object BodyObject { get; set; }
 
         public void ClearTargetAddress()
@@ -489,6 +493,7 @@ namespace Orleans.Runtime
         }
 
         // For statistical measuring of time spent in queues.
+        [Hagar.Id(4)]
         private ITimeInterval timeInterval;
 
         public void Start()

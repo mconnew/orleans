@@ -43,6 +43,7 @@ namespace UnitTests.Grains
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class PersistenceTestGrainState
     {
         public PersistenceTestGrainState()
@@ -50,16 +51,23 @@ namespace UnitTests.Grains
             SortedDict = new SortedDictionary<int, int>();
         }
 
+        [Hagar.Id(0)]
         public int Field1 { get; set; }
+        [Hagar.Id(1)]
         public string Field2 { get; set; }
+        [Hagar.Id(2)]
         public SortedDictionary<int, int> SortedDict { get; set; }
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class PersistenceGenericGrainState<T>
     {
+        [Hagar.Id(0)]
         public T Field1 { get; set; }
+        [Hagar.Id(1)]
         public string Field2 { get; set; }
+        [Hagar.Id(2)]
         public SortedDictionary<T, T> SortedDict { get; set; }
     }
 
@@ -559,15 +567,20 @@ namespace UnitTests.Grains
         }
 
         [Serializable]
+        [Hagar.GenerateSerializer]
         public class NestedPersistenceTestGrainState
         {
+            [Hagar.Id(0)]
             public int Field1 { get; set; }
+            [Hagar.Id(1)]
             public string Field2 { get; set; }
+            [Hagar.Id(2)]
             public SortedDictionary<int, int> SortedDict { get; set; }
         }
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class UserState
     {
         public UserState()
@@ -575,15 +588,21 @@ namespace UnitTests.Grains
             Friends = new List<IUser>();
         }
 
+        [Hagar.Id(0)]
         public string Name { get; set; }
+        [Hagar.Id(1)]
         public string Status { get; set; }
+        [Hagar.Id(2)]
         public List<IUser> Friends { get; set; }
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class DerivedUserState : UserState
     {
+        [Hagar.Id(0)]
         public int Field1 { get; set; }
+        [Hagar.Id(1)]
         public int Field2 { get; set; }
     }
 
@@ -652,6 +671,7 @@ namespace UnitTests.Grains
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class StateForIReentrentGrain
     {
         public StateForIReentrentGrain()
@@ -660,9 +680,13 @@ namespace UnitTests.Grains
             DictTwo = new Dictionary<string, int>();
         }
 
+        [Hagar.Id(0)]
         public int One { get; set; }
+        [Hagar.Id(1)]
         public int Two { get; set; }
+        [Hagar.Id(2)]
         public Dictionary<string, int> DictOne { get; set; }
+        [Hagar.Id(3)]
         public Dictionary<string, int> DictTwo { get; set; }
     }
 
@@ -1012,8 +1036,10 @@ namespace UnitTests.Grains
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class InternalGrainStateData
     {
+        [Hagar.Id(0)]
         public int One { get; set; }
     }
 
@@ -1041,10 +1067,13 @@ namespace UnitTests.Grains
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class StateInheritanceTestGrainData : IBaseStateData
     {
+        [Hagar.Id(0)]
         private int Field2 { get; set; }
 
+        [Hagar.Id(1)]
         public int Field1 { get; set; }
     }
 

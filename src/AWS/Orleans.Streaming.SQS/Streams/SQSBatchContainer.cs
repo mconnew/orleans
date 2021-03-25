@@ -14,22 +14,27 @@ using SQSMessage = Amazon.SQS.Model.Message;
 namespace OrleansAWSUtils.Streams
 {
     [Serializable]
+    [Hagar.GenerateSerializer]
     internal class SQSBatchContainer : IBatchContainer
     {
         [JsonProperty]
+        [Hagar.Id(0)]
         private EventSequenceTokenV2 sequenceToken;
 
         [JsonProperty]
+        [Hagar.Id(1)]
         private readonly List<object> events;
 
         [JsonProperty]
+        [Hagar.Id(2)]
         private readonly Dictionary<string, object> requestContext;
 
         [NonSerialized]
         // Need to store reference to the original SQS Message to be able to delete it later on.
         // Don't need to serialize it, since we are never interested in sending it to stream consumers.
         internal SQSMessage Message;
-        
+
+        [Hagar.Id(3)]
         public StreamId StreamId { get; private set; }
 
         public StreamSequenceToken SequenceToken

@@ -108,15 +108,20 @@ namespace Orleans.Transactions
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class TransactionalStateRecord<TState>
         where TState : class, new()
     {
+        [Hagar.Id(0)]
         public TState CommittedState { get; set; } = new TState();
 
+        [Hagar.Id(1)]
         public long CommittedSequenceId { get; set; }
 
+        [Hagar.Id(2)]
         public TransactionalStateMetaData Metadata { get; set; } = new TransactionalStateMetaData();
 
+        [Hagar.Id(3)]
         public List<PendingTransactionState<TState>> PendingStates { get; set; } = new List<PendingTransactionState<TState>>();
     }
 }

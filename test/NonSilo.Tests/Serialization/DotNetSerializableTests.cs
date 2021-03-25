@@ -84,9 +84,12 @@ namespace UnitTests.Serialization
         }
 
         [Serializable]
+        [Hagar.GenerateSerializer]
         public class SimpleISerializableObject : ISerializable, IDeserializationCallback
         {
+            [Hagar.Id(0)]
             private List<string> history;
+            [Hagar.Id(1)]
             private List<StreamingContext> contexts;
 
             public SimpleISerializableObject()
@@ -104,6 +107,7 @@ namespace UnitTests.Serialization
             public List<string> History => this.history ?? (this.history = new List<string>());
             public List<StreamingContext> Contexts => this.contexts ?? (this.contexts = new List<StreamingContext>());
 
+            [Hagar.Id(2)]
             public string Payload { get; set; }
 
             public void GetObjectData(SerializationInfo info, StreamingContext context)
@@ -147,9 +151,12 @@ namespace UnitTests.Serialization
         }
 
         [Serializable]
+        [Hagar.GenerateSerializer]
         public struct SimpleISerializableStruct : ISerializable, IDeserializationCallback
         {
+            [Hagar.Id(0)]
             private List<string> history;
+            [Hagar.Id(1)]
             private List<StreamingContext> contexts;
 
             public SimpleISerializableStruct(SerializationInfo info, StreamingContext context)
@@ -164,6 +171,7 @@ namespace UnitTests.Serialization
             public List<string> History => this.history ?? (this.history = new List<string>());
             public List<StreamingContext> Contexts => this.contexts ?? (this.contexts = new List<StreamingContext>());
 
+            [Hagar.Id(2)]
             public string Payload { get; set; }
 
             public void GetObjectData(SerializationInfo info, StreamingContext context)

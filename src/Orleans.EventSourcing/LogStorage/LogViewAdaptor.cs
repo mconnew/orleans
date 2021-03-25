@@ -220,6 +220,7 @@ namespace Orleans.EventSourcing.LogStorage
         /// Describes a connection issue that occurred when updating the primary storage.
         /// </summary>
         [Serializable]
+        [Hagar.GenerateSerializer]
         public class UpdateLogStorageFailed : PrimaryOperationFailed
         {
             /// <inheritdoc/>
@@ -234,6 +235,7 @@ namespace Orleans.EventSourcing.LogStorage
         /// Describes a connection issue that occurred when reading from the primary storage.
         /// </summary>
         [Serializable]
+        [Hagar.GenerateSerializer]
         public class ReadFromLogStorageFailed : PrimaryOperationFailed
         {
             /// <inheritdoc/>
@@ -248,18 +250,23 @@ namespace Orleans.EventSourcing.LogStorage
         /// A notification message sent to remote instances after updating this grain in storage.
         /// </summary>
         [Serializable]
+        [Hagar.GenerateSerializer]
         protected class UpdateNotificationMessage : INotificationMessage 
         {
             /// <inheritdoc/>
+            [Hagar.Id(0)]
             public int Version { get; set; }
 
             /// <summary> The cluster that performed the update </summary>
+            [Hagar.Id(1)]
             public string Origin { get; set; }
 
             /// <summary> The list of updates that were applied </summary>
+            [Hagar.Id(2)]
             public List<TLogEntry> Updates { get; set; }
 
             /// <summary> The e-tag of the storage after applying the updates</summary>
+            [Hagar.Id(3)]
             public string ETag { get; set; }
 
             /// <inheritdoc/>
