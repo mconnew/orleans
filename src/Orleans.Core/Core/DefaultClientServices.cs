@@ -126,8 +126,8 @@ namespace Orleans
 #if true
             services.AddHagar();
             services.AddSingleton<ITypeFilter, AllowOrleansTypes>();
-
             services.AddSingleton<ISpecializableCodec, GrainReferenceCodecProvider>();
+            services.AddSingleton<Hagar.Cloning.IGeneralizedCopier, GrainReferenceCopier>();
 
             services.TryAddTransient<IMessageSerializer>(sp => ActivatorUtilities.CreateInstance<HagarMessageSerializer>(
                 sp,

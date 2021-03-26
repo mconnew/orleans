@@ -147,7 +147,7 @@ namespace Orleans.Providers.Streams.SimpleMessageStream
         {
             if(logger.IsEnabled(LogLevel.Debug)) logger.Debug("Cleanup() called");
 
-            myExtension.RemoveStream(stream.InternalStreamId);
+            myExtension?.RemoveStream(stream.InternalStreamId);
 
             if (isDisposed) return;
 

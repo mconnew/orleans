@@ -377,11 +377,13 @@ namespace Orleans.Runtime
                                 try
                                 {
                                     invokable.SetTarget(target);
+                                    CancellationSourcesExtension.RegisterCancellationTokens(target, invokable);
+
                                     resultObject = await invokable.Invoke();
                                 }
                                 finally
                                 {
-                                    (invokable as IDisposable)?.Dispose();
+                                    invokable.Dispose();
                                 }
                                 break;
                             }

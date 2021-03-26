@@ -19,6 +19,7 @@ namespace Orleans.Runtime
         private readonly GrainInterfaceTypeResolver interfaceTypeResolver;
         private readonly IGrainCancellationTokenRuntime cancellationTokenRuntime;
         private readonly IOutgoingGrainCallFilter[] filters;
+        private readonly Hagar.DeepCopier deepCopier;
         private readonly InterfaceToImplementationMappingCache grainReferenceMethodCache;
 
         public GrainReferenceRuntime(
@@ -27,7 +28,8 @@ namespace Orleans.Runtime
             SerializationManager serializationManager,
             IEnumerable<IOutgoingGrainCallFilter> outgoingCallFilters,
             GrainReferenceActivator referenceActivator,
-            GrainInterfaceTypeResolver interfaceTypeResolver)
+            GrainInterfaceTypeResolver interfaceTypeResolver,
+            Hagar.DeepCopier deepCopier)
         {
             this.grainReferenceMethodCache = new InterfaceToImplementationMappingCache();
             this.sendRequestDelegate = SendRequest;
@@ -37,6 +39,7 @@ namespace Orleans.Runtime
             this.referenceActivator = referenceActivator;
             this.interfaceTypeResolver = interfaceTypeResolver;
             this.filters = outgoingCallFilters.ToArray();
+            this.deepCopier = deepCopier;
         }
 
         public IRuntimeClient RuntimeClient { get; private set; }
@@ -81,7 +84,10 @@ namespace Orleans.Runtime
 
         public void SendRequest(GrainReference reference, IResponseCompletionSource callback, IInvokable body, InvokeMethodOptions options)
         {
-            this.RuntimeClient.SendRequest(reference, body, callback, options);
+            SetGrainCancellationTokensTarget(reference, body);
+            var copy = this.deepCopier.Copy(body);
+
+            this.RuntimeClient.SendRequest(reference, copy, callback, options);
         }
 
         public object Cast(IAddressable grain, Type grainInterface)
@@ -144,6 +150,23 @@ namespace Orleans.Runtime
             foreach (var argument in arguments)
             {
                 (argument as GrainCancellationToken)?.AddGrainReference(this.cancellationTokenRuntime, target);
+            }
+        }
+
+        /// <summary>
+        /// Sets target grain to the found instances of type GrainCancellationToken
+        /// </summary>
+        private void SetGrainCancellationTokensTarget(GrainReference target, IInvokable request)
+        {
+            for (var i = 0; i < request.ArgumentCount; i++)
+            {
+                var arg = request.GetArgument<object>(i);
+                if (arg is not GrainCancellationToken grainToken)
+                {
+                    continue;
+                }
+
+                grainToken.AddGrainReference(this.cancellationTokenRuntime, target);
             }
         }
     }

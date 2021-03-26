@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Hagar;
 using Hagar.Cloning;
@@ -66,7 +67,6 @@ namespace Orleans.Runtime
         }
     }
 
-    [Hagar.RegisterCopier]
     internal class GrainReferenceCopier : IGeneralizedCopier
     {
         public object DeepCopy(object input, CopyContext context) => input;
@@ -97,6 +97,12 @@ namespace Orleans.Runtime
 
         public override void ConvertToSurrogate(T value, ref GrainReferenceSurrogate surrogate)
         {
+            // Check that the typical case is false before performing the more expensive interface check
+            if (value is not GrainReference and IGrainObserver observer)
+            {
+                ThrowGrainObserverInvalidException(observer);
+            }
+
             var refValue = (GrainReference)(object)value.AsReference<T>();
             surrogate = new GrainReferenceSurrogate
             {
@@ -104,6 +110,10 @@ namespace Orleans.Runtime
                 GrainInterfaceType = refValue.InterfaceType
             };
         }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowGrainObserverInvalidException(IGrainObserver observer)
+            => throw new NotSupportedException($"IGrainObserver parameters must be GrainReference or Grain and cannot be type {observer.GetType()}. Did you forget to CreateObjectReference?");
     }
 
     [Hagar.GenerateSerializer]
