@@ -71,7 +71,6 @@ namespace Orleans.Networking.Shared
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
     public sealed class SocketConnectionException : OrleansException
     {
         public SocketConnectionException(string message) : base(message) { }

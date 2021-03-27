@@ -11,7 +11,6 @@ namespace Orleans.Runtime
     /// raised by the Orleans runtime.
     /// </remarks>
     [Serializable]
-    [Hagar.GenerateSerializer]
     public class OrleansException : Exception
     {
         public OrleansException() : base("Unexpected error.") { }

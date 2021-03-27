@@ -7,7 +7,6 @@ namespace Orleans.Runtime
     /// Indicates a lifecycle was canceled, either by request or due to observer error.
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
     public class OrleansLifecycleCanceledException : OrleansException
     {
         internal OrleansLifecycleCanceledException(string message)

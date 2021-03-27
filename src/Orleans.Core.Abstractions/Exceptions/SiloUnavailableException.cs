@@ -7,7 +7,6 @@ namespace Orleans.Runtime
     /// Signifies that an request was cancelled due to target silo unavailability.
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
     public class SiloUnavailableException : OrleansMessageRejectionException
     {
         public SiloUnavailableException() : base("SiloUnavailableException") { }

@@ -30,7 +30,8 @@ namespace Orleans.Runtime
             writer.WriteFieldHeaderExpected(fieldIdDelta, WireType.LengthPrefixed);
             var hashCode = value.GetHashCode();
             var bytes = IdSpan.UnsafeGetArray(value);
-            writer.WriteVarUInt32((uint)(sizeof(int) + bytes.Length));
+            var bytesLength = value.IsDefault ? 0 : bytes.Length;
+            writer.WriteVarUInt32((uint)(sizeof(int) + bytesLength));
             writer.WriteInt32(hashCode);
             writer.Write(bytes);
         }
@@ -43,7 +44,8 @@ namespace Orleans.Runtime
             var hashCode = value.GetHashCode();
             var bytes = IdSpan.UnsafeGetArray(value);
             writer.WriteInt32(hashCode);
-            writer.WriteVarUInt32((uint)bytes.Length);
+            var bytesLength = value.IsDefault ? 0 : bytes.Length;
+            writer.WriteVarUInt32((uint)bytesLength);
             writer.Write(bytes);
         }
 

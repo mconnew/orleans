@@ -8,7 +8,6 @@ namespace Orleans.Streams
     /// Exception thrown whenever a provider has failed to be started.
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
     public class ProviderStartException : OrleansException
     {
         public ProviderStartException()

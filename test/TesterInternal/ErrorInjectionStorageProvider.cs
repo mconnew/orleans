@@ -34,10 +34,8 @@ namespace UnitTests.StorageTests
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
     public class StorageProviderInjectedError : OrleansException
     {
-        [Hagar.Id(0)]
         private readonly ErrorInjectionPoint errorInjectionPoint;
 
         public StorageProviderInjectedError(ErrorInjectionPoint errorPoint)

@@ -230,14 +230,10 @@ namespace UnitTests.Serialization
         }
 
         [Serializable]
-        [Hagar.GenerateSerializer]
         private class ILExceptionSerializerTestException : BaseException
         {
-            [Hagar.Id(0)]
             public string SubClassField { get; set; }
-            [Hagar.Id(1)]
             public SomeFunObject OtherField { get; set; }
-            [Hagar.Id(2)]
             public object SomeObject { get; set; }
 
             public ILExceptionSerializerTestException() : base() { }

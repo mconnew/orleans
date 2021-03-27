@@ -75,7 +75,6 @@ namespace Orleans.Providers
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
     public class ProviderStateException : OrleansException
     {
         public ProviderStateException() : base("Unexpected provider state")

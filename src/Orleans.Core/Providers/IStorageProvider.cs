@@ -8,7 +8,6 @@ namespace Orleans.Storage
     /// Exception thrown whenever a grain call is attempted with a bad / missing storage provider configuration settings for that grain.
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
     public class BadProviderConfigException : OrleansException
     {
         public BadProviderConfigException()

@@ -19,10 +19,8 @@ namespace Orleans.Runtime
     /// </para>
     /// </remarks>
     [Serializable]
-    [Hagar.GenerateSerializer]
     public class DeadlockException : OrleansException
     {
-        [Hagar.Id(0)]
         internal IEnumerable<GrainId> CallChain { get; private set; }
 
         public DeadlockException() : base("Deadlock between grain calls") {}
