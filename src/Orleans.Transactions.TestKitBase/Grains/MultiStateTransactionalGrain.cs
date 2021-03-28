@@ -137,6 +137,7 @@ namespace Orleans.Transactions.TestKit
     }
 
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class AddAndThrowException : Exception
     {
         public AddAndThrowException() : base("Unexpected error.") { }

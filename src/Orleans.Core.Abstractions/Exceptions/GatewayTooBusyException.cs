@@ -12,6 +12,7 @@ namespace Orleans.Runtime
     /// The message is likely to be accepted by this or another gateway if it is retransmitted at a later time.
     /// </remarks>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class GatewayTooBusyException : OrleansException
     {
         public GatewayTooBusyException() : base("Gateway too busy") { }

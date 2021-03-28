@@ -7,6 +7,7 @@ namespace Orleans.Runtime
     /// Signifies that an attempt was made to invoke a grain extension method on a grain where that extension was not installed.
     /// </summary>
     [Serializable]
+    [Hagar.GenerateSerializer]
     public class GrainExtensionNotInstalledException : OrleansException
     {
         public GrainExtensionNotInstalledException() : base("GrainExtensionNotInstalledException") { }

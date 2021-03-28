@@ -80,6 +80,7 @@ namespace Orleans
         /// Exception related to Orleans Reminder functions or Reminder service.
         /// </summary>
         [Serializable]
+        [Hagar.GenerateSerializer]
         public class ReminderException : OrleansException
         {
             public ReminderException(string msg) : base(msg) { }
