@@ -42,9 +42,7 @@ namespace Orleans.ServiceBus.Providers
         /// <summary>
         /// Duplicate of EventHub's EventData class.
         /// </summary>
-        /// <param name="cachedMessage"></param>
-        /// <param name="serializationManager"></param>
-        public EventHubMessage(CachedMessage cachedMessage, SerializationManager serializationManager)
+        public EventHubMessage(CachedMessage cachedMessage, Hagar.Serializer serializer)
         {
             int readOffset = 0;
             StreamId = cachedMessage.StreamId;
@@ -53,7 +51,7 @@ namespace Orleans.ServiceBus.Providers
             SequenceNumber = cachedMessage.SequenceNumber;
             EnqueueTimeUtc = cachedMessage.EnqueueTimeUtc;
             DequeueTimeUtc = cachedMessage.DequeueTimeUtc;
-            Properties = SegmentBuilder.ReadNextBytes(cachedMessage.Segment, ref readOffset).DeserializeProperties(serializationManager);
+            Properties = SegmentBuilder.ReadNextBytes(cachedMessage.Segment, ref readOffset).DeserializeProperties(serializer);
             Payload = SegmentBuilder.ReadNextBytes(cachedMessage.Segment, ref readOffset).ToArray();
         }
 

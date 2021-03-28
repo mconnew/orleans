@@ -2,26 +2,21 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using Orleans.Serialization;
 
 namespace Orleans.Runtime.MembershipService
 {
-    [Serializable]
-    [Hagar.GenerateSerializer]
     internal class InMemoryMembershipTable
     {
-        [Hagar.Id(1)]
-        private readonly SerializationManager serializationManager;
-        [Hagar.Id(2)]
         private readonly Dictionary<SiloAddress, Tuple<MembershipEntry, string>> siloTable;
-        [Hagar.Id(3)]
         private TableVersion tableVersion;
-        [Hagar.Id(4)]
         private long lastETagCounter;
 
-        public InMemoryMembershipTable(SerializationManager serializationManager)
+        [NonSerialized]
+        private readonly Hagar.DeepCopier deepCopier;
+
+        public InMemoryMembershipTable(Hagar.DeepCopier deepCopier)
         {
-            this.serializationManager = serializationManager;
+            this.deepCopier = deepCopier;
             siloTable = new Dictionary<SiloAddress, Tuple<MembershipEntry, string>>();
             lastETagCounter = 0;
             tableVersion = new TableVersion(0, NewETag());
@@ -30,14 +25,14 @@ namespace Orleans.Runtime.MembershipService
         public MembershipTableData Read(SiloAddress key)
         {
             return siloTable.TryGetValue(key, out var data) ?
-                new MembershipTableData((Tuple<MembershipEntry, string>)this.serializationManager.DeepCopy(data), tableVersion)
+                new MembershipTableData(this.deepCopier.Copy(data), tableVersion)
                 : new MembershipTableData(tableVersion);
         }
 
         public MembershipTableData ReadAll()
         {
             return new MembershipTableData(siloTable.Values.Select(tuple => 
-                new Tuple<MembershipEntry, string>((MembershipEntry)this.serializationManager.DeepCopy(tuple.Item1), tuple.Item2)).ToList(), tableVersion);
+                new Tuple<MembershipEntry, string>(this.deepCopier.Copy(tuple.Item1), tuple.Item2)).ToList(), tableVersion);
         }
 
         public TableVersion ReadTableVersion()

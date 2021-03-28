@@ -42,11 +42,11 @@ namespace Orleans.Runtime
         private Catalog catalog;
         private Dispatcher dispatcher;
         private List<IIncomingGrainCallFilter> grainCallFilters;
-        private SerializationManager serializationManager;
+        private Hagar.DeepCopier _deepCopier;
+        private Hagar.Serializer _serializer;
         private HostedClient hostedClient;
 
         private HostedClient HostedClient => this.hostedClient ?? (this.hostedClient = this.ServiceProvider.GetRequiredService<HostedClient>());
-        private readonly InterfaceToImplementationMappingCache interfaceToImplementationMapping = new InterfaceToImplementationMappingCache();
         private readonly MessageFactory messageFactory;
         private readonly ITransactionAgent transactionAgent;
         private IGrainReferenceRuntime grainReferenceRuntime;
@@ -65,8 +65,12 @@ namespace Orleans.Runtime
             MessagingTrace messagingTrace,
             GrainReferenceActivator referenceActivator,
             GrainInterfaceTypeResolver interfaceIdResolver,
-            GrainInterfaceTypeToGrainTypeResolver interfaceToTypeResolver)
+            GrainInterfaceTypeToGrainTypeResolver interfaceToTypeResolver,
+            Hagar.Serializer serializer,
+            Hagar.DeepCopier deepCopier)
         {
+            this._serializer = serializer;
+            this._deepCopier = deepCopier;
             this.ServiceProvider = serviceProvider;
             this.MySilo = siloDetails.SiloAddress;
             this.disposables = new List<IDisposable>();
@@ -342,11 +346,11 @@ namespace Orleans.Runtime
                         transactionInfo.ReconcilePending();
                         
                         // Record reason for abort, if not already set.
-                        transactionInfo.RecordException(invocationException, serializationManager);
+                        transactionInfo.RecordException(invocationException, _serializer);
 
                         if (startNewTransaction)
                         {
-                            invocationException = transactionInfo.MustAbort(serializationManager);
+                            invocationException = transactionInfo.MustAbort(_serializer);
                             await this.transactionAgent.Abort(transactionInfo);
                             TransactionContext.Clear();
                         }
@@ -376,7 +380,7 @@ namespace Orleans.Runtime
                     try
                     {
                         transactionInfo.ReconcilePending();
-                        transactionException = transactionInfo.MustAbort(serializationManager);
+                        transactionException = transactionInfo.MustAbort(_serializer);
 
                         // This request started the transaction, so we try to commit before returning,
                         // or if it must abort, tell participants that it aborted
@@ -443,7 +447,7 @@ namespace Orleans.Runtime
         {
             try
             {
-                SendResponse(message, (Response)this.serializationManager.DeepCopy(response));
+                SendResponse(message, (Response)this._deepCopier.Copy(response));
             }
             catch (Exception exc)
             {
@@ -495,7 +499,7 @@ namespace Orleans.Runtime
         {
             try
             {
-                var copiedException = PrepareForRemoting((Exception)this.serializationManager.DeepCopy(ex));
+                var copiedException = PrepareForRemoting((Exception)this._deepCopier.Copy(ex));
                 SendResponse(message, Response.FromException(copiedException));
             }
             catch (Exception exc1)
@@ -670,7 +674,6 @@ namespace Orleans.Runtime
         private Task OnRuntimeInitializeStart(CancellationToken tc)
         {
             var stopWatch = Stopwatch.StartNew();
-            this.serializationManager = this.ServiceProvider.GetRequiredService<SerializationManager>();
             var timerLogger = this.loggerFactory.CreateLogger<SafeTimer>();
             var minTicks = Math.Min(this.messagingOptions.ResponseTimeout.Ticks, TimeSpan.FromSeconds(1).Ticks);
             var period = TimeSpan.FromTicks(minTicks);

@@ -3,20 +3,19 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Orleans.CodeGeneration;
-using Orleans.Serialization;
 using Orleans.Transactions;
 
 namespace Orleans.Runtime
 {
     internal class MessageFactory
     {
-        private readonly SerializationManager serializationManager;
+        private readonly Hagar.DeepCopier deepCopier;
         private readonly ILogger logger;
         private readonly MessagingTrace messagingTrace;
 
-        public MessageFactory(SerializationManager serializationManager, ILogger<MessageFactory> logger, MessagingTrace messagingTrace)
+        public MessageFactory(Hagar.DeepCopier deepCopier, ILogger<MessageFactory> logger, MessagingTrace messagingTrace)
         {
-            this.serializationManager = serializationManager;
+            this.deepCopier = deepCopier;
             this.logger = logger;
             this.messagingTrace = messagingTrace;
         }
@@ -32,7 +31,7 @@ namespace Orleans.Runtime
                 IsUnordered = (options & InvokeMethodOptions.Unordered) != 0,
                 IsAlwaysInterleave = (options & InvokeMethodOptions.AlwaysInterleave) != 0,
                 BodyObject = body,
-                RequestContextData = RequestContextExtensions.Export(this.serializationManager)
+                RequestContextData = RequestContextExtensions.Export(this.deepCopier)
             };
 
             if (options.IsTransactional())
@@ -126,7 +125,7 @@ namespace Orleans.Runtime
             response.CacheInvalidationHeader = request.CacheInvalidationHeader;
             response.TimeToLive = request.TimeToLive;
 
-            var contextData = RequestContextExtensions.Export(this.serializationManager);
+            var contextData = RequestContextExtensions.Export(this.deepCopier);
             if (contextData != null)
             {
                 response.RequestContextData = contextData;

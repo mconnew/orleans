@@ -118,11 +118,11 @@ namespace Orleans
                 this.InternalGrainFactory = this.ServiceProvider.GetRequiredService<IInternalGrainFactory>();
                 this.messageFactory = this.ServiceProvider.GetService<MessageFactory>();
 
-                var serializationManager = this.ServiceProvider.GetRequiredService<SerializationManager>();
+                var copier = this.ServiceProvider.GetRequiredService<Hagar.DeepCopier>();
                 this.localObjects = new InvokableObjectManager(
                     services.GetRequiredService<ClientGrainContext>(),
                     this,
-                    serializationManager,
+                    copier,
                     this.messagingTrace,
                     this.loggerFactory.CreateLogger<ClientGrainContext>());
 

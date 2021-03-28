@@ -15,7 +15,7 @@ namespace Orleans.Providers.Streams.SimpleMessageStream
         private readonly string                         streamProviderName;
 
         [NonSerialized]
-        private readonly SerializationManager serializationManager;
+        private readonly Hagar.DeepCopier<T> deepCopier;
 
         [NonSerialized]
         private readonly IStreamPubSub                  pubSub;
@@ -44,7 +44,7 @@ namespace Orleans.Providers.Streams.SimpleMessageStream
             IStreamPubSub pubSub,
             IStreamFilter streamFilter,
             bool isRewindable,
-            SerializationManager serializationManager,
+            Hagar.DeepCopier<T> deepCopier,
             ILogger<SimpleMessageStreamProducer<T>> logger)
         {
             this.stream = stream;
@@ -52,7 +52,7 @@ namespace Orleans.Providers.Streams.SimpleMessageStream
             providerRuntime = providerUtilities;
             this.pubSub = pubSub;
             this.streamFilter = streamFilter;
-            this.serializationManager = serializationManager;
+            this.deepCopier = deepCopier;
             connectedToRendezvous = false;
             this.fireAndForgetDelivery = fireAndForgetDelivery;
             this.optimizeForImmutableData = optimizeForImmutableData;
@@ -105,7 +105,7 @@ namespace Orleans.Providers.Streams.SimpleMessageStream
                 {
                     // In order to avoid potential concurrency errors, synchronously copy the input before yielding the
                     // thread. DeliverItem below must also be take care to avoid yielding before copying for non-immutable objects.
-                    item = (T) this.serializationManager.DeepCopy(item);
+                    item = this.deepCopier.Copy(item);
                 }
 
                 await ConnectToRendezvous();

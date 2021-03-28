@@ -118,11 +118,11 @@ namespace Orleans.Runtime.MembershipService
         public MembershipTableSystemTarget(
             ILocalSiloDetails localSiloDetails,
             ILoggerFactory loggerFactory,
-            SerializationManager serializationManager)
+            Hagar.DeepCopier deepCopier)
             : base(CreateId(localSiloDetails), localSiloDetails.SiloAddress, lowPriority: false, loggerFactory)
         {
             logger = loggerFactory.CreateLogger<MembershipTableSystemTarget>();
-            table = new InMemoryMembershipTable(serializationManager);
+            table = new InMemoryMembershipTable(deepCopier);
             logger.Info(ErrorCode.MembershipGrainBasedTable1, "GrainBasedMembershipTable Activated.");
         }
 

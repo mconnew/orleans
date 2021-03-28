@@ -2,7 +2,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using Orleans.Serialization;
 using Orleans.Transactions.Abstractions;
 
 namespace Orleans.Transactions
@@ -78,12 +77,11 @@ namespace Orleans.Transactions
             this.joined.Enqueue((TransactionInfo)x);
         }
 
-        public OrleansTransactionAbortedException MustAbort(SerializationManager sm)
+        public OrleansTransactionAbortedException MustAbort(Hagar.Serializer serializer)
         {
             if (OriginalException != null)
             {
-                var reader = new BinaryTokenStreamReader(OriginalException);
-                return sm.Deserialize<OrleansTransactionAbortedException>(reader);
+                return serializer.Deserialize<OrleansTransactionAbortedException>(OriginalException);
             }
             else if (PendingCalls != 0)
             {
@@ -95,16 +93,14 @@ namespace Orleans.Transactions
             }
         }
 
-        public void RecordException(Exception e, SerializationManager sm)
+        public void RecordException(Exception e, Hagar.Serializer sm)
         {
             if (OriginalException == null)
             {
                 var exception = (e as OrleansTransactionAbortedException)
                     ?? new OrleansTransactionAbortedException(TransactionId.ToString(), e);
 
-                var writer = new BinaryTokenStreamWriter();
-                sm.Serialize(exception, writer);
-                OriginalException = writer.ToByteArray();
+                OriginalException = sm.SerializeToArray(exception);
             }
         }
 

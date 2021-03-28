@@ -12,15 +12,15 @@ namespace Orleans.Streams
     {
         private readonly StreamImpl<T> stream;
         private readonly IQueueAdapter queueAdapter;
-        private readonly SerializationManager serializationManager;
+        private readonly Hagar.DeepCopier deepCopier;
 
         internal bool IsRewindable { get; private set; }
 
-        internal PersistentStreamProducer(StreamImpl<T> stream, IStreamProviderRuntime providerUtilities, IQueueAdapter queueAdapter, bool isRewindable, SerializationManager serializationManager)
+        internal PersistentStreamProducer(StreamImpl<T> stream, IStreamProviderRuntime providerUtilities, IQueueAdapter queueAdapter, bool isRewindable, Hagar.DeepCopier deepCopier)
         {
             this.stream = stream;
             this.queueAdapter = queueAdapter;
-            this.serializationManager = serializationManager;
+            this.deepCopier = deepCopier;
             IsRewindable = isRewindable;
             var logger = providerUtilities.ServiceProvider.GetRequiredService<ILogger<PersistentStreamProducer<T>>>();
             if (logger.IsEnabled(LogLevel.Debug)) logger.Debug("Created PersistentStreamProducer for stream {0}, of type {1}, and with Adapter: {2}.",
@@ -29,12 +29,13 @@ namespace Orleans.Streams
 
         public Task OnNextAsync(T item, StreamSequenceToken token)
         {
-            return this.queueAdapter.QueueMessageAsync(this.stream.StreamId, item, token, RequestContextExtensions.Export(this.serializationManager));
+            return this.queueAdapter.QueueMessageAsync(this.stream.StreamId, item, token, RequestContextExtensions.Export(this.deepCopier));
         }
         
         public Task OnNextBatchAsync(IEnumerable<T> batch, StreamSequenceToken token)
         {
-            return this.queueAdapter.QueueMessageBatchAsync(this.stream.StreamId, batch, token, RequestContextExtensions.Export(this.serializationManager));
+            return this.queueAdapter.QueueMessageBatchAsync(this.stream.StreamId, batch, token, RequestContextExtensions.Export(this.deepCopier));
+
         }
 
         public Task OnCompletedAsync()

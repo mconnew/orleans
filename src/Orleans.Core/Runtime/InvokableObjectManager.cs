@@ -18,19 +18,19 @@ namespace Orleans
         private readonly IGrainContext rootGrainContext;
         private readonly IRuntimeClient runtimeClient;
         private readonly ILogger logger;
-        private readonly SerializationManager serializationManager;
+        private readonly Hagar.DeepCopier deepCopier;
         private readonly MessagingTrace messagingTrace;
 
         public InvokableObjectManager(
             IGrainContext rootGrainContext,
             IRuntimeClient runtimeClient,
-            SerializationManager serializationManager,
+            Hagar.DeepCopier deepCopier,
             MessagingTrace messagingTrace,
             ILogger logger)
         {
             this.rootGrainContext = rootGrainContext;
             this.runtimeClient = runtimeClient;
-            this.serializationManager = serializationManager;
+            this.deepCopier = deepCopier;
             this.messagingTrace = messagingTrace;
             this.logger = logger;
         }
@@ -277,7 +277,7 @@ namespace Orleans
                 try
                 {
                     // we're expected to notify the caller if the deep copy failed.
-                    deepCopy = (Response)_manager.serializationManager.DeepCopy(resultObject);
+                    deepCopy = _manager.deepCopier.Copy(resultObject);
                 }
                 catch (Exception exc2)
                 {
@@ -314,7 +314,7 @@ namespace Orleans
                             try
                             {
                                 // we're expected to notify the caller if the deep copy failed.
-                                deepCopy = (Exception)_manager.serializationManager.DeepCopy(exception);
+                                deepCopy = (Exception)_manager.deepCopier.Copy(exception);
                             }
                             catch (Exception ex2)
                             {

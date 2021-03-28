@@ -140,7 +140,7 @@ namespace Tester.AzureUtils.Streaming
                 .ToList()
                 .ForEach(streamId =>
                     adapter.QueueMessageBatchAsync(StreamId.Create(streamId.ToString(), streamId),
-                        events.Take(NumMessagesPerBatch).ToArray(), null, RequestContextExtensions.Export(this.fixture.SerializationManager)).Wait())));
+                        events.Take(NumMessagesPerBatch).ToArray(), null, RequestContextExtensions.Export(this.fixture.DeepCopier)).Wait())));
             await Task.WhenAll(work);
 
             // Make sure we got back everything we sent

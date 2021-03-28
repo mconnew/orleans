@@ -41,7 +41,7 @@ namespace Orleans.Runtime
             IInternalGrainFactory grainFactory,
             MessageCenter messageCenter,
             MessagingTrace messagingTrace,
-            SerializationManager serializationManager,
+            Hagar.DeepCopier deepCopier,
             GrainReferenceActivator referenceActivator)
         {
             this.incomingMessages = Channel.CreateUnbounded<Message>(new UnboundedChannelOptions
@@ -57,7 +57,7 @@ namespace Orleans.Runtime
             this.invokableObjects = new InvokableObjectManager(
                 this,
                 runtimeClient,
-                serializationManager,
+                deepCopier,
                 messagingTrace,
                 logger);
             this.siloMessageCenter = messageCenter;
