@@ -56,7 +56,7 @@ namespace Orleans.Serialization
             typeTokens[typeof(IPEndPoint)] = SerializationTokenType.IpEndPoint;
             typeTokens[typeof(CorrelationId)] = SerializationTokenType.CorrelationId;
             typeTokens[typeof(InvokeMethodRequest)] = SerializationTokenType.Request;
-            typeTokens[typeof(Response)] = SerializationTokenType.Response;
+            typeTokens[typeof(Hagar.Invocation.Response)] = SerializationTokenType.Response;
             typeTokens[typeof(Dictionary<string, object>)] = SerializationTokenType.StringObjDict;
             typeTokens[typeof(Object)] = SerializationTokenType.Object;
             typeTokens[typeof(List<>)] = SerializationTokenType.List;

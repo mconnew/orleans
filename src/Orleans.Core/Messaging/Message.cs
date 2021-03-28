@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Hagar.Buffers;
+using Hagar.Invocation;
 using Orleans.CodeGeneration;
 using Orleans.Serialization;
 using Orleans.Transactions;
@@ -521,7 +522,7 @@ namespace Orleans.Runtime
                 Category = request.Category,
                 Direction = Message.Directions.Response,
                 Result = Message.ResponseTypes.Error,
-                BodyObject = Response.ExceptionResponse(exception)
+                BodyObject = Response.FromException(exception)
             };
         }
 

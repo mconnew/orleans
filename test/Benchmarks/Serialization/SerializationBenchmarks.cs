@@ -6,6 +6,7 @@ using System.IO.Pipelines;
 using System.Net;
 using System.Reflection;
 using BenchmarkDotNet.Attributes;
+using Hagar.Invocation;
 using Microsoft.Extensions.DependencyInjection;
 using Orleans;
 using Orleans.Configuration;
@@ -82,7 +83,7 @@ namespace Benchmarks.Serialization
             this.largeTestData.SetBit(13);
             this.largeTestData.SetEnemy(17, CampaignEnemyTestType.Enemy1);
 
-            var body = new Response("yess!");
+            var body = Response.FromResult("yess!");
             messageHeaders = (new Message
             {
                 TargetActivation = ActivationId.NewId(),

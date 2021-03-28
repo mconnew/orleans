@@ -92,13 +92,13 @@ namespace Orleans.Runtime
         public override string ToString() => $"{nameof(HostedClient)}_{this.Address}";
 
         /// <inheritdoc />
-        public IAddressable CreateObjectReference(IAddressable obj, IGrainMethodInvoker invoker)
+        public IAddressable CreateObjectReference(IAddressable obj)
         {
             if (obj is GrainReference) throw new ArgumentException("Argument obj is already a grain reference.");
 
             var observerId = ObserverGrainId.Create(this.ClientId);
             var grainReference = this.grainFactory.GetGrain(observerId.GrainId);
-            if (!this.invokableObjects.TryRegister(obj, observerId, invoker))
+            if (!this.invokableObjects.TryRegister(obj, observerId))
             {
                 throw new ArgumentException(
                     string.Format("Failed to add new observer {0} to localObjects collection.", grainReference),

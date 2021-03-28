@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Hagar.Sdk" Version="0.6.1-dev-202103261614" />
+    <PackageReference Include="Hagar.Sdk" Version="0.6.1-dev-202103272038" />
     <PackageReference Include="protobuf-net" Version="$(ProtobufNetVersion)" />
   </ItemGroup>
 </Project>

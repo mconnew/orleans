@@ -1,6 +1,7 @@
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
+using Hagar.Invocation;
 using Orleans.CodeGeneration;
 
 namespace Orleans.Runtime
@@ -10,13 +11,14 @@ namespace Orleans.Runtime
     /// </summary>
     internal class OutgoingCallInvoker : IOutgoingGrainCallContext
     {
-        private readonly InvokeMethodRequest request;
+        private readonly IInvokable request;
         private readonly InvokeMethodOptions options;
-        private readonly Func<GrainReference, InvokeMethodRequest, InvokeMethodOptions, Task<object>> sendRequest;
+        private readonly Func<GrainReference, IInvokable, InvokeMethodOptions, Task<object>> sendRequest;
         private readonly InterfaceToImplementationMappingCache mapping;
         private readonly IOutgoingGrainCallFilter[] filters;
         private readonly GrainReference grainReference;
         private int stage;
+        private object[] _arguments;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="OutgoingCallInvoker"/> class.
@@ -29,9 +31,9 @@ namespace Orleans.Runtime
         /// <param name="mapping">The implementation map.</param>
         public OutgoingCallInvoker(
             GrainReference grain,
-            InvokeMethodRequest request,
+            IInvokable request,
             InvokeMethodOptions options,
-            Func<GrainReference, InvokeMethodRequest, InvokeMethodOptions, Task<object>> sendRequest,
+            Func<GrainReference, IInvokable, InvokeMethodOptions, Task<object>> sendRequest,
             InterfaceToImplementationMappingCache mapping,
             IOutgoingGrainCallFilter[] filters)
         {
@@ -51,21 +53,6 @@ namespace Orleans.Runtime
         {
             get
             {
-                var implementationType = this.grainReference.GetType();
-                foreach (var @interface in implementationType.GetInterfaces())
-                {
-                    // Get or create the implementation map for this object.
-                    var implementationMap = mapping.GetOrCreate(
-                        implementationType,
-                        @interface);
-
-                    // Get the method info for the method being invoked.
-                    if (implementationMap.TryGetValue(request.MethodId, out var method))
-                    {
-                        return method.InterfaceMethod;
-                    }
-                }
-
                 return null;
             }
         }
@@ -74,7 +61,7 @@ namespace Orleans.Runtime
         public MethodInfo InterfaceMethod => this.Method;
 
         /// <inheritdoc />
-        public object[] Arguments => request.Arguments;
+        public object[] Arguments => _arguments ??= ExtractArguments();
 
         /// <inheritdoc />
         public object Result { get; set; }
@@ -122,6 +109,22 @@ namespace Orleans.Runtime
         {
             throw new InvalidOperationException(
                 $"{nameof(OutgoingCallInvoker)}.{nameof(Invoke)}() received an invalid call.");
+        }
+
+        private object[] ExtractArguments()
+        {
+            if (request.ArgumentCount == 0)
+            {
+                return Array.Empty<object>();
+            }
+
+            var result = new object[request.ArgumentCount];
+            for (var i = 0; i < result.Length; i++)
+            {
+                result[i] = request.GetArgument<object>(i);
+            }
+
+            return result;
         }
     }
 }

@@ -57,11 +57,8 @@ namespace Orleans
             services.TryAddSingleton<GrainInterfaceTypeToGrainTypeResolver>();
             services.TryAddSingleton<GrainReferenceActivator>();
             services.AddSingleton<IGrainReferenceActivatorProvider, NewGrainReferenceActivatorProvider>();
-            services.AddSingleton<IGrainReferenceActivatorProvider, ImrGrainReferenceActivatorProvider>();
             services.AddSingleton<IGrainReferenceActivatorProvider, UntypedGrainReferenceActivatorProvider>();
             services.TryAddSingleton<NewRpcProvider>();
-            services.TryAddSingleton<ImrRpcProvider>();
-            services.TryAddSingleton<ImrGrainMethodInvokerProvider>();
             services.TryAddSingleton<GrainReferenceSerializer>();
             services.TryAddSingleton<GrainReferenceKeyStringConverter>();
             services.TryAddSingleton<IGrainReferenceRuntime, GrainReferenceRuntime>();

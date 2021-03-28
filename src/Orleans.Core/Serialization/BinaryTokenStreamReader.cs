@@ -344,8 +344,6 @@ namespace Orleans.Serialization
                     return typeof(CorrelationId);
                 case SerializationTokenType.Request:
                     return typeof(InvokeMethodRequest);
-                case SerializationTokenType.Response:
-                    return typeof(Response);
                 case SerializationTokenType.StringObjDict:
                     return typeof(Dictionary<string, object>);
                 case SerializationTokenType.Object:

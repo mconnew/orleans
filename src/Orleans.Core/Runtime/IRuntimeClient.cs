@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Hagar.Invocation;
 using Orleans.CodeGeneration;
 
 namespace Orleans.Runtime
@@ -46,7 +47,7 @@ namespace Orleans.Runtime
 
         void Reset(bool cleanup);
 
-        IAddressable CreateObjectReference(IAddressable obj, IGrainMethodInvoker invoker);
+        IAddressable CreateObjectReference(IAddressable obj);
 
         void DeleteObjectReference(IAddressable obj);
 

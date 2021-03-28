@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Hagar.Invocation;
 using Microsoft.AspNetCore.Connections;
 using Microsoft.Extensions.Logging;
 using Orleans.Configuration;
@@ -12,7 +13,7 @@ namespace Orleans.Runtime.Messaging
 {
     internal sealed class SiloConnection : Connection
     {
-        private static readonly Response PingResponse = new Response(null);
+        private static readonly Response PingResponse = Response.Completed;
         private readonly MessageCenter messageCenter;
         private readonly ConnectionManager connectionManager;
         private readonly ConnectionOptions connectionOptions;

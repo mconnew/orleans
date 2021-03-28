@@ -338,7 +338,6 @@ namespace Orleans.Runtime
 
     public abstract class Request : RequestBase 
     {
-        [DebuggerHidden]
         public override ValueTask<Response> Invoke()
         {
             try
@@ -358,13 +357,12 @@ namespace Orleans.Runtime
             }
         }
 
-        [DebuggerHidden]
         private static async ValueTask<Response> CompleteInvokeAsync(ValueTask resultTask)
         {
             try
             {
                 await resultTask;
-                return Response.FromResult<object>(null);
+                return Response.Completed;
             }
             catch (Exception exception)
             {
@@ -373,13 +371,11 @@ namespace Orleans.Runtime
         }
 
         // Generated
-        [DebuggerHidden]
         protected abstract ValueTask InvokeInner();
     }
 
     public abstract class Request<TResult> : RequestBase
     {
-        [DebuggerHidden]
         public override ValueTask<Response> Invoke()
         {
             try
@@ -398,7 +394,6 @@ namespace Orleans.Runtime
             }
         }
 
-        [DebuggerHidden]
         private static async ValueTask<Response> CompleteInvokeAsync(ValueTask<TResult> resultTask)
         {
             try
@@ -413,13 +408,11 @@ namespace Orleans.Runtime
         }
 
         // Generated
-        [DebuggerHidden]
         protected abstract ValueTask<TResult> InvokeInner();
     }
 
     public abstract class TaskRequest<TResult> : RequestBase
     {
-        [DebuggerHidden]
         public override ValueTask<Response> Invoke()
         {
             try
@@ -439,7 +432,6 @@ namespace Orleans.Runtime
             }
         }
 
-        [DebuggerHidden]
         private static async ValueTask<Response> CompleteInvokeAsync(Task<TResult> resultTask)
         {
             try
@@ -454,13 +446,11 @@ namespace Orleans.Runtime
         }
 
         // Generated
-        [DebuggerHidden]
         protected abstract Task<TResult> InvokeInner();
     }
 
     public abstract class TaskRequest : RequestBase 
     {
-        [DebuggerHidden]
         public override ValueTask<Response> Invoke()
         {
             try
@@ -486,7 +476,7 @@ namespace Orleans.Runtime
             try
             {
                 await resultTask;
-                return Response.FromResult<object>(null);
+                return Response.Completed;
             }
             catch (Exception exception)
             {
@@ -495,13 +485,11 @@ namespace Orleans.Runtime
         }
 
         // Generated
-        [DebuggerHidden]
         protected abstract Task InvokeInner();
     }
 
     public abstract class VoidRequest : RequestBase
     {
-        [DebuggerHidden]
         public override ValueTask<Response> Invoke()
         {
             try
@@ -516,7 +504,6 @@ namespace Orleans.Runtime
         }
 
         // Generated
-        [DebuggerHidden]
         protected abstract void InvokeInner();
     }
 }

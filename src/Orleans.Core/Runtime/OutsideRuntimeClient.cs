@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Hagar.Invocation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -249,9 +250,7 @@ namespace Orleans
             Justification = "CallbackData is IDisposable but instances exist beyond lifetime of this method so cannot Dispose yet.")]
         public void SendRequest(GrainReference target, InvokeMethodRequest request, TaskCompletionSource<object> context, InvokeMethodOptions options)
         {
-            var message = this.messageFactory.CreateMessage(request, options);
-            OrleansOutsideRuntimeClientEvent.Log.SendRequest(message);
-            SendRequestMessage(target, message, context, options);
+            throw new NotSupportedException();
         }
 
         public void SendRequest(GrainReference target, Hagar.Invocation.IInvokable request, Hagar.Invocation.IResponseCompletionSource context, InvokeMethodOptions options)
@@ -261,7 +260,7 @@ namespace Orleans
             SendRequestMessage(target, message, context, options);
         }
 
-        private void SendRequestMessage(GrainReference target, Message message, object context, InvokeMethodOptions options)
+        private void SendRequestMessage(GrainReference target, Message message, IResponseCompletionSource context, InvokeMethodOptions options)
         {
             message.InterfaceType = target.InterfaceType;
             message.InterfaceVersion = target.InterfaceVersion;
@@ -411,7 +410,7 @@ namespace Orleans
         /// <inheritdoc />
         public void SetResponseTimeout(TimeSpan timeout) => this.sharedCallbackData.ResponseTimeout = timeout;
 
-        public IAddressable CreateObjectReference(IAddressable obj, IGrainMethodInvoker invoker)
+        public IAddressable CreateObjectReference(IAddressable obj)
         {
             if (obj is GrainReference)
                 throw new ArgumentException("Argument obj is already a grain reference.", nameof(obj));
@@ -424,7 +423,7 @@ namespace Orleans
                 : ObserverGrainId.Create(this.clientId);
             var reference = this.InternalGrainFactory.GetGrain(observerId.GrainId);
 
-            if (!localObjects.TryRegister(obj, observerId, invoker))
+            if (!localObjects.TryRegister(obj, observerId))
             {
                 throw new ArgumentException($"Failed to add new observer {reference} to localObjects collection.", "reference");
             }

@@ -42,7 +42,7 @@ namespace Orleans.Runtime
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
-        public void ResponseCallback(Message message, object context)
+        public void ResponseCallback(Message message, IResponseCompletionSource context)
         {
             Response response;
             if (message.Result != Message.ResponseTypes.Rejection)
@@ -53,8 +53,8 @@ namespace Orleans.Runtime
                 }
                 catch (Exception exc)
                 {
-                    //  catch the Deserialize exception and break the promise with it.
-                    response = Response.ExceptionResponse(exc);
+                    // catch the Deserialize exception and break the promise with it.
+                    response = Response.FromException(exc);
                 }
             }
             else
@@ -80,32 +80,14 @@ namespace Orleans.Runtime
                         }
                         break;
                 }
-                response = Response.ExceptionResponse(rejection);
+                response = Response.FromException(rejection);
             }
 
-            if (context is TaskCompletionSource<object> tcs)
-            {
-                if (!response.ExceptionFlag)
-                {
-                    tcs.TrySetResult(response.Data);
-                }
-                else
-                {
-                    tcs.TrySetException(response.Exception);
-                }
-            }
-            else if (context is IResponseCompletionSource rcs)
+            if (context is IResponseCompletionSource rcs)
             {
                 // TODO: receive the response as an object and propagate it here.
-                if (response.Data is Hagar.Invocation.Response r)
-                {
-                    rcs.Complete(r);
-                    (r as IDisposable)?.Dispose();
-                }
-                else
-                {
-                    rcs.Complete(Hagar.Invocation.Response.FromException(response.Exception));
-                }
+                rcs.Complete(response);
+                response.Dispose();
             }
         }
     }

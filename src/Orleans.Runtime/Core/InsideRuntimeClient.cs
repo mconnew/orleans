@@ -52,7 +52,6 @@ namespace Orleans.Runtime
         private IGrainReferenceRuntime grainReferenceRuntime;
         private readonly ApplicationRequestsStatisticsGroup appRequestStatistics;
         private readonly MessagingTrace messagingTrace;
-        private readonly ImrGrainMethodInvokerProvider invokers;
 
         public InsideRuntimeClient(
             ILocalSiloDetails siloDetails,
@@ -66,8 +65,7 @@ namespace Orleans.Runtime
             MessagingTrace messagingTrace,
             GrainReferenceActivator referenceActivator,
             GrainInterfaceTypeResolver interfaceIdResolver,
-            GrainInterfaceTypeToGrainTypeResolver interfaceToTypeResolver,
-            ImrGrainMethodInvokerProvider invokers)
+            GrainInterfaceTypeToGrainTypeResolver interfaceToTypeResolver)
         {
             this.ServiceProvider = serviceProvider;
             this.MySilo = siloDetails.SiloAddress;
@@ -76,14 +74,13 @@ namespace Orleans.Runtime
             this.messageFactory = messageFactory;
             this.transactionAgent = transactionAgent;
             this.Scheduler = scheduler;
-            this.ConcreteGrainFactory = new GrainFactory(this, referenceActivator, interfaceIdResolver, interfaceToTypeResolver, invokers);
+            this.ConcreteGrainFactory = new GrainFactory(this, referenceActivator, interfaceIdResolver, interfaceToTypeResolver);
             this.logger = loggerFactory.CreateLogger<InsideRuntimeClient>();
             this.invokeExceptionLogger = loggerFactory.CreateLogger($"{typeof(Grain).FullName}.InvokeException");
             this.loggerFactory = loggerFactory;
             this.messagingOptions = messagingOptions.Value;
             this.appRequestStatistics = appRequestStatistics;
             this.messagingTrace = messagingTrace;
-            this.invokers = invokers;
 
             this.sharedCallbackData = new SharedCallbackData(
                 msg => this.UnregisterCallback(msg.TargetGrain, msg.Id),
@@ -194,64 +191,7 @@ namespace Orleans.Runtime
             TaskCompletionSource<object> context,
             InvokeMethodOptions options)
         {
-            var message = this.messageFactory.CreateMessage(request, options);
-            message.InterfaceType = target.InterfaceType;
-            message.InterfaceVersion = target.InterfaceVersion;
-
-            // fill in sender
-            if (message.SendingSilo == null)
-                message.SendingSilo = MySilo;
-
-            IGrainContext sendingActivation = RuntimeContext.CurrentGrainContext;
-
-            if (sendingActivation == null)
-            {
-                var clientAddress = this.HostedClient.Address;
-                message.SendingGrain = clientAddress.Grain;
-                message.SendingActivation = clientAddress.Activation;
-            }
-            else
-            {
-                message.SendingActivation = sendingActivation.ActivationId;
-                message.SendingGrain = sendingActivation.GrainId;
-            }
-
-            // fill in destination
-            var targetGrainId = target.GrainId;
-            message.TargetGrain = targetGrainId;
-            SharedCallbackData sharedData;
-            if (SystemTargetGrainId.TryParse(targetGrainId, out var systemTargetGrainId))
-            {
-                message.TargetSilo = systemTargetGrainId.GetSiloAddress();
-                message.TargetActivation = ActivationId.GetDeterministic(targetGrainId);
-                message.Category = targetGrainId.Type.Equals(Constants.MembershipServiceType) ?
-                    Message.Categories.Ping : Message.Categories.System;
-                sharedData = this.systemSharedCallbackData;
-            }
-            else
-            {
-                sharedData = this.sharedCallbackData;
-            }
-
-            var oneWay = (options & InvokeMethodOptions.OneWay) != 0;
-            if (context is null && !oneWay)
-            {
-                this.logger.Warn(ErrorCode.IGC_SendRequest_NullContext, "Null context {0}: {1}", message, Utils.GetStackTrace());
-            }
-
-            if (message.IsExpirableMessage(this.messagingOptions.DropExpiredMessages))
-            {
-                message.TimeToLive = sharedData.ResponseTimeout;
-            }
-
-            if (!oneWay)
-            {
-                var callbackData = new CallbackData(sharedData, context, message);
-                callbacks.TryAdd((message.SendingGrain, message.Id), callbackData);
-            }
-
-            this.messagingTrace.OnSendRequest(message);
-            this.Dispatcher.SendMessage(message, sendingActivation);
+            throw new NotSupportedException("nooo");
         }
 
         public void SendResponse(Message request, Response response)
@@ -348,31 +288,13 @@ namespace Orleans.Runtime
                     TransactionContext.SetTransactionInfo(transactionInfo);
                 }
 
-                object resultObject;
+                Response resultObject;
+                Exception invocationException = null;
                 try
                 {
                     switch (message.BodyObject)
                     {
-                        case InvokeMethodRequest request:
-                            {
-
-                                if (request.Arguments != null)
-                                {
-                                    CancellationSourcesExtension.RegisterCancellationTokens(target, request);
-                                }
-
-                                if (!this.invokers.TryGet(message.InterfaceType, out var invoker))
-                                {
-                                    throw new KeyNotFoundException($"Could not find an invoker for interface {message.InterfaceType}");
-                                }
-
-                                messagingTrace.OnInvokeMessage(message);
-                                var requestInvoker = new GrainMethodInvoker(target, request, invoker, GrainCallFilters, interfaceToImplementationMapping);
-                                await requestInvoker.Invoke();
-                                resultObject = requestInvoker.Result;
-                                break;
-                            }
-                        case Hagar.Invocation.IInvokable invokable:
+                        case IInvokable invokable:
                             {
                                 try
                                 {
@@ -380,6 +302,10 @@ namespace Orleans.Runtime
                                     CancellationSourcesExtension.RegisterCancellationTokens(target, invokable);
 
                                     resultObject = await invokable.Invoke();
+                                    if (resultObject.Exception is { } ex)
+                                    {
+                                        invocationException = ex;
+                                    }
                                 }
                                 finally
                                 {
@@ -394,15 +320,21 @@ namespace Orleans.Runtime
                 }
                 catch (Exception exc1)
                 {
+                    invocationException = exc1;
+                    return;
+                }
+
+                if (invocationException is { })
+                {
                     if (message.Direction == Message.Directions.OneWay)
                     {
                         this.invokeExceptionLogger.Warn(ErrorCode.GrainInvokeException,
-                            "Exception during Grain method call of message: " + message + ": " + LogFormatter.PrintException(exc1), exc1);
+                            "Exception during Grain method call of message: " + message + ": " + LogFormatter.PrintException(invocationException), invocationException);
                     }
                     else if (invokeExceptionLogger.IsEnabled(LogLevel.Debug))
                     {
                         this.invokeExceptionLogger.Debug(ErrorCode.GrainInvokeException,
-                            "Exception during Grain method call of message: " + message + ": " + LogFormatter.PrintException(exc1), exc1);
+                            "Exception during Grain method call of message: " + message + ": " + LogFormatter.PrintException(invocationException), invocationException);
                     }
 
                     if (transactionInfo != null)
@@ -410,11 +342,11 @@ namespace Orleans.Runtime
                         transactionInfo.ReconcilePending();
                         
                         // Record reason for abort, if not already set.
-                        transactionInfo.RecordException(exc1, serializationManager);
+                        transactionInfo.RecordException(invocationException, serializationManager);
 
                         if (startNewTransaction)
                         {
-                            exc1 = transactionInfo.MustAbort(serializationManager);
+                            invocationException = transactionInfo.MustAbort(serializationManager);
                             await this.transactionAgent.Abort(transactionInfo);
                             TransactionContext.Clear();
                         }
@@ -422,8 +354,7 @@ namespace Orleans.Runtime
 
                     // If a grain allowed an inconsistent state exception to escape and the exception originated from
                     // this activation, then deactivate it.
-                    var ise = exc1 as InconsistentStateException;
-                    if (ise != null && ise.IsSourceActivation)
+                    if (invocationException is InconsistentStateException ise && ise.IsSourceActivation)
                     {
                         // Mark the exception so that it doesn't deactivate any other activations.
                         ise.IsSourceActivation = false;
@@ -434,9 +365,8 @@ namespace Orleans.Runtime
 
                     if (message.Direction != Message.Directions.OneWay)
                     {
-                        SafeSendExceptionResponse(message, exc1);
+                        SafeSendExceptionResponse(message, invocationException);
                     }
-                    return;
                 }
 
                 OrleansTransactionException transactionException = null;
@@ -509,17 +439,17 @@ namespace Orleans.Runtime
             }
         }
 
-        private void SafeSendResponse(Message message, object resultObject)
+        private void SafeSendResponse(Message message, Response response)
         {
             try
             {
-                SendResponse(message, new Response(this.serializationManager.DeepCopy(resultObject)));
+                SendResponse(message, (Response)this.serializationManager.DeepCopy(response));
             }
             catch (Exception exc)
             {
                 this.logger.Warn(ErrorCode.IGC_SendResponseFailed,
                     "Exception trying to send a response: " + exc.Message, exc);
-                SendResponse(message, Response.ExceptionResponse(exc));
+                SendResponse(message, Response.FromException(exc));
             }
         }
 
@@ -566,7 +496,7 @@ namespace Orleans.Runtime
             try
             {
                 var copiedException = PrepareForRemoting((Exception)this.serializationManager.DeepCopy(ex));
-                SendResponse(message, Response.ExceptionResponse(copiedException));
+                SendResponse(message, Response.FromException(copiedException));
             }
             catch (Exception exc1)
             {
@@ -574,7 +504,7 @@ namespace Orleans.Runtime
                 {
                     this.logger.Warn(ErrorCode.IGC_SendExceptionResponseFailed,
                         "Exception trying to send an exception response: " + exc1.Message, exc1);
-                    SendResponse(message, Response.ExceptionResponse(exc1));
+                    SendResponse(message, Response.FromException(exc1));
                 }
                 catch (Exception exc2)
                 {
@@ -691,9 +621,9 @@ namespace Orleans.Runtime
         /// <inheritdoc />
         public void SetResponseTimeout(TimeSpan timeout) => this.sharedCallbackData.ResponseTimeout = timeout;
 
-        public IAddressable CreateObjectReference(IAddressable obj, IGrainMethodInvoker invoker)
+        public IAddressable CreateObjectReference(IAddressable obj)
         {
-            if (RuntimeContext.CurrentGrainContext is null) return this.HostedClient.CreateObjectReference(obj, invoker);
+            if (RuntimeContext.CurrentGrainContext is null) return this.HostedClient.CreateObjectReference(obj);
             throw new InvalidOperationException("Cannot create a local object reference from a grain.");
         }
 

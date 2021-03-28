@@ -113,7 +113,7 @@ namespace DefaultCluster.Tests.StorageTests
 
         [Serializable]
         [Hagar.GenerateSerializer]
-        private class TestGrainState : IGrainState
+        public class TestGrainState : IGrainState
         {
             public static IGrainState CreateRandom()
             {
