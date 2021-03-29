@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Orleans.Concurrency;
 using Orleans.Runtime;
 using Orleans.Serialization;
@@ -11,6 +12,7 @@ namespace Orleans.Streams
     [Serializable]
     [Immutable]
     [Hagar.GenerateSerializer]
+    [Hagar.SerializationCallbacks(typeof(OnDeserializedCallbacks))]
     internal sealed class StreamImpl<T> : IAsyncStream<T>, IStreamControl, ISerializable, IOnDeserialized
     {
         [Hagar.Id(1)]
@@ -227,7 +229,7 @@ namespace Orleans.Streams
 
         void IOnDeserialized.OnDeserialized(ISerializerContext context)
         {
-            this.runtimeClient = context?.AdditionalContext as IRuntimeClient;
+            this.runtimeClient = context?.RuntimeClient as IRuntimeClient;
         }
     }
 }

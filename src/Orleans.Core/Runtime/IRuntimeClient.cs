@@ -1,7 +1,9 @@
 using System;
 using System.Threading.Tasks;
 using Hagar.Invocation;
+using Microsoft.Extensions.DependencyInjection;
 using Orleans.CodeGeneration;
+using Orleans.Serialization;
 
 namespace Orleans.Runtime
 {
@@ -54,5 +56,23 @@ namespace Orleans.Runtime
         IGrainReferenceRuntime GrainReferenceRuntime { get; }
 
         void BreakOutstandingMessagesToDeadSilo(SiloAddress deadSilo);
+    }
+
+    public class OnDeserializedCallbacks : ISerializerContext
+    {
+        private readonly IServiceProvider _serviceProvider;
+        private readonly IRuntimeClient _runtimeClient;
+
+        public OnDeserializedCallbacks(IServiceProvider serviceProvider)
+        {
+            _serviceProvider = serviceProvider;
+            _runtimeClient = serviceProvider.GetRequiredService<IRuntimeClient>();
+        }
+
+        public IServiceProvider ServiceProvider => _serviceProvider;
+
+        public object RuntimeClient => _runtimeClient;
+
+        public void OnDeserialized(IOnDeserialized value) => value.OnDeserialized(this);
     }
 }

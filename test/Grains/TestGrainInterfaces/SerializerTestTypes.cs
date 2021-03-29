@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.Serialization;
 using Orleans.CodeGeneration;
 using Orleans.Serialization;
@@ -10,6 +10,7 @@ namespace UnitTests.GrainInterfaces
     /// </summary>
     [Serializable]
     [Hagar.GenerateSerializer]
+    [Hagar.SerializationCallbacks(typeof(Orleans.Runtime.OnDeserializedCallbacks))]
     public class TypeWithOnDeserializedHook : IOnDeserialized
     {
         [NonSerialized]

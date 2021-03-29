@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Hagar.Sdk" Version="0.6.1-dev-202103281305" />
+    <PackageReference Include="Hagar.Sdk" Version="0.6.1-dev-202103290823" />
   </ItemGroup>
 
 </Project>

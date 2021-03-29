@@ -10,6 +10,7 @@ namespace Orleans.Providers
 {
     [Serializable]
     [Hagar.GenerateSerializer]
+    [Hagar.SerializationCallbacks(typeof(OnDeserializedCallbacks))]
     internal class MemoryBatchContainer<TSerializer> : IBatchContainer, IOnDeserialized
         where TSerializer : class, IMemoryMessageBodySerializer
     {

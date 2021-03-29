@@ -26,6 +26,7 @@ namespace Orleans.Providers.GCP.Streams.PubSub
         IBatchContainer FromPullResponseMessage(PubsubMessage msg, long sequenceId);
     }
 
+    [Hagar.SerializationCallbacks(typeof(OnDeserializedCallbacks))]
     public class PubSubDataAdapter : IPubSubDataAdapter, IOnDeserialized
     {
         private SerializationManager _serializationManager;

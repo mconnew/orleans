@@ -9,19 +9,20 @@ namespace Orleans.Runtime
     /// <summary>
     /// Invokes a request on a grain reference.
     /// </summary>
-    internal class OutgoingCallInvoker : IOutgoingGrainCallContext
+    internal class OutgoingCallInvoker<TResult> : IOutgoingGrainCallContext
     {
         private readonly IInvokable request;
         private readonly InvokeMethodOptions options;
-        private readonly Func<GrainReference, IInvokable, InvokeMethodOptions, Task<object>> sendRequest;
+        private readonly Action<GrainReference, IInvokable, InvokeMethodOptions> sendRequest;
         private readonly InterfaceToImplementationMappingCache mapping;
         private readonly IOutgoingGrainCallFilter[] filters;
+        private readonly ResponseCompletionSource<TResult> responseCompletionSource;
         private readonly GrainReference grainReference;
         private int stage;
         private object[] _arguments;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="OutgoingCallInvoker"/> class.
+        /// Initializes a new instance of the <see cref="OutgoingCallInvoker{TResult}"/> class.
         /// </summary>
         /// <param name="grain">The grain reference.</param>
         /// <param name="request">The request.</param>
@@ -29,13 +30,15 @@ namespace Orleans.Runtime
         /// <param name="sendRequest"></param>
         /// <param name="filters">The invocation interceptors.</param>
         /// <param name="mapping">The implementation map.</param>
+        /// <param name="responseCompletionSource">The object used to signal completion of the request.</param>
         public OutgoingCallInvoker(
             GrainReference grain,
             IInvokable request,
             InvokeMethodOptions options,
-            Func<GrainReference, IInvokable, InvokeMethodOptions, Task<object>> sendRequest,
+            Action<GrainReference, IInvokable, InvokeMethodOptions> sendRequest,
             InterfaceToImplementationMappingCache mapping,
-            IOutgoingGrainCallFilter[] filters)
+            IOutgoingGrainCallFilter[] filters,
+            ResponseCompletionSource<TResult> responseCompletionSource)
         {
             this.request = request;
             this.options = options;
@@ -43,6 +46,7 @@ namespace Orleans.Runtime
             this.mapping = mapping;
             this.grainReference = grain;
             this.filters = filters;
+            this.responseCompletionSource = responseCompletionSource;
         }
 
         /// <inheritdoc />
@@ -90,7 +94,7 @@ namespace Orleans.Runtime
                     var resultTask = this.sendRequest(this.grainReference, this.request, this.options);
                     if (resultTask != null)
                     {
-                        this.Result = await resultTask;
+                        this.Result = await responseCompletionSource.AsValueTask();
                     }
 
                     return;

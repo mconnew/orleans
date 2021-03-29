@@ -59,6 +59,20 @@ namespace Orleans.Runtime
             this.RuntimeClient.SendRequest(reference, copy, callback, options);
         }
 
+        public Task<TResult> InvokeRequestAsync<TResult>(GrainReference reference, ResponseCompletionSource<TResult> callback, IInvokable body, InvokeMethodOptions options)
+        {
+            SetGrainCancellationTokensTarget(reference, body);
+            var copy = this.deepCopier.Copy(body);
+            if (this.filters?.Length > 0)
+            {
+//                var invoker = new OutgoingCallInvoker
+                //return InvokeWithFilters(reference, copy, options);
+            }
+
+            this.RuntimeClient.SendRequest(reference, copy, callback, options);
+        }
+
+
         public object Cast(IAddressable grain, Type grainInterface)
         {
             var grainId = grain.GetGrainId();

@@ -11,9 +11,13 @@ namespace UnitTests.GrainInterfaces
         public const string NonBatchingNameSpace = "nonbatching";
     }
 
+    [Hagar.GenerateSerializer]
     public class ConsumptionReport
     {
+        [Hagar.Id(0)]
         public int Consumed { get; set; }
+
+        [Hagar.Id(1)]
         public int MaxBatchSize { get; set; }
     }
 

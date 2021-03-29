@@ -11,6 +11,7 @@ namespace Orleans.Providers.Streams.AzureQueue
     /// <summary>
     /// Original data adapter.  Here to maintain backwards compatibility, but does not support json and other custom serializers
     /// </summary>
+    [Hagar.SerializationCallbacks(typeof(OnDeserializedCallbacks))]
     public class AzureQueueDataAdapterV1 : IQueueDataAdapter<string, IBatchContainer>, IOnDeserialized
     {
         private SerializationManager serializationManager;
@@ -53,6 +54,7 @@ namespace Orleans.Providers.Streams.AzureQueue
     /// <summary>
     /// Data adapter that uses types that support custom serializers (like json).
     /// </summary>
+    [Hagar.SerializationCallbacks(typeof(OnDeserializedCallbacks))]
     public class AzureQueueDataAdapterV2 : IQueueDataAdapter<string, IBatchContainer>, IOnDeserialized
     {
         private SerializationManager serializationManager;

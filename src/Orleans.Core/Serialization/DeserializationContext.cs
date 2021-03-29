@@ -76,7 +76,7 @@ namespace Orleans.Serialization
             this.CurrentObjectOffset = 0;
         }
 
-        public override object AdditionalContext => this.SerializationManager.RuntimeClient;
+        public override object RuntimeClient => this.SerializationManager.RuntimeClient;
 
         public object DeserializeInner(Type expected)
         {
@@ -103,7 +103,7 @@ namespace Orleans.Serialization
             }
             
             public IServiceProvider ServiceProvider => this.parent.ServiceProvider;
-            public object AdditionalContext => this.parent.AdditionalContext;
+            public object RuntimeClient => this.parent.RuntimeClient;
             public IBinaryTokenStreamReader StreamReader { get; }
             public int CurrentObjectOffset { get; set; }
             public int CurrentPosition => this.position + this.StreamReader.CurrentPosition;

@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,6 +31,7 @@ namespace Orleans.Providers
     /// </summary>
     [Serializable]
     [Hagar.GenerateSerializer]
+    [Hagar.SerializationCallbacks(typeof(Orleans.Runtime.OnDeserializedCallbacks))]
     public class DefaultMemoryMessageBodySerializer : IMemoryMessageBodySerializer, IOnDeserialized
     {
         [NonSerialized]
