@@ -15,7 +15,8 @@ namespace Orleans.Concurrency
     /// </remarks>
     /// <typeparam name="T">Type of data to be wrapped by this Immutable</typeparam>
     [GenerateSerializer]
-    public struct Immutable<T>
+    [Hagar.Immutable]
+    public readonly struct Immutable<T>
     {
         [Id(1)]
         private readonly T value;

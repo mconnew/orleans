@@ -13,10 +13,8 @@ namespace Orleans.Runtime
     {
         private readonly IInvokable request;
         private readonly InvokeMethodOptions options;
-        private readonly Action<GrainReference, IInvokable, InvokeMethodOptions> sendRequest;
-        private readonly InterfaceToImplementationMappingCache mapping;
+        private readonly Action<GrainReference, IResponseCompletionSource, IInvokable, InvokeMethodOptions> sendRequest;
         private readonly IOutgoingGrainCallFilter[] filters;
-        private readonly ResponseCompletionSource<TResult> responseCompletionSource;
         private readonly GrainReference grainReference;
         private int stage;
         private object[] _arguments;
@@ -29,24 +27,18 @@ namespace Orleans.Runtime
         /// <param name="options"></param>
         /// <param name="sendRequest"></param>
         /// <param name="filters">The invocation interceptors.</param>
-        /// <param name="mapping">The implementation map.</param>
-        /// <param name="responseCompletionSource">The object used to signal completion of the request.</param>
         public OutgoingCallInvoker(
             GrainReference grain,
             IInvokable request,
             InvokeMethodOptions options,
-            Action<GrainReference, IInvokable, InvokeMethodOptions> sendRequest,
-            InterfaceToImplementationMappingCache mapping,
-            IOutgoingGrainCallFilter[] filters,
-            ResponseCompletionSource<TResult> responseCompletionSource)
+            Action<GrainReference, IResponseCompletionSource, IInvokable, InvokeMethodOptions> sendRequest,
+            IOutgoingGrainCallFilter[] filters)
         {
             this.request = request;
             this.options = options;
             this.sendRequest = sendRequest;
-            this.mapping = mapping;
             this.grainReference = grain;
             this.filters = filters;
-            this.responseCompletionSource = responseCompletionSource;
         }
 
         /// <inheritdoc />
@@ -68,7 +60,10 @@ namespace Orleans.Runtime
         public object[] Arguments => _arguments ??= ExtractArguments();
 
         /// <inheritdoc />
-        public object Result { get; set; }
+        public object Result { get => TypedResult; set => TypedResult = (TResult)value; }
+
+        /// <inheritdoc />
+        public TResult TypedResult { get; set; }
 
         /// <inheritdoc />
         public async Task Invoke()
@@ -91,10 +86,15 @@ namespace Orleans.Runtime
                 {
                     // Finally call the root-level invoker.
                     stage++;
-                    var resultTask = this.sendRequest(this.grainReference, this.request, this.options);
-                    if (resultTask != null)
+                    var responseCompletionSource = ResponseCompletionSourcePool.Get<TResult>();
+                    try
                     {
-                        this.Result = await responseCompletionSource.AsValueTask();
+                        this.sendRequest(this.grainReference, responseCompletionSource, this.request, this.options);
+                        this.TypedResult = await responseCompletionSource.AsValueTask();
+                    }
+                    finally
+                    {
+                        ResponseCompletionSourcePool.Return(responseCompletionSource);
                     }
 
                     return;
@@ -111,8 +111,7 @@ namespace Orleans.Runtime
 
         private static void ThrowInvalidCall()
         {
-            throw new InvalidOperationException(
-                $"{nameof(OutgoingCallInvoker)}.{nameof(Invoke)}() received an invalid call.");
+            throw new InvalidOperationException($"{typeof(OutgoingCallInvoker<TResult>)}.{nameof(Invoke)}() received an invalid call.");
         }
 
         private object[] ExtractArguments()

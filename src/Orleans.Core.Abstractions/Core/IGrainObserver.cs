@@ -8,7 +8,6 @@ namespace Orleans
     /// publisher/subscriber interface.
     /// Note that all observer methods should be void, since they do not return a value to the observed grain.
     /// </summary>
-    [Hagar.GenerateMethodSerializers(typeof(NewGrainReference))]
     public interface IGrainObserver : IAddressable
     {
     }

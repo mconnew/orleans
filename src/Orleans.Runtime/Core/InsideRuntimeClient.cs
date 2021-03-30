@@ -293,7 +293,6 @@ namespace Orleans.Runtime
                 }
 
                 Response resultObject;
-                Exception invocationException = null;
                 try
                 {
                     switch (message.BodyObject)
@@ -304,12 +303,7 @@ namespace Orleans.Runtime
                                 {
                                     invokable.SetTarget(target);
                                     CancellationSourcesExtension.RegisterCancellationTokens(target, invokable);
-
                                     resultObject = await invokable.Invoke();
-                                    if (resultObject.Exception is { } ex)
-                                    {
-                                        invocationException = ex;
-                                    }
                                 }
                                 finally
                                 {
@@ -318,17 +312,15 @@ namespace Orleans.Runtime
                                 break;
                             }
                         default:
-                            throw new NotSupportedException();
-
+                            throw new NotSupportedException($"Request {message.BodyObject} of type {message.BodyObject?.GetType()} is not supported");
                     }
                 }
                 catch (Exception exc1)
                 {
-                    invocationException = exc1;
-                    return;
+                    resultObject = Response.FromException(exc1);
                 }
 
-                if (invocationException is { })
+                if (resultObject.Exception is { } invocationException)
                 {
                     if (message.Direction == Message.Directions.OneWay)
                     {
@@ -411,20 +403,17 @@ namespace Orleans.Runtime
                     {
                         // we should never hit this, but if we do, the following message will help us diagnose
                         this.logger.LogError(e, "Error in transaction post-grain-method-invocation code");
-                        throw;
+                    }
+
+                    if (transactionException != null && message.Direction != Message.Directions.OneWay)
+                    {
+                        SafeSendExceptionResponse(message, transactionException);
                     }
                 }
 
                 if (message.Direction != Message.Directions.OneWay)
                 {
-                    if (transactionException != null)
-                    {
-                        SafeSendExceptionResponse(message, transactionException);
-                    }
-                    else
-                    {
-                        SafeSendResponse(message, resultObject);
-                    }
+                    SafeSendResponse(message, resultObject);
                 }
                 return;
             }

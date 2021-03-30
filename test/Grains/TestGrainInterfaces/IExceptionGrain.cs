@@ -1,13 +1,14 @@
 using System;
-using Orleans.CodeGeneration;
+using System.Buffers;
+using System.Threading.Tasks;
+using Hagar.Cloning;
+using Hagar.Codecs;
+using Hagar.WireProtocol;
+using Orleans;
 using Orleans.Runtime;
-using Orleans.Serialization;
 
 namespace UnitTests.GrainInterfaces
 {
-    using System.Threading.Tasks;
-    using Orleans;
-
     /// <summary>
     /// The ExceptionGrain interface.
     /// </summary>
@@ -64,8 +65,6 @@ namespace UnitTests.GrainInterfaces
         Task<UndeserializableType> GetUndeserializable();
     }
 
-    [Serializable]
-    [Hagar.GenerateSerializer]
     public struct UndeserializableType
     {
         public const string FailureMessage = "Can't do it, sorry.";
@@ -75,50 +74,37 @@ namespace UnitTests.GrainInterfaces
             this.Number = num;
         }
 
-        [Hagar.Id(0)]
         public int Number { get; }
-
-        [CopierMethod]
-        public static object DeepCopy(object original, ICopyContext context)
-        {
-            var typed = (UndeserializableType) original;
-            return new UndeserializableType(typed.Number);
-        }
-
-        [SerializerMethod]
-        public static void Serialize(object untypedInput, ISerializationContext context, Type expected)
-        {
-            var typed = (UndeserializableType) untypedInput;
-            context.StreamWriter.Write(typed.Number);
-        }
-
-        [DeserializerMethod]
-        public static object Deserialize(Type expected, IDeserializationContext context)
-        {
-            throw new NotSupportedException(FailureMessage);
-        }
     }
 
-    [Serializable]
     [Hagar.GenerateSerializer]
     public class UnserializableType
     {
-        [CopierMethod]
-        public static object DeepCopy(object original, ICopyContext context)
-        {
-            return original;
-        }
+    }
 
-        [SerializerMethod]
-        public static void Serialize(object untypedInput, ISerializationContext context, Type expected)
+    [Hagar.RegisterSerializer]
+    [Hagar.RegisterCopier]
+    public sealed class UndeserializableTypeCodec : IFieldCodec<UndeserializableType>, IDeepCopier<UndeserializableType>
+    {
+        public UndeserializableType DeepCopy(UndeserializableType input, CopyContext context) => input;
+
+        public UndeserializableType ReadValue<TInput>(ref Hagar.Buffers.Reader<TInput> reader, Field field) => throw new NotSupportedException(UndeserializableType.FailureMessage);
+        public void WriteField<TBufferWriter>(ref Hagar.Buffers.Writer<TBufferWriter> writer, uint fieldIdDelta, Type expectedType, UndeserializableType value) where TBufferWriter : IBufferWriter<byte>
+        {
+            Int32Codec.WriteField(ref writer, fieldIdDelta, typeof(UndeserializableType), value.Number);
+        }
+    }
+
+    [Hagar.RegisterSerializer]
+    [Hagar.RegisterCopier]
+    public sealed class UnserializableTypeCodec : IFieldCodec<UnserializableType>, IDeepCopier<UnserializableType>
+    {
+        public UnserializableType DeepCopy(UnserializableType input, CopyContext context) => input;
+
+        public UnserializableType ReadValue<TInput>(ref Hagar.Buffers.Reader<TInput> reader, Field field) => default;
+        public void WriteField<TBufferWriter>(ref Hagar.Buffers.Writer<TBufferWriter> writer, uint fieldIdDelta, Type expectedType, UnserializableType value) where TBufferWriter : IBufferWriter<byte>
         {
             throw new NotSupportedException(UndeserializableType.FailureMessage);
-        }
-
-        [DeserializerMethod]
-        public static object Deserialize(Type expected, IDeserializationContext context)
-        {
-            return null;
         }
     }
 }

@@ -15,6 +15,7 @@ namespace Orleans.Runtime
         private readonly GrainInterfaceTypeResolver interfaceTypeResolver;
         private readonly IGrainCancellationTokenRuntime cancellationTokenRuntime;
         private readonly IOutgoingGrainCallFilter[] filters;
+        private readonly Action<GrainReference, IResponseCompletionSource, IInvokable, InvokeMethodOptions> sendRequest;
         private readonly Hagar.DeepCopier deepCopier;
 
         public GrainReferenceRuntime(
@@ -30,6 +31,7 @@ namespace Orleans.Runtime
             this.referenceActivator = referenceActivator;
             this.interfaceTypeResolver = interfaceTypeResolver;
             this.filters = outgoingCallFilters.ToArray();
+            this.sendRequest = this.SendRequest;
             this.deepCopier = deepCopier;
         }
 
@@ -51,27 +53,33 @@ namespace Orleans.Runtime
         {
             SetGrainCancellationTokensTarget(reference, body);
             var copy = this.deepCopier.Copy(body);
-            if (this.filters?.Length > 0)
-            {
-                //return InvokeWithFilters(reference, copy, options);
-            }
-
             this.RuntimeClient.SendRequest(reference, copy, callback, options);
         }
 
-        public Task<TResult> InvokeRequestAsync<TResult>(GrainReference reference, ResponseCompletionSource<TResult> callback, IInvokable body, InvokeMethodOptions options)
+        public async Task<TResult> InvokeRequestAsync<TResult>(GrainReference reference, IInvokable body, InvokeMethodOptions options)
         {
             SetGrainCancellationTokensTarget(reference, body);
             var copy = this.deepCopier.Copy(body);
-            if (this.filters?.Length > 0)
+            if (this.filters.Length == 0)
             {
-//                var invoker = new OutgoingCallInvoker
-                //return InvokeWithFilters(reference, copy, options);
+                var responseCompletionSource = ResponseCompletionSourcePool.Get<TResult>();
+                try
+                {
+                    SendRequest(reference, responseCompletionSource, copy, options);
+                    return await responseCompletionSource.AsValueTask();
+                }
+                finally
+                {
+                    ResponseCompletionSourcePool.Return(responseCompletionSource);
+                }
             }
-
-            this.RuntimeClient.SendRequest(reference, copy, callback, options);
+            else
+            {
+                var invoker = new OutgoingCallInvoker<TResult>(reference, copy, options, this.sendRequest, this.filters);
+                await invoker.Invoke();
+                return invoker.TypedResult;
+            }
         }
-
 
         public object Cast(IAddressable grain, Type grainInterface)
         {
