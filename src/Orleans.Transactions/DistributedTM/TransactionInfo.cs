@@ -8,7 +8,7 @@ namespace Orleans.Transactions
 {
     [Hagar.GenerateSerializer]
     [Serializable]
-    public class TransactionInfo : ITransactionInfo
+    public class TransactionInfo
     {
         public TransactionInfo()
         {
@@ -16,8 +16,7 @@ namespace Orleans.Transactions
             this.joined = new ConcurrentQueue<TransactionInfo>();
         }
 
-        public TransactionInfo(Guid id, DateTime timeStamp, DateTime priority, bool readOnly = false)
-        : this()
+        public TransactionInfo(Guid id, DateTime timeStamp, DateTime priority, bool readOnly = false) : this()
         {
             this.TransactionId = id;
             this.IsReadOnly = readOnly;
@@ -29,8 +28,7 @@ namespace Orleans.Transactions
         /// Constructor used when TransactionInfo is transferred to a request
         /// </summary>
         /// <param name="other"></param>
-        public TransactionInfo(TransactionInfo other)
-        : this()
+        public TransactionInfo(TransactionInfo other) : this()
         {
             this.TransactionId = other.TransactionId;
             this.IsReadOnly = other.IsReadOnly;
@@ -66,15 +64,15 @@ namespace Orleans.Transactions
         [NonSerialized]
         private readonly ConcurrentQueue<TransactionInfo> joined;
 
-        public ITransactionInfo Fork()
+        public TransactionInfo Fork()
         {
             PendingCalls++;
             return new TransactionInfo(this);
         }
 
-        public void Join(ITransactionInfo x)
+        public void Join(TransactionInfo x)
         {
-            this.joined.Enqueue((TransactionInfo)x);
+            joined.Enqueue(x);
         }
 
         public OrleansTransactionAbortedException MustAbort(Hagar.Serializer serializer)

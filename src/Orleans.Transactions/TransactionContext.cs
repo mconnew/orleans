@@ -1,4 +1,4 @@
-﻿
+
 using System.Collections.Generic;
 using Orleans.Runtime;
 
@@ -9,37 +9,25 @@ namespace Orleans.Transactions
         internal const string TransactionInfoHeader = "#TC_TI";
         internal const string Orleans_TransactionContext_Key = "#ORL_TC";
 
-        public static ITransactionInfo GetTransactionInfo()
+        public static TransactionInfo GetTransactionInfo()
         {
-            Dictionary<string, object> values = GetContextData();
-            object result;
-            if ((values != null) && values.TryGetValue(TransactionInfoHeader, out result))
+            var values = GetContextData();
+            if (values != null && values.TryGetValue(TransactionInfoHeader, out var result))
             {
-                return result as ITransactionInfo;
+                return result as TransactionInfo;
             }
+
             return null;
         }
 
-        public static string CurrentTransactionId => GetRequiredTransactionInfo<ITransactionInfo>().Id;
+        public static string CurrentTransactionId => GetRequiredTransactionInfo().Id;
 
-        public static T GetRequiredTransactionInfo<T>() where T : class, ITransactionInfo
+        public static TransactionInfo GetRequiredTransactionInfo()
         {
-            var result = GetTransactionInfo();
-            if (result == null)
-            {
-                throw new OrleansTransactionException($"A transaction context is required for access. Did you forget a [Transaction] attribute?");
-            }
-            else if (result is T info)
-            {
-                return info;
-            }
-            else
-            {
-                throw new OrleansTransactionException($"Configuration error: transaction agent is using a different protocol ({result.GetType().FullName}) than the participant expects ({typeof(T).FullName}).");
-            }
+            return GetTransactionInfo() ?? throw new OrleansTransactionException($"A transaction context is required for access. Did you forget a [Transaction] attribute?");
         }
 
-        internal static void SetTransactionInfo(ITransactionInfo info)
+        internal static void SetTransactionInfo(TransactionInfo info)
         {
             Dictionary<string, object> values = GetContextData();
 

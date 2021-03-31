@@ -56,12 +56,12 @@ namespace Orleans.Runtime
             this.RuntimeClient.SendRequest(reference, copy, callback, options);
         }
 
-        public async Task<TResult> InvokeRequestAsync<TResult>(GrainReference reference, IInvokable body, InvokeMethodOptions options)
+        public async ValueTask<TResult> InvokeMethodAsync<TResult>(GrainReference reference, IInvokable request, InvokeMethodOptions options)
         {
-            SetGrainCancellationTokensTarget(reference, body);
-            var copy = this.deepCopier.Copy(body);
             if (this.filters.Length == 0)
             {
+                SetGrainCancellationTokensTarget(reference, request);
+                var copy = this.deepCopier.Copy(request);
                 var responseCompletionSource = ResponseCompletionSourcePool.Get<TResult>();
                 try
                 {
@@ -75,10 +75,17 @@ namespace Orleans.Runtime
             }
             else
             {
-                var invoker = new OutgoingCallInvoker<TResult>(reference, copy, options, this.sendRequest, this.filters);
-                await invoker.Invoke();
-                return invoker.TypedResult;
+                return await InvokeMethodWithFiltersAsync<TResult>(reference, request, options);
             }
+        }
+
+        public async ValueTask<TResult> InvokeMethodWithFiltersAsync<TResult>(GrainReference reference, IInvokable request, InvokeMethodOptions options)
+        {
+            SetGrainCancellationTokensTarget(reference, request);
+            var copy = this.deepCopier.Copy(request);
+            var invoker = new OutgoingCallInvoker<TResult>(reference, copy, options, this.sendRequest, this.filters);
+            await invoker.Invoke();
+            return invoker.TypedResult;
         }
 
         public object Cast(IAddressable grain, Type grainInterface)

@@ -7,7 +7,7 @@
 
   <ItemGroup>
     <PackageReference Include="NodaTime" Version="$(NodaTimeVersion)" />
-    <PackageReference Include="Hagar.Sdk" Version="0.6.2" />
+    <PackageReference Include="Hagar.Sdk" Version="0.6.2-dev-202103301409" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(MicrosoftTestSdkVersion)" />
   </ItemGroup>
 

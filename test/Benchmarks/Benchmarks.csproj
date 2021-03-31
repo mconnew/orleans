@@ -13,7 +13,7 @@
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
     <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.12.1" />
-    <PackageReference Include="Hagar.Sdk" Version="0.6.2" />
+    <PackageReference Include="Hagar.Sdk" Version="0.6.2-dev-202103301409" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" Version="$(MicrosoftNETFrameworkReferenceAssembliesVersion)" />
     <!-- Temporarily kept to resolve a conflict between Microsoft.Azure.DocumentDB.Core's dependencies -->
     <PackageReference Include="System.CodeDom" Version="$(SystemCodeDomVersion)" />

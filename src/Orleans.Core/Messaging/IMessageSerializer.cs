@@ -2,13 +2,8 @@ using System;
 using System.Buffers;
 using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO.Pipelines;
 using System.Net;
-using System.Net.Http.Headers;
-using System.Resources;
 using System.Runtime.CompilerServices;
-using System.Runtime.ExceptionServices;
 using System.Text;
 using Hagar;
 using Hagar.Buffers;
@@ -20,7 +15,6 @@ using Hagar.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Orleans.Configuration;
 using Orleans.Networking.Shared;
-using Orleans.Transactions;
 using static Orleans.Runtime.Message;
 using static Orleans.Runtime.Message.HeadersContainer;
 
@@ -327,16 +321,6 @@ namespace Orleans.Runtime.Messaging
                 WriteSiloAddress(ref writer, value.TargetSilo);
             }
 
-            if ((headers & Headers.TRANSACTION_INFO) != Headers.NONE)
-            {
-                _serializer.Serialize<ITransactionInfo, TBufferWriter>(value.TransactionInfo, ref writer);
-            }
-
-            if ((headers & Headers.TRACE_CONTEXT) != Headers.NONE)
-            {
-                 _serializer.Serialize<TraceContext, TBufferWriter>(value.TraceContext, ref writer);
-            }
-
             if ((headers & Headers.INTERFACE_TYPE) != Headers.NONE)
             {
                 IdSpanCodec.WriteRaw(ref writer, value.InterfaceType.Value);
@@ -432,21 +416,6 @@ namespace Orleans.Runtime.Messaging
             if ((headers & Headers.TARGET_SILO) != Headers.NONE)
             {
                 result.TargetSilo = ReadSiloAddress(ref reader);
-            }
-
-            if ((headers & Headers.IS_TRANSACTION_REQUIRED) != Headers.NONE)
-            {
-                result.IsTransactionRequired = true;
-            }
-
-            if ((headers & Headers.TRANSACTION_INFO) != Headers.NONE)
-            {
-                result.TransactionInfo = _serializer.Deserialize<ITransactionInfo, TInput>(ref reader);
-            }
-
-            if ((headers & Headers.TRACE_CONTEXT) != Headers.NONE)
-            {
-                result.TraceContext = _serializer.Deserialize<TraceContext, TInput>(ref reader);
             }
 
             if ((headers & Headers.INTERFACE_TYPE) != Headers.NONE)

@@ -24,7 +24,6 @@ using Orleans.Versions.Compatibility;
 using Orleans.Versions.Selector;
 using Orleans.Providers;
 using Orleans.Runtime;
-using Orleans.Transactions;
 using Microsoft.Extensions.Logging;
 using Orleans.ApplicationParts;
 using Orleans.Runtime.Utilities;
@@ -39,9 +38,6 @@ using Orleans.Configuration.Internal;
 using Orleans.Runtime.Metadata;
 using Orleans.GrainReferences;
 using Hagar;
-using System.Runtime.CompilerServices;
-using Hagar.Configuration;
-using System.Collections.Generic;
 using Hagar.TypeSystem;
 using Hagar.Serializers;
 
@@ -291,9 +287,6 @@ namespace Orleans.Hosting
 
             services.AddSingleton<ILBasedSerializer>();
             services.AddFromExisting<IKeyedSerializer, ILBasedSerializer>();
-
-            // Transactions
-            services.TryAddSingleton<ITransactionAgent, DisabledTransactionAgent>();
 
             // Application Parts
             var applicationPartManager = services.GetApplicationPartManager();

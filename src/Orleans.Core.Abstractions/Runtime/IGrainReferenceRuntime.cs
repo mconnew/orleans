@@ -1,3 +1,4 @@
+using Hagar.Invocation;
 using Orleans.CodeGeneration;
 using System;
 using System.Threading.Tasks;
@@ -25,6 +26,9 @@ namespace Orleans.Runtime
         /// <param name="options">Invocation options.</param>
         /// <returns>Returns the response from the remote object.</returns>
         Task<T> InvokeMethodAsync<T>(GrainReference reference, int methodId, object[] arguments, InvokeMethodOptions options);
+
+        ValueTask<T> InvokeMethodAsync<T>(GrainReference reference, IInvokable request, InvokeMethodOptions options);
+        ValueTask<T> InvokeMethodWithFiltersAsync<T>(GrainReference reference, IInvokable request, InvokeMethodOptions options);
 
         /// <summary>
         /// Converts the provided <paramref name="grain"/> to the provided <paramref name="interfaceType"/>.

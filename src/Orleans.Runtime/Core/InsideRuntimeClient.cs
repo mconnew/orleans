@@ -11,7 +11,6 @@ using Orleans.Runtime.GrainDirectory;
 using Orleans.Runtime.Scheduler;
 using Orleans.Serialization;
 using Orleans.Storage;
-using Orleans.Transactions;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -48,7 +47,6 @@ namespace Orleans.Runtime
 
         private HostedClient HostedClient => this.hostedClient ?? (this.hostedClient = this.ServiceProvider.GetRequiredService<HostedClient>());
         private readonly MessageFactory messageFactory;
-        private readonly ITransactionAgent transactionAgent;
         private IGrainReferenceRuntime grainReferenceRuntime;
         private readonly ApplicationRequestsStatisticsGroup appRequestStatistics;
         private readonly MessagingTrace messagingTrace;
@@ -58,7 +56,6 @@ namespace Orleans.Runtime
             OrleansTaskScheduler scheduler,
             IServiceProvider serviceProvider,
             MessageFactory messageFactory,
-            ITransactionAgent transactionAgent,
             ILoggerFactory loggerFactory,
             IOptions<SiloMessagingOptions> messagingOptions,
             ApplicationRequestsStatisticsGroup appRequestStatistics,
@@ -76,7 +73,6 @@ namespace Orleans.Runtime
             this.disposables = new List<IDisposable>();
             this.callbacks = new ConcurrentDictionary<(GrainId, CorrelationId), CallbackData>();
             this.messageFactory = messageFactory;
-            this.transactionAgent = transactionAgent;
             this.Scheduler = scheduler;
             this.ConcreteGrainFactory = new GrainFactory(this, referenceActivator, interfaceIdResolver, interfaceToTypeResolver);
             this.logger = loggerFactory.CreateLogger<InsideRuntimeClient>();
@@ -228,7 +224,7 @@ namespace Orleans.Runtime
                 {
                     foreach (ActivationAddress address in message.CacheInvalidationHeader)
                     {
-                        this.Directory.InvalidateCacheEntry(address, message.IsReturnedFromRemoteCluster);
+                        this.Directory.InvalidateCacheEntry(address, invalidateDirectoryAlso: false);
                     }
                 }
 
@@ -274,25 +270,7 @@ namespace Orleans.Runtime
 
                 RequestContextExtensions.Import(message.RequestContextData);
 
-                bool startNewTransaction = false;
-                ITransactionInfo transactionInfo = message.TransactionInfo;
-
-                if (message.IsTransactionRequired && transactionInfo == null)
-                {
-                    // TODO: this should be a configurable parameter
-                    var transactionTimeout = Debugger.IsAttached ? TimeSpan.FromMinutes(30) : TimeSpan.FromSeconds(10);
-
-                    // Start a new transaction
-                    transactionInfo = await this.transactionAgent.StartTransaction(message.IsReadOnly, transactionTimeout);
-                    startNewTransaction = true;
-                }
-
-                if (transactionInfo != null)
-                {
-                    TransactionContext.SetTransactionInfo(transactionInfo);
-                }
-
-                Response resultObject;
+                Response response;
                 try
                 {
                     switch (message.BodyObject)
@@ -303,7 +281,7 @@ namespace Orleans.Runtime
                                 {
                                     invokable.SetTarget(target);
                                     CancellationSourcesExtension.RegisterCancellationTokens(target, invokable);
-                                    resultObject = await invokable.Invoke();
+                                    response = await invokable.Invoke();
                                 }
                                 finally
                                 {
@@ -317,10 +295,10 @@ namespace Orleans.Runtime
                 }
                 catch (Exception exc1)
                 {
-                    resultObject = Response.FromException(exc1);
+                    response = Response.FromException(exc1);
                 }
 
-                if (resultObject.Exception is { } invocationException)
+                if (response.Exception is { } invocationException)
                 {
                     if (message.Direction == Message.Directions.OneWay)
                     {
@@ -333,21 +311,6 @@ namespace Orleans.Runtime
                             "Exception during Grain method call of message: " + message + ": " + LogFormatter.PrintException(invocationException), invocationException);
                     }
 
-                    if (transactionInfo != null)
-                    {
-                        transactionInfo.ReconcilePending();
-                        
-                        // Record reason for abort, if not already set.
-                        transactionInfo.RecordException(invocationException, _serializer);
-
-                        if (startNewTransaction)
-                        {
-                            invocationException = transactionInfo.MustAbort(_serializer);
-                            await this.transactionAgent.Abort(transactionInfo);
-                            TransactionContext.Clear();
-                        }
-                    }
-
                     // If a grain allowed an inconsistent state exception to escape and the exception originated from
                     // this activation, then deactivate it.
                     if (invocationException is InconsistentStateException ise && ise.IsSourceActivation)
@@ -358,73 +321,23 @@ namespace Orleans.Runtime
                         this.invokeExceptionLogger.Info($"Deactivating {target} due to inconsistent state.");
                         this.DeactivateOnIdle(target.ActivationId);
                     }
-
-                    if (message.Direction != Message.Directions.OneWay)
-                    {
-                        SafeSendExceptionResponse(message, invocationException);
-                    }
-                }
-
-                OrleansTransactionException transactionException = null;
-
-                if (transactionInfo != null)
-                {
-                    try
-                    {
-                        transactionInfo.ReconcilePending();
-                        transactionException = transactionInfo.MustAbort(_serializer);
-
-                        // This request started the transaction, so we try to commit before returning,
-                        // or if it must abort, tell participants that it aborted
-                        if (startNewTransaction)
-                        {
-                            try
-                            {
-                                if (transactionException is null)
-                                {
-                                    var (status, exception) = await this.transactionAgent.Resolve(transactionInfo);
-                                    if (status != TransactionalStatus.Ok)
-                                    {
-                                        transactionException = status.ConvertToUserException(transactionInfo.Id, exception);
-                                    }
-                                }
-                                else
-                                {
-                                    await this.transactionAgent.Abort(transactionInfo);
-                                }
-                            }
-                            finally
-                            {
-                                TransactionContext.Clear();
-                            }
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        // we should never hit this, but if we do, the following message will help us diagnose
-                        this.logger.LogError(e, "Error in transaction post-grain-method-invocation code");
-                    }
-
-                    if (transactionException != null && message.Direction != Message.Directions.OneWay)
-                    {
-                        SafeSendExceptionResponse(message, transactionException);
-                    }
                 }
 
                 if (message.Direction != Message.Directions.OneWay)
                 {
-                    SafeSendResponse(message, resultObject);
+                    SafeSendResponse(message, response);
                 }
+
                 return;
             }
             catch (Exception exc2)
             {
                 this.logger.Warn(ErrorCode.Runtime_Error_100329, "Exception during Invoke of message: " + message, exc2);
 
-                TransactionContext.Clear();
-
                 if (message.Direction != Message.Directions.OneWay)
+                {
                     SafeSendExceptionResponse(message, exc2);
+                }
             }
             finally
             {

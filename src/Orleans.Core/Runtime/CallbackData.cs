@@ -1,9 +1,6 @@
 using System;
 using System.Threading;
-using System.Threading.Tasks;
 using Hagar.Invocation;
-using Orleans.CodeGeneration;
-using Orleans.Transactions;
 
 namespace Orleans.Runtime
 {
@@ -23,11 +20,8 @@ namespace Orleans.Runtime
             this.shared = shared;
             this.context = ctx;
             this.Message = msg;
-            this.TransactionInfo = TransactionContext.GetTransactionInfo();
             this.stopwatch = ValueStopwatch.StartNew();
         }
-
-        public ITransactionInfo TransactionInfo { get; set; }
 
         public Message Message { get; } // might hold metadata used by response pipeline
 

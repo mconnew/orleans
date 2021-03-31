@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Orleans.CodeGeneration;
-using Orleans.Transactions;
 
 namespace Orleans.Runtime
 {
@@ -34,55 +33,8 @@ namespace Orleans.Runtime
                 RequestContextData = RequestContextExtensions.Export(this.deepCopier)
             };
 
-            if (options.IsTransactional())
-            {
-                SetTransaction(message, options);
-            }
-            else
-            {
-                // clear transaction info if not in transaction
-                message.RequestContextData?.Remove(TransactionContext.Orleans_TransactionContext_Key);
-            }
-
             messagingTrace.OnCreateMessage(message);
             return message;
-        }
-
-        private void SetTransaction(Message message, InvokeMethodOptions options)
-        { 
-            // clear transaction info if transaction operation requires new transaction.
-            ITransactionInfo transactionInfo = TransactionContext.GetTransactionInfo();
-
-            // enforce join transaction calls
-            if(options.IsTransactionOption(InvokeMethodOptions.TransactionJoin) && transactionInfo == null)
-            {
-                throw new NotSupportedException("Call cannot be made outside of a transaction.");
-            }
-
-            // enforce not allowed transaction calls
-            if (options.IsTransactionOption(InvokeMethodOptions.TransactionNotAllowed) && transactionInfo != null)
-            {
-                throw new NotSupportedException("Call cannot be made within a transaction.");
-            }
-
-            // clear transaction context if creating a transaction or transaction is suppressed
-            if (options.IsTransactionOption(InvokeMethodOptions.TransactionCreate) ||
-                options.IsTransactionOption(InvokeMethodOptions.TransactionSuppress))
-            {
-                transactionInfo = null;
-            }
-
-            bool isTransactionRequired = options.IsTransactionOption(InvokeMethodOptions.TransactionCreate) ||
-                                         options.IsTransactionOption(InvokeMethodOptions.TransactionCreateOrJoin) ||
-                                         options.IsTransactionOption(InvokeMethodOptions.TransactionJoin);
-
-            message.TransactionInfo = transactionInfo?.Fork();
-            message.IsTransactionRequired = isTransactionRequired;
-            if (transactionInfo == null)
-            {
-                // if we're leaving a transaction context, make sure it's been cleared from the request context.
-                message.RequestContextData?.Remove(TransactionContext.Orleans_TransactionContext_Key);
-            }
         }
 
         public Message CreateResponseMessage(Message request)
@@ -95,8 +47,6 @@ namespace Orleans.Runtime
                 IsReadOnly = request.IsReadOnly,
                 IsAlwaysInterleave = request.IsAlwaysInterleave,
                 TargetSilo = request.SendingSilo,
-                TraceContext = request.TraceContext,
-                TransactionInfo = request.TransactionInfo
             };
 
             if (!request.SendingGrain.IsDefault)

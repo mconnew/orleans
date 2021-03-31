@@ -298,33 +298,29 @@ namespace Orleans.Runtime
             this.Runtime.SendRequest(this, callback, body, request.Options);
             callback.Complete();
         }
+
+        protected ValueTask<T> InvokeMethodAsync<T>(IInvokable body)
+        {
+            var request = (RequestBase)body;
+            return this.Runtime.InvokeMethodAsync<T>(this, body, request.Options);
+        }
+
+        protected ValueTask<T> InvokeMethodWithFiltersAsync<T>(IInvokable body)
+        {
+            var requestBase = (RequestBase)body;
+            return this.Runtime.InvokeMethodWithFiltersAsync<T>(this, body, requestBase.Options);
+        }
     }
 
     public abstract class RequestBase : IInvokable
     {
-        internal InvokeMethodOptions Options { get; private set; }
+        public InvokeMethodOptions Options { get; private set; }
 
         public abstract int ArgumentCount { get; }
 
         public void AddInvokeMethodOptions(InvokeMethodOptions options)
         {
             Options |= options;
-        }
-
-        public void SetTransactionOptions(TransactionOptionAlias txOption) => SetTransactionOptions((TransactionOption)txOption);
-
-        public void SetTransactionOptions(TransactionOption txOption)
-        {
-            Options |= txOption switch
-            {
-                TransactionOption.Suppress => InvokeMethodOptions.TransactionSuppress,
-                TransactionOption.Supported => InvokeMethodOptions.TransactionSupported,
-                TransactionOption.CreateOrJoin => InvokeMethodOptions.TransactionCreateOrJoin,
-                TransactionOption.Create => InvokeMethodOptions.TransactionCreate,
-                TransactionOption.Join => InvokeMethodOptions.TransactionJoin,
-                TransactionOption.NotAllowed => InvokeMethodOptions.TransactionNotAllowed,
-                _ => InvokeMethodOptions.None
-            };
         }
 
         public abstract ValueTask<Response> Invoke();

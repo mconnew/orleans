@@ -15,7 +15,9 @@ namespace Orleans.Runtime
         private readonly InvokeMethodOptions options;
         private readonly Action<GrainReference, IResponseCompletionSource, IInvokable, InvokeMethodOptions> sendRequest;
         private readonly IOutgoingGrainCallFilter[] filters;
+        private readonly int stages;
         private readonly GrainReference grainReference;
+        private readonly IOutgoingGrainCallFilter requestFilter;
         private int stage;
         private object[] _arguments;
 
@@ -39,6 +41,12 @@ namespace Orleans.Runtime
             this.sendRequest = sendRequest;
             this.grainReference = grain;
             this.filters = filters;
+            this.stages = filters.Length;
+            if (request is IOutgoingGrainCallFilter requestFilter)
+            {
+                this.requestFilter = requestFilter;
+                ++this.stages;
+            }
         }
 
         /// <inheritdoc />
@@ -72,8 +80,7 @@ namespace Orleans.Runtime
             {
                 // Execute each stage in the pipeline. Each successive call to this method will invoke the next stage.
                 // Stages which are not implemented (eg, because the user has not specified an interceptor) are skipped.
-                var numFilters = filters.Length;
-                if (stage < numFilters)
+                if (stage < this.filters.Length)
                 {
                     // Call each of the specified interceptors.
                     var systemWideFilter = this.filters[stage];
@@ -81,8 +88,12 @@ namespace Orleans.Runtime
                     await systemWideFilter.Invoke(this);
                     return;
                 }
-
-                if (stage == numFilters)
+                else if (stage < this.stages)
+                {
+                    await this.requestFilter.Invoke(this);
+                    return;
+                }
+                else if (stage == this.stages)
                 {
                     // Finally call the root-level invoker.
                     stage++;

@@ -14,7 +14,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Bcl.HashCode" Version="$(MicrosoftBclHashCodeVersion)" />
     <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
-    <PackageReference Include="Hagar.Sdk" Version="0.6.2" />
+    <PackageReference Include="Hagar.Sdk" Version="0.6.2-dev-202103301409" />
   </ItemGroup>
 
 </Project>
