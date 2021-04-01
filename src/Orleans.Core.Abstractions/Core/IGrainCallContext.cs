@@ -1,6 +1,8 @@
 using System;
+using System.Dynamic;
 using System.Reflection;
 using System.Threading.Tasks;
+using Hagar.Invocation;
 using Orleans.Runtime;
 
 namespace Orleans
@@ -50,7 +52,7 @@ namespace Orleans
         /// <summary>
         /// Gets the arguments for this method invocation.
         /// </summary>
-        object[] Arguments { get; }
+        IMethodArguments Arguments { get; }
 
         /// <summary>
         /// Invokes the request.
@@ -79,5 +81,13 @@ namespace Orleans
     /// </summary>
     public interface IOutgoingGrainCallContext : IGrainCallContext
     {
+    }
+
+    public interface IMethodArguments
+    {
+        object this[int index] { get;set; }
+        T GetArgument<T>(int index);
+        void SetArgument<T>(int index, T value);
+        int Length { get; }
     }
 }

@@ -108,7 +108,7 @@ namespace Orleans.GrainReferences
             var interfaceVersion = _versionManifest.GetLocalVersion(interfaceType);
        
             var runtime = _grainReferenceRuntime ??= _serviceProvider.GetRequiredService<IGrainReferenceRuntime>();
-            var shared = new GrainReferenceShared(grainType, interfaceType, interfaceVersion, runtime, InvokeMethodOptions.None);
+            var shared = new GrainReferenceShared(grainType, interfaceType, interfaceVersion, runtime, InvokeMethodOptions.None, _serviceProvider);
             activator = new UntypedGrainReferenceActivator(shared);
             return true;
         }
@@ -243,7 +243,7 @@ namespace Orleans.GrainReferences
 
             var invokeMethodOptions = unordered ? InvokeMethodOptions.Unordered : InvokeMethodOptions.None;
             var runtime = _grainReferenceRuntime ??= _serviceProvider.GetRequiredService<IGrainReferenceRuntime>();
-            var shared = new GrainReferenceShared(grainType, interfaceType, interfaceVersion, runtime, invokeMethodOptions);
+            var shared = new GrainReferenceShared(grainType, interfaceType, interfaceVersion, runtime, invokeMethodOptions, _serviceProvider);
             activator = new NewGrainReferenceActivator(proxyType, shared);
             return true;
         }

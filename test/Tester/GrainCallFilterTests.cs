@@ -167,7 +167,7 @@ namespace UnitTests.General
             // Original arg should have been:
             // 1. Converted to upper case on the way out of the client: ab -> AB.
             // 2. Doubled on the way out of grain1: AB -> ABAB.
-            // 3. Reversed on the wya in to grain2: ABAB -> BABA.
+            // 3. Reversed on the way in to grain2: ABAB -> BABA.
             Assert.Equal("BABA", result["orig"] as string);
             Assert.NotNull(result["result"]);
             Assert.Equal("intercepted!", result["result"]);

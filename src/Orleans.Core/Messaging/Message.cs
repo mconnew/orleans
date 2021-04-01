@@ -500,9 +500,6 @@ namespace Orleans.Runtime
         }
 
         [Serializable]
-        [Hagar.GenerateSerializer]
-        [Hagar.SuppressReferenceTracking]
-        [Hagar.OmitDefaultMemberValues]
         public class HeadersContainer
         {
             [Flags]

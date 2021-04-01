@@ -43,7 +43,6 @@ namespace Orleans.Runtime.Messaging
     {
         private const int FramingLength = Message.LENGTH_HEADER_SIZE;
         private const int MessageSizeHint = 4096;
-        private readonly Serializer<Message.HeadersContainer> _headersSerializer;
         private readonly Serializer<object> _bodySerializer;
         private readonly Serializer<ActivationAddress> _activationAddressCodec;
         private readonly Serializer _serializer;
@@ -57,7 +56,6 @@ namespace Orleans.Runtime.Messaging
         private object _bufferWriter;
 
         public HagarMessageSerializer(
-            Serializer<Message.HeadersContainer> headersSerializer,
             Serializer<object> bodySerializer,
             SerializerSessionPool sessionPool,
             SharedMemoryPool memoryPool,
@@ -72,7 +70,6 @@ namespace Orleans.Runtime.Messaging
             _serializationSession = sessionPool.GetSession();
             _deserializationSession = sessionPool.GetSession();
             _memoryPool = memoryPool.Pool;
-            _headersSerializer = headersSerializer;
             _bodySerializer = bodySerializer;
             _maxHeaderLength = maxHeaderSize;
             _maxBodyLength = maxBodySize;

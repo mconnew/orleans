@@ -130,7 +130,6 @@ namespace Orleans.Concurrency
     /// Indicates that a method on a grain interface is one-way and that no response message will be sent to the caller.
     /// </summary>
     [InvokableCustomInitializer(nameof(RequestBase.AddInvokeMethodOptions), InvokeMethodOptions.OneWay)]
-    [SubmitInvokableMethodName("SendOneWay")]
     [AttributeUsage(AttributeTargets.Method)]
     public sealed class OneWayAttribute : Attribute
     {

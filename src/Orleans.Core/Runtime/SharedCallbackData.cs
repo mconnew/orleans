@@ -83,11 +83,13 @@ namespace Orleans.Runtime
                 response = Response.FromException(rejection);
             }
 
-            if (context is IResponseCompletionSource rcs)
+            try
             {
-                // TODO: receive the response as an object and propagate it here.
-                rcs.Complete(response);
-                response.Dispose();
+                context.Complete(response);
+            }
+            catch (Exception exception)
+            {
+                Logger.LogError(exception, "Exception completing response");
             }
         }
     }

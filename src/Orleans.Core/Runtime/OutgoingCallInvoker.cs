@@ -9,7 +9,7 @@ namespace Orleans.Runtime
     /// <summary>
     /// Invokes a request on a grain reference.
     /// </summary>
-    internal class OutgoingCallInvoker<TResult> : IOutgoingGrainCallContext
+    internal class OutgoingCallInvoker<TResult> : IOutgoingGrainCallContext, IMethodArguments
     {
         private readonly IInvokable request;
         private readonly InvokeMethodOptions options;
@@ -19,7 +19,6 @@ namespace Orleans.Runtime
         private readonly GrainReference grainReference;
         private readonly IOutgoingGrainCallFilter requestFilter;
         private int stage;
-        private object[] _arguments;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="OutgoingCallInvoker{TResult}"/> class.
@@ -53,25 +52,31 @@ namespace Orleans.Runtime
         public IAddressable Grain => this.grainReference;
 
         /// <inheritdoc />
-        public MethodInfo Method
-        {
-            get
-            {
-                return null;
-            }
-        }
+        public MethodInfo Method => request.Method;
 
         /// <inheritdoc />
         public MethodInfo InterfaceMethod => this.Method;
 
         /// <inheritdoc />
-        public object[] Arguments => _arguments ??= ExtractArguments();
+        public IMethodArguments Arguments => this;
 
         /// <inheritdoc />
         public object Result { get => TypedResult; set => TypedResult = (TResult)value; }
 
         /// <inheritdoc />
         public TResult TypedResult { get; set; }
+
+        object IMethodArguments.this[int index]
+        {
+            get => request.GetArgument<object>(index);
+            set => request.SetArgument(index, value);
+        }
+
+        T IMethodArguments.GetArgument<T>(int index) => request.GetArgument<T>(index);
+
+        void IMethodArguments.SetArgument<T>(int index, T value) => request.SetArgument(index, value);
+
+        int IMethodArguments.Length => request.ArgumentCount;
 
         /// <inheritdoc />
         public async Task Invoke()
@@ -123,22 +128,6 @@ namespace Orleans.Runtime
         private static void ThrowInvalidCall()
         {
             throw new InvalidOperationException($"{typeof(OutgoingCallInvoker<TResult>)}.{nameof(Invoke)}() received an invalid call.");
-        }
-
-        private object[] ExtractArguments()
-        {
-            if (request.ArgumentCount == 0)
-            {
-                return Array.Empty<object>();
-            }
-
-            var result = new object[request.ArgumentCount];
-            for (var i = 0; i < result.Length; i++)
-            {
-                result[i] = request.GetArgument<object>(i);
-            }
-
-            return result;
         }
     }
 }

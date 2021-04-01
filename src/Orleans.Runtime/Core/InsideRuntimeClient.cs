@@ -42,6 +42,7 @@ namespace Orleans.Runtime
         private Dispatcher dispatcher;
         private List<IIncomingGrainCallFilter> grainCallFilters;
         private Hagar.DeepCopier _deepCopier;
+        private readonly InterfaceToImplementationMappingCache interfaceToImplementationMapping;
         private Hagar.Serializer _serializer;
         private HostedClient hostedClient;
 
@@ -66,6 +67,7 @@ namespace Orleans.Runtime
             Hagar.Serializer serializer,
             Hagar.DeepCopier deepCopier)
         {
+            this.interfaceToImplementationMapping = new InterfaceToImplementationMappingCache();
             this._serializer = serializer;
             this._deepCopier = deepCopier;
             this.ServiceProvider = serviceProvider;
@@ -121,8 +123,8 @@ namespace Orleans.Runtime
 
         public void SendRequest(
             GrainReference target,
-            Hagar.Invocation.IInvokable request,
-            Hagar.Invocation.IResponseCompletionSource context,
+            IInvokable request,
+            IResponseCompletionSource context,
             InvokeMethodOptions options)
         {
             var message = this.messageFactory.CreateMessage(request, options);
@@ -180,18 +182,13 @@ namespace Orleans.Runtime
                 var callbackData = new CallbackData(sharedData, context, message);
                 callbacks.TryAdd((message.SendingGrain, message.Id), callbackData);
             }
+            else
+            {
+                context?.Complete();
+            }
 
             this.messagingTrace.OnSendRequest(message);
             this.Dispatcher.SendMessage(message, sendingActivation);
-        }
-
-        public void SendRequest(
-            GrainReference target,
-            InvokeMethodRequest request,
-            TaskCompletionSource<object> context,
-            InvokeMethodOptions options)
-        {
-            throw new NotSupportedException("nooo");
         }
 
         public void SendResponse(Message request, Response response)
@@ -281,7 +278,16 @@ namespace Orleans.Runtime
                                 {
                                     invokable.SetTarget(target);
                                     CancellationSourcesExtension.RegisterCancellationTokens(target, invokable);
-                                    response = await invokable.Invoke();
+                                    if (GrainCallFilters is { Count: > 0 } || target is IIncomingGrainCallFilter)
+                                    {
+                                        var invoker = new GrainMethodInvoker(target, invokable, GrainCallFilters, this.interfaceToImplementationMapping);
+                                        await invoker.Invoke();
+                                        response = invoker.Response;
+                                    }
+                                    else
+                                    {
+                                        response = await invokable.Invoke();
+                                    }
                                 }
                                 finally
                                 {
@@ -474,10 +480,7 @@ namespace Orleans.Runtime
                     if (status.Diagnostics != null && status.Diagnostics.Count > 0 && logger.IsEnabled(LogLevel.Information))
                     {
                         var diagnosticsString = string.Join("\n", status.Diagnostics);
-                        using (request.SetThreadActivityId())
-                        {
-                            this.logger.LogInformation("Received status update for pending request, Request: {RequestMessage}. Status: {Diagnostics}", request, diagnosticsString);
-                        }
+                        this.logger.LogInformation("Received status update for pending request, Request: {RequestMessage}. Status: {Diagnostics}", request, diagnosticsString);
                     }
                 }
                 else
@@ -485,10 +488,7 @@ namespace Orleans.Runtime
                     if (status.Diagnostics != null && status.Diagnostics.Count > 0 && logger.IsEnabled(LogLevel.Information))
                     {
                         var diagnosticsString = string.Join("\n", status.Diagnostics);
-                        using (message.SetThreadActivityId())
-                        {
-                            this.logger.LogInformation("Received status update for unknown request. Message: {StatusMessage}. Status: {Diagnostics}", message, diagnosticsString);
-                        }
+                        this.logger.LogInformation("Received status update for unknown request. Message: {StatusMessage}. Status: {Diagnostics}", message, diagnosticsString);
                     }
                 }
 
@@ -499,11 +499,6 @@ namespace Orleans.Runtime
             bool found = callbacks.TryRemove((message.TargetGrain, message.Id), out callbackData);
             if (found)
             {
-                if (message.TransactionInfo != null)
-                {
-                    // NOTE: Not clear if thread-safe, revise
-                    callbackData.TransactionInfo.Join(message.TransactionInfo);
-                }
                 // IMPORTANT: we do not schedule the response callback via the scheduler, since the only thing it does
                 // is to resolve/break the resolver. The continuations/waits that are based on this resolution will be scheduled as work items. 
                 callbackData.DoCallback(message);

@@ -82,8 +82,6 @@ namespace Orleans.CodeGenerator
             ActivationAddress = Type("Orleans.Runtime.ActivationAddress");
             CorrelationId = OptionalType("Orleans.Runtime.CorrelationId");
             CancellationToken = Type("System.Threading.CancellationToken");
-            TransactionAttribute = Type("Orleans.TransactionAttribute");
-            TransactionOption = Type("Orleans.TransactionOption");
             this.Type = Type("System.Type");
             TypeCodeOverrideAttribute = Type("Orleans.CodeGeneration.TypeCodeOverrideAttribute");
             MethodIdAttribute = Type("Orleans.CodeGeneration.MethodIdAttribute");
@@ -225,8 +223,6 @@ namespace Orleans.CodeGenerator
         public INamedTypeSymbol Task { get; }
         public INamedTypeSymbol Task_1 { get; }
         public OptionalType ValueTask { get; }
-        public INamedTypeSymbol TransactionAttribute { get; }
-        public INamedTypeSymbol TransactionOption { get; }
         public INamedTypeSymbol Type { get; }
         public INamedTypeSymbol TypeCodeOverrideAttribute { get; }
         public INamedTypeSymbol MethodIdAttribute { get; }

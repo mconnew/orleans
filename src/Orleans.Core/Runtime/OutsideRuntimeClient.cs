@@ -246,14 +246,7 @@ namespace Orleans
             MessageCenter.SendMessage(message);
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope",
-            Justification = "CallbackData is IDisposable but instances exist beyond lifetime of this method so cannot Dispose yet.")]
-        public void SendRequest(GrainReference target, InvokeMethodRequest request, TaskCompletionSource<object> context, InvokeMethodOptions options)
-        {
-            throw new NotSupportedException();
-        }
-
-        public void SendRequest(GrainReference target, Hagar.Invocation.IInvokable request, Hagar.Invocation.IResponseCompletionSource context, InvokeMethodOptions options)
+        public void SendRequest(GrainReference target, IInvokable request, IResponseCompletionSource context, InvokeMethodOptions options)
         {
             var message = this.messageFactory.CreateMessage(request, options);
             OrleansOutsideRuntimeClientEvent.Log.SendRequest(message);
@@ -288,6 +281,10 @@ namespace Orleans
                 var callbackData = new CallbackData(this.sharedCallbackData, context, message);
                 callbacks.TryAdd(message.Id, callbackData);
             }
+            else
+            {
+                context?.Complete();
+            }
 
             if (logger.IsEnabled(LogLevel.Trace)) logger.Trace("Send {0}", message);
             MessageCenter.SendMessage(message);
@@ -318,10 +315,7 @@ namespace Orleans
                     if (status.Diagnostics != null && status.Diagnostics.Count > 0 && logger.IsEnabled(LogLevel.Information))
                     {
                         var diagnosticsString = string.Join("\n", status.Diagnostics);
-                        using (request.SetThreadActivityId())
-                        {
-                            this.logger.LogInformation("Received status update for pending request, Request: {RequestMessage}. Status: {Diagnostics}", request, diagnosticsString);
-                        }
+                        this.logger.LogInformation("Received status update for pending request, Request: {RequestMessage}. Status: {Diagnostics}", request, diagnosticsString);
                     }
                 }
                 else
@@ -329,10 +323,7 @@ namespace Orleans
                     if (status.Diagnostics != null && status.Diagnostics.Count > 0 && logger.IsEnabled(LogLevel.Information))
                     {
                         var diagnosticsString = string.Join("\n", status.Diagnostics);
-                        using (response.SetThreadActivityId())
-                        {
-                            this.logger.LogInformation("Received status update for unknown request. Message: {StatusMessage}. Status: {Diagnostics}", response, diagnosticsString);
-                        }
+                        this.logger.LogInformation("Received status update for unknown request. Message: {StatusMessage}. Status: {Diagnostics}", response, diagnosticsString);
                     }
                 }
 

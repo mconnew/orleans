@@ -94,7 +94,6 @@ namespace Benchmarks.Serialization
                 SendingActivation = ActivationId.NewId(),
                 SendingSilo = SiloAddress.New(IPEndPoint.Parse("10.50.4.44:40902"), 5423123),
                 SendingGrain = GrainId.Create("sys.mygrain", "fluffy_g"),
-                TraceContext = new TraceContext { ActivityId = Guid.NewGuid() },
                 Id = CorrelationId.GetNext()
             }).Headers;
 

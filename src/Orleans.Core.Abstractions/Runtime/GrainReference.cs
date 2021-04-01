@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Hagar;
@@ -22,23 +23,22 @@ namespace Orleans.Runtime
             GrainInterfaceType grainInterfaceType,
             ushort interfaceVersion,
             IGrainReferenceRuntime runtime,
-            InvokeMethodOptions invokeMethodOptions)
+            InvokeMethodOptions invokeMethodOptions,
+            IServiceProvider serviceProvider)
         {
             this.GrainType = graintype;
             this.InterfaceType = grainInterfaceType;
             this.Runtime = runtime;
             this.InvokeMethodOptions = invokeMethodOptions;
+            this.ServiceProvider = serviceProvider;
             this.InterfaceVersion = interfaceVersion;
         }
 
         public IGrainReferenceRuntime Runtime { get; }
-
         public GrainType GrainType { get; }
-
         public GrainInterfaceType InterfaceType { get; }
-
         public InvokeMethodOptions InvokeMethodOptions { get; }
-
+        public IServiceProvider ServiceProvider { get; }
         public ushort InterfaceVersion { get; }
     }
 
@@ -286,29 +286,18 @@ namespace Orleans.Runtime
 
         public override ushort InterfaceVersion => Shared.InterfaceVersion;
 
+        protected TInvokable GetInvokable<TInvokable>() => ActivatorUtilities.GetServiceOrCreateInstance<TInvokable>(Shared.ServiceProvider);
+
         protected void SendRequest(IResponseCompletionSource callback, IInvokable body)
         {
             var request = (RequestBase)body;
             this.Runtime.SendRequest(this, callback, body, request.Options);
         }
 
-        protected void SendOneWay(IResponseCompletionSource callback, IInvokable body)
-        {
-            var request = (RequestBase)body;
-            this.Runtime.SendRequest(this, callback, body, request.Options);
-            callback.Complete();
-        }
-
-        protected ValueTask<T> InvokeMethodAsync<T>(IInvokable body)
+        protected ValueTask<T> InvokeAsync<T>(IInvokable body)
         {
             var request = (RequestBase)body;
             return this.Runtime.InvokeMethodAsync<T>(this, body, request.Options);
-        }
-
-        protected ValueTask<T> InvokeMethodWithFiltersAsync<T>(IInvokable body)
-        {
-            var requestBase = (RequestBase)body;
-            return this.Runtime.InvokeMethodWithFiltersAsync<T>(this, body, requestBase.Options);
         }
     }
 
@@ -330,6 +319,13 @@ namespace Orleans.Runtime
         public abstract TArgument GetArgument<TArgument>(int index);
         public abstract void SetArgument<TArgument>(int index, in TArgument value);
         public abstract void Dispose();
+        public abstract string MethodName { get; }
+        public abstract Type[] MethodTypeArguments { get; }
+        public abstract string InterfaceName { get; }
+        public abstract Type InterfaceType { get; }
+        public abstract Type[] InterfaceTypeArguments { get; }
+        public abstract Type[] ParameterTypes { get; }
+        public abstract MethodInfo Method { get; }
     }
 
     public abstract class Request : RequestBase 

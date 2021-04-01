@@ -75,11 +75,11 @@ namespace Orleans.Transactions
             joined.Enqueue(x);
         }
 
-        public OrleansTransactionAbortedException MustAbort(Hagar.Serializer serializer)
+        public OrleansTransactionAbortedException MustAbort(Hagar.Serializer<OrleansTransactionAbortedException> serializer)
         {
             if (OriginalException != null)
             {
-                return serializer.Deserialize<OrleansTransactionAbortedException>(OriginalException);
+                return serializer.Deserialize(OriginalException);
             }
             else if (PendingCalls != 0)
             {
@@ -91,7 +91,7 @@ namespace Orleans.Transactions
             }
         }
 
-        public void RecordException(Exception e, Hagar.Serializer sm)
+        public void RecordException(Exception e, Hagar.Serializer<OrleansTransactionAbortedException> sm)
         {
             if (OriginalException == null)
             {

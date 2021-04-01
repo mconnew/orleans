@@ -58,7 +58,8 @@ namespace Orleans.Runtime
 
         public async ValueTask<TResult> InvokeMethodAsync<TResult>(GrainReference reference, IInvokable request, InvokeMethodOptions options)
         {
-            if (this.filters.Length == 0)
+            // TODO: Remove expensive interface type check
+            if (this.filters.Length == 0 && request is not IOutgoingGrainCallFilter)
             {
                 SetGrainCancellationTokensTarget(reference, request);
                 var copy = this.deepCopier.Copy(request);
@@ -79,7 +80,7 @@ namespace Orleans.Runtime
             }
         }
 
-        public async ValueTask<TResult> InvokeMethodWithFiltersAsync<TResult>(GrainReference reference, IInvokable request, InvokeMethodOptions options)
+        private async ValueTask<TResult> InvokeMethodWithFiltersAsync<TResult>(GrainReference reference, IInvokable request, InvokeMethodOptions options)
         {
             SetGrainCancellationTokensTarget(reference, request);
             var copy = this.deepCopier.Copy(request);
