@@ -4,7 +4,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Hagar.Sdk" Version="0.6.3-dev-202104010911" />
+    <PackageReference Include="Hagar.Sdk" Version="0.6.5" />
   </ItemGroup>
 
   <ItemGroup>
