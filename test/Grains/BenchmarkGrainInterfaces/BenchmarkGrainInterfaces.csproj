@@ -2,9 +2,10 @@
   <PropertyGroup>
     <OrleansBuildTimeCodeGen>true</OrleansBuildTimeCodeGen>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Hagar.Sdk" Version="0.6.5-dev-202104020651" />
+    <PackageReference Include="Hagar.Sdk" Version="0.6.6-dev-202104031146" />
   </ItemGroup>
 
   <ItemGroup>

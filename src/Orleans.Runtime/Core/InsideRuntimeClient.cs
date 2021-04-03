@@ -291,7 +291,7 @@ namespace Orleans.Runtime
                                 }
                                 finally
                                 {
-                                    invokable.Dispose();
+                                    //invokable.Dispose();
                                 }
                                 break;
                             }

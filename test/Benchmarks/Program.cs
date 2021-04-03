@@ -147,6 +147,20 @@ namespace Benchmarks
             {
                 new PingBenchmark(numSilos: 1, startClient: false).PingConcurrentHostedClient().GetAwaiter().GetResult();
             },
+            ["ConcurrentPing_HostedClient_Forever"] = () =>
+            {
+                var benchmark = new PingBenchmark(numSilos: 1, startClient: false);
+                Console.WriteLine("Press any key to begin.");
+                Console.ReadKey();
+                Console.WriteLine("Press any key to end.");
+                Console.WriteLine("## Hosted Client ##");
+                while (!Console.KeyAvailable)
+                {
+                    benchmark.PingConcurrentHostedClient().GetAwaiter().GetResult();
+                }
+
+                Console.WriteLine("Interrupted by user");
+            },
             ["ConcurrentPing_SiloToSilo"] = () =>
             {
                 new PingBenchmark(numSilos: 2, startClient: false, grainsOnSecondariesOnly: true).PingConcurrentHostedClient(blocksPerWorker: 10).GetAwaiter().GetResult();                

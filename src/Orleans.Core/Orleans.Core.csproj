@@ -27,7 +27,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="$(MicrosoftExtensionsLoggingVersion)" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="$(MicrosoftExtensionsHostingAbstractionsVersion)" />
     <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersion)" />
-    <PackageReference Include="Hagar.Sdk" Version="0.6.5-dev-202104020651" />
+    <PackageReference Include="Hagar.Sdk" Version="0.6.6-dev-202104031146" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETStandard'">
     <PackageReference Include="System.Threading.Channels" Version="$(SystemThreadingChannelsVersion)" />

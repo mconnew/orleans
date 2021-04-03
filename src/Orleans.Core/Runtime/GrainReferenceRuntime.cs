@@ -52,7 +52,7 @@ namespace Orleans.Runtime
         public void SendRequest(GrainReference reference, IResponseCompletionSource callback, IInvokable body, InvokeMethodOptions options)
         {
             SetGrainCancellationTokensTarget(reference, body);
-            var copy = this.deepCopier.Copy(body);
+            var copy = body;//this.deepCopier.Copy(body);
             this.RuntimeClient.SendRequest(reference, copy, callback, options);
         }
 
