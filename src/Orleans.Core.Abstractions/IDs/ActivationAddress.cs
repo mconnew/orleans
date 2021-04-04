@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using Orleans.Concurrency;
 
 namespace Orleans.Runtime
@@ -8,6 +9,9 @@ namespace Orleans.Runtime
     [Hagar.SuppressReferenceTracking]
     public sealed class ActivationAddress : IEquatable<ActivationAddress>
     {
+        private static readonly Interner<(SiloAddress, GrainId, ActivationId), ActivationAddress> Interner = new();
+        private static readonly Func<(SiloAddress, GrainId, ActivationId), ActivationAddress> CreateActivation = ((SiloAddress Silo, GrainId Grain, ActivationId Activation) key) => new ActivationAddress(key.Silo, key.Grain, key.Activation);
+
         [Hagar.Id(1)]
         public GrainId Grain { get; private set; }
         [Hagar.Id(2)]
@@ -33,9 +37,12 @@ namespace Orleans.Runtime
         public static ActivationAddress GetAddress(SiloAddress silo, GrainId grain, ActivationId activation)
         {
             // Silo part is not mandatory
-            if (grain.IsDefault) throw new ArgumentNullException("grain");
+            if (grain.IsDefault) ThrowArgumentException();
 
-            return new ActivationAddress(silo, grain, activation);
+            return Interner.FindOrCreate((silo, grain, activation), CreateActivation);
+
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            static void ThrowArgumentException() => throw new ArgumentNullException("grain");
         }
 
         public override bool Equals(object obj) => Equals(obj as ActivationAddress);
