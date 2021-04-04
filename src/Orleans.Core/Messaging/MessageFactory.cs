@@ -2,10 +2,29 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.ObjectPool;
 using Orleans.CodeGeneration;
 
 namespace Orleans.Runtime
 {
+    internal static class MessagePool
+    {
+        private static readonly DefaultObjectPool<Message> Pool = new(new DefaultPooledObjectPolicy<Message>());
+
+        public static Message Rent()
+        {
+            var result = Pool.Get();
+            result.Initialize();
+            return result;
+        }
+
+        public static void Return(Message value)
+        {
+            value.Reset();
+            Pool.Return(value);
+        }
+    }
+
     internal class MessageFactory
     {
         private readonly Hagar.DeepCopier deepCopier;
@@ -21,33 +40,28 @@ namespace Orleans.Runtime
 
         public Message CreateMessage(object body, InvokeMethodOptions options)
         {
-            var message = new Message
-            {
-                Category = Message.Categories.Application,
-                Direction = (options & InvokeMethodOptions.OneWay) != 0 ? Message.Directions.OneWay : Message.Directions.Request,
-                Id = CorrelationId.GetNext(),
-                IsReadOnly = (options & InvokeMethodOptions.ReadOnly) != 0,
-                IsUnordered = (options & InvokeMethodOptions.Unordered) != 0,
-                IsAlwaysInterleave = (options & InvokeMethodOptions.AlwaysInterleave) != 0,
-                BodyObject = body,
-                RequestContextData = RequestContextExtensions.Export(this.deepCopier)
-            };
-
+            var message = MessagePool.Rent();
+            message.Category = Message.Categories.Application;
+            message.Direction = (options & InvokeMethodOptions.OneWay) != 0 ? Message.Directions.OneWay : Message.Directions.Request;
+            message.Id = CorrelationId.GetNext();
+            message.IsReadOnly = (options & InvokeMethodOptions.ReadOnly) != 0;
+            message.IsUnordered = (options & InvokeMethodOptions.Unordered) != 0;
+            message.IsAlwaysInterleave = (options & InvokeMethodOptions.AlwaysInterleave) != 0;
+            message.BodyObject = body;
+            message.RequestContextData = RequestContextExtensions.Export(this.deepCopier);
             messagingTrace.OnCreateMessage(message);
             return message;
         }
 
         public Message CreateResponseMessage(Message request)
         {
-            var response = new Message
-            {
-                Category = request.Category,
-                Direction = Message.Directions.Response,
-                Id = request.Id,
-                IsReadOnly = request.IsReadOnly,
-                IsAlwaysInterleave = request.IsAlwaysInterleave,
-                TargetSilo = request.SendingSilo,
-            };
+            var response = MessagePool.Rent();
+            response.Category = request.Category;
+            response.Direction = Message.Directions.Response;
+            response.Id = request.Id;
+            response.IsReadOnly = request.IsReadOnly;
+            response.IsAlwaysInterleave = request.IsAlwaysInterleave;
+            response.TargetSilo = request.SendingSilo;
 
             if (!request.SendingGrain.IsDefault)
             {

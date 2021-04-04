@@ -157,8 +157,7 @@ namespace Orleans.Runtime
             {
                 message.TargetSilo = systemTargetGrainId.GetSiloAddress();
                 message.TargetActivation = ActivationId.GetDeterministic(targetGrainId);
-                message.Category = targetGrainId.Type.Equals(Constants.MembershipServiceType) ?
-                    Message.Categories.Ping : Message.Categories.System;
+                message.Category = targetGrainId.Type.Equals(Constants.MembershipServiceType) ? Message.Categories.Ping : Message.Categories.System;
                 sharedData = this.systemSharedCallbackData;
             }
             else

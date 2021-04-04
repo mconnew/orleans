@@ -302,8 +302,7 @@ namespace Orleans.Runtime
 
         internal void PrepareSystemTargetMessage(Message message)
         {
-            message.Category = message.TargetGrain.Equals(Constants.MembershipServiceType) ?
-                Message.Categories.Ping : Message.Categories.System;
+            message.Category = message.TargetGrain.Equals(Constants.MembershipServiceType) ? Message.Categories.Ping : Message.Categories.System;
 
             if (message.TargetSilo == null)
             {

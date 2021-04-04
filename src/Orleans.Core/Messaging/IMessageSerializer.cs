@@ -302,11 +302,6 @@ namespace Orleans.Runtime.Messaging
                 WriteGrainId(ref writer, value.TargetGrain);
             }
 
-            if ((headers & Headers.CALL_CHAIN_ID) != Headers.NONE)
-            {
-                writer.WriteInt64(value.CallChainId.ToInt64());
-            }
-
             if ((headers & Headers.TARGET_SILO) != Headers.NONE)
             {
                 WriteSiloAddress(ref writer, value.TargetSilo);
@@ -323,7 +318,7 @@ namespace Orleans.Runtime.Messaging
         private Message DeserializeFast<TInput>(ref Reader<TInput> reader)
         {
             var headers = (Headers)reader.ReadVarUInt32();
-            var result = new Message();
+            var result = MessagePool.Rent();
 
             if ((headers & Headers.CACHE_INVALIDATION_HEADER) != Headers.NONE)
             {
@@ -399,12 +394,8 @@ namespace Orleans.Runtime.Messaging
                 result.TargetGrain = ReadGrainId(ref reader);
             }
 
-            if ((headers & Headers.CALL_CHAIN_ID) != Headers.NONE)
-            {
-                result.CallChainId = new CorrelationId(reader.ReadInt64());
-            }
-
             if ((headers & Headers.TARGET_SILO) != Headers.NONE)
+
             {
                 result.TargetSilo = ReadSiloAddress(ref reader);
             }

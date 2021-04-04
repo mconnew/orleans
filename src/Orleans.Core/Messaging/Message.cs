@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Text;
 using Hagar.Invocation;
 using Orleans.CodeGeneration;
-using Orleans.Serialization;
 
 namespace Orleans.Runtime
 {
@@ -14,12 +12,16 @@ namespace Orleans.Runtime
         public const int LENGTH_HEADER_SIZE = 8;
         public const int LENGTH_META_HEADER = 4;
 
+        public Directions _direction;
         public Categories _category;
-        public Directions? _direction;
         public bool _isReadOnly;
         public bool _isAlwaysInterleave;
+
         public bool _isUnordered;
         public bool _isNewPlacement;
+        public ResponseTypes _result;
+        public RejectionTypes _rejectionType;
+
         public ushort _interfaceVersion;
         public CorrelationId _id;
         public int _forwardCount;
@@ -29,15 +31,53 @@ namespace Orleans.Runtime
         public SiloAddress _sendingSilo;
         public GrainId _sendingGrain;
         public ActivationId _sendingActivation;
-        public ResponseTypes _result;
         public GrainInterfaceType interfaceType;
         public TimeSpan? _timeToLive;
         public List<ActivationAddress> _cacheInvalidationHeader;
-        public RejectionTypes _rejectionType;
         public string _rejectionInfo;
         public Dictionary<string, object> _requestContextData;
-        public CorrelationId _callChainId;
-        public readonly DateTime _localCreationTime = DateTime.UtcNow;
+        public DateTime _localCreationTime = DateTime.UtcNow;
+
+        public object BodyObject { get; set; }
+
+        internal void Initialize()
+        {
+            _localCreationTime = DateTime.UtcNow;
+        }
+
+        internal void Reset()
+        {
+            BodyObject = default;
+            targetAddress = default;
+            sendingAddress = default;
+            timeInterval = default;
+            _targetHistory = default;
+            _retryCount = default;
+            _queuedTime = default;
+
+            _direction = default;
+            _category = default;
+            _isReadOnly = default;
+            _isAlwaysInterleave = default;
+            _isUnordered = default;
+            _isNewPlacement = default;
+            _result = default;
+            _rejectionType = default;
+            _interfaceVersion = default;
+            _id = default;
+            _forwardCount = default;
+            _targetSilo = default;
+            _targetGrain = default;
+            _targetActivation = default;
+            _sendingSilo = default;
+            _sendingGrain = default;
+            _sendingActivation = default;
+            interfaceType = default;
+            _timeToLive = default;
+            _cacheInvalidationHeader = default;
+            _rejectionInfo = default;
+            _requestContextData = default;
+        }
 
         // For statistical measuring of time spent in queues.
         [NonSerialized]
@@ -51,6 +91,13 @@ namespace Orleans.Runtime
 
         [NonSerialized]
         private int _retryCount;
+
+        // Cache values of TargetAddess and SendingAddress as they are used very frequently
+        [NonSerialized]
+        private ActivationAddress targetAddress;
+
+        [NonSerialized]
+        private ActivationAddress sendingAddress;
 
         public string TargetHistory
         {
@@ -70,13 +117,6 @@ namespace Orleans.Runtime
             set { _retryCount = value; }
         }
 
-        // Cache values of TargetAddess and SendingAddress as they are used very frequently
-        [NonSerialized]
-        private ActivationAddress targetAddress;
-
-        [NonSerialized]
-        private ActivationAddress sendingAddress;
-
         [Hagar.GenerateSerializer]
         public enum Categories : byte
         {
@@ -88,6 +128,7 @@ namespace Orleans.Runtime
         [Hagar.GenerateSerializer]
         public enum Directions : byte
         {
+            None,
             Request,
             Response,
             OneWay
@@ -121,11 +162,11 @@ namespace Orleans.Runtime
 
         public Directions Direction
         {
-            get { return _direction ?? default(Directions); }
+            get { return _direction; }
             set { _direction = value; }
         }
 
-        public bool HasDirection => _direction.HasValue;
+        public bool HasDirection => _direction != Directions.None;
 
         public bool IsReadOnly
         {
@@ -239,12 +280,6 @@ namespace Orleans.Runtime
                 _sendingActivation = value;
                 sendingAddress = null;
             }
-        }
-
-        public CorrelationId CallChainId
-        {
-            get { return _callChainId; }
-            set { _callChainId = value; }
         }
 
         public ActivationAddress SendingAddress
@@ -362,8 +397,6 @@ namespace Orleans.Runtime
             set { _requestContextData = value; }
         }
 
-        public object BodyObject { get; set; }
-
         public void ClearTargetAddress()
         {
             targetAddress = null;
@@ -408,7 +441,6 @@ namespace Orleans.Runtime
             AppendIfExists(Headers.SENDING_SILO, sb, (m) => m.SendingSilo);
             AppendIfExists(Headers.TARGET_ACTIVATION, sb, (m) => m.TargetActivation);
             AppendIfExists(Headers.TARGET_GRAIN, sb, (m) => m.TargetGrain);
-            AppendIfExists(Headers.CALL_CHAIN_ID, sb, (m) => m.CallChainId);
             AppendIfExists(Headers.TARGET_SILO, sb, (m) => m.TargetSilo);
 
             return sb.ToString();
@@ -545,8 +577,6 @@ namespace Orleans.Runtime
             REQUEST_CONTEXT = 1 << 24,
             INTERFACE_VERSION = 1 << 26,
 
-            CALL_CHAIN_ID = 1 << 29,
-
             INTERFACE_TYPE = 1 << 31
             // Do not add over int.MaxValue of these.
         }
@@ -584,7 +614,6 @@ namespace Orleans.Runtime
             headers = _rejectionType == default(RejectionTypes) ? headers & ~Headers.REJECTION_TYPE : headers | Headers.REJECTION_TYPE;
             headers = string.IsNullOrEmpty(_rejectionInfo) ? headers & ~Headers.REJECTION_INFO : headers | Headers.REJECTION_INFO;
             headers = _requestContextData == null || _requestContextData.Count == 0 ? headers & ~Headers.REQUEST_CONTEXT : headers | Headers.REQUEST_CONTEXT;
-            headers = _callChainId.ToInt64() == 0 ? headers & ~Headers.CALL_CHAIN_ID : headers | Headers.CALL_CHAIN_ID;
             headers = interfaceType.IsDefault ? headers & ~Headers.INTERFACE_TYPE : headers | Headers.INTERFACE_TYPE;
             return headers;
         }
