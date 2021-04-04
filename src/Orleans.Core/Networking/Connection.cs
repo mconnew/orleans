@@ -3,7 +3,6 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Net;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -30,7 +29,6 @@ namespace Orleans.Runtime.Messaging
         };
 
         private static readonly ObjectPool<MessageHandler> MessageHandlerPool = ObjectPool.Create(new MessageHandlerPoolPolicy());
-        private readonly MemoryPool<byte> memoryPool = MemoryPool<byte>.Shared;
         private readonly ConnectionCommon shared;
         private readonly ConnectionDelegate middleware;
         private readonly Channel<Message> outgoingMessages;
@@ -424,32 +422,32 @@ namespace Orleans.Runtime.Messaging
                 this.RemoteEndPoint,
                 this.LocalEndPoint);
 
-            // If deserialization completely failed, rethrow the exception so that it can be handled at another level.
-            if (message?.Headers is null)
+            if (message.HasDirection)
             {
-                // Returning false here informs the caller that the exception should not be caught.
-                return false;
-            }
+                // The message body was not successfully decoded, but the headers were.
+                MessagingStatisticsGroup.OnRejectedMessage(message);
 
-            // The message body was not successfully decoded, but the headers were.
-            MessagingStatisticsGroup.OnRejectedMessage(message);
+                if (message.Direction == Message.Directions.Request)
+                {
+                    // Send a fast fail to the caller.
+                    var response = this.MessageFactory.CreateResponseMessage(message);
+                    response.Result = Message.ResponseTypes.Error;
+                    response.BodyObject = Response.FromException(exception);
 
-            if (message.Direction == Message.Directions.Request)
-            {
-                // Send a fast fail to the caller.
-                var response = this.MessageFactory.CreateResponseMessage(message);
-                response.Result = Message.ResponseTypes.Error;
-                response.BodyObject = Response.FromException(exception);
-
-                // Send the error response and continue processing the next message.
-                this.Send(response);
-            }
-            else if (message.Direction == Message.Directions.Response)
-            {
-                // If the message was a response, propagate the exception to the intended recipient.
-                message.Result = Message.ResponseTypes.Error;
-                message.BodyObject = Response.FromException(exception);
+                    // Send the error response and continue processing the next message.
+                    this.Send(response);
+                }
+                else if (message.Direction == Message.Directions.Response)
+                {
+                    // If the message was a response, propagate the exception to the intended recipient.
+                    message.Result = Message.ResponseTypes.Error;
+                    message.BodyObject = Response.FromException(exception);
                 this.MessageCenter.DispatchLocalMessage(message);
+                }
+            }
+            else
+            {
+                return false;
             }
 
             // The exception has been handled by propagating it onwards.

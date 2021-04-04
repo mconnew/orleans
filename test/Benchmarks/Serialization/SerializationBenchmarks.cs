@@ -62,13 +62,11 @@ namespace Benchmarks.Serialization
         [Params(SerializerToUse.IlBasedFallbackSerializer, SerializerToUse.Default, SerializerToUse.ProtoBufNet)]
         public SerializerToUse Serializer { get; set; }
 
-        private Message.HeadersContainer messageHeaders;
         private byte[] serializedBytes;
         private ReadOnlySequence<byte> headerBytes;
         private LargeTestData largeTestData;
         private SerializationManager serializationManager;
         private TestSingleSegmentBufferWriter bufferWriter;
-        private MessageSerializer.HeadersSerializer headerSerializer;
 
         [GlobalSetup]
         public void BenchmarkSetup()
@@ -83,6 +81,7 @@ namespace Benchmarks.Serialization
             this.largeTestData.SetBit(13);
             this.largeTestData.SetEnemy(17, CampaignEnemyTestType.Enemy1);
 
+            /*
             var body = Response.FromResult("yess!");
             messageHeaders = (new Message
             {
@@ -96,12 +95,15 @@ namespace Benchmarks.Serialization
                 SendingGrain = GrainId.Create("sys.mygrain", "fluffy_g"),
                 Id = CorrelationId.GetNext()
             }).Headers;
+            */
 
             this.serializedBytes = this.serializationManager.SerializeToByteArray(this.largeTestData);
 
             this.bufferWriter = new TestSingleSegmentBufferWriter(new byte[10000]); 
+            /*
             this.headerSerializer = new MessageSerializer.HeadersSerializer(this.serializationManager);
             this.headerSerializer.Serialize(this.bufferWriter, this.messageHeaders);
+            */
             this.headerBytes = this.bufferWriter.GetReadOnlySequence();
             this.bufferWriter.Reset();
         }
@@ -133,6 +135,7 @@ namespace Benchmarks.Serialization
             }
         }
 
+        /*
         [Benchmark]
         public void SerializeHeaders()
         {
@@ -146,6 +149,7 @@ namespace Benchmarks.Serialization
             this.headerSerializer.Deserialize(this.headerBytes, out var result);
             return result;
         }
+        */
 
         //[Benchmark]
         public byte[] SerializerBenchmark()

@@ -259,9 +259,6 @@ namespace Benchmarks
         // requires benchmark name or 'All' word as first parameter
         public static void Main(string[] args)
         {
-            var x = new SerializationBenchmarks();
-            x.BenchmarkSetup();
-            x.DeserializerHeaders();
             if (args.Length > 0 && args[0].Equals("all", StringComparison.InvariantCultureIgnoreCase))
             {
                 Console.WriteLine("Running full benchmarks suite");
