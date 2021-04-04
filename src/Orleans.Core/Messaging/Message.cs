@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Text;
 using Hagar.Invocation;
 using Orleans.CodeGeneration;
@@ -18,6 +19,8 @@ namespace Orleans.Runtime
         public bool _isReadOnly;
         public bool _isAlwaysInterleave;
         public bool _isUnordered;
+        public bool _isNewPlacement;
+        public ushort _interfaceVersion;
         public CorrelationId _id;
         public int _forwardCount;
         public SiloAddress _targetSilo;
@@ -26,8 +29,6 @@ namespace Orleans.Runtime
         public SiloAddress _sendingSilo;
         public GrainId _sendingGrain;
         public ActivationId _sendingActivation;
-        public bool _isNewPlacement;
-        public ushort _interfaceVersion;
         public ResponseTypes _result;
         public GrainInterfaceType interfaceType;
         public TimeSpan? _timeToLive;
@@ -37,6 +38,10 @@ namespace Orleans.Runtime
         public Dictionary<string, object> _requestContextData;
         public CorrelationId _callChainId;
         public readonly DateTime _localCreationTime = DateTime.UtcNow;
+
+        // For statistical measuring of time spent in queues.
+        [NonSerialized]
+        private ITimeInterval timeInterval;
 
         [NonSerialized]
         private string _targetHistory;
@@ -73,7 +78,7 @@ namespace Orleans.Runtime
         private ActivationAddress sendingAddress;
 
         [Hagar.GenerateSerializer]
-        public enum Categories
+        public enum Categories : byte
         {
             Ping,
             System,
@@ -81,7 +86,7 @@ namespace Orleans.Runtime
         }
 
         [Hagar.GenerateSerializer]
-        public enum Directions
+        public enum Directions : byte
         {
             Request,
             Response,
@@ -89,7 +94,7 @@ namespace Orleans.Runtime
         }
 
         [Hagar.GenerateSerializer]
-        public enum ResponseTypes
+        public enum ResponseTypes : byte
         {
             Success,
             Error,
@@ -98,7 +103,7 @@ namespace Orleans.Runtime
         }
 
         [Hagar.GenerateSerializer]
-        public enum RejectionTypes
+        public enum RejectionTypes : byte
         {
             Transient,
             Overloaded,
@@ -479,9 +484,6 @@ namespace Orleans.Runtime
             return history.ToString();
         }
 
-        // For statistical measuring of time spent in queues.
-        private ITimeInterval timeInterval;
-
         public void Start()
         {
             timeInterval = TimeIntervalFactory.CreateTimeInterval(true);
@@ -585,23 +587,6 @@ namespace Orleans.Runtime
             headers = _callChainId.ToInt64() == 0 ? headers & ~Headers.CALL_CHAIN_ID : headers | Headers.CALL_CHAIN_ID;
             headers = interfaceType.IsDefault ? headers & ~Headers.INTERFACE_TYPE : headers | Headers.INTERFACE_TYPE;
             return headers;
-        }
-
-        private static bool ReadBool(IBinaryTokenStreamReader stream)
-        {
-            return stream.ReadByte() == (byte)SerializationTokenType.True;
-        }
-
-        private static void WriteObj(SerializationManager sm, ISerializationContext context, Type type, object input)
-        {
-            var ser = sm.GetSerializer(type);
-            ser.Invoke(input, context, type);
-        }
-
-        private static object ReadObj(SerializationManager sm, Type t, IDeserializationContext context)
-        {
-            var des = sm.GetDeserializer(t);
-            return des.Invoke(t, context);
         }
     }
 }
