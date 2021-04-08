@@ -50,7 +50,6 @@ namespace Orleans.Runtime
             BodyObject = default;
             targetAddress = default;
             sendingAddress = default;
-            timeInterval = default;
             _targetHistory = default;
             _retryCount = default;
             _queuedTime = default;
@@ -78,10 +77,6 @@ namespace Orleans.Runtime
             _rejectionInfo = default;
             _requestContextData = default;
         }
-
-        // For statistical measuring of time spent in queues.
-        [NonSerialized]
-        private ITimeInterval timeInterval;
 
         [NonSerialized]
         private string _targetHistory;
@@ -512,24 +507,6 @@ namespace Orleans.Runtime
             }
             return history.ToString();
         }
-
-        public void Start()
-        {
-            timeInterval = TimeIntervalFactory.CreateTimeInterval(true);
-            timeInterval.Start();
-        }
-
-        public void Stop()
-        {
-            timeInterval.Stop();
-        }
-
-        public void Restart()
-        {
-            timeInterval.Restart();
-        }
-
-        public TimeSpan Elapsed => timeInterval == null ? TimeSpan.Zero : timeInterval.Elapsed;
 
         public static Message CreatePromptExceptionResponse(Message request, Exception exception)
         {
