@@ -33,6 +33,11 @@ namespace Orleans.Runtime
         public TimeSpan Elapsed => TimeSpan.FromTicks(this.ElapsedTicks);
 
         /// <summary>
+        /// Returns the elapsed number of milliseconds.
+        /// </summary>
+        public double ElapsedMilliseconds => TimeSpan.FromTicks(this.ElapsedTicks).TotalMilliseconds;
+
+        /// <summary>
         /// Returns the elapsed ticks.
         /// </summary>
         public long ElapsedTicks
