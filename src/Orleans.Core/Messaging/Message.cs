@@ -31,7 +31,7 @@ namespace Orleans.Runtime
         public SiloAddress _sendingSilo;
         public GrainId _sendingGrain;
         public ActivationId _sendingActivation;
-        public GrainInterfaceType interfaceType;
+        public GrainInterfaceType _interfaceType;
         public long _timeToLive;
         public List<ActivationAddress> _cacheInvalidationHeader;
         public string _rejectionInfo;
@@ -71,7 +71,7 @@ namespace Orleans.Runtime
             _sendingSilo = default;
             _sendingGrain = default;
             _sendingActivation = default;
-            interfaceType = default;
+            _interfaceType = default;
             _timeToLive = default;
             _cacheInvalidationHeader = default;
             _rejectionInfo = default;
@@ -309,10 +309,10 @@ namespace Orleans.Runtime
 
         public GrainInterfaceType InterfaceType
         {
-            get { return interfaceType; }
+            get { return _interfaceType; }
             set
             {
-                interfaceType = value;
+                _interfaceType = value;
             }
         }
 
@@ -588,7 +588,7 @@ namespace Orleans.Runtime
             headers = _rejectionType == default(RejectionTypes) ? headers & ~Headers.REJECTION_TYPE : headers | Headers.REJECTION_TYPE;
             headers = string.IsNullOrEmpty(_rejectionInfo) ? headers & ~Headers.REJECTION_INFO : headers | Headers.REJECTION_INFO;
             headers = _requestContextData == null || _requestContextData.Count == 0 ? headers & ~Headers.REQUEST_CONTEXT : headers | Headers.REQUEST_CONTEXT;
-            headers = interfaceType.IsDefault ? headers & ~Headers.INTERFACE_TYPE : headers | Headers.INTERFACE_TYPE;
+            headers = _interfaceType.IsDefault ? headers & ~Headers.INTERFACE_TYPE : headers | Headers.INTERFACE_TYPE;
             return headers;
         }
     }
