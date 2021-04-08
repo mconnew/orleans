@@ -330,27 +330,7 @@ namespace Orleans.Runtime
                 {
                     if (response.Exception is { } invocationException)
                     {
-                        if (message.Direction == Message.Directions.OneWay)
-                        {
-                            this.invokeExceptionLogger.Warn(ErrorCode.GrainInvokeException,
-                                "Exception during Grain method call of message: " + message + ": " + LogFormatter.PrintException(invocationException), invocationException);
-                        }
-                        else if (invokeExceptionLogger.IsEnabled(LogLevel.Debug))
-                        {
-                            this.invokeExceptionLogger.Debug(ErrorCode.GrainInvokeException,
-                                "Exception during Grain method call of message: " + message + ": " + LogFormatter.PrintException(invocationException), invocationException);
-                        }
-
-                        // If a grain allowed an inconsistent state exception to escape and the exception originated from
-                        // this activation, then deactivate it.
-                        if (invocationException is InconsistentStateException ise && ise.IsSourceActivation)
-                        {
-                            // Mark the exception so that it doesn't deactivate any other activations.
-                            ise.IsSourceActivation = false;
-
-                            this.invokeExceptionLogger.Info($"Deactivating {target} due to inconsistent state.");
-                            this.DeactivateOnIdle(target.ActivationId);
-                        }
+                        HandleException(target, message, invocationException);
                     }
 
                     if (message.Direction != Message.Directions.OneWay)
@@ -361,6 +341,31 @@ namespace Orleans.Runtime
                 finally
                 {
                     RequestContext.Clear();
+                }
+
+                void HandleException(IGrainContext target, Message message, Exception invocationException)
+                {
+                    if (message.Direction == Message.Directions.OneWay)
+                    {
+                        this.invokeExceptionLogger.Warn(ErrorCode.GrainInvokeException,
+                            "Exception during Grain method call of message: " + message + ": " + LogFormatter.PrintException(invocationException), invocationException);
+                    }
+                    else if (invokeExceptionLogger.IsEnabled(LogLevel.Debug))
+                    {
+                        this.invokeExceptionLogger.Debug(ErrorCode.GrainInvokeException,
+                            "Exception during Grain method call of message: " + message + ": " + LogFormatter.PrintException(invocationException), invocationException);
+                    }
+
+                    // If a grain allowed an inconsistent state exception to escape and the exception originated from
+                    // this activation, then deactivate it.
+                    if (invocationException is InconsistentStateException ise && ise.IsSourceActivation)
+                    {
+                        // Mark the exception so that it doesn't deactivate any other activations.
+                        ise.IsSourceActivation = false;
+
+                        this.invokeExceptionLogger.Info($"Deactivating {target} due to inconsistent state.");
+                        this.DeactivateOnIdle(target.ActivationId);
+                    }
                 }
             }
         }
