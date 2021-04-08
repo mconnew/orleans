@@ -43,7 +43,6 @@ namespace Orleans.Runtime
         private List<IIncomingGrainCallFilter> grainCallFilters;
         private Hagar.DeepCopier _deepCopier;
         private readonly InterfaceToImplementationMappingCache interfaceToImplementationMapping;
-        private Hagar.Serializer _serializer;
         private HostedClient hostedClient;
 
         private HostedClient HostedClient => this.hostedClient ?? (this.hostedClient = this.ServiceProvider.GetRequiredService<HostedClient>());
@@ -64,11 +63,9 @@ namespace Orleans.Runtime
             GrainReferenceActivator referenceActivator,
             GrainInterfaceTypeResolver interfaceIdResolver,
             GrainInterfaceTypeToGrainTypeResolver interfaceToTypeResolver,
-            Hagar.Serializer serializer,
             Hagar.DeepCopier deepCopier)
         {
             this.interfaceToImplementationMapping = new InterfaceToImplementationMappingCache();
-            this._serializer = serializer;
             this._deepCopier = deepCopier;
             this.ServiceProvider = serviceProvider;
             this.MySilo = siloDetails.SiloAddress;
@@ -253,100 +250,118 @@ namespace Orleans.Runtime
             }
         }
 
-        public async Task Invoke(IGrainContext target, Message message)
+        public Task Invoke(IGrainContext target, Message message)
         {
+            // Don't process messages that have already timed out
+            if (message.IsExpired)
+            {
+                this.messagingTrace.OnDropExpiredMessage(message, MessagingStatisticsGroup.Phase.Invoke);
+                return Task.CompletedTask;
+            }
+
+            RequestContextExtensions.Import(message.RequestContextData);
+
             try
             {
-                // Don't process messages that have already timed out
-                if (message.IsExpired)
+                var invokable = (IInvokable)message.BodyObject;
+                invokable.SetTarget(target);
+                CancellationSourcesExtension.RegisterCancellationTokens(target, invokable);
+                if (GrainCallFilters is { Count: > 0 } || target is IIncomingGrainCallFilter)
                 {
-                    this.messagingTrace.OnDropExpiredMessage(message, MessagingStatisticsGroup.Phase.Invoke);
-                    return;
+                    return InvokeWithFiltersAsync(invokable, target, message);
                 }
-
-                RequestContextExtensions.Import(message.RequestContextData);
-
-                Response response;
-                try
+                else
                 {
-                    switch (message.BodyObject)
+                    var responseTask = invokable.Invoke();
+                    if (responseTask.IsCompletedSuccessfully)
                     {
-                        case IInvokable invokable:
-                            {
-                                try
-                                {
-                                    invokable.SetTarget(target);
-                                    CancellationSourcesExtension.RegisterCancellationTokens(target, invokable);
-                                    if (GrainCallFilters is { Count: > 0 } || target is IIncomingGrainCallFilter)
-                                    {
-                                        var invoker = new GrainMethodInvoker(target, invokable, GrainCallFilters, this.interfaceToImplementationMapping);
-                                        await invoker.Invoke();
-                                        response = invoker.Response;
-                                    }
-                                    else
-                                    {
-                                        response = await invokable.Invoke();
-                                    }
-                                }
-                                finally
-                                {
-                                    //invokable.Dispose();
-                                }
-                                break;
-                            }
-                        default:
-                            throw new NotSupportedException($"Request {message.BodyObject} of type {message.BodyObject?.GetType()} is not supported");
+                        CompleteRequest(target, message, responseTask.Result);
+                    }
+                    else
+                    {
+                        return InvokeAsync(responseTask, invokable, target, message);
                     }
                 }
-                catch (Exception exc1)
-                {
-                    response = Response.FromException(exc1);
-                }
-
-                if (response.Exception is { } invocationException)
-                {
-                    if (message.Direction == Message.Directions.OneWay)
-                    {
-                        this.invokeExceptionLogger.Warn(ErrorCode.GrainInvokeException,
-                            "Exception during Grain method call of message: " + message + ": " + LogFormatter.PrintException(invocationException), invocationException);
-                    }
-                    else if (invokeExceptionLogger.IsEnabled(LogLevel.Debug))
-                    {
-                        this.invokeExceptionLogger.Debug(ErrorCode.GrainInvokeException,
-                            "Exception during Grain method call of message: " + message + ": " + LogFormatter.PrintException(invocationException), invocationException);
-                    }
-
-                    // If a grain allowed an inconsistent state exception to escape and the exception originated from
-                    // this activation, then deactivate it.
-                    if (invocationException is InconsistentStateException ise && ise.IsSourceActivation)
-                    {
-                        // Mark the exception so that it doesn't deactivate any other activations.
-                        ise.IsSourceActivation = false;
-
-                        this.invokeExceptionLogger.Info($"Deactivating {target} due to inconsistent state.");
-                        this.DeactivateOnIdle(target.ActivationId);
-                    }
-                }
-
-                if (message.Direction != Message.Directions.OneWay)
-                {
-                    SafeSendResponse(message, response);
-                }
-
-                return;
             }
-            catch (Exception exc2)
+            catch (Exception exc1)
             {
-                this.logger.Warn(ErrorCode.Runtime_Error_100329, "Exception during Invoke of message: " + message, exc2);
-
-                if (message.Direction != Message.Directions.OneWay)
-                {
-                    SafeSendExceptionResponse(message, exc2);
-                }
+                var response = Response.FromException(exc1);
+                CompleteRequest(target, message, response);
             }
             finally
             {
                 RequestContext.Clear();
+            }
+
+            return Task.CompletedTask;
+
+            async Task InvokeAsync(ValueTask<Response> task, IInvokable invokable, IGrainContext target, Message message)
+            {
+                try
+                {
+                    var response = await task;
+                    CompleteRequest(target, message, response);
+                }
+                catch (Exception exception)
+                {
+                    var response = Response.FromException(exception);
+                    CompleteRequest(target, message, response);
+                }
+            }
+
+            async Task InvokeWithFiltersAsync(IInvokable invokable, IGrainContext target, Message message)
+            {
+                try
+                {
+                    var invoker = new GrainMethodInvoker(target, invokable, GrainCallFilters, this.interfaceToImplementationMapping);
+                    await invoker.Invoke();
+                    CompleteRequest(target, message, invoker.Response);
+                }
+                catch (Exception exception)
+                {
+                    var response = Response.FromException(exception);
+                    CompleteRequest(target, message, response);
+                }
+            }
+
+            void CompleteRequest(IGrainContext target, Message message, Response response)
+            {
+                try
+                {
+                    if (response.Exception is { } invocationException)
+                    {
+                        if (message.Direction == Message.Directions.OneWay)
+                        {
+                            this.invokeExceptionLogger.Warn(ErrorCode.GrainInvokeException,
+                                "Exception during Grain method call of message: " + message + ": " + LogFormatter.PrintException(invocationException), invocationException);
+                        }
+                        else if (invokeExceptionLogger.IsEnabled(LogLevel.Debug))
+                        {
+                            this.invokeExceptionLogger.Debug(ErrorCode.GrainInvokeException,
+                                "Exception during Grain method call of message: " + message + ": " + LogFormatter.PrintException(invocationException), invocationException);
+                        }
+
+                        // If a grain allowed an inconsistent state exception to escape and the exception originated from
+                        // this activation, then deactivate it.
+                        if (invocationException is InconsistentStateException ise && ise.IsSourceActivation)
+                        {
+                            // Mark the exception so that it doesn't deactivate any other activations.
+                            ise.IsSourceActivation = false;
+
+                            this.invokeExceptionLogger.Info($"Deactivating {target} due to inconsistent state.");
+                            this.DeactivateOnIdle(target.ActivationId);
+                        }
+                    }
+
+                    if (message.Direction != Message.Directions.OneWay)
+                    {
+                        SafeSendResponse(message, response);
+                    }
+                }
+                finally
+                {
+                    RequestContext.Clear();
+                }
             }
         }
 
@@ -569,13 +584,12 @@ namespace Orleans.Runtime
 
         private Task OnRuntimeInitializeStart(CancellationToken tc)
         {
-            var stopWatch = Stopwatch.StartNew();
+            var stopWatch = ValueStopwatch.StartNew();
             var timerLogger = this.loggerFactory.CreateLogger<SafeTimer>();
             var minTicks = Math.Min(this.messagingOptions.ResponseTimeout.Ticks, TimeSpan.FromSeconds(1).Ticks);
             var period = TimeSpan.FromTicks(minTicks);
             this.callbackTimer = new SafeTimer(timerLogger, this.OnCallbackExpiryTick, null, period, period);
             this.disposables.Add(this.callbackTimer);
-
             stopWatch.Stop();
             this.logger.Info(ErrorCode.SiloStartPerfMeasure, $"Start InsideRuntimeClient took {stopWatch.ElapsedMilliseconds} Milliseconds");
             return Task.CompletedTask;
