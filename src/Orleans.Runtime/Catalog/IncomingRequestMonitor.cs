@@ -94,7 +94,7 @@ namespace Orleans.Runtime
                 }
 
                 var iteration = 0;
-                var now = DateTime.UtcNow;
+                var now = Environment.TickCount64;
                 foreach (var activationEntry in _recentlyUsedActivations)
                 {
                     var activation = activationEntry.Value;
@@ -113,7 +113,7 @@ namespace Orleans.Runtime
                     if (++iteration % 100 == 0)
                     {
                         await Task.Yield();
-                        now = DateTime.UtcNow;
+                        now = Environment.TickCount64;
                     }
                 }
             }

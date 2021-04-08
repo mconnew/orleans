@@ -174,6 +174,7 @@ namespace Orleans.Runtime
         public List<ActivationData> ScanStale()
         {
             var now = DateTime.UtcNow;
+            var nowTickCount = Environment.TickCount64;
             List<ActivationData> result = null;
             IEnumerable<ActivationData> activations;
             while (DequeueQuantum(out activations, now))
@@ -209,7 +210,7 @@ namespace Orleans.Runtime
                                 activation.ToDetailedString());
                             ScheduleCollection(activation);
                         }
-                        else if (!activation.IsStale(now))
+                        else if (!activation.IsStale(nowTickCount))
                         {
                             // This is essentialy a bug, a non stale activation should not be in the last bucket.
                             logger.Warn(ErrorCode.Catalog_ActivationCollector_BadState_3,
@@ -239,7 +240,7 @@ namespace Orleans.Runtime
         public List<ActivationData> ScanAll(TimeSpan ageLimit)
         {
             List<ActivationData> result = null;
-            var now = DateTime.UtcNow;
+            var now = Environment.TickCount64;
             foreach (var kv in buckets)
             {
                 var bucket = kv.Value;

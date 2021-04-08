@@ -22,8 +22,8 @@ namespace Orleans.Runtime
     internal class ActivationData : IActivationData, IGrainExtensionBinder, IAsyncDisposable
     {
         // This is the maximum amount of time we expect a request to continue processing
-        private readonly TimeSpan maxRequestProcessingTime;
-        private readonly TimeSpan maxWarningRequestProcessingTime;
+        private readonly long maxRequestProcessingTime;
+        private readonly long maxWarningRequestProcessingTime;
         private readonly SiloMessagingOptions messagingOptions;
         private readonly ILogger logger;
         private readonly IServiceScope serviceScope;
@@ -58,8 +58,8 @@ namespace Orleans.Runtime
             _messageScheduler = messageScheduler;
             logger = loggerFactory.CreateLogger<ActivationData>();
             this.lifecycle = new GrainLifecycle(loggerFactory.CreateLogger<LifecycleSubject>());
-            this.maxRequestProcessingTime = maxRequestProcessingTime;
-            this.maxWarningRequestProcessingTime = maxWarningRequestProcessingTime;
+            this.maxRequestProcessingTime = (long)maxRequestProcessingTime.TotalMilliseconds;
+            this.maxWarningRequestProcessingTime = (long)maxWarningRequestProcessingTime.TotalMilliseconds;
             this.messagingOptions = messagingOptions.Value;
             ResetKeepAliveRequest();
             Address = addr;
@@ -213,7 +213,7 @@ namespace Orleans.Runtime
         public void PrepareForDeactivation()
         {
             SetState(ActivationState.Deactivating);
-            deactivationStartTime = DateTime.UtcNow;
+            deactivationStartTime = Environment.TickCount64;
             if (!IsCurrentlyExecuting)
                 StopAllTimers();
         }
@@ -279,16 +279,16 @@ namespace Orleans.Runtime
         internal bool IsUsingGrainDirectory => this.PlacedUsing.IsUsingGrainDirectory;
 
         public Message Blocking { get; private set; }
-        public Dictionary<Message, DateTime> RunningRequests { get; private set; } = new Dictionary<Message, DateTime>();
+        public Dictionary<Message, long> RunningRequests { get; private set; } = new Dictionary<Message, long>();
 
-        private DateTime currentRequestStartTime;
-        private DateTime becameIdle;
-        private DateTime deactivationStartTime;
+        private long currentRequestStartTime;
+        private long becameIdle;
+        private long deactivationStartTime;
 
         public void RecordRunning(Message message, bool isInterleavable)
         {
             // Note: This method is always called while holding lock on this activation, so no need for additional locks here
-            var now = DateTime.UtcNow;
+            var now = Environment.TickCount64;
             RunningRequests.Add(message, now);
 
             if (this.Blocking != null || isInterleavable) return;
@@ -306,7 +306,7 @@ namespace Orleans.Runtime
 
             if (RunningRequests.Count == 0)
             {
-                becameIdle = DateTime.UtcNow;
+                becameIdle = Environment.TickCount64;
                 if (!IsExemptFromCollection)
                 {
                     collector.TryRescheduleCollection(this);
@@ -317,7 +317,7 @@ namespace Orleans.Runtime
             if (this.Blocking != null && !message.Equals(this.Blocking)) return;
 
             this.Blocking = null;
-            currentRequestStartTime = DateTime.MinValue;
+            currentRequestStartTime = Environment.TickCount64;
         }
 
         private long inFlightCount;
@@ -373,58 +373,57 @@ namespace Orleans.Runtime
         /// <param name="message"></param>
         public EnqueueMessageResult EnqueueMessage(Message message)
         {
-            lock (this)
+            switch (State)
             {
-                if (State == ActivationState.Invalid)
-                {
-                    logger.Warn(ErrorCode.Dispatcher_InvalidActivation,
-                        "Cannot enqueue message to invalid activation {0} : {1}", this.ToDetailedString(), message);
-                    return EnqueueMessageResult.ErrorInvalidActivation;
-                }
-                if (State == ActivationState.FailedToActivate)
-                {
-                    logger.Warn(ErrorCode.Dispatcher_InvalidActivation,
-                        "Cannot enqueue message to activation that failed in OnActivate {0} : {1}", this.ToDetailedString(), message);
-                    return EnqueueMessageResult.ErrorActivateFailed;
-                }
-                if (State == ActivationState.Deactivating)
-                {
-                    var deactivatingTime = DateTime.UtcNow - deactivationStartTime;
-                    if (deactivatingTime > maxRequestProcessingTime)
+                case ActivationState.Invalid:
                     {
-                        logger.Error(ErrorCode.Dispatcher_StuckActivation,
-                            $"Current activation {ToDetailedString()} marked as Deactivating for {deactivatingTime}. Trying to enqueue {message}.");
-                        return EnqueueMessageResult.ErrorStuckActivation;
+                        logger.Warn(ErrorCode.Dispatcher_InvalidActivation,
+                            "Cannot enqueue message to invalid activation {0} : {1}", this.ToDetailedString(), message);
+                        return EnqueueMessageResult.ErrorInvalidActivation;
                     }
-                }
-                if (this.Blocking != null)
-                {
-                    var currentRequestActiveTime = DateTime.UtcNow - currentRequestStartTime;
-                    if (currentRequestActiveTime > maxRequestProcessingTime)
+                case ActivationState.FailedToActivate:
                     {
-                        logger.Error(ErrorCode.Dispatcher_StuckActivation,
-                            $"Current request has been active for {currentRequestActiveTime} for activation {ToDetailedString()}. Currently executing {this.Blocking}. Trying to enqueue {message}.");
-                        return EnqueueMessageResult.ErrorStuckActivation;
+                        logger.Warn(ErrorCode.Dispatcher_InvalidActivation,
+                            "Cannot enqueue message to activation that failed in OnActivate {0} : {1}", this.ToDetailedString(), message);
+                        return EnqueueMessageResult.ErrorActivateFailed;
                     }
-                    // Consider: Handle long request detection for reentrant activations -- this logic only works for non-reentrant activations
-                    else if (currentRequestActiveTime > maxWarningRequestProcessingTime)
+                case ActivationState.Deactivating:
                     {
-                        logger.Warn(ErrorCode.Dispatcher_ExtendedMessageProcessing,
-                             "Current request has been active for {0} for activation {1}. Currently executing {2}. Trying  to enqueue {3}.",
-                             currentRequestActiveTime, this.ToDetailedString(), this.Blocking, message);
+                        var deactivatingTime = Environment.TickCount64 - deactivationStartTime;
+                        if (deactivatingTime > maxRequestProcessingTime)
+                        {
+                            logger.Error(ErrorCode.Dispatcher_StuckActivation,
+                                $"Current activation {ToDetailedString()} marked as Deactivating for {deactivatingTime}. Trying to enqueue {message}.");
+                            return EnqueueMessageResult.ErrorStuckActivation;
+                        }
+
+                        break;
                     }
-                }
-
-                if (!message.QueuedTime.HasValue)
-                {
-                    message.QueuedTime = DateTime.UtcNow;
-                }
-
-                waiting ??= new List<Message>();
-                waiting.Add(message);
-
-                return EnqueueMessageResult.Success;
             }
+
+            if (this.Blocking is { } blocking)
+            {
+                var currentRequestActiveTime = Environment.TickCount64 - currentRequestStartTime;
+                if (currentRequestActiveTime > maxRequestProcessingTime)
+                {
+                    logger.Error(ErrorCode.Dispatcher_StuckActivation,
+                        $"Current request has been active for {currentRequestActiveTime} for activation {ToDetailedString()}. Currently executing {blocking}. Trying to enqueue {message}.");
+                    return EnqueueMessageResult.ErrorStuckActivation;
+                }
+                // Consider: Handle long request detection for reentrant activations -- this logic only works for non-reentrant activations
+                else if (currentRequestActiveTime > maxWarningRequestProcessingTime)
+                {
+                    logger.Warn(ErrorCode.Dispatcher_ExtendedMessageProcessing,
+                         "Current request has been active for {0} for activation {1}. Currently executing {2}. Trying  to enqueue {3}.",
+                         currentRequestActiveTime, this.ToDetailedString(), blocking, message);
+                }
+            }
+
+            message.QueuedTime = Environment.TickCount64;
+            waiting ??= new List<Message>();
+            waiting.Add(message);
+
+            return EnqueueMessageResult.Success;
         }
 
         /// <summary>
@@ -527,18 +526,15 @@ namespace Orleans.Runtime
         /// <summary>
         /// Returns how long this activation has been idle.
         /// </summary>
-        public TimeSpan GetIdleness(DateTime now)
+        public TimeSpan GetIdleness(long now)
         {
-            if (now == default(DateTime))
-                throw new ArgumentException("default(DateTime) is not allowed; Use DateTime.UtcNow instead.", "now");
-            
-            return now - becameIdle;
+            return TimeSpan.FromMilliseconds(now - becameIdle);
         }
 
         /// <summary>
         /// Returns whether this activation has been idle long enough to be collected.
         /// </summary>
-        public bool IsStale(DateTime now)
+        public bool IsStale(long now)
         {
             return GetIdleness(now) >= CollectionAgeLimit;
         }
@@ -657,10 +653,10 @@ namespace Orleans.Runtime
             }
         }
 
-        public void AnalyzeWorkload(DateTime now, IMessageCenter messageCenter, MessageFactory messageFactory, SiloMessagingOptions options)
+        public void AnalyzeWorkload(long now, IMessageCenter messageCenter, MessageFactory messageFactory, SiloMessagingOptions options)
         {
-            var slowRunningRequestDuration = options.RequestProcessingWarningTime;
-            var longQueueTimeDuration = options.RequestQueueDelayWarningTime;
+            var slowRunningRequestDuration = options.RequestProcessingWarningTime.TotalMilliseconds;
+            var longQueueTimeDuration = options.RequestQueueDelayWarningTime.TotalMilliseconds;
 
             List<string> diagnostics = null;
             lock (this)
@@ -678,7 +674,7 @@ namespace Orleans.Runtime
                     if (executionTime >= slowRunningRequestDuration)
                     {
                         GetStatusList(ref diagnostics);
-                        if (timeSinceQueued.HasValue)
+                        if (message.QueuedTime != 0)
                         {
                             diagnostics.Add($"Message {message} was enqueued {timeSinceQueued} ago and has now been executing for {executionTime}.");
                         }
@@ -800,7 +796,7 @@ namespace Orleans.Runtime
                     EnqueuedOnDispatcherCount,      // 6 EnqueuedOnDispatcher
                     InFlightCount,                  // 7 InFlightCount
                     RunningRequests.Count,          // 8 NumRunning
-                    GetIdleness(DateTime.UtcNow),   // 9 IdlenessTimeSpan
+                    GetIdleness(Environment.TickCount64),   // 9 IdlenessTimeSpan
                     CollectionAgeLimit,             // 10 CollectionAgeLimit
                     (includeExtraDetails && this.Blocking != null) ? " CurrentlyExecuting=" + this.Blocking : "");  // 11: Running
         }

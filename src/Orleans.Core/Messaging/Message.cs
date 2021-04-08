@@ -52,7 +52,7 @@ namespace Orleans.Runtime
             sendingAddress = default;
             _targetHistory = default;
             _retryCount = default;
-            _queuedTime = default;
+            QueuedTime = default;
 
             _direction = default;
             _category = default;
@@ -82,9 +82,6 @@ namespace Orleans.Runtime
         private string _targetHistory;
 
         [NonSerialized]
-        private DateTime? _queuedTime;
-
-        [NonSerialized]
         private int _retryCount;
 
         // Cache values of TargetAddess and SendingAddress as they are used very frequently
@@ -100,11 +97,8 @@ namespace Orleans.Runtime
             set { _targetHistory = value; }
         }
 
-        public DateTime? QueuedTime
-        {
-            get { return _queuedTime; }
-            set { _queuedTime = value; }
-        }
+        [field: NonSerialized]
+        public long QueuedTime { get; set; }
 
         public int RetryCount
         {
