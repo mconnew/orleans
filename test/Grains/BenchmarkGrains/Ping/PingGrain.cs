@@ -15,10 +15,7 @@ namespace BenchmarkGrains.Ping
             return base.OnActivateAsync();
         }
 
-        public Task Run()
-        {
-            return Task.CompletedTask;
-        }
+        public ValueTask Run() => default;
 
         public Task PingPongInterleave(IPingGrain other, int count)
         {

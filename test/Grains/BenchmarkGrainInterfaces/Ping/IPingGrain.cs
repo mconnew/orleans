@@ -7,7 +7,7 @@ namespace BenchmarkGrainInterfaces.Ping
 {
     public interface IPingGrain : IGrainWithIntegerKey
     {
-        Task Run();
+        ValueTask Run();
 
         [AlwaysInterleave]
         Task PingPongInterleave(IPingGrain other, int count);

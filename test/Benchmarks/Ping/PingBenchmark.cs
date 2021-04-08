@@ -99,7 +99,7 @@ namespace Benchmarks.Ping
         }
         
         [Benchmark]
-        public Task Ping() => grain.Run();
+        public ValueTask Ping() => grain.Run();
 
         public async Task PingForever()
         {
