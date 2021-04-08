@@ -94,7 +94,7 @@ namespace Benchmarks.Ping
                 var grainFactory = this.client;
 
                 this.grain = grainFactory.GetGrain<IPingGrain>(Guid.NewGuid().GetHashCode());
-                this.grain.Run().GetAwaiter().GetResult();
+                this.grain.Run().AsTask().GetAwaiter().GetResult();
             }
         }
         
