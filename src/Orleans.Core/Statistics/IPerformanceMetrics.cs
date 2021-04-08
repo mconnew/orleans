@@ -28,54 +28,52 @@ namespace Orleans.Runtime
         public int RecentlyUsedActivationCount { get; internal set; }
 
         /// <summary>
-        [Hagar.Id(3)]
-        [Hagar.Id(4)]
         /// The CPU utilization.
         /// </summary>
-        [Hagar.Id(5)]
+        [Hagar.Id(3)]
         public float? CpuUsage { get; internal set; }
 
         /// <summary>
         /// The amount of memory available in the silo [bytes].
         /// </summary>
-        [Hagar.Id(6)]
+        [Hagar.Id(4)]
         public float? AvailableMemory { get; internal set; }
 
         /// <summary>
         /// The used memory size.
         /// </summary>
-        [Hagar.Id(7)]
+        [Hagar.Id(5)]
         public long? MemoryUsage { get; internal set; }
 
         /// <summary>
         /// The total physical memory available [bytes].
         /// </summary>
-        [Hagar.Id(8)]
+        [Hagar.Id(6)]
         public long? TotalPhysicalMemory { get; internal set; }
 
         /// <summary>
         /// Is this silo overloaded.
         /// </summary>
-        [Hagar.Id(9)]
+        [Hagar.Id(7)]
         public bool IsOverloaded { get; internal set; }
 
         /// <summary>
         /// The number of clients currently connected to that silo.
         /// </summary>
-        [Hagar.Id(10)]
+        [Hagar.Id(8)]
         public long ClientCount { get; internal set; }
 
-        [Hagar.Id(11)]
+        [Hagar.Id(9)]
         public long ReceivedMessages { get; internal set; }
 
-        [Hagar.Id(12)]
+        [Hagar.Id(10)]
         public long SentMessages { get; internal set; }
 
 
         /// <summary>
         /// The DateTime when this statistics was created.
         /// </summary>
-        [Hagar.Id(13)]
+        [Hagar.Id(11)]
         public DateTime DateTime { get; private set; }
 
         internal SiloRuntimeStatistics() { }
