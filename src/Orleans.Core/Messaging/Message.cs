@@ -32,17 +32,17 @@ namespace Orleans.Runtime
         public GrainId _sendingGrain;
         public ActivationId _sendingActivation;
         public GrainInterfaceType interfaceType;
-        public TimeSpan? _timeToLive;
+        public long _timeToLive;
         public List<ActivationAddress> _cacheInvalidationHeader;
         public string _rejectionInfo;
         public Dictionary<string, object> _requestContextData;
-        public DateTime _localCreationTime = DateTime.UtcNow;
+        public long _localCreationTime = Environment.TickCount64;
 
         public object BodyObject { get; set; }
 
         internal void Initialize()
         {
-            _localCreationTime = DateTime.UtcNow;
+            _localCreationTime = Environment.TickCount64;
         }
 
         internal void Reset()
@@ -329,11 +329,8 @@ namespace Orleans.Runtime
 
         public TimeSpan? TimeToLive
         {
-            get
-            {
-                return _timeToLive - (DateTime.UtcNow - _localCreationTime);
-            }
-            set { _timeToLive = value; }
+            get => _timeToLive == 0 ? default(TimeSpan?) : TimeSpan.FromMilliseconds(_timeToLive - (Environment.TickCount64 - _localCreationTime));
+            set => _timeToLive = !value.HasValue ? 0 : (long)(value.Value.TotalMilliseconds + (Environment.TickCount64 - _localCreationTime));
         }
 
         public bool IsExpired
@@ -609,7 +606,7 @@ namespace Orleans.Runtime
             headers = _isNewPlacement == default(bool) ? headers & ~Headers.IS_NEW_PLACEMENT : headers | Headers.IS_NEW_PLACEMENT;
             headers = _interfaceVersion == 0 ? headers & ~Headers.INTERFACE_VERSION : headers | Headers.INTERFACE_VERSION;
             headers = _result == default(ResponseTypes) ? headers & ~Headers.RESULT : headers | Headers.RESULT;
-            headers = _timeToLive == null ? headers & ~Headers.TIME_TO_LIVE : headers | Headers.TIME_TO_LIVE;
+            headers = _timeToLive == 0 ? headers & ~Headers.TIME_TO_LIVE : headers | Headers.TIME_TO_LIVE;
             headers = _cacheInvalidationHeader == null || _cacheInvalidationHeader.Count == 0 ? headers & ~Headers.CACHE_INVALIDATION_HEADER : headers | Headers.CACHE_INVALIDATION_HEADER;
             headers = _rejectionType == default(RejectionTypes) ? headers & ~Headers.REJECTION_TYPE : headers | Headers.REJECTION_TYPE;
             headers = string.IsNullOrEmpty(_rejectionInfo) ? headers & ~Headers.REJECTION_INFO : headers | Headers.REJECTION_INFO;
