@@ -224,7 +224,7 @@ namespace Orleans.Runtime
                     {
                         this.MessagingTrace.OnEnqueueMessageOnActivation(msg, this);
                         var workItem = new RequestWorkItem(this, msg);
-                        this.WorkItemGroup.TaskScheduler.QueueWorkItem(workItem);
+                        this.WorkItemGroup.EnqueueWorkItem(workItem);
                         break;
                     }
 
@@ -232,7 +232,7 @@ namespace Orleans.Runtime
                     {
                         this.MessagingTrace.OnEnqueueMessageOnActivation(msg, this);
                         var workItem = new ResponseWorkItem(this, msg);
-                        this.WorkItemGroup.TaskScheduler.QueueWorkItem(workItem);
+                        this.WorkItemGroup.EnqueueWorkItem(workItem);
                         break;
                     }
 

@@ -879,18 +879,7 @@ namespace Orleans.Runtime
 
         public void ReceiveMessage(object message)
         {
-            var msg = (Message)message;
-            lock (this)
-            {
-                // Get the activation's scheduler or the default task scheduler if the activation is not valid.
-                // Requests to an invalid activation are handled later.
-                var scheduler = this.WorkItemGroup?.TaskScheduler ?? TaskScheduler.Default;
-                this.IncrementEnqueuedOnDispatcherCount();
-
-                // Enqueue the handler on the activation's scheduler
-                var task = new Task(_receiveMessageInScheduler, msg);
-                task.Start(scheduler);
-            }
+            _messageScheduler.ReceiveMessage(this, (Message)message);
         }
 
         private void ReceiveMessageInScheduler(object state)

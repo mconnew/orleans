@@ -287,7 +287,7 @@ namespace Orleans.Runtime
 
                 MessagingProcessingStatisticsGroup.OnDispatcherMessageProcessedOk(message);
                 _messagingTrace.OnScheduleMessage(message);
-                _scheduler.QueueWorkItem(new InvokeWorkItem(targetActivation, message, _dispatcher.RuntimeClient, this));
+                targetActivation.WorkItemGroup.EnqueueWorkItem(new InvokeWorkItem(targetActivation, message, _dispatcher.RuntimeClient, this), forceAsync: true);
             }
         }
     }
