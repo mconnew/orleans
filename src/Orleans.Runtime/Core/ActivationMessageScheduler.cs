@@ -60,7 +60,7 @@ namespace Orleans.Runtime
 
             if (message.Direction == Message.Directions.Response)
             {
-                ReceiveResponse(message, activation);
+                _catalog.RuntimeClient.ReceiveResponse(message);
             }
             else // Request or OneWay
             {
@@ -157,18 +157,14 @@ namespace Orleans.Runtime
 
         private void ReceiveResponse(Message message, ActivationData targetActivation)
         {
-            lock (targetActivation)
+            if (targetActivation.State is ActivationState.Invalid or ActivationState.FailedToActivate)
             {
-                if (targetActivation.State == ActivationState.Invalid || targetActivation.State == ActivationState.FailedToActivate)
-                {
-                    _messagingTrace.OnDispatcherReceiveInvalidActivation(message, targetActivation.State);
-                    return;
-                }
-
-                MessagingProcessingStatisticsGroup.OnDispatcherMessageProcessedOk(message);
-
-                _catalog.RuntimeClient.ReceiveResponse(message);
+                _messagingTrace.OnDispatcherReceiveInvalidActivation(message, targetActivation.State);
+                return;
             }
+
+            MessagingProcessingStatisticsGroup.OnDispatcherMessageProcessedOk(message);
+
         }
 
         /// <summary>
