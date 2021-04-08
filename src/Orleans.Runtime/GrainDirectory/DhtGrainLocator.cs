@@ -34,6 +34,12 @@ namespace Orleans.Runtime.GrainDirectory
 
         public bool TryLocalLookup(GrainId grainId, out ActivationAddress address)
         {
+            if (localGrainDirectory.GetLocalCacheData(grainId) is { } result)
+            {
+                address = result;
+                return true;
+            }
+
             if (this.localGrainDirectory.LocalLookup(grainId, out var addressAndTag))
             {
                 address = addressAndTag.Address;

@@ -729,6 +729,7 @@ namespace Orleans.Runtime.GrainDirectory
                 if (log.IsEnabled(LogLevel.Trace)) log.Trace("LocalLookup mine {0}={1}", grain, result.Address);
                 LocalDirectorySuccesses.Increment();
                 localSuccesses.Increment();
+                DirectoryCache.AddOrUpdate(result.Address, result.VersionTag);
                 return true;
             }
 
