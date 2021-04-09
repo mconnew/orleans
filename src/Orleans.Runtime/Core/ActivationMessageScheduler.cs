@@ -55,6 +55,7 @@ namespace Orleans.Runtime
             {
                 MessagingProcessingStatisticsGroup.OnDispatcherMessageProcessedError(message);
                 _messagingTrace.OnDropExpiredMessage(message, MessagingStatisticsGroup.Phase.Dispatch);
+                activation.DecrementEnqueuedOnDispatcherCount();
                 return;
             }
 
@@ -64,6 +65,7 @@ namespace Orleans.Runtime
             }
             else // Request or OneWay
             {
+                activation.IncrementEnqueuedOnDispatcherCount();
                 if (activation.State == ActivationState.Valid)
                 {
                     _activationCollector.TryRescheduleCollection(activation);
@@ -133,6 +135,7 @@ namespace Orleans.Runtime
                 return;
             }
 
+            targetActivation.DecrementEnqueuedOnDispatcherCount();
             switch (targetActivation.EnqueueMessage(message))
             {
                 case ActivationData.EnqueueMessageResult.Success:
@@ -153,18 +156,6 @@ namespace Orleans.Runtime
             }
 
             // Dont count this as end of processing. The message will come back after queueing via HandleIncomingRequest.
-        }
-
-        private void ReceiveResponse(Message message, ActivationData targetActivation)
-        {
-            if (targetActivation.State is ActivationState.Invalid or ActivationState.FailedToActivate)
-            {
-                _messagingTrace.OnDispatcherReceiveInvalidActivation(message, targetActivation.State);
-                return;
-            }
-
-            MessagingProcessingStatisticsGroup.OnDispatcherMessageProcessedOk(message);
-
         }
 
         /// <summary>
@@ -249,6 +240,7 @@ namespace Orleans.Runtime
         /// <param name="targetActivation"></param>
         public void HandleIncomingRequest(Message message, ActivationData targetActivation)
         {
+            targetActivation.DecrementEnqueuedOnDispatcherCount();
             lock (targetActivation)
             {
                 if (targetActivation.State == ActivationState.Invalid || targetActivation.State == ActivationState.FailedToActivate)

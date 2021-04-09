@@ -30,7 +30,6 @@ namespace Orleans.Runtime
         public readonly TimeSpan CollectionAgeLimit;
         private readonly GrainTypeComponents _shared;
         private readonly ActivationMessageScheduler _messageScheduler;
-        private readonly Action<object> _receiveMessageInScheduler;
         private HashSet<IGrainTimer> timers;
         private Dictionary<Type, object> _components;
 
@@ -53,7 +52,6 @@ namespace Orleans.Runtime
             if (null == placedUsing) throw new ArgumentNullException(nameof(placedUsing));
             if (null == collector) throw new ArgumentNullException(nameof(collector));
 
-            _receiveMessageInScheduler = state => this.ReceiveMessageInScheduler(state);
             _shared = sharedComponents;
             _messageScheduler = messageScheduler;
             logger = loggerFactory.CreateLogger<ActivationData>();
@@ -897,18 +895,6 @@ namespace Orleans.Runtime
         public void ReceiveMessage(object message)
         {
             _messageScheduler.ReceiveMessage(this, (Message)message);
-        }
-
-        private void ReceiveMessageInScheduler(object state)
-        {
-            try
-            {
-                _messageScheduler.ReceiveMessage(this, (Message)state);
-            }
-            finally
-            {
-                this.DecrementEnqueuedOnDispatcherCount();
-            }
         }
     }
 
