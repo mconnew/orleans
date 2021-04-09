@@ -218,7 +218,7 @@ namespace Orleans.Runtime.Messaging
                         {
                             _ = SendAsync(this, connectionTask, msg);
 
-                            static async Task SendAsync(MessageCenter messageCenter, ValueTask<Connection> connectionTask, Message msg)
+                            static async ValueTask SendAsync(MessageCenter messageCenter, ValueTask<Connection> connectionTask, Message msg)
                             {
                                 try
                                 {

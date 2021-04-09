@@ -245,14 +245,14 @@ namespace Orleans.Runtime
         /// - add ordering info and maintain send order
         /// 
         /// </summary>
-        internal Task SendMessage(Message message, IGrainContext sendingActivation = null)
+        internal void SendMessage(Message message, IGrainContext sendingActivation = null)
         {
             try
             {
                 var messageAddressingTask = placementService.AddressMessage(message);
                 if (messageAddressingTask.Status != TaskStatus.RanToCompletion)
                 {
-                    return SendMessageAsync(messageAddressingTask, message, sendingActivation);
+                    _ = SendMessageAsync(messageAddressingTask, message, sendingActivation);
                 }
 
                 messageCenter.SendMessage(message);
@@ -262,21 +262,17 @@ namespace Orleans.Runtime
                 OnAddressingFailure(message, sendingActivation, ex);
             }
 
-            return Task.CompletedTask;
-
             async Task SendMessageAsync(Task addressMessageTask, Message m, IGrainContext activation)
             {
                 try
                 {
                     await addressMessageTask;
+                    messageCenter.SendMessage(m);
                 }
                 catch (Exception ex)
                 {
                     OnAddressingFailure(m, activation, ex);
-                    return;
                 }
-
-                messageCenter.SendMessage(m);
             }
 
             void OnAddressingFailure(Message m, IGrainContext activation, Exception ex)
