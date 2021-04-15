@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netcoreapp3.1;net48;net5.0</TargetFrameworks>
+    <TargetFrameworks>$(MultiTargetFrameworks)</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PackageDescription>Fast, flexible, and version-tolerant serializer for .NET</PackageDescription>
     <OrleansBuildTimeCodeGen>true</OrleansBuildTimeCodeGen>
@@ -25,17 +25,12 @@
     <PackageReference Include="System.Runtime.Serialization.Primitives" Version="4.3.0" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' or '$(TargetFramework)' == 'net48'">
-    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="5.0.0" />
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="5.0.0" />
-  </ItemGroup>
-
   <ItemGroup Condition="'$(TargetFramework)' != 'net5.0'">
     <PackageReference Include="Microsoft.DotNet.PlatformAbstractions" Version="3.1.6" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Orleans.Serialization.Abstractions\Orleans.Serialization.Abstractions.csproj" />
+    <ProjectReference Include="..\Orleans.Core.Abstractions\Orleans.Core.Abstractions.csproj" />
     <ProjectReference Include="$(SourceRoot)src/Orleans.Analyzers/Orleans.Analyzers.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
   </ItemGroup>
 

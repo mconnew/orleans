@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>$(MultiTargetFrameworks)</TargetFrameworks>
     <PackageDescription>Newtonsoft.Json integration for Orleans.Serialization</PackageDescription>
     <OrleansBuildTimeCodeGen>true</OrleansBuildTimeCodeGen>
   </PropertyGroup>
