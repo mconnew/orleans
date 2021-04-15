@@ -84,16 +84,11 @@ namespace Orleans
             services.AddSingleton<DotNetSerializableSerializer>();
             services.AddFromExisting<IKeyedSerializer, DotNetSerializableSerializer>();
 
-            services.TryAddSingleton<ILBasedSerializer>();
-            services.AddFromExisting<IKeyedSerializer, ILBasedSerializer>();
-
             // Application parts
             var parts = services.GetApplicationPartManager();
             services.TryAddSingleton<IApplicationPartManager>(parts);
             parts.AddApplicationPart(new AssemblyPart(typeof(RuntimeVersion).Assembly) { IsFrameworkAssembly = true });
-            parts.AddFeatureProvider(new BuiltInTypesSerializationFeaturePopulator());
             parts.AddFeatureProvider(new AssemblyAttributeFeatureProvider<GrainInterfaceFeature>());
-            parts.AddFeatureProvider(new AssemblyAttributeFeatureProvider<SerializerFeature>());
             services.AddTransient<IConfigurationValidator, ApplicationPartValidator>();
 
             services.TryAddSingleton(typeof(IKeyedServiceCollection<,>), typeof(KeyedServiceCollection<,>));

@@ -108,9 +108,6 @@ namespace Orleans.Serialization
 
         public void RegisterSerializers(IApplicationPartManager applicationPartManager)
         {
-            var serializerFeature = applicationPartManager.CreateAndPopulateFeature<SerializerFeature>();
-            this.RegisterSerializers(serializerFeature);
-
             var grainInterfaceFeature = applicationPartManager.CreateAndPopulateFeature<GrainInterfaceFeature>();
             this.RegisterGrainReferenceSerializers(grainInterfaceFeature);
         }
@@ -120,36 +117,6 @@ namespace Orleans.Serialization
             foreach (var grainInterface in grainInterfaceFeature.Interfaces)
             {
                 this.RegisterGrainReferenceSerializers(grainInterface.ReferenceType);
-            }
-        }
-
-        private void RegisterSerializers(SerializerFeature serializerFeature)
-        {
-            var typeSerializer = new BuiltInTypes.DefaultTypeSerializer(this.typeResolver);
-
-            // ReSharper disable once PossibleMistakenCallToGetType.2
-            // GetType() returns a RuntimeType, which is an inaccessible subclass of Type which is used at runtime.
-            this.Register(typeof(Type).GetType(), typeSerializer.CopyType, typeSerializer.SerializeType, typeSerializer.DeserializeType);
-            this.Register(typeof(Type), typeSerializer.CopyType, typeSerializer.SerializeType, typeSerializer.DeserializeType);
-
-            foreach (var serializer in serializerFeature.SerializerDelegates)
-            {
-                this.Register(
-                    serializer.Target,
-                    serializer.Delegates.DeepCopy,
-                    serializer.Delegates.Serialize,
-                    serializer.Delegates.Deserialize,
-                    serializer.OverrideExisting);
-            }
-
-            foreach (var serializer in serializerFeature.SerializerTypes)
-            {
-                this.Register(serializer.Target, serializer.Serializer, serializer.OverrideExisting);
-            }
-
-            foreach (var knownType in serializerFeature.KnownTypes)
-            {
-                this.typeKeysToQualifiedNames[knownType.TypeKey] = knownType.Type;
             }
         }
 
@@ -1609,8 +1576,9 @@ namespace Orleans.Serialization
             }
             else
             {
-                serializer = this.ServiceProvider.GetRequiredService<ILBasedSerializer>();
+                serializer = null;
             }
+
             return serializer;
         }
 
@@ -1748,6 +1716,56 @@ namespace Orleans.Serialization
 
         public void Dispose()
         {
+        }
+
+        /// <summary>
+        /// Deserializer function.
+        /// </summary>
+        /// <param name="expected">Expected Type to receive.</param>
+        /// <param name="context">The context under which this object is being deserialized.</param>
+        /// <returns>Rehydrated object of the specified Type read from the current position in the input stream.</returns>
+        public delegate object Deserializer(Type expected, IDeserializationContext context);
+
+        /// <summary> Serializer function. </summary>
+        /// <param name="raw">Input object to be serialized.</param>
+        /// <param name="context">The context under which this object is being serialized.</param>
+        /// <param name="expected">Current Type active in this stream.</param>
+        public delegate void Serializer(object raw, ISerializationContext context, Type expected);
+
+        /// <summary>
+        /// Deep copier function.
+        /// </summary>
+        /// <param name="original">Original object to be deep copied.</param>
+        /// <param name="context">The serialization context.</param>
+        /// <returns>Deep copy of the original object.</returns>
+        public delegate object DeepCopier(object original, ICopyContext context);
+
+        /// <summary>
+        /// Contains delegates for serialization.
+        /// </summary>
+        public struct SerializerMethods
+        {
+            public SerializerMethods(DeepCopier deepCopy, Serializer serialize, Deserializer deserialize)
+            {
+                this.DeepCopy = deepCopy;
+                this.Serialize = serialize;
+                this.Deserialize = deserialize;
+            }
+
+            /// <summary>
+            /// Gets the deep copier delegate.
+            /// </summary>
+            public DeepCopier DeepCopy { get; }
+
+            /// <summary>
+            /// Gets the serializer delegate.
+            /// </summary>
+            public Serializer Serialize { get; }
+
+            /// <summary>
+            /// Gets the deserializer delegate.
+            /// </summary>
+            public Deserializer Deserialize { get; }
         }
     }
 }

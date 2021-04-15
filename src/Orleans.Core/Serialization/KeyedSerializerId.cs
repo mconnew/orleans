@@ -7,9 +7,7 @@ namespace Orleans.Serialization
     /// </summary>
     internal enum KeyedSerializerId : byte
     {
-        /// <summary>
-        /// <see cref="Orleans.Serialization.ILBasedSerializer"/>
-        /// </summary>
+        [Obsolete("Removed")]
         ILBasedSerializer = 1,
 
         [Obsolete("Removed")]
