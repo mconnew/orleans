@@ -6,10 +6,10 @@ namespace FakeFx.Runtime
     /// Uniquely identifies a grain interface.
     /// </summary>
     [Serializable]
-    [Orleans.Serialization.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public readonly struct GrainInterfaceType : IEquatable<GrainInterfaceType>
     {
-        [Orleans.Serialization.Id(1)]
+        [Orleans.Id(1)]
         private readonly IdSpan _value;
 
         /// <summary>

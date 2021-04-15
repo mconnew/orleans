@@ -4,10 +4,10 @@ using System.Collections.Generic;
 namespace FakeFx.Runtime
 {
     [Serializable]
-    [Orleans.Serialization.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     internal class StatusResponse
     {
-        [Orleans.Serialization.Id(1)]
+        [Orleans.Id(1)]
         private readonly uint _statusFlags;
 
         public StatusResponse(bool isExecuting, bool isWaiting, List<string> diagnostics)
@@ -25,7 +25,7 @@ namespace FakeFx.Runtime
             Diagnostics = diagnostics;
         }
 
-        [Orleans.Serialization.Id(2)]
+        [Orleans.Id(2)]
         public List<string> Diagnostics { get; }
 
         public bool IsExecuting => (_statusFlags & 0x1) != 0;

@@ -8,8 +8,8 @@ using System.Text;
 namespace FakeFx.Runtime
 {
     [Serializable]
-    [Orleans.Serialization.GenerateSerializer]
-    [Orleans.Serialization.SuppressReferenceTracking]
+    [Orleans.GenerateSerializer]
+    [Orleans.SuppressReferenceTracking]
     public sealed class UniqueKey : IComparable<UniqueKey>, IEquatable<UniqueKey>
     {
         /// <summary>
@@ -27,13 +27,13 @@ namespace FakeFx.Runtime
             KeyExtSystemTarget = 8,
         }
 
-        [Orleans.Serialization.Id(1)]
+        [Orleans.Id(1)]
         public ulong N0 { get; private set; }
-        [Orleans.Serialization.Id(2)]
+        [Orleans.Id(2)]
         public ulong N1 { get; private set; }
-        [Orleans.Serialization.Id(3)]
+        [Orleans.Id(3)]
         public ulong TypeCodeData { get; private set; }
-        [Orleans.Serialization.Id(4)]
+        [Orleans.Id(4)]
         public string KeyExt { get; private set; }
 
         [NonSerialized]

@@ -11,7 +11,7 @@ namespace FakeFx.Runtime
     /// </summary>
     [Serializable]
     [StructLayout(LayoutKind.Auto)]
-    [Orleans.Serialization.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public readonly struct GrainType : IEquatable<GrainType>, IComparable<GrainType>, ISerializable
     {
         /// <summary>
@@ -35,7 +35,7 @@ namespace FakeFx.Runtime
         /// <summary>
         /// The underlying value.
         /// </summary>
-        [Orleans.Serialization.Id(1)]
+        [Orleans.Id(1)]
         public IdSpan Value { get; }
 
         /// <summary>

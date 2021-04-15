@@ -3,11 +3,11 @@ using System;
 namespace FakeFx.Runtime
 {
     [Serializable]
-    [Orleans.Serialization.GenerateSerializer]
-    [Orleans.Serialization.SuppressReferenceTracking]
+    [Orleans.GenerateSerializer]
+    [Orleans.SuppressReferenceTracking]
     internal sealed class CorrelationId : IEquatable<CorrelationId>, IComparable<CorrelationId>
     {
-        [Orleans.Serialization.Id(1)]
+        [Orleans.Id(1)]
         private readonly long id;
         private static long nextToUse = 1;
 

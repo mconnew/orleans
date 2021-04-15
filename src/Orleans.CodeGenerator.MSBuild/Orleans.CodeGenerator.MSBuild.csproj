@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
@@ -16,6 +16,7 @@
     <DevelopmentDependency>true</DevelopmentDependency>
     <PublishRoot>bin\$(Configuration)\publish\</PublishRoot>
     <PublishDir>$(PublishRoot)$(TargetFramework)</PublishDir>
+    <IsOrleansFrameworkPart>false</IsOrleansFrameworkPart>
   </PropertyGroup>
 
   <ItemGroup>

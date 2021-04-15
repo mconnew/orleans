@@ -1,6 +1,6 @@
 using System;
 
-namespace Orleans.Serialization
+namespace Orleans
 {
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Enum)]
     public sealed class GenerateSerializerAttribute : Attribute

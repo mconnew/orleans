@@ -8,11 +8,11 @@ namespace FakeFx.Runtime
     /// Can be used in places where Guid is optional and in those cases it can be set to null and will not use the storage of an empty Guid struct.
     /// </summary>
     [Serializable]
-    [Orleans.Serialization.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public sealed class GuidId : IEquatable<GuidId>, IComparable<GuidId>, ISerializable
     {
         private static readonly Interner<Guid, GuidId> guidIdInternCache = new(InternerConstants.SIZE_LARGE);
-        [Orleans.Serialization.Id(1)]
+        [Orleans.Id(1)]
         public readonly Guid Guid;
 
         public static GuidId Default { get; } = new(Guid.Empty);

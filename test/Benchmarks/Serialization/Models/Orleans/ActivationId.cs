@@ -4,13 +4,13 @@ using System.Runtime.Serialization;
 namespace FakeFx.Runtime
 {
     [Serializable]
-    [Orleans.Serialization.GenerateSerializer]
-    [Orleans.Serialization.SuppressReferenceTracking]
+    [Orleans.GenerateSerializer]
+    [Orleans.SuppressReferenceTracking]
     public sealed class ActivationId : IEquatable<ActivationId>
     {
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2104:DoNotDeclareReadOnlyMutableReferenceTypes")]
         [DataMember]
-        [Orleans.Serialization.Id(1)]
+        [Orleans.Id(1)]
         internal readonly UniqueKey Key;
 
         public bool IsSystem { get { return Key.IsSystemTargetKey; } }

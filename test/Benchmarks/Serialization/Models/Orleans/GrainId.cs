@@ -11,7 +11,7 @@ namespace FakeFx.Runtime
     /// </summary>
     [Serializable]
     [StructLayout(LayoutKind.Auto)]
-    [Orleans.Serialization.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public readonly struct GrainId : IEquatable<GrainId>, IComparable<GrainId>, ISerializable
     {
         /// <summary>
@@ -35,13 +35,13 @@ namespace FakeFx.Runtime
         /// <summary>
         /// The grain type.
         /// </summary>
-        [Orleans.Serialization.Id(1)]
+        [Orleans.Id(1)]
         public GrainType Type { get; }
 
         /// <summary>
         /// The key.
         /// </summary>
-        [Orleans.Serialization.Id(2)]
+        [Orleans.Id(2)]
         public IdSpan Key { get; }
 
         // TODO: remove implicit conversion (potentially make explicit to start with)

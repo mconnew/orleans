@@ -5,7 +5,7 @@ using System.Text;
 
 namespace FakeFx.Runtime
 {
-    [Orleans.Serialization.WellKnownId(101)]
+    [Orleans.WellKnownId(101)]
     [GenerateSerializer]
     internal sealed class Message
     {
@@ -47,7 +47,7 @@ namespace FakeFx.Runtime
         {
         }
 
-        [Orleans.Serialization.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public enum Categories
         {
             Ping,
@@ -55,7 +55,7 @@ namespace FakeFx.Runtime
             Application,
         }
 
-        [Orleans.Serialization.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public enum Directions
         {
             Request,
@@ -63,7 +63,7 @@ namespace FakeFx.Runtime
             OneWay
         }
 
-        [Orleans.Serialization.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public enum ResponseTypes
         {
             Success,
@@ -72,7 +72,7 @@ namespace FakeFx.Runtime
             Status
         }
 
-        [Orleans.Serialization.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public enum RejectionTypes
         {
             Transient,
@@ -458,9 +458,9 @@ namespace FakeFx.Runtime
         }
 
         [Serializable]
-        [Orleans.Serialization.GenerateSerializer]
-        [Orleans.Serialization.SuppressReferenceTracking]
-        [Orleans.Serialization.OmitDefaultMemberValues]
+        [Orleans.GenerateSerializer]
+        [Orleans.SuppressReferenceTracking]
+        [Orleans.OmitDefaultMemberValues]
         public sealed class HeadersContainer
         {
             [Flags]
@@ -508,61 +508,61 @@ namespace FakeFx.Runtime
                 // Do not add over int.MaxValue of these.
             }
 
-            [Orleans.Serialization.Id(1)]
+            [Orleans.Id(1)]
             public Categories _category;
-            [Orleans.Serialization.Id(2)]
+            [Orleans.Id(2)]
             public Directions? _direction;
-            [Orleans.Serialization.Id(3)]
+            [Orleans.Id(3)]
             public bool _isReadOnly;
-            [Orleans.Serialization.Id(4)]
+            [Orleans.Id(4)]
             public bool _isAlwaysInterleave;
-            [Orleans.Serialization.Id(5)]
+            [Orleans.Id(5)]
             public bool _isUnordered;
-            [Orleans.Serialization.Id(6)]
+            [Orleans.Id(6)]
             public bool _isReturnedFromRemoteCluster;
-            [Orleans.Serialization.Id(7)]
+            [Orleans.Id(7)]
             public bool _isTransactionRequired;
-            [Orleans.Serialization.Id(8)]
+            [Orleans.Id(8)]
             public CorrelationId _id;
-            [Orleans.Serialization.Id(9)]
+            [Orleans.Id(9)]
             public int _forwardCount;
-            [Orleans.Serialization.Id(10)]
+            [Orleans.Id(10)]
             public SiloAddress _targetSilo;
-            [Orleans.Serialization.Id(11)]
+            [Orleans.Id(11)]
             public GrainId _targetGrain;
-            [Orleans.Serialization.Id(12)]
+            [Orleans.Id(12)]
             public ActivationId _targetActivation;
-            [Orleans.Serialization.Id(13)]
+            [Orleans.Id(13)]
             public SiloAddress _sendingSilo;
-            [Orleans.Serialization.Id(14)]
+            [Orleans.Id(14)]
             public GrainId _sendingGrain;
-            [Orleans.Serialization.Id(15)]
+            [Orleans.Id(15)]
             public ActivationId _sendingActivation;
-            [Orleans.Serialization.Id(16)]
+            [Orleans.Id(16)]
             public bool _isNewPlacement;
-            [Orleans.Serialization.Id(17)]
+            [Orleans.Id(17)]
             public ushort _interfaceVersion;
-            [Orleans.Serialization.Id(18)]
+            [Orleans.Id(18)]
             public ResponseTypes _result;
-            [Orleans.Serialization.Id(19)]
+            [Orleans.Id(19)]
             public object _transactionInfo;
-            [Orleans.Serialization.Id(20)]
+            [Orleans.Id(20)]
             public TimeSpan? _timeToLive;
-            [Orleans.Serialization.Id(21)]
+            [Orleans.Id(21)]
             public List<ActivationAddress> _cacheInvalidationHeader;
-            [Orleans.Serialization.Id(22)]
+            [Orleans.Id(22)]
             public RejectionTypes _rejectionType;
-            [Orleans.Serialization.Id(23)]
+            [Orleans.Id(23)]
             public string _rejectionInfo;
-            [Orleans.Serialization.Id(24)]
+            [Orleans.Id(24)]
             public Dictionary<string, object> _requestContextData;
-            [Orleans.Serialization.Id(25)]
+            [Orleans.Id(25)]
             public CorrelationId _callChainId;
-            [Orleans.Serialization.Id(26)]
+            [Orleans.Id(26)]
             public readonly DateTime _localCreationTime;
-            [Orleans.Serialization.Id(27)]
+            [Orleans.Id(27)]
             public TraceContext _traceContext;
-            [Orleans.Serialization.Id(28)]
+            [Orleans.Id(28)]
             public GrainInterfaceType interfaceType;
 
             public HeadersContainer()
@@ -966,7 +966,7 @@ namespace FakeFx.Runtime
         }
     }
 
-    [Orleans.Serialization.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     internal class TraceContext
     {
         [Id(1)]
