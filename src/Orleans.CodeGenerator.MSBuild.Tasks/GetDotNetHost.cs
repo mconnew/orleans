@@ -7,10 +7,10 @@ namespace Orleans.CodeGenerator.MSBuild.Tasks
     {
         [Output]
         public string DotNetHost { get; set; }
-        
+
         public override bool Execute()
         {
-            this.DotNetHost = TryFindDotNetExePath();
+            DotNetHost = TryFindDotNetExePath();
             return true;
         }
 
