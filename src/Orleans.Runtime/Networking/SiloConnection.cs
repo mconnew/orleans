@@ -3,11 +3,11 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using Orleans.Invocation;
 using Microsoft.AspNetCore.Connections;
 using Microsoft.Extensions.Logging;
 using Orleans.Configuration;
 using Orleans.Messaging;
+using Orleans.Serialization.Invocation;
 
 namespace Orleans.Runtime.Messaging
 {

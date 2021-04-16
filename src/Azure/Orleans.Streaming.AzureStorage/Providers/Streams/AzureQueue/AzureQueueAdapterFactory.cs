@@ -7,7 +7,6 @@ using Orleans.Configuration;
 using Orleans.Configuration.Overrides;
 using Orleans.Providers.Streams.Common;
 using Orleans.Runtime;
-using Orleans.Serialization;
 using Orleans.Streaming.AzureStorage.Providers.Streams.AzureQueue;
 using Orleans.Streams;
 

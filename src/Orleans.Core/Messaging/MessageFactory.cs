@@ -3,16 +3,17 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Orleans.CodeGeneration;
+using Orleans.Serialization;
 
 namespace Orleans.Runtime
 {
     internal class MessageFactory
     {
-        private readonly Orleans.DeepCopier deepCopier;
+        private readonly DeepCopier deepCopier;
         private readonly ILogger logger;
         private readonly MessagingTrace messagingTrace;
 
-        public MessageFactory(Orleans.DeepCopier deepCopier, ILogger<MessageFactory> logger, MessagingTrace messagingTrace)
+        public MessageFactory(DeepCopier deepCopier, ILogger<MessageFactory> logger, MessagingTrace messagingTrace)
         {
             this.deepCopier = deepCopier;
             this.logger = logger;

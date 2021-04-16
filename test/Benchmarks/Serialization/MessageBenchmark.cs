@@ -1,5 +1,4 @@
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Diagnostics.Windows.Configs;
 using Benchmarks.Utilities;
 using FakeFx.Runtime;
 using Orleans.Serialization;

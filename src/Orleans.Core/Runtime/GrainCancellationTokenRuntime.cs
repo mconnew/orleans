@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Orleans.Internal;
-using Orleans.Serialization;
 using Orleans.Serialization.Codecs;
 using Orleans.Serialization.Cloning;
 using Orleans.Serialization.Serializers;

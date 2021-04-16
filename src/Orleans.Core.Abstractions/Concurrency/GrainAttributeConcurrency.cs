@@ -1,4 +1,3 @@
-using Hagar;
 using Orleans.CodeGeneration;
 using Orleans.Metadata;
 using Orleans.Placement;

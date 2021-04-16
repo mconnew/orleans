@@ -1,5 +1,3 @@
-using System.Runtime.InteropServices.ComTypes;
-
 namespace Orleans.Serialization.Invocation
 {
     public interface IResponseCompletionSource

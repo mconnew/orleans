@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
@@ -18,7 +17,7 @@ using System.Threading;
 using Orleans.Configuration;
 using Orleans.GrainReferences;
 using Orleans.Metadata;
-using Orleans.Invocation;
+using Orleans.Serialization.Invocation;
 
 namespace Orleans.Runtime
 {
@@ -41,7 +40,7 @@ namespace Orleans.Runtime
         private Catalog catalog;
         private Dispatcher dispatcher;
         private List<IIncomingGrainCallFilter> grainCallFilters;
-        private Orleans.DeepCopier _deepCopier;
+        private DeepCopier _deepCopier;
         private readonly InterfaceToImplementationMappingCache interfaceToImplementationMapping;
         private Orleans.Serialization.Serializer _serializer;
         private HostedClient hostedClient;
@@ -65,7 +64,7 @@ namespace Orleans.Runtime
             GrainInterfaceTypeResolver interfaceIdResolver,
             GrainInterfaceTypeToGrainTypeResolver interfaceToTypeResolver,
             Orleans.Serialization.Serializer serializer,
-            Orleans.DeepCopier deepCopier)
+            DeepCopier deepCopier)
         {
             this.interfaceToImplementationMapping = new InterfaceToImplementationMappingCache();
             this._serializer = serializer;

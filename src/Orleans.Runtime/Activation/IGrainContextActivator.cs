@@ -6,11 +6,10 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
-using Orleans.Invocation;
 using Microsoft.Extensions.DependencyInjection;
-using Orleans.CodeGeneration;
 using Orleans.Concurrency;
 using Orleans.Metadata;
+using Orleans.Serialization.Invocation;
 
 namespace Orleans.Runtime
 {

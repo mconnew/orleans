@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using Orleans.Invocation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -16,6 +15,7 @@ using Orleans.Providers;
 using Orleans.Runtime;
 using Orleans.Runtime.Configuration;
 using Orleans.Serialization;
+using Orleans.Serialization.Invocation;
 
 namespace Orleans
 {
@@ -118,7 +118,7 @@ namespace Orleans
                 this.InternalGrainFactory = this.ServiceProvider.GetRequiredService<IInternalGrainFactory>();
                 this.messageFactory = this.ServiceProvider.GetService<MessageFactory>();
 
-                var copier = this.ServiceProvider.GetRequiredService<Orleans.DeepCopier>();
+                var copier = this.ServiceProvider.GetRequiredService<DeepCopier>();
                 this.localObjects = new InvokableObjectManager(
                     services.GetRequiredService<ClientGrainContext>(),
                     this,

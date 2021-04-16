@@ -4,15 +4,12 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Orleans.CodeGeneration;
 using Orleans.Configuration;
 using Orleans.Runtime;
 using Orleans.Timers.Internal;
 using Orleans.Transactions.Abstractions;
 using Orleans.Transactions.State;
 using Orleans.Transactions.TOC;
-
-[assembly: GenerateSerializer(typeof(Orleans.Transactions.TransactionCommitter<>.OperationState))]
 
 namespace Orleans.Transactions
 {

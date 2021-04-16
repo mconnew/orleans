@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Orleans.CodeGeneration;
 using Orleans.Runtime;
+using Orleans.Serialization.Invocation;
 
 namespace Orleans.Serialization
 {
@@ -56,7 +57,7 @@ namespace Orleans.Serialization
             typeTokens[typeof(IPEndPoint)] = SerializationTokenType.IpEndPoint;
             typeTokens[typeof(CorrelationId)] = SerializationTokenType.CorrelationId;
             typeTokens[typeof(InvokeMethodRequest)] = SerializationTokenType.Request;
-            typeTokens[typeof(Orleans.Invocation.Response)] = SerializationTokenType.Response;
+            typeTokens[typeof(Response)] = SerializationTokenType.Response;
             typeTokens[typeof(Dictionary<string, object>)] = SerializationTokenType.StringObjDict;
             typeTokens[typeof(Object)] = SerializationTokenType.Object;
             typeTokens[typeof(List<>)] = SerializationTokenType.List;

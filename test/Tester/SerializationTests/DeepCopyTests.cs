@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using TestExtensions;
-using UnitTests.FSharpTypes;
 using UnitTests.GrainInterfaces;
 using Xunit;
 

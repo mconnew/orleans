@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.Serialization;
-using Orleans.Concurrency;
 
 namespace Orleans.Runtime
 {

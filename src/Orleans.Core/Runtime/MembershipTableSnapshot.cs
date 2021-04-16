@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Immutable;
 using System.Text;
-using Hagar;
 
 namespace Orleans.Runtime
 {

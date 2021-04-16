@@ -1,5 +1,3 @@
-using ZeroFormatter;
-
 namespace Benchmarks.Models
 {
     [ZeroFormattable]

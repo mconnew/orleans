@@ -1,5 +1,4 @@
 using System;
-using Orleans.Concurrency;
 using Orleans.Runtime;
 
 namespace Orleans.Streams.Core

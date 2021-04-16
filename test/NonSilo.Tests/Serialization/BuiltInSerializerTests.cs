@@ -12,7 +12,6 @@ using Orleans.Concurrency;
 using Orleans.Configuration;
 using Orleans.GrainDirectory;
 using Orleans.Runtime;
-using Orleans.Runtime.GrainDirectory;
 using Orleans.Serialization;
 using Orleans.ServiceBus.Providers;
 using Orleans.Streams;

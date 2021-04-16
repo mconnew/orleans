@@ -4,7 +4,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using Hagar;
 using Orleans.Concurrency;
 using Orleans.Runtime;
 

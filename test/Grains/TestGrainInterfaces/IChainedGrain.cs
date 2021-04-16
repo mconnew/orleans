@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using Hagar;
 using Orleans;
 
 namespace UnitTests.GrainInterfaces

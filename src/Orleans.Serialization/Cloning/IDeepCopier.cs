@@ -1,6 +1,5 @@
-﻿using Orleans.Serialization.Serializers;
+using Orleans.Serialization.Serializers;
 using Orleans.Serialization.Utilities;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.ObjectPool;
 using System;
 using System.Collections.Concurrent;
@@ -140,11 +139,6 @@ namespace Orleans.Serialization.Cloning
             if (type.IsConstructedGenericType)
             {
                 var def = type.GetGenericTypeDefinition();
-
-                if (def == typeof(Immutable<>))
-                {
-                    return true;
-                }
 
                 if (def == typeof(Nullable<>)
                     || def == typeof(Tuple<>)

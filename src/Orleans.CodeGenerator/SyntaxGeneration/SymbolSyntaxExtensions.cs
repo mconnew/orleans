@@ -5,8 +5,6 @@ using System.Reflection;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using Microsoft.CodeAnalysis;
 
 namespace Orleans.CodeGenerator.SyntaxGeneration

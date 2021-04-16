@@ -3,7 +3,6 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Net;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -14,7 +13,7 @@ using Orleans.Configuration;
 using Orleans.Messaging;
 
 using Microsoft.Extensions.ObjectPool;
-using Orleans.Invocation;
+using Orleans.Serialization.Invocation;
 
 namespace Orleans.Runtime.Messaging
 {

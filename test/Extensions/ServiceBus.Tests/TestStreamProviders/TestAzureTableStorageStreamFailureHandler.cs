@@ -6,7 +6,6 @@ using Azure.Identity;
 using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Extensions.Logging.Abstractions;
 using Orleans.Providers.Streams.PersistentStreams;
-using Orleans.Serialization;
 using Orleans.Streaming.EventHubs;
 using Orleans.Streams;
 using TestExtensions;

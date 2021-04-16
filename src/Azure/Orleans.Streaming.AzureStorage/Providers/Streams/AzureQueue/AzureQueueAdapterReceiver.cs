@@ -8,7 +8,6 @@ using Orleans.AzureUtils;
 using Orleans.AzureUtils.Utilities;
 using Orleans.Configuration;
 using Orleans.Runtime;
-using Orleans.Serialization;
 using Orleans.Streams;
 
 namespace Orleans.Providers.Streams.AzureQueue

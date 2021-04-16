@@ -1,19 +1,15 @@
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Runtime.Serialization;
-using Orleans.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Orleans.ApplicationParts;
 using Orleans.CodeGeneration;
 using Orleans.Metadata;
 using Orleans.Runtime;
 using Orleans.Runtime.Versions;
+using Orleans.Serialization.Configuration;
 
 namespace Orleans.GrainReferences
 {

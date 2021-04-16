@@ -37,7 +37,7 @@ namespace Orleans.Runtime
             }
         }
 
-        public static Dictionary<string, object> Export(Orleans.DeepCopier copier)
+        public static Dictionary<string, object> Export(DeepCopier copier)
         {
             var values = RequestContext.CallContextData.Value;
 

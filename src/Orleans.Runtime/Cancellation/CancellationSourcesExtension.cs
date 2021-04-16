@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Diagnostics;
+using Orleans.Serialization.Invocation;
 
 namespace Orleans.Runtime
 {
@@ -76,7 +77,7 @@ namespace Orleans.Runtime
         /// <param name="request"></param>
         internal static void RegisterCancellationTokens(
             IGrainContext target,
-            Orleans.Invocation.IInvokable request)
+            IInvokable request)
         {
             for (var i = 0; i < request.ArgumentCount; i++)
             {

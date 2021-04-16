@@ -1,4 +1,3 @@
-using Orleans.Serialization;
 using System;
 
 namespace Benchmarks.Models

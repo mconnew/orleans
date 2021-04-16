@@ -9,7 +9,6 @@ using Orleans.Configuration;
 using Orleans.Internal;
 using Orleans.Providers.Streams.Common;
 using Orleans.Runtime;
-using Orleans.Serialization;
 using Orleans.Streams;
 
 namespace Orleans.Providers.Streams.Generator

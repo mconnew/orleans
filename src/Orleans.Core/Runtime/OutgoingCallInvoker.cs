@@ -1,8 +1,8 @@
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
-using Orleans.Invocation;
 using Orleans.CodeGeneration;
+using Orleans.Serialization.Invocation;
 
 namespace Orleans.Runtime
 {

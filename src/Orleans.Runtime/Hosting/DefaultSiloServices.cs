@@ -37,9 +37,9 @@ using Orleans.Networking.Shared;
 using Orleans.Configuration.Internal;
 using Orleans.Runtime.Metadata;
 using Orleans.GrainReferences;
-using Hagar;
-using Orleans.TypeSystem;
-using Orleans.Serializers;
+using Orleans.Serialization.TypeSystem;
+using Orleans.Serialization.Serializers;
+using Orleans.Serialization.Cloning;
 
 namespace Orleans.Hosting
 {
@@ -277,10 +277,6 @@ namespace Orleans.Hosting
             services.TryAddSingleton<ITypeResolver, Orleans.Runtime.CachedTypeResolver>();
             services.TryAddSingleton<IFieldUtils, FieldUtils>();
 
-            // Register the ISerializable serializer first, so that it takes precedence
-            services.AddSingleton<DotNetSerializableSerializer>();
-            services.AddFromExisting<IKeyedSerializer, DotNetSerializableSerializer>();
-
             // Application Parts
             var applicationPartManager = services.GetApplicationPartManager();
             applicationPartManager.AddApplicationPart(new AssemblyPart(typeof(RuntimeVersion).Assembly) { IsFrameworkAssembly = true });
@@ -385,23 +381,16 @@ namespace Orleans.Hosting
                 GatewayConnectionListener.ServicesKey,
                 (sp, key) => ActivatorUtilities.CreateInstance<SocketConnectionListenerFactory>(sp));
 
-#if true
-            services.AddHagar();
+            services.AddSerializer();
             services.AddSingleton<ITypeFilter, AllowOrleansTypes>();
             services.AddSingleton<ISpecializableCodec, GrainReferenceCodecProvider>();
-            services.AddSingleton<Orleans.Cloning.IGeneralizedCopier, GrainReferenceCopier>();
+            services.AddSingleton<IGeneralizedCopier, GrainReferenceCopier>();
             services.AddSingleton<OnDeserializedCallbacks>();
 
-            services.TryAddTransient<IMessageSerializer>(sp => ActivatorUtilities.CreateInstance<HagarMessageSerializer>(
-                sp,
-                sp.GetRequiredService<IOptions<ClientMessagingOptions>>().Value.MaxMessageHeaderSize,
-                sp.GetRequiredService<IOptions<ClientMessagingOptions>>().Value.MaxMessageBodySize));
-#else
             services.TryAddTransient<IMessageSerializer>(sp => ActivatorUtilities.CreateInstance<MessageSerializer>(
                 sp,
                 sp.GetRequiredService<IOptions<ClientMessagingOptions>>().Value.MaxMessageHeaderSize,
                 sp.GetRequiredService<IOptions<ClientMessagingOptions>>().Value.MaxMessageBodySize));
-#endif
             services.TryAddSingleton<ConnectionFactory, SiloConnectionFactory>();
             services.AddSingleton<NetworkingTrace>();
             services.AddSingleton<RuntimeMessagingTrace>();

@@ -1,7 +1,5 @@
 using System;
-using System.Collections;
 using System.Collections.Immutable;
-using Hagar;
 using Orleans.Runtime;
 
 namespace Orleans.Metadata

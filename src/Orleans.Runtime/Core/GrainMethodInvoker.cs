@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
-using Orleans.Invocation;
+using Orleans.Serialization.Invocation;
 
 namespace Orleans.Runtime
 {

@@ -1,17 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
-using Hagar;
 using Orleans.Configuration;
-using Orleans.Serializers;
-using Orleans.TypeSystem;
 using Microsoft.AspNetCore.Connections;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Orleans.ApplicationParts;
-using Orleans.Configuration;
 using Orleans.Configuration.Internal;
 using Orleans.Configuration.Validators;
 using Orleans.GrainReferences;
@@ -24,6 +16,9 @@ using Orleans.Runtime.Messaging;
 using Orleans.Runtime.Versions;
 using Orleans.Serialization;
 using Orleans.Statistics;
+using Orleans.Serialization.TypeSystem;
+using Orleans.Serialization.Serializers;
+using Orleans.Serialization.Cloning;
 
 namespace Orleans
 {
@@ -80,10 +75,6 @@ namespace Orleans
             services.TryAddSingleton<ITypeResolver, Orleans.Runtime.CachedTypeResolver>();
             services.TryAddSingleton<IFieldUtils, FieldUtils>();
 
-            // Register the ISerializable serializer first, so that it takes precedence
-            services.AddSingleton<DotNetSerializableSerializer>();
-            services.AddFromExisting<IKeyedSerializer, DotNetSerializableSerializer>();
-
             // Application parts
             var parts = services.GetApplicationPartManager();
             services.TryAddSingleton<IApplicationPartManager>(parts);
@@ -115,23 +106,16 @@ namespace Orleans
                 ClientOutboundConnectionFactory.ServicesKey,
                 (sp, key) => ActivatorUtilities.CreateInstance<SocketConnectionFactory>(sp));
 
-#if true
-            services.AddHagar();
+            services.AddSerializer();
             services.AddSingleton<ITypeFilter, AllowOrleansTypes>();
             services.AddSingleton<ISpecializableCodec, GrainReferenceCodecProvider>();
-            services.AddSingleton<Orleans.Cloning.IGeneralizedCopier, GrainReferenceCopier>();
+            services.AddSingleton<IGeneralizedCopier, GrainReferenceCopier>();
             services.AddSingleton<OnDeserializedCallbacks>();
 
-            services.TryAddTransient<IMessageSerializer>(sp => ActivatorUtilities.CreateInstance<HagarMessageSerializer>(
-                sp,
-                sp.GetRequiredService<IOptions<ClientMessagingOptions>>().Value.MaxMessageHeaderSize,
-                sp.GetRequiredService<IOptions<ClientMessagingOptions>>().Value.MaxMessageBodySize));
-#else
             services.TryAddTransient<IMessageSerializer>(sp => ActivatorUtilities.CreateInstance<MessageSerializer>(
                 sp,
                 sp.GetRequiredService<IOptions<ClientMessagingOptions>>().Value.MaxMessageHeaderSize,
                 sp.GetRequiredService<IOptions<ClientMessagingOptions>>().Value.MaxMessageBodySize));
-#endif
             services.TryAddSingleton<ConnectionFactory, ClientOutboundConnectionFactory>();
             services.TryAddSingleton<ClientMessageCenter>(sp => sp.GetRequiredService<OutsideRuntimeClient>().MessageCenter);
             services.TryAddFromExisting<IMessageCenter, ClientMessageCenter>();

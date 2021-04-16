@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Azure.Messaging.EventHubs;
 using Orleans.Providers.Streams.Common;
 using Orleans.Runtime;
-using Orleans.Serialization;
 using Orleans.Streams;
 
 namespace Orleans.ServiceBus.Providers

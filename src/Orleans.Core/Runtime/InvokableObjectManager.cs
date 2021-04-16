@@ -3,11 +3,11 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Orleans.Invocation;
 using Microsoft.Extensions.Logging;
 using Orleans.CodeGeneration;
 using Orleans.Runtime;
 using Orleans.Serialization;
+using Orleans.Serialization.Invocation;
 
 namespace Orleans
 {
@@ -18,13 +18,13 @@ namespace Orleans
         private readonly IGrainContext rootGrainContext;
         private readonly IRuntimeClient runtimeClient;
         private readonly ILogger logger;
-        private readonly Orleans.DeepCopier deepCopier;
+        private readonly DeepCopier deepCopier;
         private readonly MessagingTrace messagingTrace;
 
         public InvokableObjectManager(
             IGrainContext rootGrainContext,
             IRuntimeClient runtimeClient,
-            Orleans.DeepCopier deepCopier,
+            DeepCopier deepCopier,
             MessagingTrace messagingTrace,
             ILogger logger)
         {

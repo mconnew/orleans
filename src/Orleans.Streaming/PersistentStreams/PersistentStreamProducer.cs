@@ -1,10 +1,10 @@
 using System;
 using System.Threading.Tasks;
 using Orleans.Runtime;
-using Orleans.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Generic;
+using Orleans.Serialization;
 
 namespace Orleans.Streams
 {
@@ -12,11 +12,11 @@ namespace Orleans.Streams
     {
         private readonly StreamImpl<T> stream;
         private readonly IQueueAdapter queueAdapter;
-        private readonly Orleans.DeepCopier deepCopier;
+        private readonly DeepCopier deepCopier;
 
         internal bool IsRewindable { get; private set; }
 
-        internal PersistentStreamProducer(StreamImpl<T> stream, IStreamProviderRuntime providerUtilities, IQueueAdapter queueAdapter, bool isRewindable, Orleans.DeepCopier deepCopier)
+        internal PersistentStreamProducer(StreamImpl<T> stream, IStreamProviderRuntime providerUtilities, IQueueAdapter queueAdapter, bool isRewindable, DeepCopier deepCopier)
         {
             this.stream = stream;
             this.queueAdapter = queueAdapter;

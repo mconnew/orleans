@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFrameworks>$(MultiTargetFrameworks)</TargetFrameworks>
     <PackageDescription>Test kit for projects using Orleans.Serialization</PackageDescription>
+    <IsOrleansFrameworkPart>false</IsOrleansFrameworkPart>
   </PropertyGroup>
 
   <ItemGroup>

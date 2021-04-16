@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using Orleans.Serialization;
 using Orleans.Transactions.Abstractions;
 
 namespace Orleans.Transactions
@@ -75,7 +76,7 @@ namespace Orleans.Transactions
             joined.Enqueue(x);
         }
 
-        public OrleansTransactionAbortedException MustAbort(Orleans.Serializer<OrleansTransactionAbortedException> serializer)
+        public OrleansTransactionAbortedException MustAbort(Serializer<OrleansTransactionAbortedException> serializer)
         {
             if (OriginalException != null)
             {
@@ -91,7 +92,7 @@ namespace Orleans.Transactions
             }
         }
 
-        public void RecordException(Exception e, Orleans.Serializer<OrleansTransactionAbortedException> sm)
+        public void RecordException(Exception e, Serializer<OrleansTransactionAbortedException> sm)
         {
             if (OriginalException == null)
             {

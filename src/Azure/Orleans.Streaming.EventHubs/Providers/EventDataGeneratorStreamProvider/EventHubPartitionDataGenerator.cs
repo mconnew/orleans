@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 using Orleans.Configuration;
 using Orleans.Runtime;
 using Orleans.Serialization;
-using Orleans.Streams;
 
 namespace Orleans.ServiceBus.Providers.Testing
 {
@@ -25,10 +24,10 @@ namespace Orleans.ServiceBus.Providers.Testing
         public bool ShouldProduce { private get; set; }
 
         private readonly ILogger logger;
-        private readonly Orleans.DeepCopier deepCopier;
-        private readonly Orleans.Serialization.Serializer serializer;
+        private readonly DeepCopier deepCopier;
+        private readonly Serializer serializer;
 
-        public SimpleStreamEventDataGenerator(StreamId streamId, ILogger<SimpleStreamEventDataGenerator> logger, Orleans.DeepCopier deepCopier, Orleans.Serialization.Serializer serializer)
+        public SimpleStreamEventDataGenerator(StreamId streamId, ILogger<SimpleStreamEventDataGenerator> logger, DeepCopier deepCopier, Orleans.Serialization.Serializer serializer)
         {
             this.StreamId = streamId;
             this.logger = logger;

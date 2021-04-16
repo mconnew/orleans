@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Orleans.Runtime;
-using Orleans.Serialization;
 using Orleans.Streams;
 using Microsoft.Extensions.Logging;
 using Orleans.Streams.Filtering;
+using Orleans.Serialization;
 
 namespace Orleans.Providers.Streams.SimpleMessageStream
 {
@@ -15,7 +15,7 @@ namespace Orleans.Providers.Streams.SimpleMessageStream
         private readonly string                         streamProviderName;
 
         [NonSerialized]
-        private readonly Orleans.DeepCopier<T> deepCopier;
+        private readonly DeepCopier<T> deepCopier;
 
         [NonSerialized]
         private readonly IStreamPubSub                  pubSub;
@@ -44,7 +44,7 @@ namespace Orleans.Providers.Streams.SimpleMessageStream
             IStreamPubSub pubSub,
             IStreamFilter streamFilter,
             bool isRewindable,
-            Orleans.DeepCopier<T> deepCopier,
+            DeepCopier<T> deepCopier,
             ILogger<SimpleMessageStreamProducer<T>> logger)
         {
             this.stream = stream;

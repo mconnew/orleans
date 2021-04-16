@@ -1,4 +1,3 @@
-using Orleans.Serialization.Activators;
 using Orleans.Serialization.Buffers;
 using Orleans.Serialization.Cloning;
 using Orleans.Serialization.GeneratedCodeHelpers;

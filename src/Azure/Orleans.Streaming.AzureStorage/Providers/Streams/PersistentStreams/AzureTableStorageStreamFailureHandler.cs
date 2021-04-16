@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using Hagar;
 using Microsoft.Extensions.Logging;
 using Orleans.Runtime;
 using Orleans.Serialization;

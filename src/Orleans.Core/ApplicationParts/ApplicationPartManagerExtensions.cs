@@ -7,7 +7,6 @@ using System.Runtime.Loader;
 using Microsoft.Extensions.DependencyModel;
 using Microsoft.Extensions.Hosting;
 using Orleans.ApplicationParts;
-using Orleans.Metadata;
 using System.Runtime.InteropServices;
 
 namespace Orleans

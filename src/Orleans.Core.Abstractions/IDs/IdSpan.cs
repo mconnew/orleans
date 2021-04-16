@@ -6,10 +6,9 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Text;
-using Orleans.Buffers;
-using Orleans.Codecs;
-using Orleans.WireProtocol;
-using Orleans.Concurrency;
+using Orleans.Serialization.Buffers;
+using Orleans.Serialization.Codecs;
+using Orleans.Serialization.WireProtocol;
 
 namespace Orleans.Runtime
 {

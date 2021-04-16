@@ -1,6 +1,5 @@
 using System;
 using System.Diagnostics;
-using Orleans.Invocation;
 using Microsoft.Extensions.Logging;
 using Orleans.Configuration;
 

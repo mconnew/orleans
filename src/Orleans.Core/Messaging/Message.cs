@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Orleans.Invocation;
 using Orleans.CodeGeneration;
 using Orleans.Serialization;
+using Orleans.Serialization.Invocation;
 
 namespace Orleans.Runtime
 {

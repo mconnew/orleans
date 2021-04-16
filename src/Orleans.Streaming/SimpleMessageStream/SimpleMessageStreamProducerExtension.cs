@@ -2,11 +2,11 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Orleans.Concurrency;
 using Orleans.Runtime;
 using Orleans.Streams;
 using Microsoft.Extensions.Logging;
 using Orleans.Streams.Filtering;
+using Orleans.Concurrency;
 
 namespace Orleans.Providers.Streams.SimpleMessageStream
 {

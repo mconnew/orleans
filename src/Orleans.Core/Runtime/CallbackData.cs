@@ -1,6 +1,6 @@
 using System;
 using System.Threading;
-using Orleans.Invocation;
+using Orleans.Serialization.Invocation;
 
 namespace Orleans.Runtime
 {

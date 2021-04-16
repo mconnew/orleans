@@ -7,9 +7,6 @@ using Orleans.Runtime;
 using Orleans.Storage;
 using Orleans.Utilities;
 using Orleans.Transactions.Abstractions;
-using Orleans.CodeGeneration;
-
-[assembly: GenerateSerializer(typeof(Orleans.Transactions.TransactionalStateRecord<>))]
 
 namespace Orleans.Transactions
 {

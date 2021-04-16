@@ -36,13 +36,13 @@ namespace Orleans.Providers
     public class DefaultMemoryMessageBodySerializer : IMemoryMessageBodySerializer, IOnDeserialized
     {
         [NonSerialized]
-        private Orleans.Serializer<MemoryMessageBody> serializer;
+        private Serializer<MemoryMessageBody> serializer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DefaultMemoryMessageBodySerializer"/> class.
         /// </summary>
         /// <param name="serializer"></param>
-        public DefaultMemoryMessageBodySerializer(Orleans.Serializer<MemoryMessageBody> serializer)
+        public DefaultMemoryMessageBodySerializer(Serializer<MemoryMessageBody> serializer)
         {
             this.serializer = serializer;
         }
@@ -61,7 +61,7 @@ namespace Orleans.Providers
 
         void IOnDeserialized.OnDeserialized(ISerializerContext context)
         {
-            this.serializer = context.ServiceProvider.GetRequiredService<Orleans.Serializer<MemoryMessageBody>>();
+            this.serializer = context.ServiceProvider.GetRequiredService<Serializer<MemoryMessageBody>>();
         }
     }
 

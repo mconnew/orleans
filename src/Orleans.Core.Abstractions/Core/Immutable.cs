@@ -1,5 +1,3 @@
-using Hagar;
-
 namespace Orleans.Concurrency
 {
     /// <summary>

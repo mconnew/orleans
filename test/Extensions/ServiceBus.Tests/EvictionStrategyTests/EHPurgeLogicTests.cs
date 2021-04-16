@@ -1,6 +1,5 @@
 using Orleans.Providers.Streams.Common;
 using Orleans.Runtime;
-using Orleans.Serialization;
 using Orleans.ServiceBus.Providers;
 using Orleans.Streams;
 using Orleans.TestingHost.Utils;
@@ -15,7 +14,6 @@ using Orleans.Configuration;
 using TestExtensions;
 using Xunit;
 using Orleans.ServiceBus.Providers.Testing;
-using Orleans.Hosting;
 using Azure.Messaging.EventHubs;
 
 namespace ServiceBus.Tests.EvictionStrategyTests

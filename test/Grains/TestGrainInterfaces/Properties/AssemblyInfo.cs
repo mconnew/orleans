@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using Orleans.CodeGeneration;
 using UnitTests.GrainInterfaces;
 
 [assembly: InternalsVisibleTo("TesterInternal")]

@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Orleans.Serialization;
 using SQSMessage = Amazon.SQS.Model.Message;
-using Hagar;
 
 namespace OrleansAWSUtils.Streams
 {

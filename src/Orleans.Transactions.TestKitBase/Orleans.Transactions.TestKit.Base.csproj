@@ -9,7 +9,6 @@
     <IsOrleansFrameworkPart>false</IsOrleansFrameworkPart>
     <TargetFrameworks>$(StandardTargetFrameworks)</TargetFrameworks>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-    <Hagar_AttachDebugger>true</Hagar_AttachDebugger>
   </PropertyGroup>
 
   <PropertyGroup>

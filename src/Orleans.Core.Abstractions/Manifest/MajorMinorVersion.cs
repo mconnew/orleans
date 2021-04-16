@@ -1,5 +1,4 @@
 using System;
-using Orleans.Concurrency;
 
 namespace Orleans.Metadata
 {

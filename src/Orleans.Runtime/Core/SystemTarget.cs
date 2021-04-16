@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Orleans.GrainReferences;
 using Orleans.Runtime.Scheduler;
+using Orleans.Serialization.Invocation;
 
 namespace Orleans.Runtime
 {
@@ -197,7 +198,7 @@ namespace Orleans.Runtime
             return (implementation, reference);
         }
 
-        TComponent Orleans.Invocation.ITargetHolder.GetComponent<TComponent>()
+        TComponent ITargetHolder.GetComponent<TComponent>()
         {
             var result = this.GetComponent<TComponent>();
             if (result is null && typeof(IGrainExtension).IsAssignableFrom(typeof(TComponent)))

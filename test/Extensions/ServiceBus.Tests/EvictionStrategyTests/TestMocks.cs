@@ -1,5 +1,4 @@
 using Orleans.Providers.Streams.Common;
-using Orleans.Serialization;
 using Orleans.ServiceBus.Providers;
 using Orleans.Streams;
 using System;

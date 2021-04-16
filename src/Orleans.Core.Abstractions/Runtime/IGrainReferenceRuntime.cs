@@ -1,5 +1,5 @@
-using Orleans.Invocation;
 using Orleans.CodeGeneration;
+using Orleans.Serialization.Invocation;
 using System;
 using System.Threading.Tasks;
 
@@ -37,6 +37,6 @@ namespace Orleans.Runtime
         /// <returns>A reference to <paramref name="grain"/> which implements <paramref name="interfaceType"/>.</returns>
         object Cast(IAddressable grain, Type interfaceType);
 
-        void SendRequest(GrainReference reference, Orleans.Invocation.IResponseCompletionSource callback, Orleans.Invocation.IInvokable body, InvokeMethodOptions options);
+        void SendRequest(GrainReference reference, IResponseCompletionSource callback, IInvokable body, InvokeMethodOptions options);
     }
 }

@@ -1,10 +1,10 @@
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using Hagar;
-using Orleans.Invocation;
 using Orleans.CodeGeneration;
 using Orleans.Runtime;
+using Orleans.Serialization;
+using Orleans.Serialization.Invocation;
 using Orleans.Transactions;
 
 namespace Orleans

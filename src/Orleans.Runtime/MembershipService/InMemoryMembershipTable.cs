@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using Orleans.Serialization;
 
 namespace Orleans.Runtime.MembershipService
 {
@@ -12,9 +13,9 @@ namespace Orleans.Runtime.MembershipService
         private long lastETagCounter;
 
         [NonSerialized]
-        private readonly Orleans.DeepCopier deepCopier;
+        private readonly DeepCopier deepCopier;
 
-        public InMemoryMembershipTable(Orleans.DeepCopier deepCopier)
+        public InMemoryMembershipTable(DeepCopier deepCopier)
         {
             this.deepCopier = deepCopier;
             siloTable = new Dictionary<SiloAddress, Tuple<MembershipEntry, string>>();

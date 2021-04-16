@@ -12,7 +12,6 @@ using Orleans.Configuration;
 using Orleans.Providers.Streams.AzureQueue;
 using Orleans.Providers.Streams.Common;
 using Orleans.Runtime;
-using Orleans.Serialization;
 using Orleans.Streams;
 using TestExtensions;
 using Xunit;

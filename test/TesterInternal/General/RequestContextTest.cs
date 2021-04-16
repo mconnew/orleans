@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,7 +9,6 @@ using Orleans.CodeGeneration;
 using Orleans.Configuration;
 using Orleans.Hosting;
 using Orleans.Runtime;
-using Orleans.Runtime.Configuration;
 using Orleans.TestingHost;
 using Tester;
 using TestExtensions;
@@ -19,7 +17,7 @@ using Xunit;
 using Xunit.Abstractions;
 
 namespace UnitTests.General
-{ 
+{
     public class RequestContextTests_Silo : OrleansTestingBase, IClassFixture<RequestContextTests_Silo.Fixture>, IDisposable
     {
         private readonly ITestOutputHelper output;

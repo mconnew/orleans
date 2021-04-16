@@ -5,11 +5,11 @@
 using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
-using scg = global::System.Collections.Generic;
-namespace ProtoBuf.Serialization.Tests {
+namespace ProtoBuf.Serialization.Tests
+{
 
-  /// <summary>Holder for reflection information generated from addressbook.proto</summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+    /// <summary>Holder for reflection information generated from addressbook.proto</summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public static partial class AddressbookReflection {
       /// <summary>File descriptor for addressbook.proto</summary>
     public static pbr::FileDescriptor Descriptor {

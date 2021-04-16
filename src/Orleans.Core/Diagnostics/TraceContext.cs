@@ -1,5 +1,4 @@
 using System;
-using Hagar;
 
 namespace Orleans.Runtime
 {

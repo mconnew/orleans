@@ -1,7 +1,7 @@
 using System;
-using Hagar;
 using Microsoft.Extensions.Logging;
 using Orleans.EventSourcing;
+using Orleans.Serialization;
 
 namespace Orleans.Runtime.LogConsistency
 {
@@ -19,7 +19,7 @@ namespace Orleans.Runtime.LogConsistency
         public ProtocolServices(
             Grain gr,
             ILoggerFactory loggerFactory,
-            Orleans.DeepCopier deepCopier,
+            DeepCopier deepCopier,
             ILocalSiloDetails siloDetails)
         {
             this.grain = gr;

@@ -1,12 +1,12 @@
-
 using System;
+using Orleans.Serialization.Invocation;
 
 namespace Orleans.Runtime
 {
     /// <summary>
     /// Represents a grain from the perspective of the runtime.
     /// </summary>
-    public interface IGrainContext : Orleans.Invocation.ITargetHolder, IEquatable<IGrainContext>
+    public interface IGrainContext : ITargetHolder, IEquatable<IGrainContext>
     {
         /// <summary>
         /// Gets a reference to this grain.

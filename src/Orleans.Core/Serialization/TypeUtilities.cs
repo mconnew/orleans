@@ -4,12 +4,12 @@ using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Threading;
-using Orleans.Concurrency;
 using Orleans.Runtime;
 
 namespace Orleans.Serialization
 {
     using System.Runtime.CompilerServices;
+    using Orleans.Concurrency;
 
     internal static class TypeUtilities
     {

@@ -4,7 +4,6 @@ using Benchmarks.Utilities;
 using Orleans.Serialization;
 using Orleans.Serialization.Buffers;
 using Orleans.Serialization.Session;
-using Hyperion;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.IO;

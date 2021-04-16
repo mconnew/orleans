@@ -12,6 +12,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Orleans.Core.Abstractions\Orleans.Core.Abstractions.csproj" PrivateAssets="None" />
     <ProjectReference Include="..\Orleans.Core\Orleans.Core.csproj" PrivateAssets="None" />
+    <ProjectReference Include="..\Orleans.Serialization.Abstractions\Orleans.Serialization.Abstractions.csproj" PrivateAssets="None" />
     <ProjectReference Include="..\Orleans.Serialization\Orleans.Serialization.csproj" PrivateAssets="None" />
     <ProjectReference Include="..\Orleans.Analyzers\Orleans.Analyzers.csproj" PrivateAssets="None" />
     <ProjectReference Include="..\Orleans.CodeGenerator\Orleans.CodeGenerator.csproj" PrivateAssets="None" />

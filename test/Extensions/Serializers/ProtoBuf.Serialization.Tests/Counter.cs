@@ -3,13 +3,12 @@
 #pragma warning disable 1591, 0612, 3021
 
 using pb = global::Google.Protobuf;
-using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
-using scg = global::System.Collections.Generic;
-namespace ProtoBuf.Serialization.Tests {
+namespace ProtoBuf.Serialization.Tests
+{
 
-  /// <summary>Holder for reflection information generated from counter.proto</summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+    /// <summary>Holder for reflection information generated from counter.proto</summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public static partial class CounterReflection {
       /// <summary>File descriptor for counter.proto</summary>
     public static pbr::FileDescriptor Descriptor {

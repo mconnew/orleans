@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <PackageId>Microsoft.Orleans.Transactions</PackageId>
     <Title>Microsoft Orleans Transactions support</Title>
@@ -6,7 +6,6 @@
     <PackageTags>$(PackageTags) Transactions</PackageTags>
     <TargetFrameworks>$(StandardTargetFrameworks)</TargetFrameworks>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-    <Hagar_AttachDebugger>false</Hagar_AttachDebugger>
   </PropertyGroup>
 
   <PropertyGroup>

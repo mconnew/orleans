@@ -5,9 +5,9 @@ using Microsoft.Extensions.Options;
 using Orleans.Runtime;
 using Orleans.Streams;
 using Orleans.Streams.Core;
-using Orleans.Serialization;
 using Orleans.Configuration;
 using Orleans.Streams.Filtering;
+using Orleans.Serialization;
 
 namespace Orleans.Providers.Streams.SimpleMessageStream
 {
@@ -76,7 +76,7 @@ namespace Orleans.Providers.Streams.SimpleMessageStream
                 providerRuntime.PubSub(this.options.PubSubType),
                 this.streamFilter,
                 IsRewindable,
-                this.runtimeClient.ServiceProvider.GetRequiredService<Orleans.DeepCopier<T>>(),
+                this.runtimeClient.ServiceProvider.GetRequiredService<DeepCopier<T>>(),
                 this.loggerFactory.CreateLogger<SimpleMessageStreamProducer<T>>());
         }
 

@@ -13,9 +13,7 @@ namespace Orleans.Serialization
         [Obsolete("Removed")]
         BinaryFormatterISerializable = 2,
 
-        /// <summary>
-        /// <see cref="DotNetSerializableSerializer"/>
-        /// </summary>
+        [Obsolete("Removed")]
         ISerializableSerializer = 3,
 
         /// <summary>

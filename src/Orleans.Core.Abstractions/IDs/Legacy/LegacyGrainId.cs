@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text;
-using Orleans.Concurrency;
 
 namespace Orleans.Runtime
 {

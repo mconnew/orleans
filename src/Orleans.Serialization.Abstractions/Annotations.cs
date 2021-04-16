@@ -228,12 +228,6 @@ namespace Orleans
     {
     }
 
-    [Immutable]
-    public readonly struct Immutable<T>
-    {
-        public T Value { get; init; }
-    }
-
     /// <summary>
     /// Specifies an assembly to be added as an application part.
     /// </summary>
