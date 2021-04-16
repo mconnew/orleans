@@ -5,7 +5,7 @@ using Orleans.Metadata;
 namespace Orleans.Runtime
 {
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public abstract class PlacementStrategy
     {
         protected PlacementStrategy()

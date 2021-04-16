@@ -181,10 +181,10 @@ namespace UnitTests.StreamingTests
         }
 
         [Serializable]
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         private class DummyStreamProducerExtension : IStreamProducerExtension
         {
-            [Hagar.Id(0)]
+            [Orleans.Id(0)]
             private readonly Guid id;
 
             public DummyStreamProducerExtension()

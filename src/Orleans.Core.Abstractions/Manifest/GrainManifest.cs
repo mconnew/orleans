@@ -8,7 +8,7 @@ namespace Orleans.Metadata
     /// Information about available grains.
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class GrainManifest
     {
         /// <summary>
@@ -25,13 +25,13 @@ namespace Orleans.Metadata
         /// <summary>
         /// Gets the interfaces available on this silo.
         /// </summary>
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public ImmutableDictionary<GrainInterfaceType, GrainInterfaceProperties> Interfaces { get; }
 
         /// <summary>
         /// Gets the grain types available on this silo.
         /// </summary>
-        [Hagar.Id(2)]
+        [Orleans.Id(2)]
         public ImmutableDictionary<GrainType, GrainProperties> Grains { get; }
     }
 }

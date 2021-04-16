@@ -6,7 +6,7 @@ namespace Orleans.Runtime
     /// <summary>
     /// Represents a grain from the perspective of the runtime.
     /// </summary>
-    public interface IGrainContext : Hagar.Invocation.ITargetHolder, IEquatable<IGrainContext>
+    public interface IGrainContext : Orleans.Invocation.ITargetHolder, IEquatable<IGrainContext>
     {
         /// <summary>
         /// Gets a reference to this grain.

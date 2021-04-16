@@ -76,7 +76,7 @@ namespace Orleans.Runtime
         /// <param name="request"></param>
         internal static void RegisterCancellationTokens(
             IGrainContext target,
-            Hagar.Invocation.IInvokable request)
+            Orleans.Invocation.IInvokable request)
         {
             for (var i = 0; i < request.ArgumentCount; i++)
             {

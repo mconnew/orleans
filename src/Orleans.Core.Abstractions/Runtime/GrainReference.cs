@@ -3,11 +3,10 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using Hagar;
-using Hagar.Cloning;
-using Hagar.Codecs;
-using Hagar.Invocation;
-using Hagar.Serializers;
+using Orleans.Serialization.Cloning;
+using Orleans.Serialization.Codecs;
+using Orleans.Serialization.Invocation;
+using Orleans.Serialization.Serializers;
 using Microsoft.Extensions.DependencyInjection;
 using Orleans.CodeGeneration;
 
@@ -42,7 +41,7 @@ namespace Orleans.Runtime
         public ushort InterfaceVersion { get; }
     }
 
-    [Hagar.RegisterSerializer]
+    [Orleans.RegisterSerializer]
     internal class GrainReferenceCodec : GeneralizedReferenceTypeSurrogateCodec<IAddressable, GrainReferenceSurrogate>
     {
         private readonly IGrainFactory _grainFactory;
@@ -116,7 +115,7 @@ namespace Orleans.Runtime
             => throw new NotSupportedException($"IGrainObserver parameters must be GrainReference or Grain and cannot be type {observer.GetType()}. Did you forget to CreateObjectReference?");
     }
 
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     internal struct GrainReferenceSurrogate
     {
         [Id(1)]

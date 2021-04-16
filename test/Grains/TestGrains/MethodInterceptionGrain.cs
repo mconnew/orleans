@@ -101,7 +101,7 @@ namespace UnitTests.Grains
         }
 
         [Serializable]
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public class MyDomainSpecificException : Exception
         {
             public MyDomainSpecificException()

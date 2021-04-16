@@ -8,14 +8,14 @@ using Orleans.Transactions.Abstractions;
 
 namespace Orleans.Transactions
 {
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     [Serializable]
     [Immutable]
     public readonly struct ParticipantId
     {
         public static readonly IEqualityComparer<ParticipantId> Comparer = new IdComparer();
 
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         [Flags]
         public enum Role
         {
@@ -24,13 +24,13 @@ namespace Orleans.Transactions
             PriorityManager = 1 << 2
         }
 
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public string Name { get; }
 
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public GrainReference Reference { get; }
 
-        [Hagar.Id(2)]
+        [Orleans.Id(2)]
         public Role SupportedRoles { get; }
 
         public ParticipantId(string name, GrainReference reference, Role supportedRoles)
@@ -45,7 +45,7 @@ namespace Orleans.Transactions
             return $"ParticipantId.{Name}.{Reference}";
         }
 
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public class IdComparer : IEqualityComparer<ParticipantId>
         {
             public bool Equals(ParticipantId x, ParticipantId y)

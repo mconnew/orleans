@@ -38,7 +38,7 @@ namespace Orleans.Providers.Streams.Generator
         private readonly HashRingStreamQueueMapperOptions queueMapperOptions;
         private readonly StreamStatisticOptions statisticOptions;
         private readonly IServiceProvider serviceProvider;
-        private readonly Hagar.Serializer serializer;
+        private readonly Orleans.Serialization.Serializer serializer;
         private readonly ITelemetryProducer telemetryProducer;
         private readonly ILoggerFactory loggerFactory;
         private readonly ILogger<GeneratorAdapterFactory> logger;
@@ -83,7 +83,7 @@ namespace Orleans.Providers.Streams.Generator
         /// </summary>
         protected Func<ReceiverMonitorDimensions, ITelemetryProducer, IQueueAdapterReceiverMonitor> ReceiverMonitorFactory;
 
-        public GeneratorAdapterFactory(string providerName, HashRingStreamQueueMapperOptions queueMapperOptions, StreamStatisticOptions statisticOptions, IServiceProvider serviceProvider, Hagar.Serializer serializer, ITelemetryProducer telemetryProducer, ILoggerFactory loggerFactory)
+        public GeneratorAdapterFactory(string providerName, HashRingStreamQueueMapperOptions queueMapperOptions, StreamStatisticOptions statisticOptions, IServiceProvider serviceProvider, Orleans.Serialization.Serializer serializer, ITelemetryProducer telemetryProducer, ILoggerFactory loggerFactory)
         {
             this.Name = providerName;
             this.queueMapperOptions = queueMapperOptions ?? throw new ArgumentNullException(nameof(queueMapperOptions));

@@ -120,10 +120,10 @@ namespace UnitTests.Grains.ProgrammaticSubscribe
         }
     }
 
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class Apple : IFruit
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         int number;
 
         public Apple(int number)

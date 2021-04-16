@@ -6,16 +6,16 @@ using TestGrainInterfaces;
 namespace TestGrains
 {
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class PersonState
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public string FirstName { get; set; }
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public string LastName { get; set; }
-        [Hagar.Id(2)]
+        [Orleans.Id(2)]
         public GenderType Gender { get; set; }
-        [Hagar.Id(3)]
+        [Orleans.Id(3)]
         public bool IsMarried { get; set; }
 
         public void Apply(PersonRegistered @event)

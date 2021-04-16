@@ -8,10 +8,10 @@ using System.Threading.Tasks;
 namespace Orleans.Transactions.TestKit
 {
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class GrainData
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public int Value { get; set; }
     }
 
@@ -137,7 +137,7 @@ namespace Orleans.Transactions.TestKit
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class AddAndThrowException : Exception
     {
         public AddAndThrowException() : base("Unexpected error.") { }

@@ -3,7 +3,7 @@ using System;
 namespace Orleans.Runtime
 {
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public sealed class ClusterMember : IEquatable<ClusterMember>
     {
         public ClusterMember(SiloAddress siloAddress, SiloStatus status, string name)
@@ -13,11 +13,11 @@ namespace Orleans.Runtime
             this.Name = name;
         }
 
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public SiloAddress SiloAddress { get; }
-        [Hagar.Id(2)]
+        [Orleans.Id(2)]
         public SiloStatus Status { get; }
-        [Hagar.Id(3)]
+        [Orleans.Id(3)]
         public string Name { get; }
 
         public override bool Equals(object obj) => this.Equals(obj as ClusterMember);

@@ -33,7 +33,7 @@ namespace ServiceBus.Tests.EvictionStrategyTests
         private long sequenceNumberCounter = 0;
         private int eventIndex = 1;
         private string eventHubOffset = "OffSet";
-        public MockEventHubCacheAdaptor(Hagar.Serializer serializer) : base(serializer)
+        public MockEventHubCacheAdaptor(Orleans.Serialization.Serializer serializer) : base(serializer)
         { }
 
         public override StreamPosition GetStreamPosition(string partition, EventData queueMessage)

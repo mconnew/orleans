@@ -19,10 +19,10 @@ namespace Orleans.UnitTest.GrainInterfaces
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class MyTypeWithAnInternalTypeField
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         private MyInternalDependency _dependency;
 
         public MyTypeWithAnInternalTypeField()

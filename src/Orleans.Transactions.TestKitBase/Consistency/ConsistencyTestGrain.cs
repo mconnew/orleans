@@ -15,12 +15,12 @@ namespace Orleans.Transactions.TestKit.Consistency
         private readonly ILogger logger;
 
         [Serializable]
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public class State
         {
-            [Hagar.Id(0)]
+            [Orleans.Id(0)]
             public string WriterTx = ConsistencyTestHarness.InitialTx; // last writer
-            [Hagar.Id(1)]
+            [Orleans.Id(1)]
             public int SeqNo;   // 0, 1, 2,...
         }
 

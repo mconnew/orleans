@@ -7,7 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
-using Hagar.Configuration;
+using Orleans.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Orleans.ApplicationParts;
 using Orleans.CodeGeneration;

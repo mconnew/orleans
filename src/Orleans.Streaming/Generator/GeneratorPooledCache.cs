@@ -16,7 +16,7 @@ namespace Orleans.Providers.Streams.Generator
     public class GeneratorPooledCache : IQueueCache, ICacheDataAdapter
     {
         private readonly IObjectPool<FixedSizeBuffer> bufferPool;
-        private readonly Hagar.Serializer serializer;
+        private readonly Orleans.Serialization.Serializer serializer;
         private readonly IEvictionStrategy evictionStrategy;
         private readonly PooledQueueCache cache;
 
@@ -30,7 +30,7 @@ namespace Orleans.Providers.Streams.Generator
         /// <param name="serializer"></param>
         /// <param name="cacheMonitor"></param>
         /// <param name="monitorWriteInterval">monitor write interval.  Only triggered for active caches.</param>
-        public GeneratorPooledCache(IObjectPool<FixedSizeBuffer> bufferPool, ILogger logger, Hagar.Serializer serializer, ICacheMonitor cacheMonitor, TimeSpan? monitorWriteInterval)
+        public GeneratorPooledCache(IObjectPool<FixedSizeBuffer> bufferPool, ILogger logger, Orleans.Serialization.Serializer serializer, ICacheMonitor cacheMonitor, TimeSpan? monitorWriteInterval)
         {
             this.bufferPool = bufferPool;
             this.serializer = serializer;

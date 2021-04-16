@@ -12,7 +12,7 @@ namespace Orleans.Runtime
     [Immutable]
     [Serializable]
     [StructLayout(LayoutKind.Auto)]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public readonly struct GrainId : IEquatable<GrainId>, IComparable<GrainId>, ISerializable
     {
         internal static IGrainIdLoggingHelper GrainTypeNameMapper { get; set; }
@@ -38,13 +38,13 @@ namespace Orleans.Runtime
         /// <summary>
         /// The grain type.
         /// </summary>
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public GrainType Type { get; }
 
         /// <summary>
         /// The key.
         /// </summary>
-        [Hagar.Id(2)]
+        [Orleans.Id(2)]
         public IdSpan Key { get; }
 
         // TODO: remove implicit conversion (potentially make explicit to start with)

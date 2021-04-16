@@ -29,7 +29,7 @@ namespace Orleans.Storage
     {
         private readonly AzureTableStorageOptions options;
         private readonly ClusterOptions clusterOptions;
-        private readonly Hagar.Serializer serializer;
+        private readonly Orleans.Serialization.Serializer serializer;
         private readonly IServiceProvider services;
         private readonly ILogger logger;
 
@@ -51,7 +51,7 @@ namespace Orleans.Storage
             string name,
             AzureTableStorageOptions options,
             IOptions<ClusterOptions> clusterOptions,
-            Hagar.Serializer serializer,
+            Orleans.Serialization.Serializer serializer,
             IServiceProvider services,
             ILogger<AzureTableGrainStorage> logger)
         {

@@ -7,7 +7,7 @@ using System.Text;
 namespace Orleans.TestingHost
 {
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class RandomlyInjectedStorageException : Exception
     {
         public RandomlyInjectedStorageException() : base("injected fault") { }
@@ -19,7 +19,7 @@ namespace Orleans.TestingHost
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class RandomlyInjectedInconsistentStateException : InconsistentStateException
     {
         public RandomlyInjectedInconsistentStateException() : base("injected fault") { }

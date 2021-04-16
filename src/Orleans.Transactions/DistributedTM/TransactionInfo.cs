@@ -6,7 +6,7 @@ using Orleans.Transactions.Abstractions;
 
 namespace Orleans.Transactions
 {
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     [Serializable]
     public class TransactionInfo
     {
@@ -38,24 +38,24 @@ namespace Orleans.Transactions
 
         public string Id => TransactionId.ToString();
 
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public Guid TransactionId { get; }
 
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public DateTime TimeStamp { get; set; }
 
-        [Hagar.Id(2)]
+        [Orleans.Id(2)]
         public DateTime Priority { get; set; }
 
-        [Hagar.Id(3)]
+        [Orleans.Id(3)]
         public bool IsReadOnly { get; }
 
-        [Hagar.Id(4)]
+        [Orleans.Id(4)]
         public byte[] OriginalException { get; set; }
 
         // counts how many writes were done per each accessed resource
         // zero means the resource was only read
-        [Hagar.Id(5)]
+        [Orleans.Id(5)]
         public Dictionary<ParticipantId, AccessCounter> Participants { get; }
 
         [NonSerialized]
@@ -75,7 +75,7 @@ namespace Orleans.Transactions
             joined.Enqueue(x);
         }
 
-        public OrleansTransactionAbortedException MustAbort(Hagar.Serializer<OrleansTransactionAbortedException> serializer)
+        public OrleansTransactionAbortedException MustAbort(Orleans.Serializer<OrleansTransactionAbortedException> serializer)
         {
             if (OriginalException != null)
             {
@@ -91,7 +91,7 @@ namespace Orleans.Transactions
             }
         }
 
-        public void RecordException(Exception e, Hagar.Serializer<OrleansTransactionAbortedException> sm)
+        public void RecordException(Exception e, Orleans.Serializer<OrleansTransactionAbortedException> sm)
         {
             if (OriginalException == null)
             {

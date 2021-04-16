@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Hagar;
-using Hagar.Invocation;
+using Orleans.Invocation;
 using Orleans.CodeGeneration;
 using Orleans.Runtime;
 using Orleans.Transactions;
@@ -59,7 +59,7 @@ namespace Orleans
     {
     }
 
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public abstract class TransactionRequestBase : RequestBase, IOutgoingGrainCallFilter
     {
         private Serializer<OrleansTransactionAbortedException> _serializer = null;

@@ -8,7 +8,7 @@ namespace Orleans.Streams
     /// This exception indicates that a stream event was not successfully delivered to the consumer.
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class StreamEventDeliveryFailureException : OrleansException
     {
         private const string ErrorStringFormat =

@@ -25,7 +25,7 @@ namespace ServiceBus.Tests.EvictionStrategyTests
     {
         private CachePressureInjectionMonitor cachePressureInjectionMonitor;
         private PurgeDecisionInjectionPredicate purgePredicate;
-        private Hagar.Serializer serializer;
+        private Orleans.Serialization.Serializer serializer;
         private EventHubAdapterReceiver receiver1;
         private EventHubAdapterReceiver receiver2;
         private ObjectPool<FixedSizeBuffer> bufferPool;

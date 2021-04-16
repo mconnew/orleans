@@ -9,19 +9,19 @@ namespace Orleans.EventSourcing.StateStorage
     /// </summary>
     /// <typeparam name="TView">The type used for log view</typeparam>
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class GrainStateWithMetaDataAndETag<TView> : IGrainState where TView : class, new()
     {
         /// <summary>
         /// Gets and Sets StateAndMetaData
         /// </summary>
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public GrainStateWithMetaData<TView> StateAndMetaData { get; set; }
 
         /// <summary>
         /// Gets and Sets Etag
         /// </summary>
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public string ETag { get; set; }
 
         /// <summary>
@@ -41,7 +41,7 @@ namespace Orleans.EventSourcing.StateStorage
             }
         }
 
-        [Hagar.Id(2)]
+        [Orleans.Id(2)]
         public bool RecordExists { get; set; }
 
         /// <summary>
@@ -76,19 +76,19 @@ namespace Orleans.EventSourcing.StateStorage
     /// </summary>
     /// <typeparam name="TView"></typeparam>
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class GrainStateWithMetaData<TView> where TView : class, new()
     {
         /// <summary>
         /// The stored view of the log
         /// </summary>
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public TView State { get; set; }
 
         /// <summary>
         /// The length of the log
         /// </summary>
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public int GlobalVersion { get; set; }
 
 
@@ -100,7 +100,7 @@ namespace Orleans.EventSourcing.StateStorage
         /// Bits are toggled when writing, so that the retry logic can avoid appending an entry twice
         /// when retrying a failed append.
         /// </summary>
-        [Hagar.Id(2)]
+        [Orleans.Id(2)]
         public string WriteVector { get; set; }
 
         /// <summary>

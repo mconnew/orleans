@@ -5,13 +5,13 @@ using Orleans.Concurrency;
 namespace Orleans.Runtime
 {
     [Serializable, Immutable]
-    [Hagar.GenerateSerializer]
-    [Hagar.SuppressReferenceTracking]
+    [Orleans.GenerateSerializer]
+    [Orleans.SuppressReferenceTracking]
     public sealed class ActivationId : IEquatable<ActivationId>
     {
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2104:DoNotDeclareReadOnlyMutableReferenceTypes")]
         [DataMember]
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         internal readonly UniqueKey Key;
 
         public bool IsSystem { get { return Key.IsSystemTargetKey; } }

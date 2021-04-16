@@ -4,12 +4,12 @@ using System.Threading.Tasks;
 namespace UnitTests.GrainInterfaces
 {
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class ReplaceArguments
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public string OldString { get; private set; }
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public string NewString { get; private set; }
 
         public ReplaceArguments(string oldStr, string newStr)

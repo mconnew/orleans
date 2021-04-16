@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Azure.Messaging.EventHubs;
-using Hagar.Codecs;
+using Orleans.Codecs;
 using Newtonsoft.Json;
 using Orleans.Runtime;
 using Orleans.Serialization;
@@ -14,20 +14,20 @@ namespace Orleans.ServiceBus.Providers
     /// Batch container that is delivers payload and stream position information for a set of events in an EventHub EventData.
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
-    [Hagar.SerializationCallbacks(typeof(EventHubBatchContainerSerializationCallbacks))]
+    [Orleans.GenerateSerializer]
+    [Orleans.SerializationCallbacks(typeof(EventHubBatchContainerSerializationCallbacks))]
     public class EventHubBatchContainer : IBatchContainer
     {
         [JsonProperty]
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         private readonly EventHubMessage eventHubMessage;
 
         [JsonIgnore]
         [field: NonSerialized]
-        internal Hagar.Serializer Serializer { get; set; }
+        internal Orleans.Serialization.Serializer Serializer { get; set; }
 
         [JsonProperty]
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         private readonly EventHubSequenceToken token;
 
         /// <summary>
@@ -47,19 +47,19 @@ namespace Orleans.ServiceBus.Providers
         private Body GetPayload() => payload ?? (payload = this.Serializer.Deserialize<Body>(eventHubMessage.Payload));
 
         [Serializable]
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         internal class Body
         {
-            [Hagar.Id(0)]
+            [Orleans.Id(0)]
             public List<object> Events { get; set; }
-            [Hagar.Id(1)]
+            [Orleans.Id(1)]
             public Dictionary<string, object> RequestContext { get; set; }
         }
 
         /// <summary>
         /// Batch container that delivers events from cached EventHub data associated with an orleans stream
         /// </summary>
-        public EventHubBatchContainer(EventHubMessage eventHubMessage, Hagar.Serializer serializer)
+        public EventHubBatchContainer(EventHubMessage eventHubMessage, Orleans.Serialization.Serializer serializer)
         {
             this.eventHubMessage = eventHubMessage;
             this.Serializer = serializer;
@@ -94,7 +94,7 @@ namespace Orleans.ServiceBus.Providers
         /// <summary>
         /// Put events list and its context into a EventData object
         /// </summary>
-        public static EventData ToEventData<T>(Hagar.Serializer bodySerializer, StreamId streamId, IEnumerable<T> events, Dictionary<string, object> requestContext)
+        public static EventData ToEventData<T>(Orleans.Serialization.Serializer bodySerializer, StreamId streamId, IEnumerable<T> events, Dictionary<string, object> requestContext)
         {
             var payload = new Body
             {
@@ -111,8 +111,8 @@ namespace Orleans.ServiceBus.Providers
 
     public class EventHubBatchContainerSerializationCallbacks
     {
-        private readonly Hagar.Serializer _serializer;
-        public EventHubBatchContainerSerializationCallbacks(Hagar.Serializer serializer) => _serializer = serializer;
+        private readonly Orleans.Serialization.Serializer _serializer;
+        public EventHubBatchContainerSerializationCallbacks(Orleans.Serialization.Serializer serializer) => _serializer = serializer;
         public void OnDeserialized(EventHubBatchContainer value) => value.Serializer = _serializer;
     }
 }

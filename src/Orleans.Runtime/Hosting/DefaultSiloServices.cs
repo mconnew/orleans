@@ -38,8 +38,8 @@ using Orleans.Configuration.Internal;
 using Orleans.Runtime.Metadata;
 using Orleans.GrainReferences;
 using Hagar;
-using Hagar.TypeSystem;
-using Hagar.Serializers;
+using Orleans.TypeSystem;
+using Orleans.Serializers;
 
 namespace Orleans.Hosting
 {
@@ -281,10 +281,6 @@ namespace Orleans.Hosting
             services.AddSingleton<DotNetSerializableSerializer>();
             services.AddFromExisting<IKeyedSerializer, DotNetSerializableSerializer>();
 
-
-            services.AddSingleton<ILBasedSerializer>();
-            services.AddFromExisting<IKeyedSerializer, ILBasedSerializer>();
-
             // Application Parts
             var applicationPartManager = services.GetApplicationPartManager();
             applicationPartManager.AddApplicationPart(new AssemblyPart(typeof(RuntimeVersion).Assembly) { IsFrameworkAssembly = true });
@@ -393,7 +389,7 @@ namespace Orleans.Hosting
             services.AddHagar();
             services.AddSingleton<ITypeFilter, AllowOrleansTypes>();
             services.AddSingleton<ISpecializableCodec, GrainReferenceCodecProvider>();
-            services.AddSingleton<Hagar.Cloning.IGeneralizedCopier, GrainReferenceCopier>();
+            services.AddSingleton<Orleans.Cloning.IGeneralizedCopier, GrainReferenceCopier>();
             services.AddSingleton<OnDeserializedCallbacks>();
 
             services.TryAddTransient<IMessageSerializer>(sp => ActivatorUtilities.CreateInstance<HagarMessageSerializer>(

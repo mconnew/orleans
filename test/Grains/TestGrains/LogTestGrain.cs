@@ -14,14 +14,14 @@ namespace TestGrains
     /// it started from SimpleGrain, but a lot of stuff got added over time 
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class MyGrainState
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public int A;
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public int B;
-        [Hagar.Id(2)]
+        [Orleans.Id(2)]
         public Dictionary<String, int> Reservations;
 
         public MyGrainState()
@@ -45,20 +45,20 @@ namespace TestGrains
  
 
     [Serializable]
-    [Hagar.GenerateSerializer]
-    public class UpdateA {[Hagar.Id(0)] public int Val; }
+    [Orleans.GenerateSerializer]
+    public class UpdateA {[Orleans.Id(0)] public int Val; }
     [Serializable]
-    [Hagar.GenerateSerializer]
-    public class UpdateB  {[Hagar.Id(0)] public int Val; }
+    [Orleans.GenerateSerializer]
+    public class UpdateB  {[Orleans.Id(0)] public int Val; }
     [Serializable]
-    [Hagar.GenerateSerializer]
-    public class IncrementA  {[Hagar.Id(0)] public int Val; }
+    [Orleans.GenerateSerializer]
+    public class IncrementA  {[Orleans.Id(0)] public int Val; }
     [Serializable]
-    [Hagar.GenerateSerializer]
-    public class AddReservation {[Hagar.Id(0)] public int Val; }
+    [Orleans.GenerateSerializer]
+    public class AddReservation {[Orleans.Id(0)] public int Val; }
     [Serializable]
-    [Hagar.GenerateSerializer]
-    public class RemoveReservation {[Hagar.Id(0)] public int Val; }
+    [Orleans.GenerateSerializer]
+    public class RemoveReservation {[Orleans.Id(0)] public int Val; }
 
 
 

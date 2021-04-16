@@ -22,22 +22,22 @@ namespace UnitTests.StorageTests
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public struct ErrorInjectionBehavior
     {
         public static readonly ErrorInjectionBehavior None = new ErrorInjectionBehavior { ErrorInjectionPoint = ErrorInjectionPoint.None };
 
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public Type ExceptionType { get; set; }
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public ErrorInjectionPoint ErrorInjectionPoint { get; set; }
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class StorageProviderInjectedError : OrleansException
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         private readonly ErrorInjectionPoint errorInjectionPoint;
 
         public StorageProviderInjectedError(ErrorInjectionPoint errorPoint)

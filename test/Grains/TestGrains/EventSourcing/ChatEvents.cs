@@ -18,12 +18,12 @@ namespace TestGrains
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class CreatedEvent : IChatEvent
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public DateTime Timestamp { get; set; }
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public string Origin { get; set; }
 
         public void Update(XDocument document)
@@ -34,16 +34,16 @@ namespace TestGrains
 
 
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class PostedEvent : IChatEvent
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public Guid Guid { get; set; }
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public string User { get; set; }
-        [Hagar.Id(2)]
+        [Orleans.Id(2)]
         public DateTime Timestamp { get; set; }
-        [Hagar.Id(3)]
+        [Orleans.Id(3)]
         public string Text { get; set; }
 
         public void Update(XDocument document)
@@ -55,10 +55,10 @@ namespace TestGrains
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class DeletedEvent : IChatEvent
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public Guid Guid { get; set; }
 
         public void Update(XDocument document)
@@ -68,12 +68,12 @@ namespace TestGrains
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class EditedEvent : IChatEvent
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public Guid Guid { get; set; }
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public string Text { get; set; }
 
         public void Update(XDocument document)

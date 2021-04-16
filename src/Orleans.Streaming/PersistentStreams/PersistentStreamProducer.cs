@@ -12,11 +12,11 @@ namespace Orleans.Streams
     {
         private readonly StreamImpl<T> stream;
         private readonly IQueueAdapter queueAdapter;
-        private readonly Hagar.DeepCopier deepCopier;
+        private readonly Orleans.DeepCopier deepCopier;
 
         internal bool IsRewindable { get; private set; }
 
-        internal PersistentStreamProducer(StreamImpl<T> stream, IStreamProviderRuntime providerUtilities, IQueueAdapter queueAdapter, bool isRewindable, Hagar.DeepCopier deepCopier)
+        internal PersistentStreamProducer(StreamImpl<T> stream, IStreamProviderRuntime providerUtilities, IQueueAdapter queueAdapter, bool isRewindable, Orleans.DeepCopier deepCopier)
         {
             this.stream = stream;
             this.queueAdapter = queueAdapter;

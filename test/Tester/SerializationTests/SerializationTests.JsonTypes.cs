@@ -93,12 +93,12 @@ namespace UnitTests.Serialization
         }
 
         [Serializable]
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public class SimplePOCO
         {
-            [Hagar.Id(0)]
+            [Orleans.Id(0)]
             public int A { get; set; }
-            [Hagar.Id(1)]
+            [Orleans.Id(1)]
             public int B { get; set; }
         }
 

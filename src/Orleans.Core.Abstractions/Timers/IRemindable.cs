@@ -38,25 +38,25 @@ namespace Orleans
         /// Thereafter, the app can set count = curCount
         /// </summary>
         [Serializable]
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public struct TickStatus
         {
             /// <summary>
             /// The time at which the first tick of this reminder is due, or was triggered
             /// </summary>
-            [Hagar.Id(1)]
+            [Orleans.Id(1)]
             public DateTime FirstTickTime { get; private set; }
 
             /// <summary>
             /// The period of the reminder
             /// </summary>
-            [Hagar.Id(2)]
+            [Orleans.Id(2)]
             public TimeSpan Period { get; private set; }
 
             /// <summary>
             /// The time on the runtime silo when the silo initiated the delivery of this tick.
             /// </summary>
-            [Hagar.Id(3)]
+            [Orleans.Id(3)]
             public DateTime CurrentTickTime { get; private set; }
 
             public static TickStatus NewStruct(DateTime firstTickTime, TimeSpan period, DateTime timeStamp)
@@ -80,7 +80,7 @@ namespace Orleans
         /// Exception related to Orleans Reminder functions or Reminder service.
         /// </summary>
         [Serializable]
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public class ReminderException : OrleansException
         {
             public ReminderException(string msg) : base(msg) { }

@@ -6,12 +6,12 @@ using UnitTests.GrainInterfaces;
 namespace UnitTests.Grains
 {
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class MultifacetFactoryTestGrainState
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public IMultifacetReader Reader { get; set; }
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public IMultifacetWriter Writer { get; set; }
     }
 

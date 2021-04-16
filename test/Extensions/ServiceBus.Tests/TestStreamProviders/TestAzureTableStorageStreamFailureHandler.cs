@@ -17,12 +17,12 @@ namespace ServiceBus.Tests.TestStreamProviders.EventHub
     {
         private const string TableName = "TestStreamFailures";
         private const string DeploymentId = "TestDeployment";
-        private TestAzureTableStorageStreamFailureHandler(Hagar.Serializer<StreamSequenceToken> serializer)
+        private TestAzureTableStorageStreamFailureHandler(Orleans.Serializer<StreamSequenceToken> serializer)
             : base(serializer, NullLoggerFactory.Instance, false, DeploymentId, TableName, TestDefaultConfiguration.DataConnectionString)
         {
         }
 
-        public static async Task<IStreamFailureHandler> Create(Hagar.Serializer<StreamSequenceToken> serializer)
+        public static async Task<IStreamFailureHandler> Create(Orleans.Serializer<StreamSequenceToken> serializer)
         {
             var failureHandler = new TestAzureTableStorageStreamFailureHandler(serializer);
             await failureHandler.InitAsync();

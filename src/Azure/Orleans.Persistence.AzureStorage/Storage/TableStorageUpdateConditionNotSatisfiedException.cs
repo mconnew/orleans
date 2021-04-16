@@ -7,7 +7,7 @@ namespace Orleans.Storage
     /// Exception thrown when a storage provider detects an Etag inconsistency when attempting to perform a WriteStateAsync operation.
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class TableStorageUpdateConditionNotSatisfiedException : InconsistentStateException
     {
         private const string DefaultMessageFormat = "Table storage condition not Satisfied.  GrainType: {0}, GrainId: {1}, TableName: {2}, StoredETag: {3}, CurrentETag: {4}";
@@ -47,19 +47,19 @@ namespace Orleans.Storage
         /// <summary>
         /// Id of grain
         /// </summary>
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public string GrainId { get; }
 
         /// <summary>
         /// Type of grain that throw this exception
         /// </summary>
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public string GrainType { get; }
 
         /// <summary>
         /// Azure table name
         /// </summary>
-        [Hagar.Id(2)]
+        [Orleans.Id(2)]
         public string TableName { get; }
 
         /// <summary>

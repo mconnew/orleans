@@ -1,6 +1,6 @@
 using System;
 using System.Threading;
-using Hagar.Invocation;
+using Orleans.Invocation;
 
 namespace Orleans.Runtime
 {

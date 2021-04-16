@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Hagar.Invocation;
+using Orleans.Invocation;
 using Orleans.CodeGeneration;
 using Orleans.Serialization;
 
 namespace Orleans.Runtime
 {
-    [Hagar.GenerateSerializer]
-    [Hagar.WellKnownId(101)]
+    [Orleans.GenerateSerializer]
+    [Orleans.WellKnownId(101)]
     internal sealed class Message
     {
         public const int LENGTH_HEADER_SIZE = 8;
@@ -42,16 +42,16 @@ namespace Orleans.Runtime
         }
 
         // Cache values of TargetAddess and SendingAddress as they are used very frequently
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         private ActivationAddress targetAddress;
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         private ActivationAddress sendingAddress;
         
         static Message()
         {
         }
 
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public enum Categories
         {
             Ping,
@@ -59,7 +59,7 @@ namespace Orleans.Runtime
             Application,
         }
 
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public enum Directions
         {
             Request,
@@ -67,7 +67,7 @@ namespace Orleans.Runtime
             OneWay
         }
 
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public enum ResponseTypes
         {
             Success,
@@ -76,7 +76,7 @@ namespace Orleans.Runtime
             Status
         }
 
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public enum RejectionTypes
         {
             Transient,
@@ -87,7 +87,7 @@ namespace Orleans.Runtime
             CacheInvalidation
         }
 
-        [Hagar.Id(2)]
+        [Orleans.Id(2)]
         internal HeadersContainer Headers { get; set; } = new HeadersContainer();
 
         public Categories Category
@@ -336,7 +336,7 @@ namespace Orleans.Runtime
             set { Headers.RequestContextData = value; }
         }
 
-        [Hagar.Id(3)]
+        [Orleans.Id(3)]
         public object BodyObject { get; set; }
 
         public void ClearTargetAddress()
@@ -460,7 +460,7 @@ namespace Orleans.Runtime
         }
 
         // For statistical measuring of time spent in queues.
-        [Hagar.Id(4)]
+        [Orleans.Id(4)]
         private ITimeInterval timeInterval;
 
         public void Start()

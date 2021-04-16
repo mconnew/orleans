@@ -50,8 +50,8 @@ namespace TestExtensions
         internal IServiceProvider Services => this.Client.ServiceProvider;
 
         public SerializationManager SerializationManager => this.RuntimeClient.ServiceProvider.GetRequiredService<SerializationManager>();
-        public Hagar.DeepCopier DeepCopier => this.RuntimeClient.ServiceProvider.GetRequiredService<Hagar.DeepCopier>();
-        public Hagar.Serializer Serializer => this.RuntimeClient.ServiceProvider.GetRequiredService<Hagar.Serializer>();
+        public Orleans.DeepCopier DeepCopier => this.RuntimeClient.ServiceProvider.GetRequiredService<Orleans.DeepCopier>();
+        public Orleans.Serialization.Serializer Serializer => this.RuntimeClient.ServiceProvider.GetRequiredService<Orleans.Serializer>();
         
         public void Dispose()
         {

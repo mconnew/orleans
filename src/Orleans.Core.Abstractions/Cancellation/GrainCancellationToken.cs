@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Hagar.Cloning;
 using Orleans.CodeGeneration;
 using Orleans.Runtime;
 using Orleans.Serialization;
@@ -124,43 +123,5 @@ namespace Orleans
             var gct = (GrainCancellationToken) obj;
             return new GrainCancellationToken(gct.Id, gct.IsCancellationRequested, runtime);
         }
-    }
-
-    [Hagar.RegisterSerializer]
-    internal class GrainCancellationTokenCodec : Hagar.Codecs.GeneralizedReferenceTypeSurrogateCodec<GrainCancellationToken, GrainCancellationTokenSurrogate>
-    {
-        private readonly IGrainCancellationTokenRuntime _runtime;
-
-        public GrainCancellationTokenCodec(IGrainCancellationTokenRuntime runtime, Hagar.Serializers.IValueSerializer<GrainCancellationTokenSurrogate> surrogateSerializer) : base(surrogateSerializer)
-        {
-            _runtime = runtime;
-        }
-
-        public override GrainCancellationToken ConvertFromSurrogate(ref GrainCancellationTokenSurrogate surrogate)
-        {
-            return new GrainCancellationToken(surrogate.TokenId, surrogate.IsCancellationRequested, _runtime);
-        }
-
-        public override void ConvertToSurrogate(GrainCancellationToken value, ref GrainCancellationTokenSurrogate surrogate)
-        {
-            surrogate.IsCancellationRequested = value.IsCancellationRequested;
-            surrogate.TokenId = value.Id;
-        }
-    }
-
-    [Hagar.RegisterCopier]
-    internal class GrainCancellationTokenCopier : Hagar.Cloning.IDeepCopier<GrainCancellationToken>
-    {
-        public GrainCancellationToken DeepCopy(GrainCancellationToken input, CopyContext context) => input;
-    }
-
-    [Hagar.GenerateSerializer]
-    internal struct GrainCancellationTokenSurrogate
-    {
-        [Hagar.Id(0)]
-        public bool IsCancellationRequested { get; set; }
-
-        [Hagar.Id(1)]
-        public Guid TokenId { get; set; }
     }
 }

@@ -41,7 +41,7 @@ namespace Orleans.Runtime
             IInternalGrainFactory grainFactory,
             MessageCenter messageCenter,
             MessagingTrace messagingTrace,
-            Hagar.DeepCopier deepCopier,
+            Orleans.DeepCopier deepCopier,
             GrainReferenceActivator referenceActivator)
         {
             this.incomingMessages = Channel.CreateUnbounded<Message>(new UnboundedChannelOptions

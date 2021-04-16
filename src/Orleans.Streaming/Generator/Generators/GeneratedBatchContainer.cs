@@ -7,21 +7,21 @@ using Orleans.Streams;
 
 namespace Orleans.Providers.Streams.Generator
 {
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     internal class GeneratedBatchContainer : IBatchContainer
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public StreamId StreamId { get; }
 
         public StreamSequenceToken SequenceToken => RealToken;
 
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public EventSequenceTokenV2 RealToken { get;  }
 
-        [Hagar.Id(2)]
+        [Orleans.Id(2)]
         public DateTime EnqueueTimeUtc { get; }
 
-        [Hagar.Id(3)]
+        [Orleans.Id(3)]
         public object Payload { get; }
 
         public GeneratedBatchContainer(StreamId streamId, object payload, EventSequenceTokenV2 token)

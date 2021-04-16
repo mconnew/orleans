@@ -197,7 +197,7 @@ namespace Orleans.Runtime
             return (implementation, reference);
         }
 
-        TComponent Hagar.Invocation.ITargetHolder.GetComponent<TComponent>()
+        TComponent Orleans.Invocation.ITargetHolder.GetComponent<TComponent>()
         {
             var result = this.GetComponent<TComponent>();
             if (result is null && typeof(IGrainExtension).IsAssignableFrom(typeof(TComponent)))

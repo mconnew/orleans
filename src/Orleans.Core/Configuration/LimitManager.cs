@@ -8,10 +8,10 @@ namespace Orleans.Runtime.Configuration
     /// Limits Manager
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class LimitManager
     {
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         private readonly Dictionary<string, LimitValue> limitValues;
 
         public LimitManager()

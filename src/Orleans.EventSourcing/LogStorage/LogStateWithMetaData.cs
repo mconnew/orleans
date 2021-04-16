@@ -10,19 +10,19 @@ namespace Orleans.EventSourcing.LogStorage
     /// </summary>
     /// <typeparam name="TEntry">The type used for log entries</typeparam>
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class LogStateWithMetaDataAndETag<TEntry> : IGrainState where TEntry : class
     {
         /// <summary>
         /// Gets and Sets StateAndMetaData
         /// </summary>
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public LogStateWithMetaData<TEntry> StateAndMetaData { get; set; }
 
         /// <summary>
         /// Gets and Sets Etag
         /// </summary>
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public string ETag { get; set; }
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace Orleans.EventSourcing.LogStorage
             }
         }
 
-        [Hagar.Id(2)]
+        [Orleans.Id(2)]
         public bool RecordExists { get; set; }
 
         /// <summary>
@@ -69,13 +69,13 @@ namespace Orleans.EventSourcing.LogStorage
     /// </summary>
     /// <typeparam name="TEntry"></typeparam>
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class LogStateWithMetaData<TEntry> where TEntry : class
     {
         /// <summary>
         /// The stored view of the log
         /// </summary>
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public List<TEntry> Log { get; set; }
 
         /// <summary>
@@ -92,7 +92,7 @@ namespace Orleans.EventSourcing.LogStorage
         /// Bits are toggled when writing, so that the retry logic can avoid appending an entry twice
         /// when retrying a failed append.
         /// </summary>
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public string WriteVector { get; set; }
 
         /// <summary>

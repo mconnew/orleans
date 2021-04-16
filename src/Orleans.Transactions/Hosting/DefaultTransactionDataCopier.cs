@@ -4,9 +4,9 @@ namespace Orleans.Transactions
 {
     public class DefaultTransactionDataCopier<TData> : ITransactionDataCopier<TData>
     {
-        private readonly Hagar.DeepCopier<TData> deepCopier;
+        private readonly Orleans.DeepCopier<TData> deepCopier;
 
-        public DefaultTransactionDataCopier(Hagar.DeepCopier<TData> deepCopier)
+        public DefaultTransactionDataCopier(Orleans.DeepCopier<TData> deepCopier)
         {
             this.deepCopier = deepCopier;
         }

@@ -12,7 +12,7 @@ namespace Orleans.Storage
     [DebuggerDisplay("CanStream = {CanStream}, Tag = {Tag}")]
     public class OrleansStorageDefaultBinaryDeserializer: IStorageDeserializer
     {
-        private readonly Hagar.Serializer serializer;
+        private readonly Orleans.Serialization.Serializer serializer;
 
         /// <summary>
         /// <see cref="IStorageDeserializer.CanStream"/>
@@ -30,7 +30,7 @@ namespace Orleans.Storage
         /// </summary>
         /// <param name="serializer"></param>
         /// <param name="tag"><see cref="IStorageDeserializer.Tag"/>.</param>
-        public OrleansStorageDefaultBinaryDeserializer(Hagar.Serializer serializer, string tag)
+        public OrleansStorageDefaultBinaryDeserializer(Orleans.Serialization.Serializer serializer, string tag)
         {
             this.serializer = serializer;
             if(string.IsNullOrWhiteSpace(tag))

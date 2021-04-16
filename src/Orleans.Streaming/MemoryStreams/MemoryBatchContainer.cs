@@ -9,20 +9,20 @@ using Orleans.Streams;
 namespace Orleans.Providers
 {
     [Serializable]
-    [Hagar.GenerateSerializer]
-    [Hagar.SerializationCallbacks(typeof(OnDeserializedCallbacks))]
+    [Orleans.GenerateSerializer]
+    [Orleans.SerializationCallbacks(typeof(OnDeserializedCallbacks))]
     internal class MemoryBatchContainer<TSerializer> : IBatchContainer, IOnDeserialized
         where TSerializer : class, IMemoryMessageBodySerializer
     {
         [NonSerialized]
         private TSerializer serializer;
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         private readonly EventSequenceToken realToken;
 
         public StreamId StreamId => MessageData.StreamId;
         public StreamSequenceToken SequenceToken => realToken;
 
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public MemoryMessageData MessageData { get; set; }
         public long SequenceNumber => realToken.SequenceNumber;
 

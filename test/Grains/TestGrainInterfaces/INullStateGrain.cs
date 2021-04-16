@@ -3,10 +3,10 @@ using System.Threading.Tasks;
 
 namespace UnitTests.GrainInterfaces
 {
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class NullableState
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public string Name { get; set; }
     }
 

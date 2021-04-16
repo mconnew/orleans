@@ -1,19 +1,17 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Orleans;
 using Orleans.CodeGeneration;
 using Orleans.Transactions.Abstractions;
 using BenchmarkGrainInterfaces.Transaction;
 
-[assembly: GenerateSerializer(typeof(BenchmarkGrains.Transaction.Info))]
-
 namespace BenchmarkGrains.Transaction
 {
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class Info
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public int Value { get; set; }
     }
 

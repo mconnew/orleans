@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using Hagar;
 using Orleans;
 
 namespace BenchmarkGrainInterfaces.Ping

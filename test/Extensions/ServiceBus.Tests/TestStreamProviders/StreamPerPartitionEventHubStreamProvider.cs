@@ -11,7 +11,7 @@ namespace ServiceBus.Tests.TestStreamProviders.EventHub
 {
     public class StreamPerPartitionDataAdapter : EventHubDataAdapter
     {
-        public StreamPerPartitionDataAdapter(Hagar.Serializer serializer) : base(serializer) {}
+        public StreamPerPartitionDataAdapter(Orleans.Serialization.Serializer serializer) : base(serializer) {}
 
         public override StreamPosition GetStreamPosition(string partition, EventData queueMessage)
         {

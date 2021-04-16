@@ -8,10 +8,10 @@ using ProtoBuf;
 namespace UnitTests.GrainInterfaces
 {
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public struct ValueTypeTestData
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         private readonly int intValue;
 
         public ValueTypeTestData(int i)
@@ -26,7 +26,7 @@ namespace UnitTests.GrainInterfaces
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public enum TestEnum : byte 
     {
         First,
@@ -35,7 +35,7 @@ namespace UnitTests.GrainInterfaces
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public enum CampaignEnemyTestType : sbyte
     {
         None = -1,
@@ -47,40 +47,40 @@ namespace UnitTests.GrainInterfaces
 
     [ProtoContract]
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class ClassWithEnumTestData
     {
         [ProtoMember(1)]
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public TestEnum EnumValue { get; set; }
 
         [ProtoMember(2)]
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public CampaignEnemyTestType Enemy { get; set; }
     }
 
     [ProtoContract]
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class LargeTestData
     {
         [ProtoMember(1)]
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public string TestString { get; set; }
         [ProtoMember(2)]
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         private readonly bool[] boolArray;
         [ProtoMember(3)]
-        [Hagar.Id(2)]
+        [Orleans.Id(2)]
         protected Dictionary<string, int> stringIntDict;
         [ProtoMember(4)]
-        [Hagar.Id(3)]
+        [Orleans.Id(3)]
         public TestEnum EnumValue { get; set; }
         [ProtoMember(5)]
-        [Hagar.Id(4)]
+        [Orleans.Id(4)]
         private readonly ClassWithEnumTestData[] classArray;
         [ProtoMember(6)]
-        [Hagar.Id(5)]
+        [Orleans.Id(5)]
         public string Description { get; set; }
 
         public LargeTestData()
@@ -123,12 +123,12 @@ namespace UnitTests.GrainInterfaces
         // This class is not actually used anywhere. It is here to test that the serializer generator properly handles
         // nested generic classes. If it doesn't, then the generated serializer for this class will fail to compile.
         [Serializable]
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public class NestedGeneric<T>
         {
-            [Hagar.Id(0)]
+            [Orleans.Id(0)]
             private T myT;
-            [Hagar.Id(1)]
+            [Orleans.Id(1)]
             private string s;
 
             public NestedGeneric(T t)
@@ -166,13 +166,13 @@ namespace UnitTests.GrainInterfaces
 
     [Serializable]
     [Immutable]
-    [Hagar.GenerateSerializer]
-    [Hagar.Immutable]
+    [Orleans.GenerateSerializer]
+    [Orleans.Immutable]
     public class ImmutableType
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         private readonly int a;
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         private readonly int b;
 
         public int A { get { return a; } }
@@ -186,13 +186,13 @@ namespace UnitTests.GrainInterfaces
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class EmbeddedImmutable
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public string A { get; set; }
 
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         private readonly Immutable<List<int>> list;
         public Immutable<List<int>> B { get { return list; } }
 

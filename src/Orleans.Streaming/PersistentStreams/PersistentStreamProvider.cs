@@ -33,7 +33,7 @@ namespace Orleans.Providers.Streams.Common
     {
         private readonly ILogger logger;
         private readonly IStreamProviderRuntime runtime;
-        private readonly Hagar.DeepCopier deepCopier;
+        private readonly Orleans.DeepCopier deepCopier;
         private readonly IRuntimeClient runtimeClient;
         private readonly ProviderStateManager stateManager = new ProviderStateManager();
         private IQueueAdapterFactory    adapterFactory;
@@ -50,7 +50,7 @@ namespace Orleans.Providers.Streams.Common
             StreamPubSubOptions pubsubOptions,
             StreamLifecycleOptions lifeCycleOptions,
             IProviderRuntime runtime,
-            Hagar.DeepCopier deepCopier,
+            Orleans.DeepCopier deepCopier,
             ILogger<PersistentStreamProvider> logger)
         {
             if (String.IsNullOrEmpty(name)) throw new ArgumentNullException(nameof(name));

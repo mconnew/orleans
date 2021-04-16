@@ -9,9 +9,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Hagar;
-using Hagar.Codecs;
-using Hagar.Cloning;
-using Hagar.Serializers;
+using Orleans.Codecs;
+using Orleans.Cloning;
+using Orleans.Serializers;
 
 namespace TestGrainInterfaces
 {
@@ -36,8 +36,8 @@ namespace TestGrainInterfaces
     /// <summary>
     /// Since XDocument does not seem to serialize automatically, we provide the necessary methods
     /// </summary>
-    [Hagar.RegisterSerializer]
-    [Hagar.RegisterCopier]
+    [Orleans.RegisterSerializer]
+    [Orleans.RegisterCopier]
     public class XDocumentSerialization : GeneralizedReferenceTypeSurrogateCodec<XDocument, XDocumentSurrogate>, IDeepCopier<XDocument>
     {
         public XDocumentSerialization(IValueSerializer<XDocumentSurrogate> surrogateSerializer) : base(surrogateSerializer)
@@ -49,7 +49,7 @@ namespace TestGrainInterfaces
         public XDocument DeepCopy(XDocument input, CopyContext context) => new(input);
     }
 
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public struct XDocumentSurrogate
     {
         [Id(0)]

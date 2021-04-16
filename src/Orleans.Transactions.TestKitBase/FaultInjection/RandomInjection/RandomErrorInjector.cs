@@ -39,7 +39,7 @@ namespace Orleans.Transactions.TestKit
         }
 
         [Serializable]
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public class RandomlyInjectedStorageException : Exception
         {
             public RandomlyInjectedStorageException() : base("injected fault") { }
@@ -51,7 +51,7 @@ namespace Orleans.Transactions.TestKit
         }
 
         [Serializable]
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public class RandomlyInjectedInconsistentStateException : InconsistentStateException
         {
             public RandomlyInjectedInconsistentStateException() : base("injected fault") { }

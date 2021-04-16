@@ -18,8 +18,8 @@ namespace Orleans.Runtime
     /// </summary>
     [Serializable, Immutable]
     [DebuggerDisplay("SiloAddress {ToString()}")]
-    [Hagar.GenerateSerializer]
-    [Hagar.SuppressReferenceTracking]
+    [Orleans.GenerateSerializer]
+    [Orleans.SuppressReferenceTracking]
     public sealed class SiloAddress : IEquatable<SiloAddress>, IComparable<SiloAddress>, IComparable
     {
         [NonSerialized]
@@ -31,10 +31,10 @@ namespace Orleans.Runtime
         [NonSerialized]
         private List<uint> uniformHashCache;
 
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public IPEndPoint Endpoint { get; private set; }
 
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public int Generation { get; private set; }
 
         [NonSerialized]

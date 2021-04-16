@@ -60,7 +60,7 @@ namespace Tester.AzureUtils.Streaming
                 QueueNames = azureQueueNames
             };
             options.ConfigureTestDefaults();
-            var serializer = this.fixture.Services.GetService<Hagar.Serializer>();
+            var serializer = this.fixture.Services.GetService<Orleans.Serializer>();
             var clusterOptions = this.fixture.Services.GetRequiredService<IOptions<ClusterOptions>>();
             var queueCacheOptions = new SimpleQueueCacheOptions();
             var queueDataAdapter = new AzureQueueDataAdapterV2(serializer);

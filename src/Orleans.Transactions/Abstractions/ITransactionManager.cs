@@ -42,13 +42,13 @@ namespace Orleans.Transactions.Abstractions
     /// <summary>
     /// Counts read and write accesses on a transaction participant.
     /// </summary>
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     [Serializable]
     public struct AccessCounter
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public int Reads;
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public int Writes;
 
         public static AccessCounter operator +(AccessCounter c1, AccessCounter c2)

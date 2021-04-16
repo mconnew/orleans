@@ -8,19 +8,19 @@ namespace Orleans.Providers.Streams.Common
     /// Stream sequence token that tracks sequence number and event index
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class EventSequenceTokenV2 : StreamSequenceToken
     {
         /// <summary>
         /// Number of event batches in stream prior to this event batch
         /// </summary>
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public override long SequenceNumber { get; protected set; }
 
         /// <summary>
         /// Number of events in batch prior to this event
         /// </summary>
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public override int EventIndex { get; protected set; }
 
         /// <summary>

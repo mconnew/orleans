@@ -76,7 +76,7 @@ namespace Orleans.Providers.Streams.SimpleMessageStream
                 providerRuntime.PubSub(this.options.PubSubType),
                 this.streamFilter,
                 IsRewindable,
-                this.runtimeClient.ServiceProvider.GetRequiredService<Hagar.DeepCopier<T>>(),
+                this.runtimeClient.ServiceProvider.GetRequiredService<Orleans.DeepCopier<T>>(),
                 this.loggerFactory.CreateLogger<SimpleMessageStreamProducer<T>>());
         }
 

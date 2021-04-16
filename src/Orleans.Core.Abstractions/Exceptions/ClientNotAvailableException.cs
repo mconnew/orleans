@@ -8,7 +8,7 @@ namespace Orleans.Runtime
     /// Indicates that a client is not longer reachable.
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class ClientNotAvailableException : OrleansException
     {
         internal ClientNotAvailableException(GrainId clientId) : base("No activation for client " + clientId.ToString()) { }

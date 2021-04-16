@@ -1,7 +1,7 @@
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
-using Hagar.Invocation;
+using Orleans.Invocation;
 using Orleans.CodeGeneration;
 
 namespace Orleans.Runtime

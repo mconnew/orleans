@@ -12,9 +12,9 @@ namespace Orleans.Runtime.MembershipService
         private long lastETagCounter;
 
         [NonSerialized]
-        private readonly Hagar.DeepCopier deepCopier;
+        private readonly Orleans.DeepCopier deepCopier;
 
-        public InMemoryMembershipTable(Hagar.DeepCopier deepCopier)
+        public InMemoryMembershipTable(Orleans.DeepCopier deepCopier)
         {
             this.deepCopier = deepCopier;
             siloTable = new Dictionary<SiloAddress, Tuple<MembershipEntry, string>>();

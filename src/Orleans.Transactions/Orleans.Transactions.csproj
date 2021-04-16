@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <PackageId>Microsoft.Orleans.Transactions</PackageId>
     <Title>Microsoft Orleans Transactions support</Title>
@@ -14,9 +14,5 @@
     <RootNamespace>Orleans.Transactions</RootNamespace>
     <OrleansBuildTimeCodeGen>true</OrleansBuildTimeCodeGen>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Hagar.Sdk" Version="0.6.6" />
-  </ItemGroup>
 
 </Project>

@@ -141,6 +141,7 @@
   <!-- Inner dependency versions -->
   <PropertyGroup Condition="$(FullBuild) != 'true'">
     <OrleansCoreAbstractionsVersion>2.3.0</OrleansCoreAbstractionsVersion>
+    <OrleansSerializationVersion>2.3.0</OrleansSerializationVersion>
     <OrleansRuntimeAbstractionsVersion>2.3.0</OrleansRuntimeAbstractionsVersion>
     <OrleansCoreVersion>2.3.0</OrleansCoreVersion>
     <OrleansStreamingAbstractionsVersion>2.3.0</OrleansStreamingAbstractionsVersion>
@@ -174,6 +175,7 @@
 
   <PropertyGroup Condition="$(FullBuild) == 'true'">
     <OrleansCoreAbstractionsVersion>$(VersionPrefix)</OrleansCoreAbstractionsVersion>
+    <OrleansSerializationVersion>$(VersionPrefix)</OrleansSerializationVersion>
     <OrleansRuntimeAbstractionsVersion>$(VersionPrefix)</OrleansRuntimeAbstractionsVersion>
     <OrleansCoreVersion>$(VersionPrefix)</OrleansCoreVersion>
     <OrleansStreamingAbstractionsVersion>$(VersionPrefix)</OrleansStreamingAbstractionsVersion>

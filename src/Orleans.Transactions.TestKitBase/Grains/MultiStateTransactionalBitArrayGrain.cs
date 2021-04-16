@@ -11,7 +11,7 @@ using Orleans.Transactions.Abstractions;
 namespace Orleans.Transactions.TestKit.Correctnesss
 {
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class BitArrayState
     {
         protected bool Equals(BitArrayState other)
@@ -46,7 +46,7 @@ namespace Orleans.Transactions.TestKit.Correctnesss
         private static readonly int BitsInInt = sizeof(int) * 8;
 
         [JsonProperty("v")]
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         private int[] value = { 0 };
 
         [JsonIgnore]

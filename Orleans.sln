@@ -206,6 +206,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Orleans.Serialization.Newto
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Orleans.Serialization.UnitTests", "test\Orleans.Serialization.UnitTests\Orleans.Serialization.UnitTests.csproj", "{EA49BFD9-6946-4858-AF4B-4138E871447F}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Orleans.Serialization.Abstractions", "src\Orleans.Serialization.Abstractions\Orleans.Serialization.Abstractions.csproj", "{2A9C009B-5219-47DB-A540-106DADF9FC91}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -564,6 +566,10 @@ Global
 		{EA49BFD9-6946-4858-AF4B-4138E871447F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EA49BFD9-6946-4858-AF4B-4138E871447F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EA49BFD9-6946-4858-AF4B-4138E871447F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A9C009B-5219-47DB-A540-106DADF9FC91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A9C009B-5219-47DB-A540-106DADF9FC91}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A9C009B-5219-47DB-A540-106DADF9FC91}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A9C009B-5219-47DB-A540-106DADF9FC91}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -669,6 +675,7 @@ Global
 		{34BEB0DE-4D70-40A3-B36B-276D085EEBBB} = {4CD3AA9E-D937-48CA-BB6C-158E12257D23}
 		{B8CE2331-5AA5-426D-AEF6-E2B79EFFE828} = {4CD3AA9E-D937-48CA-BB6C-158E12257D23}
 		{EA49BFD9-6946-4858-AF4B-4138E871447F} = {A6573187-FD0D-4DF7-91D1-03E07E470C0A}
+		{2A9C009B-5219-47DB-A540-106DADF9FC91} = {4CD3AA9E-D937-48CA-BB6C-158E12257D23}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7BFB3429-B5BB-4DB1-95B4-67D77A864952}

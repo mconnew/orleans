@@ -11,13 +11,13 @@ namespace Orleans.Hosting
     /// This class is used to configure a generator stream provider to generate streams using the SimpleGenerator
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class SimpleGeneratorOptions : IStreamGeneratorConfig
     {
         /// <summary>
         /// Stream namespace
         /// </summary>
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public string StreamNamespace { get; set; }
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace Orleans.Hosting
         /// <summary>
         /// Nuber of events to generate on this stream
         /// </summary>
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public int EventsInStream { get; set; } = DEFAULT_EVENTS_IN_STREAM;
         public const int DEFAULT_EVENTS_IN_STREAM = 100;
     }

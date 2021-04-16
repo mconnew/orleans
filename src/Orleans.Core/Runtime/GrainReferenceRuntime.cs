@@ -1,4 +1,4 @@
-using Hagar.Invocation;
+using Orleans.Invocation;
 using Orleans.CodeGeneration;
 using Orleans.GrainReferences;
 using Orleans.Metadata;
@@ -16,7 +16,7 @@ namespace Orleans.Runtime
         private readonly IGrainCancellationTokenRuntime cancellationTokenRuntime;
         private readonly IOutgoingGrainCallFilter[] filters;
         private readonly Action<GrainReference, IResponseCompletionSource, IInvokable, InvokeMethodOptions> sendRequest;
-        private readonly Hagar.DeepCopier deepCopier;
+        private readonly Orleans.DeepCopier deepCopier;
 
         public GrainReferenceRuntime(
             IRuntimeClient runtimeClient,
@@ -24,7 +24,7 @@ namespace Orleans.Runtime
             IEnumerable<IOutgoingGrainCallFilter> outgoingCallFilters,
             GrainReferenceActivator referenceActivator,
             GrainInterfaceTypeResolver interfaceTypeResolver,
-            Hagar.DeepCopier deepCopier)
+            Orleans.DeepCopier deepCopier)
         {
             this.RuntimeClient = runtimeClient;
             this.cancellationTokenRuntime = cancellationTokenRuntime;

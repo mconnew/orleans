@@ -8,11 +8,11 @@ namespace Orleans.Runtime
 {
     internal class MessageFactory
     {
-        private readonly Hagar.DeepCopier deepCopier;
+        private readonly Orleans.DeepCopier deepCopier;
         private readonly ILogger logger;
         private readonly MessagingTrace messagingTrace;
 
-        public MessageFactory(Hagar.DeepCopier deepCopier, ILogger<MessageFactory> logger, MessagingTrace messagingTrace)
+        public MessageFactory(Orleans.DeepCopier deepCopier, ILogger<MessageFactory> logger, MessagingTrace messagingTrace)
         {
             this.deepCopier = deepCopier;
             this.logger = logger;

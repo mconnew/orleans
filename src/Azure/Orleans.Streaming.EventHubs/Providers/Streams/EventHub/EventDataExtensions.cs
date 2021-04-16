@@ -41,7 +41,7 @@ namespace Orleans.ServiceBus.Providers
         /// <summary>
         /// Serializes event data properties
         /// </summary>
-        public static byte[] SerializeProperties(this EventData eventData, Hagar.Serializer serializer)
+        public static byte[] SerializeProperties(this EventData eventData, Orleans.Serialization.Serializer serializer)
         {
             var result = serializer.SerializeToArray(eventData.Properties.Where(kvp => !string.Equals(kvp.Key, EventDataPropertyStreamNamespaceKey, StringComparison.Ordinal)).ToList());
             return result;
@@ -50,7 +50,7 @@ namespace Orleans.ServiceBus.Providers
         /// <summary>
         /// Deserializes event data properties
         /// </summary>
-        public static IDictionary<string, object> DeserializeProperties(this ArraySegment<byte> bytes, Hagar.Serializer serializer)
+        public static IDictionary<string, object> DeserializeProperties(this ArraySegment<byte> bytes, Orleans.Serialization.Serializer serializer)
         {
             return serializer.Deserialize<List<KeyValuePair<string, object>>>(bytes.AsSpan()).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
         }

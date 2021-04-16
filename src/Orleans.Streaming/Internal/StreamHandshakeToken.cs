@@ -3,10 +3,10 @@ using System;
 namespace Orleans.Streams
 {
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     internal class StreamHandshakeToken : IEquatable<StreamHandshakeToken>
     {
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public StreamSequenceToken Token { get; private set; }
         
         public static StreamHandshakeToken CreateStartToken(StreamSequenceToken token)
@@ -47,10 +47,10 @@ namespace Orleans.Streams
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     internal class StartToken : StreamHandshakeToken { }
     
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     internal class DeliveryToken : StreamHandshakeToken { }
 }

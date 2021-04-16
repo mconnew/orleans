@@ -14,7 +14,7 @@ namespace UnitTests.GrainInterfaces
     /// StackOverflowException during code generation.
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class RecursiveType : SelfTyped<RecursiveType>
     {
     }

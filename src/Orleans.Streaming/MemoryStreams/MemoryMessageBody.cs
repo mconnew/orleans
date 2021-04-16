@@ -31,18 +31,18 @@ namespace Orleans.Providers
     /// Default IMemoryMessageBodySerializer
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
-    [Hagar.SerializationCallbacks(typeof(Orleans.Runtime.OnDeserializedCallbacks))]
+    [Orleans.GenerateSerializer]
+    [Orleans.SerializationCallbacks(typeof(Orleans.Runtime.OnDeserializedCallbacks))]
     public class DefaultMemoryMessageBodySerializer : IMemoryMessageBodySerializer, IOnDeserialized
     {
         [NonSerialized]
-        private Hagar.Serializer<MemoryMessageBody> serializer;
+        private Orleans.Serializer<MemoryMessageBody> serializer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DefaultMemoryMessageBodySerializer"/> class.
         /// </summary>
         /// <param name="serializer"></param>
-        public DefaultMemoryMessageBodySerializer(Hagar.Serializer<MemoryMessageBody> serializer)
+        public DefaultMemoryMessageBodySerializer(Orleans.Serializer<MemoryMessageBody> serializer)
         {
             this.serializer = serializer;
         }
@@ -61,7 +61,7 @@ namespace Orleans.Providers
 
         void IOnDeserialized.OnDeserialized(ISerializerContext context)
         {
-            this.serializer = context.ServiceProvider.GetRequiredService<Hagar.Serializer<MemoryMessageBody>>();
+            this.serializer = context.ServiceProvider.GetRequiredService<Orleans.Serializer<MemoryMessageBody>>();
         }
     }
 
@@ -69,7 +69,7 @@ namespace Orleans.Providers
     /// Body of message sent over MemoryStreamProvider
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class MemoryMessageBody
     {
         /// <summary>
@@ -87,13 +87,13 @@ namespace Orleans.Providers
         /// <summary>
         /// Events in message
         /// </summary>
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public List<object> Events { get; }
 
         /// <summary>
         /// Message context
         /// </summary>
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public Dictionary<string, object> RequestContext { get; }
     }
 }

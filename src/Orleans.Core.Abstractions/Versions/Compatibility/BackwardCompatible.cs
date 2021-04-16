@@ -3,7 +3,7 @@ using System;
 namespace Orleans.Versions.Compatibility
 {
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class BackwardCompatible : CompatibilityStrategy
     {
         public static BackwardCompatible Singleton { get; } = new BackwardCompatible();

@@ -31,13 +31,13 @@ namespace Orleans.ServiceBus.Providers
     ///   and ordering of application layer events within an EventHub message.
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class EventHubSequenceToken : EventSequenceToken, IEventHubPartitionLocation
     {
         /// <summary>
         /// Offset of the message within an EventHub partition
         /// </summary>
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public string EventHubOffset { get; }
 
         /// <summary>

@@ -12,16 +12,16 @@ namespace Orleans.Providers.Streams.AzureQueue
     /// <summary>
     /// Original data adapter.  Here to maintain backwards compatibility, but does not support json and other custom serializers
     /// </summary>
-    [Hagar.SerializationCallbacks(typeof(OnDeserializedCallbacks))]
+    [Orleans.SerializationCallbacks(typeof(OnDeserializedCallbacks))]
     public class AzureQueueDataAdapterV1 : IQueueDataAdapter<string, IBatchContainer>, IOnDeserialized
     {
-        private Hagar.Serializer<AzureQueueBatchContainer> serializer;
+        private Orleans.Serializer<AzureQueueBatchContainer> serializer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureQueueDataAdapterV1"/> class.
         /// </summary>
         /// <param name="serializer"></param>
-        public AzureQueueDataAdapterV1(Hagar.Serializer serializer)
+        public AzureQueueDataAdapterV1(Orleans.Serialization.Serializer serializer)
         {
             this.serializer = serializer.GetSerializer<AzureQueueBatchContainer>();
         }
@@ -48,23 +48,23 @@ namespace Orleans.Providers.Streams.AzureQueue
 
         void IOnDeserialized.OnDeserialized(ISerializerContext context)
         {
-            this.serializer = context.ServiceProvider.GetRequiredService<Hagar.Serializer<AzureQueueBatchContainer>>();
+            this.serializer = context.ServiceProvider.GetRequiredService<Orleans.Serializer<AzureQueueBatchContainer>>();
         }
     }
 
     /// <summary>
     /// Data adapter that uses types that support custom serializers (like json).
     /// </summary>
-    [Hagar.SerializationCallbacks(typeof(OnDeserializedCallbacks))]
+    [Orleans.SerializationCallbacks(typeof(OnDeserializedCallbacks))]
     public class AzureQueueDataAdapterV2 : IQueueDataAdapter<string, IBatchContainer>, IOnDeserialized
     {
-        private Hagar.Serializer<AzureQueueBatchContainerV2> serializer;
+        private Orleans.Serializer<AzureQueueBatchContainerV2> serializer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureQueueDataAdapterV2"/> class.
         /// </summary>
         /// <param name="serializer"></param>
-        public AzureQueueDataAdapterV2(Hagar.Serializer serializer)
+        public AzureQueueDataAdapterV2(Orleans.Serialization.Serializer serializer)
         {
             this.serializer = serializer.GetSerializer<AzureQueueBatchContainerV2>();
         }
@@ -91,7 +91,7 @@ namespace Orleans.Providers.Streams.AzureQueue
 
         void IOnDeserialized.OnDeserialized(ISerializerContext context)
         {
-            this.serializer = context.ServiceProvider.GetRequiredService<Hagar.Serializer<AzureQueueBatchContainerV2>>();
+            this.serializer = context.ServiceProvider.GetRequiredService<Orleans.Serializer<AzureQueueBatchContainerV2>>();
         }
     }
 }

@@ -55,10 +55,10 @@ namespace DefaultCluster.Tests
         }
 
         [Serializable]
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public class NodaTimeTestPoco
         {
-            [Hagar.Id(0)]
+            [Orleans.Id(0)]
             public LocalDate Date { get; }
 
             public NodaTimeTestPoco(LocalDate date)

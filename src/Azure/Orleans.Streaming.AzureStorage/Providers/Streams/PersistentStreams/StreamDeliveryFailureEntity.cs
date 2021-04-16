@@ -63,7 +63,7 @@ namespace Orleans.Providers.Streams.PersistentStreams
         /// </summary>
         /// <param name="serializer"></param>
         /// <param name="token"></param>
-        public virtual void SetSequenceToken(Hagar.Serializer<StreamSequenceToken> serializer, StreamSequenceToken token)
+        public virtual void SetSequenceToken(Orleans.Serializer<StreamSequenceToken> serializer, StreamSequenceToken token)
         {
             SequenceToken = token != null ? serializer.SerializeToArray(token) : null;
         }
@@ -72,7 +72,7 @@ namespace Orleans.Providers.Streams.PersistentStreams
         /// Gets sequence token by deserializing it from property.
         /// </summary>
         /// <returns></returns>
-        public virtual StreamSequenceToken GetSequenceToken(Hagar.Serializer<StreamSequenceToken> serializer)
+        public virtual StreamSequenceToken GetSequenceToken(Orleans.Serializer<StreamSequenceToken> serializer)
         {
             return SequenceToken != null ? serializer.Deserialize(SequenceToken) : null;
         }

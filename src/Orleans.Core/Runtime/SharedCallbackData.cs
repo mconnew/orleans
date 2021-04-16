@@ -1,6 +1,6 @@
 using System;
 using System.Diagnostics;
-using Hagar.Invocation;
+using Orleans.Invocation;
 using Microsoft.Extensions.Logging;
 using Orleans.Configuration;
 

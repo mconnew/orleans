@@ -14,7 +14,7 @@ namespace UnitTests.GrainInterfaces
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class VersionAwarePlacementStrategy : PlacementStrategy
     {
         internal static VersionAwarePlacementStrategy Singleton { get; } = new VersionAwarePlacementStrategy();

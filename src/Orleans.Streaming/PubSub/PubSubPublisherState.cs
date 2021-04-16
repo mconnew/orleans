@@ -6,17 +6,17 @@ namespace Orleans.Streams
 {
     [Serializable]
     [JsonObject(MemberSerialization.OptIn)]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     internal class PubSubPublisherState : IEquatable<PubSubPublisherState>
     {
         // IMPORTANT!!!!!
         // These fields have to be public non-readonly for JSonSerialization to work!
         // Implement ISerializable if changing any of them to readonly
         [JsonProperty]
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public InternalStreamId Stream;
         [JsonProperty]
-        [Hagar.Id(2)]
+        [Orleans.Id(2)]
         public GrainReference producerReference; // the field needs to be of a public type, otherwise we will not generate an Orleans serializer for that class.
         // This property does not need to be Json serialized, since we already have producerReference.
         [JsonIgnore]

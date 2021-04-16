@@ -45,10 +45,10 @@ namespace TestGrains
     /// The state of the reservation grain
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class ReservationState
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public Dictionary<int, SeatReservation> Reservations { get; set; }
 
         public ReservationState()
@@ -70,12 +70,12 @@ namespace TestGrains
     /// The class that defines the update operation when a reservation is requested
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class SeatReservation
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public int Seat { get; set; }
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public string UserId { get; set; }
     }
 

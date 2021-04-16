@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Hagar;
-using Hagar.Configuration;
-using Hagar.Serializers;
-using Hagar.TypeSystem;
+using Orleans.Configuration;
+using Orleans.Serializers;
+using Orleans.TypeSystem;
 using Microsoft.AspNetCore.Connections;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -119,7 +119,7 @@ namespace Orleans
             services.AddHagar();
             services.AddSingleton<ITypeFilter, AllowOrleansTypes>();
             services.AddSingleton<ISpecializableCodec, GrainReferenceCodecProvider>();
-            services.AddSingleton<Hagar.Cloning.IGeneralizedCopier, GrainReferenceCopier>();
+            services.AddSingleton<Orleans.Cloning.IGeneralizedCopier, GrainReferenceCopier>();
             services.AddSingleton<OnDeserializedCallbacks>();
 
             services.TryAddTransient<IMessageSerializer>(sp => ActivatorUtilities.CreateInstance<HagarMessageSerializer>(

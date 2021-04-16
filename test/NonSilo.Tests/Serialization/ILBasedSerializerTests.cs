@@ -205,7 +205,7 @@ namespace UnitTests.Serialization
         }
 
         [Serializable]
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public class SimpleISerializableObject : IDeserializationCallback
         {
             [NonSerialized]
@@ -222,7 +222,7 @@ namespace UnitTests.Serialization
             public List<string> History => this.history ?? (this.history = new List<string>());
             public List<StreamingContext> Contexts => this.contexts ?? (this.contexts = new List<StreamingContext>());
 
-            [Hagar.Id(0)]
+            [Orleans.Id(0)]
             public string Payload { get; set; }
             
             [OnSerializing]
@@ -260,7 +260,7 @@ namespace UnitTests.Serialization
         }
 
         [Serializable]
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public struct SimpleISerializableStruct : IDeserializationCallback
         {
             [NonSerialized]
@@ -272,7 +272,7 @@ namespace UnitTests.Serialization
             public List<string> History => this.history ?? (this.history = new List<string>());
             public List<StreamingContext> Contexts => this.contexts ?? (this.contexts = new List<StreamingContext>());
 
-            [Hagar.Id(0)]
+            [Orleans.Id(0)]
             public string Payload { get; set; }
 
             [OnSerializing]

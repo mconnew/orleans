@@ -19,7 +19,7 @@ namespace Orleans.Runtime.LogConsistency
         public ProtocolServices(
             Grain gr,
             ILoggerFactory loggerFactory,
-            Hagar.DeepCopier deepCopier,
+            Orleans.DeepCopier deepCopier,
             ILocalSiloDetails siloDetails)
         {
             this.grain = gr;

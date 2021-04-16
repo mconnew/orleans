@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <RootNamespace>UnitTests.GrainInterfaces</RootNamespace>
     <TargetFramework>netcoreapp3.1</TargetFramework>
@@ -9,11 +9,11 @@
 
   <ItemGroup>
     <ProjectReference Include="$(SourceRoot)src\Orleans.Streaming\Orleans.Streaming.csproj" />
+    <ProjectReference Include="$(SourceRoot)src\Orleans.Serialization\Orleans.Serialization.csproj" />
     <ProjectReference Include="$(SourceRoot)test\Misc\TestInterfaces\TestInterfaces.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Hagar.Sdk" Version="0.6.6" />
     <PackageReference Include="protobuf-net" Version="$(ProtobufNetVersion)" />
   </ItemGroup>
 </Project>

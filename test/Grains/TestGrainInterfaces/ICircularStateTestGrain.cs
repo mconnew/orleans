@@ -11,23 +11,23 @@ namespace TestGrainInterfaces
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class CircularStateTestState
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public CircularTest1 CircularTest1 { get; set; }
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class CircularTest1
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public CircularTest2 CircularTest2 { get; set; }
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class CircularTest2
     {
         public CircularTest2()
@@ -35,7 +35,7 @@ namespace TestGrainInterfaces
             CircularTest1List = new List<CircularTest1>();
         }
 
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public List<CircularTest1> CircularTest1List { get; set; }
     }
 }

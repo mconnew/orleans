@@ -30,16 +30,16 @@ namespace ServiceBus.Tests.MonitorTests
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class EventHubReceiverMonitorCounters 
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public int TrackInitializationCallCounter;
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public int TrackReadCallCounter;
-        [Hagar.Id(2)]
+        [Orleans.Id(2)]
         public int TrackMessagesReceivedCallCounter;
-        [Hagar.Id(3)]
+        [Orleans.Id(3)]
         public int TrackShutdownCallCounter;
     }
 }

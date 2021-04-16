@@ -6,7 +6,7 @@ using Orleans.Metadata;
 namespace Orleans.Runtime
 {
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     internal class StatelessWorkerPlacement : PlacementStrategy
     {
         private const string MaxLocalPropertyKey = "max-local-instances";
@@ -17,7 +17,7 @@ namespace Orleans.Runtime
         /// </summary>
         public override bool IsUsingGrainDirectory => false;
 
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public int MaxLocal { get; private set; }
 
         internal StatelessWorkerPlacement(int maxLocal)

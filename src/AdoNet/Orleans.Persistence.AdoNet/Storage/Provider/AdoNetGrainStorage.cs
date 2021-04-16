@@ -73,7 +73,7 @@ namespace Orleans.Storage
     [DebuggerDisplay("Name = {Name}, ConnectionString = {Storage.ConnectionString}")]
     public class AdoNetGrainStorage: IGrainStorage, ILifecycleParticipant<ISiloLifecycle>
     {
-        private Hagar.Serializer serializer;
+        private Orleans.Serialization.Serializer serializer;
 
         /// <summary>
         /// Tag for BinaryFormatSerializer
@@ -397,7 +397,7 @@ namespace Orleans.Storage
         /// <summary> Initialization function for this storage provider. </summary>
         private async Task Init(CancellationToken cancellationToken)
         {
-            this.serializer = providerRuntime.ServiceProvider.GetRequiredService<Hagar.Serializer>();
+            this.serializer = providerRuntime.ServiceProvider.GetRequiredService<Orleans.Serialization.Serializer>();
 
             //NOTE: StorageSerializationPicker should be defined outside and given as a parameter in constructor or via Init in IProviderConfiguration perhaps.
             //Currently this limits one's options to much to the current situation of providing only one serializer for serialization and deserialization

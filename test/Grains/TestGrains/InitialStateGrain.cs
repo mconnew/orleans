@@ -7,10 +7,10 @@ using UnitTests.GrainInterfaces;
 namespace UnitTests.Grains
 {
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class Initialized_State
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public List<string> Names { get; set; }
         public Initialized_State()
         {

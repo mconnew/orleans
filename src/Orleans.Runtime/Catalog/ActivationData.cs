@@ -108,7 +108,7 @@ namespace Orleans.Runtime
 
         public TTarget GetTarget<TTarget>() => (TTarget)(object)this.GrainInstance;
 
-        TComponent Hagar.Invocation.ITargetHolder.GetComponent<TComponent>()
+        TComponent Orleans.Invocation.ITargetHolder.GetComponent<TComponent>()
         {
             var result = this.GetComponent<TComponent>();
             if (result is null && typeof(IGrainExtension).IsAssignableFrom(typeof(TComponent)))

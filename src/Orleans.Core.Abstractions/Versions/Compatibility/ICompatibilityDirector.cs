@@ -8,7 +8,7 @@ namespace Orleans.Versions.Compatibility
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public abstract class CompatibilityStrategy
     {
     }

@@ -9,14 +9,14 @@ namespace UnitTests.GrainInterfaces
     /// A type with an <see cref="IOnDeserialized"/> hook, to test that it is correctly called by the internal serializers.
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
-    [Hagar.SerializationCallbacks(typeof(Orleans.Runtime.OnDeserializedCallbacks))]
+    [Orleans.GenerateSerializer]
+    [Orleans.SerializationCallbacks(typeof(Orleans.Runtime.OnDeserializedCallbacks))]
     public class TypeWithOnDeserializedHook : IOnDeserialized
     {
         [NonSerialized]
         public ISerializerContext Context;
 
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public int Int { get; set; }
 
         void IOnDeserialized.OnDeserialized(ISerializerContext context)
@@ -26,10 +26,10 @@ namespace UnitTests.GrainInterfaces
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class BaseClassWithAutoProp
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public int AutoProp { get; set; }
     }
 
@@ -38,7 +38,7 @@ namespace UnitTests.GrainInterfaces
     /// the base autoprop is not used during serializer generation
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class SubClassOverridingAutoProp : BaseClassWithAutoProp
     {
         public new string AutoProp { get => base.AutoProp.ToString(); set => base.AutoProp = int.Parse(value); }

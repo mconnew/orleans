@@ -14,19 +14,19 @@ using SQSMessage = Amazon.SQS.Model.Message;
 namespace OrleansAWSUtils.Streams
 {
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     internal class SQSBatchContainer : IBatchContainer
     {
         [JsonProperty]
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         private EventSequenceTokenV2 sequenceToken;
 
         [JsonProperty]
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         private readonly List<object> events;
 
         [JsonProperty]
-        [Hagar.Id(2)]
+        [Orleans.Id(2)]
         private readonly Dictionary<string, object> requestContext;
 
         [NonSerialized]
@@ -34,7 +34,7 @@ namespace OrleansAWSUtils.Streams
         // Don't need to serialize it, since we are never interested in sending it to stream consumers.
         internal SQSMessage Message;
 
-        [Hagar.Id(3)]
+        [Orleans.Id(3)]
         public StreamId StreamId { get; private set; }
 
         public StreamSequenceToken SequenceToken
@@ -68,7 +68,7 @@ namespace OrleansAWSUtils.Streams
         }
 
         internal static SendMessageRequest ToSQSMessage<T>(
-            Hagar.Serializer<SQSBatchContainer> serializer,
+            Orleans.Serializer<SQSBatchContainer> serializer,
             StreamId streamId,
             IEnumerable<T> events,
             Dictionary<string, object> requestContext)
@@ -85,7 +85,7 @@ namespace OrleansAWSUtils.Streams
             };
         }
 
-        internal static SQSBatchContainer FromSQSMessage(Hagar.Serializer<SQSBatchContainer> serializer, SQSMessage msg, long sequenceId)
+        internal static SQSBatchContainer FromSQSMessage(Orleans.Serializer<SQSBatchContainer> serializer, SQSMessage msg, long sequenceId)
         {
             var json = JObject.Parse(msg.Body);
             var sqsBatch = serializer.Deserialize(json["payload"].ToObject<byte[]>());

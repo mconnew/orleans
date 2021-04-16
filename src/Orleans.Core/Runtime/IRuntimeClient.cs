@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using Hagar.Invocation;
+using Orleans.Invocation;
 using Microsoft.Extensions.DependencyInjection;
 using Orleans.CodeGeneration;
 using Orleans.Serialization;

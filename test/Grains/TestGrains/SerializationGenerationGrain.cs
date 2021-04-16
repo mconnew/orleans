@@ -47,10 +47,10 @@ namespace TestGrains
         }
 
         [Serializable]
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public class MyState
         {
-            [Hagar.Id(0)]
+            [Orleans.Id(0)]
             public IList<SomeAbstractClass> Classes { get; set; }
         }
     }

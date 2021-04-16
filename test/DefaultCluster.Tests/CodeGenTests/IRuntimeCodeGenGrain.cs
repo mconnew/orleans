@@ -144,10 +144,10 @@ namespace Tester.CodeGenTests
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class GenericGrainState<T>
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public T @event { get; set; }
     }
 

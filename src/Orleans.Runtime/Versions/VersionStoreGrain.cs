@@ -22,16 +22,16 @@ namespace Orleans.Runtime.Versions
         Task SetSelectorStrategy(GrainInterfaceType interfaceType, VersionSelectorStrategy strategy);
     }
 
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     internal class VersionStoreGrainState
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         internal Dictionary<GrainInterfaceType, CompatibilityStrategy> CompatibilityStrategies { get; }
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         internal Dictionary<GrainInterfaceType, VersionSelectorStrategy> VersionSelectorStrategies { get; }
-        [Hagar.Id(2)]
+        [Orleans.Id(2)]
         public VersionSelectorStrategy SelectorOverride { get; set; }
-        [Hagar.Id(3)]
+        [Orleans.Id(3)]
         public CompatibilityStrategy CompatibilityOverride { get; set; }
 
         public VersionStoreGrainState()

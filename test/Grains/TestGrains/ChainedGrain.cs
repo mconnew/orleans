@@ -9,16 +9,16 @@ using UnitTests.GrainInterfaces;
 namespace UnitTests.Grains
 {
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class ChainedGrainState
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public int Id { get; set; }
 
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public int X { get; set; }
 
-        [Hagar.Id(2)]
+        [Orleans.Id(2)]
         public IChainedGrain Next { get; set; }
     }
 

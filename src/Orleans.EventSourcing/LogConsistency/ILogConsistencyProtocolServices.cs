@@ -55,7 +55,7 @@ namespace Orleans.EventSourcing
     /// Exception thrown by protocol messaging layer.
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class ProtocolTransportException : OrleansException
     {
         public ProtocolTransportException()

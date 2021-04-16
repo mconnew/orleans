@@ -25,10 +25,10 @@ namespace Orleans.ServiceBus.Providers.Testing
         public bool ShouldProduce { private get; set; }
 
         private readonly ILogger logger;
-        private readonly Hagar.DeepCopier deepCopier;
-        private readonly Hagar.Serializer serializer;
+        private readonly Orleans.DeepCopier deepCopier;
+        private readonly Orleans.Serialization.Serializer serializer;
 
-        public SimpleStreamEventDataGenerator(StreamId streamId, ILogger<SimpleStreamEventDataGenerator> logger, Hagar.DeepCopier deepCopier, Hagar.Serializer serializer)
+        public SimpleStreamEventDataGenerator(StreamId streamId, ILogger<SimpleStreamEventDataGenerator> logger, Orleans.DeepCopier deepCopier, Orleans.Serialization.Serializer serializer)
         {
             this.StreamId = streamId;
             this.logger = logger;

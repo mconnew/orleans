@@ -13,12 +13,12 @@ namespace Orleans.ServiceBus.Providers
     /// </summary>
     public class EventHubDataAdapter : IEventHubDataAdapter
     {
-        private readonly Hagar.Serializer serializer;
+        private readonly Orleans.Serialization.Serializer serializer;
 
         /// <summary>
         /// Cache data adapter that adapts EventHub's EventData to CachedEventHubMessage used in cache
         /// </summary>
-        public EventHubDataAdapter(Hagar.Serializer serializer)
+        public EventHubDataAdapter(Orleans.Serialization.Serializer serializer)
         {
             this.serializer = serializer;
         }

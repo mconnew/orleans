@@ -7,7 +7,7 @@ namespace Orleans.Runtime
     /// Represents a configuration exception.
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class OrleansConfigurationException : Exception
     {
         /// <inheritdoc />

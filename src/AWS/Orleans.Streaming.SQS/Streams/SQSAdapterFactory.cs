@@ -17,7 +17,7 @@ namespace OrleansAWSUtils.Streams
         private readonly string providerName;
         private readonly SqsOptions sqsOptions;
         private readonly ClusterOptions clusterOptions;
-        private readonly Hagar.Serializer<SQSBatchContainer> serializer;
+        private readonly Orleans.Serializer<SQSBatchContainer> serializer;
         private readonly ILoggerFactory loggerFactory;
         private HashRingBasedStreamQueueMapper streamQueueMapper;
         private IQueueAdapterCache adapterCache;
@@ -33,7 +33,7 @@ namespace OrleansAWSUtils.Streams
             HashRingStreamQueueMapperOptions queueMapperOptions,
             SimpleQueueCacheOptions cacheOptions,
             IOptions<ClusterOptions> clusterOptions, 
-            Hagar.Serializer serializer, 
+            Orleans.Serialization.Serializer serializer, 
             ILoggerFactory loggerFactory)
         {
             this.providerName = name;

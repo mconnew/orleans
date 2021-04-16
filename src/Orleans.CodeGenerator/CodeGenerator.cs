@@ -12,10 +12,10 @@ namespace Orleans.CodeGenerator
 {
     public class CodeGeneratorOptions
     {
-        public List<string> GenerateSerializerAttributes { get; } = new() { "Orleans.Serialization.GenerateSerializer" };
-        public List<string> IdAttributes { get; } = new() { "Orleans.Serialization.IdAttribute" };
-        public List<string> AliasAttributes { get; } = new() { "Orleans.Serialization.AliasAttribute" };
-        public List<string> ImmutableAttributes { get; } = new() { "Orleans.Serialization.ImmutableAttribute" };
+        public List<string> GenerateSerializerAttributes { get; } = new() { "Orleans.GenerateSerializer" };
+        public List<string> IdAttributes { get; } = new() { "Orleans.IdAttribute" };
+        public List<string> AliasAttributes { get; } = new() { "Orleans.AliasAttribute" };
+        public List<string> ImmutableAttributes { get; } = new() { "Orleans.ImmutableAttribute" };
 
         public bool GenerateFieldIds { get; set; } = false;
     }

@@ -4,10 +4,10 @@ using System.Collections.Generic;
 namespace UnitTests.GrainInterfaces
 {
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class TestTypeA
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public ICollection<TestTypeA> Collection { get; set; }
     }
 }

@@ -78,10 +78,10 @@ namespace Orleans.Transactions.TestKit
             }
         }
 
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public class NoAttributionGrain : ITransactionAttributionGrain
         {
-            [Hagar.Id(0)]
+            [Orleans.Id(0)]
             public INoAttributionGrain grain;
 
             public NoAttributionGrain(INoAttributionGrain grain)
@@ -95,10 +95,10 @@ namespace Orleans.Transactions.TestKit
             }
         }
 
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public class SuppressAttributionGrain : ITransactionAttributionGrain
         {
-            [Hagar.Id(0)]
+            [Orleans.Id(0)]
             public ISuppressAttributionGrain grain;
 
             public SuppressAttributionGrain(ISuppressAttributionGrain grain)
@@ -112,10 +112,10 @@ namespace Orleans.Transactions.TestKit
             }
         }
 
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public class CreateOrJoinAttributionGrain : ITransactionAttributionGrain
         {
-            [Hagar.Id(0)]
+            [Orleans.Id(0)]
             public ICreateOrJoinAttributionGrain grain;
 
             public CreateOrJoinAttributionGrain(ICreateOrJoinAttributionGrain grain)
@@ -129,10 +129,10 @@ namespace Orleans.Transactions.TestKit
             }
         }
 
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public class CreateAttributionGrain : ITransactionAttributionGrain
         {
-            [Hagar.Id(0)]
+            [Orleans.Id(0)]
             public ICreateAttributionGrain grain;
 
             public CreateAttributionGrain(ICreateAttributionGrain grain)
@@ -146,10 +146,10 @@ namespace Orleans.Transactions.TestKit
             }
         }
 
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public class JoinAttributionGrain : ITransactionAttributionGrain
         {
-            [Hagar.Id(0)]
+            [Orleans.Id(0)]
             public IJoinAttributionGrain grain;
 
             public JoinAttributionGrain(IJoinAttributionGrain grain)
@@ -163,10 +163,10 @@ namespace Orleans.Transactions.TestKit
             }
         }
 
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public class SupportedAttributionGrain : ITransactionAttributionGrain
         {
-            [Hagar.Id(0)]
+            [Orleans.Id(0)]
             public ISupportedAttributionGrain grain;
 
             public SupportedAttributionGrain(ISupportedAttributionGrain grain)
@@ -180,10 +180,10 @@ namespace Orleans.Transactions.TestKit
             }
         }
 
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public class NotAllowedAttributionGrain : ITransactionAttributionGrain
         {
-            [Hagar.Id(0)]
+            [Orleans.Id(0)]
             public INotAllowedAttributionGrain grain;
 
             public NotAllowedAttributionGrain(INotAllowedAttributionGrain grain)

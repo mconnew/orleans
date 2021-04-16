@@ -10,7 +10,7 @@ namespace Orleans.Metadata
     /// Information about types which are available in the cluster.
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     [Orleans.Concurrency.Immutable]
     [Immutable]
     public class ClusterManifest
@@ -31,19 +31,19 @@ namespace Orleans.Metadata
         /// <summary>
         /// The version of this instance.
         /// </summary>
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public MajorMinorVersion Version { get; }
 
         /// <summary>
         /// Manifests for each silo in the cluster.
         /// </summary>
-        [Hagar.Id(2)]
+        [Orleans.Id(2)]
         public ImmutableDictionary<SiloAddress, GrainManifest> Silos { get; }
 
         /// <summary>
         /// All grain manifests.
         /// </summary>
-        [Hagar.Id(3)]
+        [Orleans.Id(3)]
         public ImmutableArray<GrainManifest> AllGrainManifests { get; }
     }
 }

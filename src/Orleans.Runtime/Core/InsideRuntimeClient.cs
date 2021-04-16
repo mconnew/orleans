@@ -18,7 +18,7 @@ using System.Threading;
 using Orleans.Configuration;
 using Orleans.GrainReferences;
 using Orleans.Metadata;
-using Hagar.Invocation;
+using Orleans.Invocation;
 
 namespace Orleans.Runtime
 {
@@ -41,9 +41,9 @@ namespace Orleans.Runtime
         private Catalog catalog;
         private Dispatcher dispatcher;
         private List<IIncomingGrainCallFilter> grainCallFilters;
-        private Hagar.DeepCopier _deepCopier;
+        private Orleans.DeepCopier _deepCopier;
         private readonly InterfaceToImplementationMappingCache interfaceToImplementationMapping;
-        private Hagar.Serializer _serializer;
+        private Orleans.Serialization.Serializer _serializer;
         private HostedClient hostedClient;
 
         private HostedClient HostedClient => this.hostedClient ?? (this.hostedClient = this.ServiceProvider.GetRequiredService<HostedClient>());
@@ -64,8 +64,8 @@ namespace Orleans.Runtime
             GrainReferenceActivator referenceActivator,
             GrainInterfaceTypeResolver interfaceIdResolver,
             GrainInterfaceTypeToGrainTypeResolver interfaceToTypeResolver,
-            Hagar.Serializer serializer,
-            Hagar.DeepCopier deepCopier)
+            Orleans.Serialization.Serializer serializer,
+            Orleans.DeepCopier deepCopier)
         {
             this.interfaceToImplementationMapping = new InterfaceToImplementationMappingCache();
             this._serializer = serializer;

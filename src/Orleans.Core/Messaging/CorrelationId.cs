@@ -3,10 +3,10 @@ using System;
 namespace Orleans.Runtime
 {
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     internal readonly struct CorrelationId : IEquatable<CorrelationId>, IComparable<CorrelationId>
     {
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         private readonly long id;
         private static long nextToUse = 1;
 

@@ -56,10 +56,10 @@ namespace UnitTests.Grains
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class StreamImmutabilityTestObject
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public string MyString;
     }
 }

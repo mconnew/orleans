@@ -5,7 +5,7 @@ using System.Text;
 namespace Orleans.Runtime
 {
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public sealed class ClusterMembershipSnapshot
     {
         public ClusterMembershipSnapshot(ImmutableDictionary<SiloAddress, ClusterMember> members, MembershipVersion version)
@@ -14,10 +14,10 @@ namespace Orleans.Runtime
             this.Version = version;
         }
 
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public ImmutableDictionary<SiloAddress, ClusterMember> Members { get; }
 
-        [Hagar.Id(2)]
+        [Orleans.Id(2)]
         public MembershipVersion Version { get; }
 
         public SiloStatus GetSiloStatus(SiloAddress silo)

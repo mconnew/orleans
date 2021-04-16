@@ -15,7 +15,7 @@ namespace Orleans.Providers.Streams.SimpleMessageStream
         private readonly string                         streamProviderName;
 
         [NonSerialized]
-        private readonly Hagar.DeepCopier<T> deepCopier;
+        private readonly Orleans.DeepCopier<T> deepCopier;
 
         [NonSerialized]
         private readonly IStreamPubSub                  pubSub;
@@ -44,7 +44,7 @@ namespace Orleans.Providers.Streams.SimpleMessageStream
             IStreamPubSub pubSub,
             IStreamFilter streamFilter,
             bool isRewindable,
-            Hagar.DeepCopier<T> deepCopier,
+            Orleans.DeepCopier<T> deepCopier,
             ILogger<SimpleMessageStreamProducer<T>> logger)
         {
             this.stream = stream;

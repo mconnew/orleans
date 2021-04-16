@@ -14,7 +14,7 @@ using Orleans.Configuration;
 using Orleans.Messaging;
 
 using Microsoft.Extensions.ObjectPool;
-using Hagar.Invocation;
+using Orleans.Invocation;
 
 namespace Orleans.Runtime.Messaging
 {

@@ -9,12 +9,12 @@ using UnitTests.GrainInterfaces;
 namespace UnitTests.Grains
 {
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class SimplePersistentGrain_State
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public int A { get; set; }
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public int B { get; set; }
     }
 

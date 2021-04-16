@@ -19,7 +19,7 @@ namespace Orleans.SystemTargetInterfaces
     /// Response message used by Global Single Instance Protocol
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     internal class RemoteClusterActivationResponse
     {
         public static readonly RemoteClusterActivationResponse Pass = new RemoteClusterActivationResponse(ActivationResponseStatus.Pass);
@@ -29,15 +29,15 @@ namespace Orleans.SystemTargetInterfaces
             this.ResponseStatus = responseStatus;
         }
 
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public ActivationResponseStatus ResponseStatus { get; private set; }
-        [Hagar.Id(2)]
+        [Orleans.Id(2)]
         public AddressAndTag ExistingActivationAddress { get; set; }
-        [Hagar.Id(3)]
+        [Orleans.Id(3)]
         public string ClusterId { get; set; }
-        [Hagar.Id(4)]
+        [Orleans.Id(4)]
         public bool Owned { get; set; }
-        [Hagar.Id(5)]
+        [Orleans.Id(5)]
         public Exception ResponseException { get; set; }
 
         public override string ToString()

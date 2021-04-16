@@ -12,7 +12,7 @@ namespace Orleans.ServiceBus.Providers
     /// Replication of EventHub EventData class, reconstructed from cached data CachedEventHubMessage
     /// </summary>
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class EventHubMessage
     {
         /// <summary>
@@ -42,7 +42,7 @@ namespace Orleans.ServiceBus.Providers
         /// <summary>
         /// Duplicate of EventHub's EventData class.
         /// </summary>
-        public EventHubMessage(CachedMessage cachedMessage, Hagar.Serializer serializer)
+        public EventHubMessage(CachedMessage cachedMessage, Orleans.Serialization.Serializer serializer)
         {
             int readOffset = 0;
             StreamId = cachedMessage.StreamId;
@@ -58,49 +58,49 @@ namespace Orleans.ServiceBus.Providers
         /// <summary>
         /// Stream identifier
         /// </summary>
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public StreamId StreamId { get; }
 
         /// <summary>
         /// EventHub partition key
         /// </summary>
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public string PartitionKey { get; }
 
         /// <summary>
         /// Offset into EventHub partition
         /// </summary>
-        [Hagar.Id(2)]
+        [Orleans.Id(2)]
         public string Offset { get; }
 
         /// <summary>
         /// Sequence number in EventHub partition
         /// </summary>
-        [Hagar.Id(3)]
+        [Orleans.Id(3)]
         public long SequenceNumber { get; }
 
         /// <summary>
         /// Time event was written to EventHub
         /// </summary>
-        [Hagar.Id(4)]
+        [Orleans.Id(4)]
         public DateTime EnqueueTimeUtc { get; }
 
         /// <summary>
         /// Time event was read from EventHub and added to cache
         /// </summary>
-        [Hagar.Id(5)]
+        [Orleans.Id(5)]
         public DateTime DequeueTimeUtc { get; }
 
         /// <summary>
         /// User EventData properties
         /// </summary>
-        [Hagar.Id(6)]
+        [Orleans.Id(6)]
         public IDictionary<string, object> Properties { get; }
 
         /// <summary>
         /// Binary event data
         /// </summary>
-        [Hagar.Id(7)]
+        [Orleans.Id(7)]
         public byte[] Payload { get; }
     }
 }

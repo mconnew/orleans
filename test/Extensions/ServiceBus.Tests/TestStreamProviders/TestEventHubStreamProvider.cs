@@ -19,7 +19,7 @@ namespace ServiceBus.Tests.TestStreamProviders.EventHub
             IServiceProvider serviceProvider, SerializationManager serializationManager, ITelemetryProducer telemetryProducer, ILoggerFactory loggerFactory)
             : base(name, ehOptions, receiverOptions, cacheOptions, evictionOptions, statisticOptions, dataAdapter, serviceProvider, serializationManager, telemetryProducer, loggerFactory)
         {
-            StreamFailureHandlerFactory = qid => TestAzureTableStorageStreamFailureHandler.Create(this.serviceProvider.GetRequiredService<Hagar.Serializer<StreamSequenceToken>>());
+            StreamFailureHandlerFactory = qid => TestAzureTableStorageStreamFailureHandler.Create(this.serviceProvider.GetRequiredService<Orleans.Serializer<StreamSequenceToken>>());
         }
 
         public static new TestEventHubStreamAdapterFactory Create(IServiceProvider services, string name)

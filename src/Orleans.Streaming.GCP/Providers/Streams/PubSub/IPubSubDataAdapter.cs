@@ -27,16 +27,16 @@ namespace Orleans.Providers.GCP.Streams.PubSub
         IBatchContainer FromPullResponseMessage(PubsubMessage msg, long sequenceId);
     }
 
-    [Hagar.SerializationCallbacks(typeof(OnDeserializedCallbacks))]
+    [Orleans.SerializationCallbacks(typeof(OnDeserializedCallbacks))]
     public class PubSubDataAdapter : IPubSubDataAdapter, IOnDeserialized
     {
-        private Hagar.Serializer<PubSubBatchContainer> _serializer;
+        private Orleans.Serializer<PubSubBatchContainer> _serializer;
 
         /// <summary>
         /// Initializes a new instance of the <seealso cref="PubSubDataAdapter"/> class.
         /// </summary>
         /// <param name="serializer">The <seealso cref="SerializationManager"/> injected at runtime.</param>
-        public PubSubDataAdapter(Hagar.Serializer<PubSubBatchContainer> serializer)
+        public PubSubDataAdapter(Orleans.Serializer<PubSubBatchContainer> serializer)
         {
             _serializer = serializer;
         }
@@ -60,7 +60,7 @@ namespace Orleans.Providers.GCP.Streams.PubSub
 
         void IOnDeserialized.OnDeserialized(ISerializerContext context)
         {
-            _serializer = context.ServiceProvider.GetRequiredService<Hagar.Serializer<PubSubBatchContainer>>();
+            _serializer = context.ServiceProvider.GetRequiredService<Orleans.Serializer<PubSubBatchContainer>>();
         }
     }
 }

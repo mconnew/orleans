@@ -55,22 +55,22 @@ namespace ServiceBus.Tests.MonitorTests
     }
 
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class CacheMonitorCounters
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         public int TrackCachePressureMonitorStatusChangeCallCounter;
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public int ReportCacheSizeCallCounter;
-        [Hagar.Id(2)]
+        [Orleans.Id(2)]
         public int ReportMessageStatisticsCallCounter;
-        [Hagar.Id(3)]
+        [Orleans.Id(3)]
         public int TrackMemoryAllocatedCallCounter;
-        [Hagar.Id(4)]
+        [Orleans.Id(4)]
         public int TrackMemoryReleasedCallCounter;
-        [Hagar.Id(5)]
+        [Orleans.Id(5)]
         public int TrackMessageAddedCounter;
-        [Hagar.Id(6)]
+        [Orleans.Id(6)]
         public int TrackMessagePurgedCounter;
     }
 }

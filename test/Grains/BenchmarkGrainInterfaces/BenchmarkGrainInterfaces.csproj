@@ -4,9 +4,6 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
   </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Hagar.Sdk" Version="0.6.6" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="$(SourceRoot)src\Orleans.Core.Abstractions\Orleans.Core.Abstractions.csproj" />

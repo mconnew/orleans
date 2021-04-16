@@ -4,7 +4,7 @@ using System.Runtime.Serialization;
 namespace Orleans.Runtime.MembershipService
 {
     [Serializable]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class OrleansClusterConnectivityCheckFailedException : OrleansException
     {
         public OrleansClusterConnectivityCheckFailedException() : base("Failed to verify connectivity with active cluster nodes.") { }

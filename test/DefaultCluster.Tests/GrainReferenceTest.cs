@@ -133,11 +133,11 @@ namespace DefaultCluster.Tests.General
         }
 
         [Serializable]
-        [Hagar.GenerateSerializer]
+        [Orleans.GenerateSerializer]
         public class GenericGrainReferenceHolder
         {
             [JsonProperty]
-            [Hagar.Id(0)]
+            [Orleans.Id(0)]
             public GrainReference Reference { get; set; }
         }
 

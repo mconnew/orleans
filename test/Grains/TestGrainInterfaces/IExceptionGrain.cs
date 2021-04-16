@@ -1,9 +1,9 @@
 using System;
 using System.Buffers;
 using System.Threading.Tasks;
-using Hagar.Cloning;
-using Hagar.Codecs;
-using Hagar.WireProtocol;
+using Orleans.Cloning;
+using Orleans.Codecs;
+using Orleans.WireProtocol;
 using Orleans;
 using Orleans.Runtime;
 
@@ -77,32 +77,32 @@ namespace UnitTests.GrainInterfaces
         public int Number { get; }
     }
 
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public class UnserializableType
     {
     }
 
-    [Hagar.RegisterSerializer]
-    [Hagar.RegisterCopier]
+    [Orleans.RegisterSerializer]
+    [Orleans.RegisterCopier]
     public sealed class UndeserializableTypeCodec : IFieldCodec<UndeserializableType>, IDeepCopier<UndeserializableType>
     {
         public UndeserializableType DeepCopy(UndeserializableType input, CopyContext context) => input;
 
-        public UndeserializableType ReadValue<TInput>(ref Hagar.Buffers.Reader<TInput> reader, Field field) => throw new NotSupportedException(UndeserializableType.FailureMessage);
-        public void WriteField<TBufferWriter>(ref Hagar.Buffers.Writer<TBufferWriter> writer, uint fieldIdDelta, Type expectedType, UndeserializableType value) where TBufferWriter : IBufferWriter<byte>
+        public UndeserializableType ReadValue<TInput>(ref Orleans.Buffers.Reader<TInput> reader, Field field) => throw new NotSupportedException(UndeserializableType.FailureMessage);
+        public void WriteField<TBufferWriter>(ref Orleans.Buffers.Writer<TBufferWriter> writer, uint fieldIdDelta, Type expectedType, UndeserializableType value) where TBufferWriter : IBufferWriter<byte>
         {
             Int32Codec.WriteField(ref writer, fieldIdDelta, typeof(UndeserializableType), value.Number);
         }
     }
 
-    [Hagar.RegisterSerializer]
-    [Hagar.RegisterCopier]
+    [Orleans.RegisterSerializer]
+    [Orleans.RegisterCopier]
     public sealed class UnserializableTypeCodec : IFieldCodec<UnserializableType>, IDeepCopier<UnserializableType>
     {
         public UnserializableType DeepCopy(UnserializableType input, CopyContext context) => input;
 
-        public UnserializableType ReadValue<TInput>(ref Hagar.Buffers.Reader<TInput> reader, Field field) => default;
-        public void WriteField<TBufferWriter>(ref Hagar.Buffers.Writer<TBufferWriter> writer, uint fieldIdDelta, Type expectedType, UnserializableType value) where TBufferWriter : IBufferWriter<byte>
+        public UnserializableType ReadValue<TInput>(ref Orleans.Buffers.Reader<TInput> reader, Field field) => default;
+        public void WriteField<TBufferWriter>(ref Orleans.Buffers.Writer<TBufferWriter> writer, uint fieldIdDelta, Type expectedType, UnserializableType value) where TBufferWriter : IBufferWriter<byte>
         {
             throw new NotSupportedException(UndeserializableType.FailureMessage);
         }

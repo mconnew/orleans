@@ -13,7 +13,7 @@ namespace Orleans.Runtime
     [Immutable]
     [Serializable]
     [StructLayout(LayoutKind.Auto)]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public readonly struct GrainType : IEquatable<GrainType>, IComparable<GrainType>, ISerializable
     {
         /// <summary>
@@ -37,7 +37,7 @@ namespace Orleans.Runtime
         /// <summary>
         /// The underlying value.
         /// </summary>
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         public IdSpan Value { get; }
 
         /// <summary>

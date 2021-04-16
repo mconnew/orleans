@@ -6,14 +6,14 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Text;
-using Hagar.Buffers;
-using Hagar.Codecs;
-using Hagar.WireProtocol;
+using Orleans.Buffers;
+using Orleans.Codecs;
+using Orleans.WireProtocol;
 using Orleans.Concurrency;
 
 namespace Orleans.Runtime
 {
-    [Hagar.RegisterSerializer]
+    [Orleans.RegisterSerializer]
     public sealed class IdSpanCodec : IFieldCodec<IdSpan>
     {
         private static readonly ConcurrentDictionary<int, IdSpan> _cache = new ConcurrentDictionary<int, IdSpan>();
@@ -147,12 +147,12 @@ namespace Orleans.Runtime
     [Immutable]
     [Serializable]
     [StructLayout(LayoutKind.Auto)]
-    [Hagar.GenerateSerializer]
+    [Orleans.GenerateSerializer]
     public readonly struct IdSpan : IEquatable<IdSpan>, IComparable<IdSpan>, ISerializable
     {
-        [Hagar.Id(0)]
+        [Orleans.Id(0)]
         private readonly int _hashCode;
-        [Hagar.Id(1)]
+        [Orleans.Id(1)]
         private readonly byte[] _value;
 
         /// <summary>
