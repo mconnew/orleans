@@ -14,16 +14,16 @@ namespace Orleans.Runtime
     [Immutable]
     [Serializable]
     [StructLayout(LayoutKind.Auto)]
-    [Orleans.GenerateSerializer]
+    [GenerateSerializer]
     public readonly struct StreamId : IEquatable<StreamId>, IComparable<StreamId>, ISerializable
     {
-        [Orleans.Id(0)]
+        [Id(0)]
         private readonly byte[] fullKey;
         
-        [Orleans.Id(1)]
+        [Id(1)]
         private readonly ushort keyIndex;
         
-        [Orleans.Id(2)]
+        [Id(2)]
         private readonly int hash;
 
         public ReadOnlyMemory<byte> FullKey => fullKey;

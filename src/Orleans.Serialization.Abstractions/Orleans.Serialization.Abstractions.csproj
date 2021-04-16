@@ -6,7 +6,6 @@
     <Description>Serialization abstractions library of Microsoft Orleans</Description>
     <TargetFrameworks>$(MultiTargetFrameworks)</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <OrleansBuildTimeCodeGen>true</OrleansBuildTimeCodeGen>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <RootNamespace>Orleans</RootNamespace>
     <IsOrleansFrameworkPart>false</IsOrleansFrameworkPart>

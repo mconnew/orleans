@@ -1,9 +1,11 @@
-using Microsoft.FSharp.Collections;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Microsoft.FSharp.Collections;
 using TestExtensions;
+using UnitTests.FSharpInterfaces;
+using UnitTests.FSharpTypes;
 using UnitTests.GrainInterfaces;
 using Xunit;
 

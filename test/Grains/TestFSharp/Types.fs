@@ -1,7 +1,7 @@
 namespace UnitTests.FSharpTypes
 
 open System
-open Orleans.Concurrency
+open Orleans
 
 [<Serializable; Immutable>]
 type SingleCaseDU = 

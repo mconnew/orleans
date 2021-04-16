@@ -1,18 +1,18 @@
 using System;
-using Orleans.Concurrency;
+using Orleans;
 
 namespace FakeFx.Runtime
 {
     [Serializable, Immutable]
-    [Orleans.GenerateSerializer]
-    [Orleans.SuppressReferenceTracking]
+    [GenerateSerializer]
+    [SuppressReferenceTracking]
     public sealed class ActivationAddress : IEquatable<ActivationAddress>
     {
-        [Orleans.Id(1)]
+        [Id(1)]
         public GrainId Grain { get; private set; }
-        [Orleans.Id(2)]
+        [Id(2)]
         public ActivationId Activation { get; private set; }
-        [Orleans.Id(3)]
+        [Id(3)]
         public SiloAddress Silo { get; private set; }
 
         public bool IsComplete => !Grain.IsDefault && Activation != null && Silo != null;

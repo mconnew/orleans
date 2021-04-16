@@ -10,6 +10,8 @@ using System.IO;
 using Xunit;
 using SerializerSession = Orleans.Serialization.Session.SerializerSession;
 using Utf8JsonNS = Utf8Json;
+using Hyperion;
+using ZeroFormatter;
 
 namespace Benchmarks.Comparison
 {

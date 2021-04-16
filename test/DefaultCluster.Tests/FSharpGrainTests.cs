@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.FSharp.Core;
 using TestExtensions;
+using UnitTests.FSharpTypes;
 using UnitTests.GrainInterfaces;
 using Xunit;
 

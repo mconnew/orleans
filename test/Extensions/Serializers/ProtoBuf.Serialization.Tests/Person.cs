@@ -1,4 +1,4 @@
-using Orleans.Concurrency;
+using Orleans;
 using System;
 
 namespace ProtoBuf.Serialization.Tests

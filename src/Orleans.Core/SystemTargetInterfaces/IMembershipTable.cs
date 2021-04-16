@@ -109,8 +109,7 @@ namespace Orleans
     }
 
     [Serializable]
-    [Orleans.Concurrency.Immutable]
-    [Orleans.Immutable]
+    [Immutable]
     [GenerateSerializer]
     public class TableVersion
     {

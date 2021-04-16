@@ -64,9 +64,6 @@ namespace UnitTests.Serialization
                     Type fallback;
                     switch (serializerToUse)
                     {
-                        case SerializerToUse.IlBasedFallbackSerializer:
-                            fallback = typeof(ILBasedSerializer);
-                            break;
                         case SerializerToUse.NoFallback:
                             fallback = typeof(SupportsNothingSerializer);
                             break;

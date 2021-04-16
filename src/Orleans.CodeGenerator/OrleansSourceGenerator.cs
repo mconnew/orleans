@@ -53,7 +53,7 @@ namespace Orleans.CodeGenerator
             var syntax = codeGenerator.GenerateCode(context.CancellationToken);
             var sourceString = syntax.NormalizeWhitespace().ToFullString();
             var sourceText = SourceText.From(sourceString, Encoding.UTF8);
-            context.AddSource("Orleans.Serialization.g.cs", sourceText);
+            context.AddSource($"{context.Compilation.AssemblyName ?? "assembly"}.orleans.g.cs", sourceText);
         }
 
         public void Initialize(GeneratorInitializationContext context)

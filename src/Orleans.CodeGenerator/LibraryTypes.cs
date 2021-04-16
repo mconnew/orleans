@@ -167,7 +167,6 @@ namespace Orleans.CodeGenerator
                 },
                     Exception = Type("System.Exception"),
                     ImmutableAttributes = options.ImmutableAttributes.Select(Type).ToList(),
-                    Immutable_1 = Type("Orleans.Serialization.Immutable`1"),
                     ValueTuple = Type("System.ValueTuple"),
                     TimeSpan = Type("System.TimeSpan"),
                     DateTimeOffset = Type("System.DateTimeOffset"),
@@ -277,7 +276,6 @@ namespace Orleans.CodeGenerator
         public INamedTypeSymbol CancellationToken { get; private set; }
         public INamedTypeSymbol[] TupleTypes { get; private set; }
         public INamedTypeSymbol ValueTuple { get; private set; }
-        public INamedTypeSymbol Immutable_1 { get; private set; }
         public List<INamedTypeSymbol> ImmutableAttributes { get; private set; }
         public INamedTypeSymbol Exception { get; private set; }
         public INamedTypeSymbol VoidRequest { get; private set; }
@@ -358,11 +356,6 @@ namespace Orleans.CodeGenerator
                 if (def.SpecialType == SpecialType.System_Nullable_T)
                 {
                     return _shallowCopyableTypes[type] = IsShallowCopyable(namedType.TypeArguments.Single());
-                }
-
-                if (SymbolEqualityComparer.Default.Equals(Immutable_1, def))
-                {
-                    return _shallowCopyableTypes[type] = true;
                 }
 
                 if (TupleTypes.Any(t => SymbolEqualityComparer.Default.Equals(t, def)))

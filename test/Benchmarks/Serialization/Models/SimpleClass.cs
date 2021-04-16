@@ -1,4 +1,5 @@
 using System;
+using Orleans;
 
 namespace Benchmarks.Models
 {

@@ -6,8 +6,7 @@ namespace Orleans.LeaseProviders
     /// <summary>
     /// Acquired lease
     /// </summary>
-    [Orleans.Concurrency.Immutable]
-    [Orleans.Immutable]
+    [Immutable]
     [GenerateSerializer]
     public class AcquiredLease 
     {
@@ -63,8 +62,7 @@ namespace Orleans.LeaseProviders
     /// <summary>
     /// AcquireLeaseResult class, which demonstrates result of acquiring or renewing lease operation
     /// </summary>
-    [Orleans.Concurrency.Immutable]
-    [Orleans.Immutable]
+    [Immutable]
     [GenerateSerializer]
     public class AcquireLeaseResult
     {

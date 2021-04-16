@@ -11,6 +11,7 @@
     <AssemblyName>Orleans.Streaming.AzureStorage</AssemblyName>
     <RootNamespace>Orleans.Streaming.AzureStorage</RootNamespace>
     <OrleansBuildTimeCodeGen>true</OrleansBuildTimeCodeGen>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <DefineConstants>$(DefineConstants);ORLEANS_STREAMING</DefineConstants>
   </PropertyGroup>
 

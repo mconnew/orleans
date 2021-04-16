@@ -4,6 +4,8 @@ using TestExtensions;
 using Xunit;
 using System.Collections.Generic;
 using System;
+using UnitTests.FSharpInterfaces;
+using UnitTests.FSharpTypes;
 
 namespace UnitTests.Serialization
 {

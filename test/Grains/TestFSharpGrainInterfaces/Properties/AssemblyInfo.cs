@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using Microsoft.FSharp.Core;
 using Orleans.CodeGeneration;
+using UnitTests.FSharpTypes;
 
 [assembly: InternalsVisibleTo("TesterInternal")]
 [assembly: InternalsVisibleTo("DefaultCluster.Tests")]

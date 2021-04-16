@@ -166,8 +166,7 @@ namespace UnitTests.GrainInterfaces
 
     [Serializable]
     [Immutable]
-    [Orleans.GenerateSerializer]
-    [Orleans.Immutable]
+    [GenerateSerializer]
     public class ImmutableType
     {
         [Orleans.Id(0)]
