@@ -8,6 +8,7 @@ using Orleans.Streams;
 using Orleans.Configuration;
 using Orleans;
 using Orleans.Configuration.Overrides;
+using Orleans.Serialization;
 
 namespace OrleansAWSUtils.Streams
 {
@@ -17,7 +18,7 @@ namespace OrleansAWSUtils.Streams
         private readonly string providerName;
         private readonly SqsOptions sqsOptions;
         private readonly ClusterOptions clusterOptions;
-        private readonly Orleans.Serializer<SQSBatchContainer> serializer;
+        private readonly Serializer<SQSBatchContainer> serializer;
         private readonly ILoggerFactory loggerFactory;
         private HashRingBasedStreamQueueMapper streamQueueMapper;
         private IQueueAdapterCache adapterCache;

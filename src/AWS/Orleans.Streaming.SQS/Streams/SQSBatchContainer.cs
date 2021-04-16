@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Orleans.Providers.Streams.Common;
 using Orleans.Runtime;
+using Orleans.Serialization;
 using Orleans.Streams;
 using System;
 using System.Collections.Generic;
@@ -66,7 +67,7 @@ namespace OrleansAWSUtils.Streams
         }
 
         internal static SendMessageRequest ToSQSMessage<T>(
-            Orleans.Serializer<SQSBatchContainer> serializer,
+            Serializer<SQSBatchContainer> serializer,
             StreamId streamId,
             IEnumerable<T> events,
             Dictionary<string, object> requestContext)
@@ -83,7 +84,7 @@ namespace OrleansAWSUtils.Streams
             };
         }
 
-        internal static SQSBatchContainer FromSQSMessage(Orleans.Serializer<SQSBatchContainer> serializer, SQSMessage msg, long sequenceId)
+        internal static SQSBatchContainer FromSQSMessage(Serializer<SQSBatchContainer> serializer, SQSMessage msg, long sequenceId)
         {
             var json = JObject.Parse(msg.Body);
             var sqsBatch = serializer.Deserialize(json["payload"].ToObject<byte[]>());

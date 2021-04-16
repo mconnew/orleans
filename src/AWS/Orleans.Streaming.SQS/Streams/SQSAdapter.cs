@@ -6,13 +6,14 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Orleans.Runtime;
+using Orleans.Serialization;
 
 namespace OrleansAWSUtils.Streams
 {
     internal class SQSAdapter : IQueueAdapter
     {
         protected readonly string ServiceId;
-        private readonly Orleans.Serializer<SQSBatchContainer> serializer;
+        private readonly Serializer<SQSBatchContainer> serializer;
         protected readonly string DataConnectionString;
         private readonly IConsistentRingStreamQueueMapper streamQueueMapper;
         protected readonly ConcurrentDictionary<QueueId, SQSStorage> Queues = new ConcurrentDictionary<QueueId, SQSStorage>();
@@ -22,7 +23,7 @@ namespace OrleansAWSUtils.Streams
 
         public StreamProviderDirection Direction { get { return StreamProviderDirection.ReadWrite; } }
 
-        public SQSAdapter(Orleans.Serializer<SQSBatchContainer> serializer, IConsistentRingStreamQueueMapper streamQueueMapper, ILoggerFactory loggerFactory, string dataConnectionString, string serviceId, string providerName)
+        public SQSAdapter(Serializer<SQSBatchContainer> serializer, IConsistentRingStreamQueueMapper streamQueueMapper, ILoggerFactory loggerFactory, string dataConnectionString, string serviceId, string providerName)
         {
             if (string.IsNullOrEmpty(dataConnectionString)) throw new ArgumentNullException("dataConnectionString");
             if (string.IsNullOrEmpty(serviceId)) throw new ArgumentNullException(nameof(serviceId));

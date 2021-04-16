@@ -15,13 +15,13 @@ namespace Orleans.Providers.Streams.AzureQueue
     [Orleans.SerializationCallbacks(typeof(OnDeserializedCallbacks))]
     public class AzureQueueDataAdapterV1 : IQueueDataAdapter<string, IBatchContainer>, IOnDeserialized
     {
-        private Orleans.Serializer<AzureQueueBatchContainer> serializer;
+        private Serializer<AzureQueueBatchContainer> serializer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureQueueDataAdapterV1"/> class.
         /// </summary>
         /// <param name="serializer"></param>
-        public AzureQueueDataAdapterV1(Orleans.Serialization.Serializer serializer)
+        public AzureQueueDataAdapterV1(Serializer serializer)
         {
             this.serializer = serializer.GetSerializer<AzureQueueBatchContainer>();
         }
@@ -48,7 +48,7 @@ namespace Orleans.Providers.Streams.AzureQueue
 
         void IOnDeserialized.OnDeserialized(ISerializerContext context)
         {
-            this.serializer = context.ServiceProvider.GetRequiredService<Orleans.Serializer<AzureQueueBatchContainer>>();
+            this.serializer = context.ServiceProvider.GetRequiredService<Serializer<AzureQueueBatchContainer>>();
         }
     }
 
@@ -58,7 +58,7 @@ namespace Orleans.Providers.Streams.AzureQueue
     [Orleans.SerializationCallbacks(typeof(OnDeserializedCallbacks))]
     public class AzureQueueDataAdapterV2 : IQueueDataAdapter<string, IBatchContainer>, IOnDeserialized
     {
-        private Orleans.Serializer<AzureQueueBatchContainerV2> serializer;
+        private Serializer<AzureQueueBatchContainerV2> serializer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureQueueDataAdapterV2"/> class.
@@ -91,7 +91,7 @@ namespace Orleans.Providers.Streams.AzureQueue
 
         void IOnDeserialized.OnDeserialized(ISerializerContext context)
         {
-            this.serializer = context.ServiceProvider.GetRequiredService<Orleans.Serializer<AzureQueueBatchContainerV2>>();
+            this.serializer = context.ServiceProvider.GetRequiredService<Serializer<AzureQueueBatchContainerV2>>();
         }
     }
 }

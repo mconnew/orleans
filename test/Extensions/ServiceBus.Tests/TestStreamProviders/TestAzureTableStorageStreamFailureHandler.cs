@@ -6,6 +6,7 @@ using Azure.Identity;
 using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Extensions.Logging.Abstractions;
 using Orleans.Providers.Streams.PersistentStreams;
+using Orleans.Serialization;
 using Orleans.Streaming.EventHubs;
 using Orleans.Streams;
 using TestExtensions;
@@ -16,12 +17,12 @@ namespace ServiceBus.Tests.TestStreamProviders.EventHub
     {
         private const string TableName = "TestStreamFailures";
         private const string DeploymentId = "TestDeployment";
-        private TestAzureTableStorageStreamFailureHandler(Orleans.Serializer<StreamSequenceToken> serializer)
+        private TestAzureTableStorageStreamFailureHandler(Serializer<StreamSequenceToken> serializer)
             : base(serializer, NullLoggerFactory.Instance, false, DeploymentId, TableName, TestDefaultConfiguration.DataConnectionString)
         {
         }
 
-        public static async Task<IStreamFailureHandler> Create(Orleans.Serializer<StreamSequenceToken> serializer)
+        public static async Task<IStreamFailureHandler> Create(Serializer<StreamSequenceToken> serializer)
         {
             var failureHandler = new TestAzureTableStorageStreamFailureHandler(serializer);
             await failureHandler.InitAsync();

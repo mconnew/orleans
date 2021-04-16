@@ -3,6 +3,10 @@ using System.Buffers;
 using System.Threading.Tasks;
 using Orleans;
 using Orleans.Runtime;
+using Orleans.Serialization.Buffers;
+using Orleans.Serialization.Cloning;
+using Orleans.Serialization.Codecs;
+using Orleans.Serialization.WireProtocol;
 
 namespace UnitTests.GrainInterfaces
 {
@@ -74,32 +78,32 @@ namespace UnitTests.GrainInterfaces
         public int Number { get; }
     }
 
-    [Orleans.GenerateSerializer]
+    [GenerateSerializer]
     public class UnserializableType
     {
     }
 
-    [Orleans.RegisterSerializer]
-    [Orleans.RegisterCopier]
+    [RegisterSerializer]
+    [RegisterCopier]
     public sealed class UndeserializableTypeCodec : IFieldCodec<UndeserializableType>, IDeepCopier<UndeserializableType>
     {
         public UndeserializableType DeepCopy(UndeserializableType input, CopyContext context) => input;
 
-        public UndeserializableType ReadValue<TInput>(ref Orleans.Buffers.Reader<TInput> reader, Field field) => throw new NotSupportedException(UndeserializableType.FailureMessage);
-        public void WriteField<TBufferWriter>(ref Orleans.Buffers.Writer<TBufferWriter> writer, uint fieldIdDelta, Type expectedType, UndeserializableType value) where TBufferWriter : IBufferWriter<byte>
+        public UndeserializableType ReadValue<TInput>(ref Reader<TInput> reader, Field field) => throw new NotSupportedException(UndeserializableType.FailureMessage);
+        public void WriteField<TBufferWriter>(ref Writer<TBufferWriter> writer, uint fieldIdDelta, Type expectedType, UndeserializableType value) where TBufferWriter : IBufferWriter<byte>
         {
             Int32Codec.WriteField(ref writer, fieldIdDelta, typeof(UndeserializableType), value.Number);
         }
     }
 
-    [Orleans.RegisterSerializer]
-    [Orleans.RegisterCopier]
+    [RegisterSerializer]
+    [RegisterCopier]
     public sealed class UnserializableTypeCodec : IFieldCodec<UnserializableType>, IDeepCopier<UnserializableType>
     {
         public UnserializableType DeepCopy(UnserializableType input, CopyContext context) => input;
 
-        public UnserializableType ReadValue<TInput>(ref Orleans.Buffers.Reader<TInput> reader, Field field) => default;
-        public void WriteField<TBufferWriter>(ref Orleans.Buffers.Writer<TBufferWriter> writer, uint fieldIdDelta, Type expectedType, UnserializableType value) where TBufferWriter : IBufferWriter<byte>
+        public UnserializableType ReadValue<TInput>(ref Reader<TInput> reader, Field field) => default;
+        public void WriteField<TBufferWriter>(ref Writer<TBufferWriter> writer, uint fieldIdDelta, Type expectedType, UnserializableType value) where TBufferWriter : IBufferWriter<byte>
         {
             throw new NotSupportedException(UndeserializableType.FailureMessage);
         }

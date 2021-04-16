@@ -49,7 +49,7 @@ namespace TestExtensions
 
         public SerializationManager SerializationManager => this.RuntimeClient.ServiceProvider.GetRequiredService<SerializationManager>();
         public DeepCopier DeepCopier => this.RuntimeClient.ServiceProvider.GetRequiredService<DeepCopier>();
-        public Orleans.Serialization.Serializer Serializer => this.RuntimeClient.ServiceProvider.GetRequiredService<Orleans.Serializer>();
+        public Serializer Serializer => RuntimeClient.ServiceProvider.GetRequiredService<Serializer>();
         
         public void Dispose()
         {

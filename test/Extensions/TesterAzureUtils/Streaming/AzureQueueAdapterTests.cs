@@ -17,6 +17,7 @@ using TestExtensions;
 using Xunit;
 using Xunit.Abstractions;
 using Orleans.Internal;
+using Orleans.Serialization;
 
 namespace Tester.AzureUtils.Streaming
 {
@@ -59,7 +60,7 @@ namespace Tester.AzureUtils.Streaming
                 QueueNames = azureQueueNames
             };
             options.ConfigureTestDefaults();
-            var serializer = this.fixture.Services.GetService<Orleans.Serializer>();
+            var serializer = this.fixture.Services.GetService<Serializer>();
             var clusterOptions = this.fixture.Services.GetRequiredService<IOptions<ClusterOptions>>();
             var queueCacheOptions = new SimpleQueueCacheOptions();
             var queueDataAdapter = new AzureQueueDataAdapterV2(serializer);

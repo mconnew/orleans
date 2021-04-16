@@ -29,13 +29,13 @@ namespace Orleans.Providers.GCP.Streams.PubSub
     [Orleans.SerializationCallbacks(typeof(OnDeserializedCallbacks))]
     public class PubSubDataAdapter : IPubSubDataAdapter, IOnDeserialized
     {
-        private Orleans.Serializer<PubSubBatchContainer> _serializer;
+        private Serializer<PubSubBatchContainer> _serializer;
 
         /// <summary>
         /// Initializes a new instance of the <seealso cref="PubSubDataAdapter"/> class.
         /// </summary>
         /// <param name="serializer">The <seealso cref="SerializationManager"/> injected at runtime.</param>
-        public PubSubDataAdapter(Orleans.Serializer<PubSubBatchContainer> serializer)
+        public PubSubDataAdapter(Serializer<PubSubBatchContainer> serializer)
         {
             _serializer = serializer;
         }
@@ -59,7 +59,7 @@ namespace Orleans.Providers.GCP.Streams.PubSub
 
         void IOnDeserialized.OnDeserialized(ISerializerContext context)
         {
-            _serializer = context.ServiceProvider.GetRequiredService<Orleans.Serializer<PubSubBatchContainer>>();
+            _serializer = context.ServiceProvider.GetRequiredService<Serializer<PubSubBatchContainer>>();
         }
     }
 }

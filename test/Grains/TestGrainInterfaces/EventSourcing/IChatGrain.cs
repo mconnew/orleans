@@ -1,4 +1,7 @@
 using Orleans;
+using Orleans.Serialization.Cloning;
+using Orleans.Serialization.Codecs;
+using Orleans.Serialization.Serializers;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -27,8 +30,8 @@ namespace TestGrainInterfaces
     /// <summary>
     /// Since XDocument does not seem to serialize automatically, we provide the necessary methods
     /// </summary>
-    [Orleans.RegisterSerializer]
-    [Orleans.RegisterCopier]
+    [RegisterSerializer]
+    [RegisterCopier]
     public class XDocumentSerialization : GeneralizedReferenceTypeSurrogateCodec<XDocument, XDocumentSurrogate>, IDeepCopier<XDocument>
     {
         public XDocumentSerialization(IValueSerializer<XDocumentSurrogate> surrogateSerializer) : base(surrogateSerializer)
