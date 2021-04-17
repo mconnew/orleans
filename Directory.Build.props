@@ -52,8 +52,8 @@
     <SystemIoPipelinesVersion>5.0.0</SystemIoPipelinesVersion>
 
     <!-- Microsoft packages -->
-    <MicrosoftBuildVersion>16.8.0</MicrosoftBuildVersion>
-    <MicrosoftCodeAnalysisVersion>3.8.0</MicrosoftCodeAnalysisVersion>
+    <MicrosoftBuildVersion>16.9.0</MicrosoftBuildVersion>
+    <MicrosoftCodeAnalysisVersion>3.9.0</MicrosoftCodeAnalysisVersion>
     <MicrosoftCodeAnalysisAnalyzersVersion>3.3.2</MicrosoftCodeAnalysisAnalyzersVersion>
     <MicrosoftCSharpVersion>4.7.0</MicrosoftCSharpVersion>
 
@@ -80,7 +80,7 @@
     <!-- on .NET Core 3.1+ runtimes these are inbox, so these versions are actually used only on .NET Framework 4.6.2+ -->
     <SystemCollectionsImmutableVersion>5.0.0</SystemCollectionsImmutableVersion>
     <SystemReflectionEmitVersion>4.7.0</SystemReflectionEmitVersion>
-    <SystemReflectionMetadataVersion>1.8.0</SystemReflectionMetadataVersion>
+    <SystemReflectionMetadataVersion>5.0.0</SystemReflectionMetadataVersion>
     <SystemThreadingChannelsVersion>4.7.0</SystemThreadingChannelsVersion>
     <MicrosoftBclHashCodeVersion>1.1.1</MicrosoftBclHashCodeVersion>
 
@@ -101,7 +101,7 @@
     <!-- Test related packages -->
     <FluentAssertionsVersion>4.19.4</FluentAssertionsVersion>
     <MoqVersion>4.16.0</MoqVersion>
-    <MicrosoftTestSdkVersion>16.8.3</MicrosoftTestSdkVersion>
+    <MicrosoftTestSdkVersion>16.9.4</MicrosoftTestSdkVersion>
     <BenchmarkDotNetVersion>0.12.1</BenchmarkDotNetVersion>
     <XunitSkippableFactVersion>1.4.13</XunitSkippableFactVersion>
     <xUnitVersion>2.4.1</xUnitVersion>
