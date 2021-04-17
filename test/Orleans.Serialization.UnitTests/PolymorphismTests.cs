@@ -1,9 +1,10 @@
-﻿using Orleans.Serialization.Configuration;
+using Orleans.Serialization.Configuration;
 using Orleans.Serialization.Session;
 using Orleans.Serialization.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using Xunit;
+using Microsoft.Extensions.Options;
 
 namespace Orleans.Serialization.UnitTests
 {
@@ -14,13 +15,13 @@ namespace Orleans.Serialization.UnitTests
         public PolymorphismTests()
         {
             _serviceProvider = new ServiceCollection().AddSerializer()
-                .AddSingleton<IConfigurationProvider<SerializerConfiguration>, TypeConfigurationProvider>()
+                .AddSingleton<IConfigureOptions<TypeManifestOptions>, TypeConfigurationProvider>()
                 .BuildServiceProvider();
         }
 
-        private class TypeConfigurationProvider : IConfigurationProvider<SerializerConfiguration>
+        private class TypeConfigurationProvider : IConfigureOptions<TypeManifestOptions>
         {
-            public void Configure(SerializerConfiguration configuration)
+            public void Configure(TypeManifestOptions configuration)
             {
                 configuration.WellKnownTypeIds[1000] = typeof(SomeBaseClass);
                 configuration.WellKnownTypeIds[1001] = typeof(SomeSubClass);

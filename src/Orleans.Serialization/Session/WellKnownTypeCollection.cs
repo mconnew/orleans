@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using Orleans.Serialization.Configuration;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ namespace Orleans.Serialization.Session
         private readonly Dictionary<uint, Type> _wellKnownTypes;
         private readonly Dictionary<Type, uint> _wellKnownTypeToIdMap;
 
-        public WellKnownTypeCollection(IConfiguration<SerializerConfiguration> config)
+        public WellKnownTypeCollection(IOptions<TypeManifestOptions> config)
         {
             _wellKnownTypes = config?.Value.WellKnownTypeIds ?? throw new ArgumentNullException(nameof(config));
             _wellKnownTypeToIdMap = new Dictionary<Type, uint>();

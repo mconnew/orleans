@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 
 namespace Orleans.Serialization.Configuration
 {
@@ -7,29 +6,29 @@ namespace Orleans.Serialization.Configuration
     /// Defines a metadata provider for this assembly.
     /// </summary>
     [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
-    public sealed class MetadataProviderAttribute : Attribute
+    public sealed class TypeManifestProviderAttribute : Attribute
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MetadataProviderAttribute"/> class.
+        /// Initializes a new instance of the <see cref="TypeManifestProviderAttribute"/> class.
         /// </summary>
         /// <param name="providerType">The metadata provider type.</param>
-        public MetadataProviderAttribute(Type providerType)
+        public TypeManifestProviderAttribute(Type providerType)
         {
             if (providerType is null)
             {
                 throw new ArgumentNullException(nameof(providerType));
             }
 
-            if (!providerType.GetInterfaces().Any(iface => iface.IsConstructedGenericType && typeof(IConfigurationProvider<>).IsAssignableFrom(iface.GetGenericTypeDefinition())))
+            if (!typeof(ITypeManifestProvider).IsAssignableFrom(providerType))
             {
-                throw new ArgumentException($"Provided type {providerType} must implement {typeof(IConfigurationProvider<>)}", nameof(providerType));
+                throw new ArgumentException($"Provided type {providerType} must implement {typeof(ITypeManifestProvider)}", nameof(providerType));
             }
 
             ProviderType = providerType;
         }
 
         /// <summary>
-        /// Gets the metadata provider type.
+        /// Gets the manifest provider type.
         /// </summary>
         public Type ProviderType { get; }
     }

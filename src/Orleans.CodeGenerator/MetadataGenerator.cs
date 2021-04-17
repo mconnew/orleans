@@ -67,6 +67,28 @@ namespace Orleans.CodeGenerator
                                     SingletonSeparatedList(
                                         Argument(TypeOfExpression(type.TypeSyntax))))))
                 ));
+            var addInvokableInterfaceMethod = configParam.Member("Interfaces").Member("Add");
+            body.AddRange(
+                metadataModel.InvokableInterfaces.Select(
+                    type =>
+                        (StatementSyntax)ExpressionStatement(
+                            InvocationExpression(
+                                addInvokableInterfaceMethod,
+                                ArgumentList(
+                                    SingletonSeparatedList(
+                                        Argument(TypeOfExpression(type.InterfaceType.ToOpenTypeSyntax()))))))
+                ));
+            var addInvokableInterfaceImplementationMethod = configParam.Member("InterfaceImplementations").Member("Add");
+            body.AddRange(
+                metadataModel.InvokableInterfaceImplementations.Select(
+                    type =>
+                        (StatementSyntax)ExpressionStatement(
+                            InvocationExpression(
+                                addInvokableInterfaceImplementationMethod ,
+                                ArgumentList(
+                                    SingletonSeparatedList(
+                                        Argument(TypeOfExpression(type.ToOpenTypeSyntax()))))))
+                ));
 
             var addActivatorMethod = configParam.Member("Activators").Member("Add");
             body.AddRange(
@@ -120,14 +142,14 @@ namespace Orleans.CodeGenerator
                                     }))))
                 ));
 
-            var configType = libraryTypes.SerializerConfiguration;
+            var configType = libraryTypes.TypeManifestOptions;
             var configureMethod = MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), "Configure")
                 .AddModifiers(Token(SyntaxKind.PublicKeyword))
                 .AddParameterListParameters(
                     Parameter(configParam.Identifier).WithType(configType.ToTypeSyntax()))
                 .AddBodyStatements(body.ToArray());
 
-            var interfaceType = libraryTypes.ConfigurationProvider.Construct(configType);
+            var interfaceType = libraryTypes.ITypeManifestProvider;
             return ClassDeclaration("Metadata_" + compilation.AssemblyName.Replace('.', '_'))
                 .AddBaseListTypes(SimpleBaseType(interfaceType.ToTypeSyntax()))
                 .AddModifiers(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.SealedKeyword))

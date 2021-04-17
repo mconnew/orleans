@@ -3,11 +3,11 @@ using System;
 
 namespace Orleans.Serialization.Configuration
 {
-    internal class DefaultTypeConfiguration : IConfigurationProvider<SerializerConfiguration>
+    internal class DefaultTypeManifestProvider : ITypeManifestProvider
     {
-        public void Configure(SerializerConfiguration options)
+        public void Configure(TypeManifestOptions typeManifest)
         {
-            var wellKnownTypes = options.WellKnownTypeIds;
+            var wellKnownTypes = typeManifest.WellKnownTypeIds;
             wellKnownTypes[0] = typeof(void); // Represents the type of null
             wellKnownTypes[1] = typeof(int);
             wellKnownTypes[2] = typeof(string);
@@ -30,7 +30,7 @@ namespace Orleans.Serialization.Configuration
             wellKnownTypes[19] = typeof(object);
             wellKnownTypes[20] = typeof(DotNetSerializableCodec);
 
-            var allowedTypes = options.AllowedTypes;
+            var allowedTypes = typeManifest.AllowedTypes;
             allowedTypes.Add("System.Globalization.CompareOptions");
         }
     }

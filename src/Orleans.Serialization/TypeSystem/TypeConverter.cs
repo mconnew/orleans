@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using Orleans.Serialization.Activators;
 using Orleans.Serialization.Cloning;
 using Orleans.Serialization.Codecs;
@@ -27,7 +28,7 @@ namespace Orleans.Serialization.TypeSystem
         private readonly ConcurrentDictionary<QualifiedType, bool> _allowedTypes;
         private readonly HashSet<string> _allowedTypesConfiguration;
 
-        public TypeConverter(IEnumerable<ITypeConverter> formatters, IEnumerable<ITypeFilter> filters, IConfiguration<SerializerConfiguration> configuration, TypeResolver typeResolver)
+        public TypeConverter(IEnumerable<ITypeConverter> formatters, IEnumerable<ITypeFilter> filters, IOptions<TypeManifestOptions> options, TypeResolver typeResolver)
         {
             _resolver = typeResolver;
             _converters = formatters.ToArray();
@@ -40,14 +41,14 @@ namespace Orleans.Serialization.TypeSystem
 
             _allowedTypes = new ConcurrentDictionary<QualifiedType, bool>(QualifiedType.EqualityComparer);
             _allowedTypesConfiguration = new(StringComparer.Ordinal);
-            foreach (var t in configuration.Value.AllowedTypes)
+            foreach (var t in options.Value.AllowedTypes)
             {
                 _allowedTypesConfiguration.Add(t);
             }
 
-            ConsumeMetadata(configuration.Value);
+            ConsumeMetadata(options.Value);
 
-            var aliases = configuration.Value.WellKnownTypeAliases;
+            var aliases = options.Value.WellKnownTypeAliases;
             foreach (var item in aliases)
             {
                 var alias = new QualifiedType(null, item.Key);
@@ -70,7 +71,7 @@ namespace Orleans.Serialization.TypeSystem
             }
         }
 
-        private void ConsumeMetadata(SerializerConfiguration metadata)
+        private void ConsumeMetadata(TypeManifestOptions metadata)
         {
             AddFromMetadata(metadata.Serializers, typeof(IBaseCodec<>));
             AddFromMetadata(metadata.Serializers, typeof(IValueSerializer<>));
@@ -323,11 +324,11 @@ namespace Orleans.Serialization.TypeSystem
 
             if (!string.IsNullOrWhiteSpace(value.Assembly))
             {
-                message = $"Type \"{value.Type}\" from assembly \"{value.Assembly}\" is not allowed. To allow it, add it to {nameof(SerializerConfiguration)}.{nameof(SerializerConfiguration.AllowedTypes)} or register an {nameof(ITypeFilter)} instance which allows it.";
+                message = $"Type \"{value.Type}\" from assembly \"{value.Assembly}\" is not allowed. To allow it, add it to {nameof(TypeManifestOptions)}.{nameof(TypeManifestOptions.AllowedTypes)} or register an {nameof(ITypeFilter)} instance which allows it.";
             }
             else
             {
-                message = $"Type \"{value.Type}\" is not allowed. To allow it, add it to {nameof(SerializerConfiguration)}.{nameof(SerializerConfiguration.AllowedTypes)} or register an {nameof(ITypeFilter)} instance which allows it.";
+                message = $"Type \"{value.Type}\" is not allowed. To allow it, add it to {nameof(TypeManifestOptions)}.{nameof(TypeManifestOptions.AllowedTypes)} or register an {nameof(ITypeFilter)} instance which allows it.";
             }
 
             throw new InvalidOperationException(message);

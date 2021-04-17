@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Microsoft.Extensions.Options;
 
 namespace Orleans.Serialization.Serializers
 {
@@ -48,7 +49,7 @@ namespace Orleans.Serialization.Serializers
         private readonly IDeepCopier _voidCopier = new VoidCopier();
         private bool _initialized;
 
-        public CodecProvider(IServiceProvider serviceProvider, IConfiguration<SerializerConfiguration> codecConfiguration)
+        public CodecProvider(IServiceProvider serviceProvider, IOptions<TypeManifestOptions> codecConfiguration)
         {
             _serviceProvider = serviceProvider;
 
@@ -85,7 +86,7 @@ namespace Orleans.Serialization.Serializers
             }
         }
 
-        private void ConsumeMetadata(IConfiguration<SerializerConfiguration> codecConfiguration)
+        private void ConsumeMetadata(IOptions<TypeManifestOptions> codecConfiguration)
         {
             var metadata = codecConfiguration.Value;
             Func<Type, bool> noFilter = _ => true;

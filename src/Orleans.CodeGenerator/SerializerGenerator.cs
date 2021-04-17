@@ -293,7 +293,7 @@ namespace Orleans.CodeGenerator
             {
                 TypeSyntax codecType = null;
                 if (member.Type.HasAttribute(libraryTypes.GenerateSerializerAttribute)
-                    && (!SymbolEqualityComparer.Default.Equals(member.Type.ContainingAssembly, libraryTypes.Compilation.Assembly) || member.Type.ContainingAssembly.HasAttribute(libraryTypes.MetadataProviderAttribute)))
+                    && (!SymbolEqualityComparer.Default.Equals(member.Type.ContainingAssembly, libraryTypes.Compilation.Assembly) || member.Type.ContainingAssembly.HasAttribute(libraryTypes.TypeManifestProviderAttribute)))
                 {
                     // Use the concrete generated type and avoid expensive interface dispatch
                     if (member.Type is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.IsGenericType)

@@ -19,7 +19,7 @@ namespace Orleans.CodeGenerator
                 ApplicationPartAttribute = Type("Orleans.ApplicationPartAttribute"),
                 Action_2 = Type("System.Action`2"),
                 Byte = compilation.GetSpecialType(SpecialType.System_Byte),
-                ConfigurationProvider = Type("Orleans.Serialization.Configuration.IConfigurationProvider`1"),
+                ITypeManifestProvider = Type("Orleans.Serialization.Configuration.ITypeManifestProvider"),
                 Field = Type("Orleans.Serialization.WireProtocol.Field"),
                 WireType = Type("Orleans.Serialization.WireProtocol.WireType"),
                 FieldCodec = Type("Orleans.Serialization.Codecs.IFieldCodec"),
@@ -55,7 +55,7 @@ namespace Orleans.CodeGenerator
                 InvokablePool = Type("Orleans.Serialization.Invocation.InvokablePool"),
                 IResponseCompletionSource = Type("Orleans.Serialization.Invocation.IResponseCompletionSource"),
                 ITargetHolder = Type("Orleans.Serialization.Invocation.ITargetHolder"),
-                MetadataProviderAttribute = Type("Orleans.Serialization.Configuration.MetadataProviderAttribute"),
+                TypeManifestProviderAttribute = Type("Orleans.Serialization.Configuration.TypeManifestProviderAttribute"),
                 NonSerializedAttribute = Type("System.NonSerializedAttribute"),
                 Object = compilation.GetSpecialType(SpecialType.System_Object),
                 ObsoleteAttribute = Type("System.ObsoleteAttribute"),
@@ -65,7 +65,7 @@ namespace Orleans.CodeGenerator
                 Request = Type("Orleans.Serialization.Invocation.Request"),
                 Request_1 = Type("Orleans.Serialization.Invocation.Request`1"),
                 ResponseCompletionSourcePool = Type("Orleans.Serialization.Invocation.ResponseCompletionSourcePool"),
-                SerializerConfiguration = Type("Orleans.Serialization.Configuration.SerializerConfiguration"),
+                TypeManifestOptions = Type("Orleans.Serialization.Configuration.TypeManifestOptions"),
                 SerializerSession = Type("Orleans.Serialization.Session.SerializerSession"),
                 Task = Type("System.Threading.Tasks.Task"),
                 Task_1 = Type("System.Threading.Tasks.Task`1"),
@@ -209,7 +209,7 @@ namespace Orleans.CodeGenerator
 
         public INamedTypeSymbol Action_2 { get; private set; }
         public INamedTypeSymbol Byte { get; private set; }
-        public INamedTypeSymbol ConfigurationProvider { get; private set; }
+        public INamedTypeSymbol ITypeManifestProvider { get; private set; }
         public INamedTypeSymbol Field { get; private set; }
         public INamedTypeSymbol WireType { get; private set; }
         public INamedTypeSymbol DeepCopier_1 { get; private set; }
@@ -227,7 +227,7 @@ namespace Orleans.CodeGenerator
         public INamedTypeSymbol InvokablePool { get; private set; }
         public INamedTypeSymbol IResponseCompletionSource { get; private set; }
         public INamedTypeSymbol ITargetHolder { get; private set; }
-        public INamedTypeSymbol MetadataProviderAttribute { get; private set; }
+        public INamedTypeSymbol TypeManifestProviderAttribute { get; private set; }
         public INamedTypeSymbol NonSerializedAttribute { get; private set; }
         public INamedTypeSymbol Object { get; private set; }
         public INamedTypeSymbol ObsoleteAttribute { get; private set; }
@@ -237,7 +237,7 @@ namespace Orleans.CodeGenerator
         public INamedTypeSymbol Request { get; private set; }
         public INamedTypeSymbol Request_1 { get; private set; }
         public INamedTypeSymbol ResponseCompletionSourcePool { get; private set; }
-        public INamedTypeSymbol SerializerConfiguration { get; private set; }
+        public INamedTypeSymbol TypeManifestOptions { get; private set; }
         public INamedTypeSymbol SerializerSession { get; private set; }
         public INamedTypeSymbol Task { get; private set; }
         public INamedTypeSymbol Task_1 { get; private set; }

@@ -7,6 +7,7 @@ namespace Orleans.CodeGenerator
     {
         public List<ISerializableTypeDescription> SerializableTypes { get; } = new(1024);
         public List<InvokableInterfaceDescription> InvokableInterfaces { get; } = new(1024);
+        public List<INamedTypeSymbol> InvokableInterfaceImplementations { get; } = new(1024);
         public Dictionary<MethodDescription, GeneratedInvokerDescription> GeneratedInvokables { get; } = new();
         public List<GeneratedProxyDescription> GeneratedProxies { get; } = new(1024);
         public List<ISerializableTypeDescription> ActivatableTypes { get; } = new(1024);

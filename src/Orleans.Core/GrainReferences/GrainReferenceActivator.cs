@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Orleans.CodeGeneration;
 using Orleans.Metadata;
 using Orleans.Runtime;
@@ -131,7 +132,7 @@ namespace Orleans.GrainReferences
         private readonly Dictionary<GrainInterfaceType, Type> _mapping;
 
         public NewRpcProvider(
-            IConfiguration<SerializerConfiguration> config,
+            IOptions<TypeManifestOptions> config,
             GrainInterfaceTypeResolver resolver,
             TypeConverter typeConverter)
         {

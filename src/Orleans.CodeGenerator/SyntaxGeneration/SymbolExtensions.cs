@@ -220,27 +220,24 @@ namespace Orleans.CodeGenerator.SyntaxGeneration
         {
             var displayString = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
             var nameSyntax = ParseName(displayString);
+            return Visit(nameSyntax);
 
-            switch (nameSyntax)
+            static NameSyntax Visit(NameSyntax nameSyntax)
             {
-                case AliasQualifiedNameSyntax aliased:
-                    return aliased.WithName(WithGenericParameters(aliased.Name, typeSymbol.Arity));
-                case QualifiedNameSyntax qualified:
-                    return qualified.WithRight(WithGenericParameters(qualified.Right, typeSymbol.Arity));
-                case GenericNameSyntax g when typeSymbol.Arity > 0:
-                    return WithGenericParameters(g, typeSymbol.Arity);
-                default:
-                    return nameSyntax;
-            }
-
-            static SimpleNameSyntax WithGenericParameters(SimpleNameSyntax simpleNameSyntax, int arity)
-            {
-                if (simpleNameSyntax is GenericNameSyntax generic)
+                switch (nameSyntax)
                 {
-                    return generic.WithTypeArgumentList(TypeArgumentList(SeparatedList<TypeSyntax>(Enumerable.Range(0, arity).Select(_ => OmittedTypeArgument()))));
+                    case GenericNameSyntax generic:
+                        {
+                            var argCount = generic.TypeArgumentList.Arguments.Count;
+                            return generic.WithTypeArgumentList(TypeArgumentList(SeparatedList<TypeSyntax>(Enumerable.Range(0, argCount).Select(_ => OmittedTypeArgument()))));
+                        }
+                    case AliasQualifiedNameSyntax aliased:
+                        return aliased.WithName((SimpleNameSyntax)Visit(aliased.Name));
+                    case QualifiedNameSyntax qualified:
+                        return qualified.WithRight((SimpleNameSyntax)Visit(qualified.Right)).WithLeft(Visit(qualified.Left));
+                    default:
+                        return nameSyntax;
                 }
-
-                return simpleNameSyntax;
             }
         }
 

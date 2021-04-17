@@ -274,7 +274,7 @@ namespace Orleans.CodeGenerator
                 TypeSyntax copierType = null;
                 var t = member.Type;
                 if (t.HasAttribute(libraryTypes.GenerateSerializerAttribute)
-                    && (!SymbolEqualityComparer.Default.Equals(t.ContainingAssembly, libraryTypes.Compilation.Assembly) || t.ContainingAssembly.HasAttribute(libraryTypes.MetadataProviderAttribute)))
+                    && (!SymbolEqualityComparer.Default.Equals(t.ContainingAssembly, libraryTypes.Compilation.Assembly) || t.ContainingAssembly.HasAttribute(libraryTypes.TypeManifestProviderAttribute)))
                 {
                     // Use the concrete generated type and avoid expensive interface dispatch
                     if (t is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.IsGenericType)

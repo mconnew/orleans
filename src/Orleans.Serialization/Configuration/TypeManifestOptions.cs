@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Orleans.Serialization.Configuration
 {
-    public sealed class SerializerConfiguration
+    public sealed class TypeManifestOptions
     {
         public HashSet<Type> Activators { get; } = new HashSet<Type>();
 
@@ -13,7 +13,11 @@ namespace Orleans.Serialization.Configuration
 
         public HashSet<Type> Copiers { get; } = new HashSet<Type>();
 
+        public HashSet<Type> Interfaces { get; } = new HashSet<Type>();
+
         public HashSet<Type> InterfaceProxies { get; } = new HashSet<Type>();
+
+        public HashSet<Type> InterfaceImplementations { get; } = new HashSet<Type>();
 
         public Dictionary<uint, Type> WellKnownTypeIds { get; } = new Dictionary<uint, Type>();
 

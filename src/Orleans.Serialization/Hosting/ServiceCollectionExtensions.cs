@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using Microsoft.Extensions.Options;
 
 namespace Orleans.Serialization
 {
@@ -31,12 +32,11 @@ namespace Orleans.Serialization
                 }
 
                 services.Add(context.CreateServiceDescriptor());
-                services.AddSingleton<IConfigurationProvider<SerializerConfiguration>, DefaultTypeConfiguration>();
+                services.AddSingleton<IConfigureOptions<TypeManifestOptions>, DefaultTypeManifestProvider>();
                 services.AddSingleton<TypeResolver, CachedTypeResolver>();
                 services.AddSingleton<TypeConverter>();
                 services.TryAddSingleton(typeof(ListActivator<>));
                 services.TryAddSingleton(typeof(DictionaryActivator<,>));
-                services.TryAddSingleton(typeof(IConfiguration<>), typeof(ConfigurationHolder<>));
                 services.TryAddSingleton<CodecProvider>();
                 services.TryAddSingleton<ICodecProvider>(sp => sp.GetRequiredService<CodecProvider>());
                 services.TryAddSingleton<IDeepCopierProvider>(sp => sp.GetRequiredService<CodecProvider>());

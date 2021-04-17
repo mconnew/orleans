@@ -90,7 +90,7 @@ namespace Orleans.CodeGenerator
                 .WithTarget(AttributeTargetSpecifier(Token(SyntaxKind.AssemblyKeyword)))
                 .WithAttributes(
                     SingletonSeparatedList(
-                        Attribute(LibraryTypes.MetadataProviderAttribute.ToNameSyntax())
+                        Attribute(LibraryTypes.TypeManifestProviderAttribute.ToNameSyntax())
                             .AddArgumentListArguments(AttributeArgument(TypeOfExpression(QualifiedName(IdentifierName(metadataClassNamespace), IdentifierName(metadataClass.Identifier.Text)))))));
 
             var assemblyAttributes = ApplicationPartAttributeGenerator.GenerateSyntax(LibraryTypes, metadataModel);
@@ -226,6 +226,20 @@ namespace Orleans.CodeGenerator
                         if (symbol.HasAttribute(LibraryTypes.RegisterCopierAttribute))
                         {
                             metadataModel.DetectedCopiers.Add(symbol);
+                        }
+
+                        // Find all implementations of invokable interfaces
+                        foreach (var iface in symbol.AllInterfaces)
+                        {
+                            var attribute = HasAttribute(
+                                iface,
+                                LibraryTypes.GenerateMethodSerializersAttribute,
+                                inherited: true);
+                            if (attribute != null)
+                            {
+                                metadataModel.InvokableInterfaceImplementations.Add(symbol);
+                                break;
+                            }
                         }
                     }
                 }
