@@ -6,19 +6,15 @@
          Orleans_FullAssembly;
          Orleans_GeneratorAssembly;
          Orleans_MSBuildIsCore;
-         Orleans_OutputFileName;
-         Orleans_TaskAssembly;">
+         Orleans_OutputFileName">
 
   <PropertyGroup>
     <!-- Specify the assembly containing the MSBuild tasks. -->
     <Orleans_MSBuildIsCore Condition="'$(MSBuildRuntimeType)' == 'Core' or '$(OS)' != 'Windows_NT'">true</Orleans_MSBuildIsCore>
-    <Orleans_TaskAssembly Condition=" '$(OrleansCodeGenTaskAssembly)' != '' ">$(OrleansCodeGenTaskAssembly)</Orleans_TaskAssembly>
-    <Orleans_TaskAssembly Condition=" '$(Orleans_TaskAssembly)' == '' and '$(Orleans_MSBuildIsCore)' == 'true'">$(MSBuildThisFileDirectory)..\tasks\net5.0\Orleans.CodeGenerator.MSBuild.Tasks.dll</Orleans_TaskAssembly>
 
     <!-- When the MSBuild host is full-framework, we defer to PATH for dotnet -->
-    <Orleans_DotNetHost Condition="'$(DotNetFromPath)' == 'true'">dotnet</Orleans_DotNetHost>
-    <Orleans_DotNetHost Condition="'$(Orleans_MSBuildIsCore)' != 'true'">dotnet</Orleans_DotNetHost>
     <Orleans_DotNetHost Condition="'$(DotNetHost)' != ''">$(DotNetHost)</Orleans_DotNetHost>
+    <Orleans_DotNetHost Condition="'$(DotNetFromPath)' == 'true' or '$(Orleans_MSBuildIsCore)' != 'true' or '$(Orleans_DotNetHost)' == ''">dotnet</Orleans_DotNetHost>
 
     <!-- Specify the assembly containing the code generator. -->
     <Orleans_GeneratorAssembly Condition="'$(OrleansCodeGenCoreAssembly)' != ''">$(OrleansCodeGenCoreAssembly)</Orleans_GeneratorAssembly>
@@ -76,8 +72,6 @@
 
   </Target>
 
-  <UsingTask TaskName="Orleans.CodeGenerator.MSBuild.Tasks.GetDotNetHost" AssemblyFile="$(Orleans_TaskAssembly)" Condition="'$(Orleans_CodeGeneratorEnabled)' == 'true' and '$(Orleans_DotNetHost)' == '' and '$(Orleans_MSBuildIsCore)' == 'true'" />
-
   <Target Name="OrleansGenerateCode"
           DependsOnTargets="$(OrleansGenerateCodeDependsOn)"
           AfterTargets="OrleansGenerateInputCache"
@@ -104,10 +98,6 @@
 
     <Message Text="[Orleans.CodeGenerator] - CodeGen arguments file=$(Orleans_ArgsFile)"/>
     <WriteLinesToFile Overwrite="true" File="$(Orleans_ArgsFile)" Lines="@(Orleans_CodeGenArgs)"/>
-
-    <Orleans.CodeGenerator.MSBuild.Tasks.GetDotNetHost Condition="'$(Orleans_DotNetHost)' == '' and '$(Orleans_MSBuildIsCore)' == 'true' ">
-      <Output TaskParameter="DotNetHost" PropertyName="Orleans_DotNetHost" />
-    </Orleans.CodeGenerator.MSBuild.Tasks.GetDotNetHost>
 
     <!-- If building on .NET Core, use dotnet to execute the process. -->
     <Exec Command="&quot;$(Orleans_DotNetHost)&quot; &quot;$(Orleans_GeneratorAssembly)&quot; &quot;$(Orleans_ArgsFile)&quot;" Outputs="$(Orleans_OutputFileName)" />
