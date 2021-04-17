@@ -7,6 +7,7 @@ using Orleans;
 using Orleans.Configuration;
 using Orleans.Hosting;
 using Orleans.Runtime;
+using Orleans.Serialization.TypeSystem;
 using Orleans.TestingHost;
 using Orleans.Utilities;
 using TestExtensions;

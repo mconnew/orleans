@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using Microsoft.Extensions.Options;
 using Orleans.Configuration;
 using Orleans.Runtime;
+using Orleans.Serialization.TypeSystem;
 
 namespace Orleans.Metadata
 {

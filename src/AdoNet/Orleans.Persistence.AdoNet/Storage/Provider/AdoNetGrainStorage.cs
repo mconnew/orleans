@@ -567,7 +567,24 @@ namespace Orleans.Storage
         private ICollection<IStorageDeserializer> ConfigureDeserializers(AdoNetGrainStorageOptions options, IProviderRuntime providerRuntime)
         {
             var deserializers = new List<IStorageDeserializer>();
-            deserializers.Add(new OrleansStorageDefaultBinaryDeserializer(this.serializer, BinaryFormatSerializerTag));
+            if(options.UseJsonFormat)
+            {
+                var jsonSettings = OrleansJsonSerializer.UpdateSerializerSettings(OrleansJsonSerializer.GetDefaultSerializerSettings(providerRuntime.ServiceProvider), options.UseFullAssemblyNames, options.IndentJson, options.TypeNameHandling);
+                options.ConfigureJsonSerializerSettings?.Invoke(jsonSettings);
+
+                deserializers.Add(new OrleansStorageDefaultJsonDeserializer(jsonSettings, JsonFormatSerializerTag));
+            }
+
+            if(options.UseXmlFormat)
+            {
+                deserializers.Add(new OrleansStorageDefaultXmlDeserializer(XmlFormatSerializerTag));
+            }
+            //if none are set true, configure binary format serializer by default
+            if(!options.UseXmlFormat && !options.UseJsonFormat)
+            {
+                deserializers.Add(new OrleansStorageDefaultBinaryDeserializer(this.serializer, BinaryFormatSerializerTag));
+            }
+
             return deserializers;
         }
 
@@ -575,7 +592,24 @@ namespace Orleans.Storage
         private ICollection<IStorageSerializer> ConfigureSerializers(AdoNetGrainStorageOptions options, IProviderRuntime providerRuntime)
         {
             var serializers = new List<IStorageSerializer>();
-            serializers.Add(new OrleansStorageDefaultBinarySerializer(this.serializer, BinaryFormatSerializerTag));
+            if(options.UseJsonFormat)
+            {
+                var jsonSettings = OrleansJsonSerializer.UpdateSerializerSettings(OrleansJsonSerializer.GetDefaultSerializerSettings(providerRuntime.ServiceProvider),
+                    options.UseFullAssemblyNames, options.IndentJson, options.TypeNameHandling);
+                options.ConfigureJsonSerializerSettings?.Invoke(jsonSettings);
+                serializers.Add(new OrleansStorageDefaultJsonSerializer(jsonSettings, JsonFormatSerializerTag));
+            }
+            if(options.UseXmlFormat)
+            {
+                serializers.Add(new OrleansStorageDefaultXmlSerializer(XmlFormatSerializerTag));
+            }
+
+            //if none are set true, configure binary format serializer by default
+            if (!options.UseXmlFormat && !options.UseJsonFormat)
+            {
+                serializers.Add(new OrleansStorageDefaultBinarySerializer(this.serializer, BinaryFormatSerializerTag));
+            }
+
             return serializers;
         }
     }

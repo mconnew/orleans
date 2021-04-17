@@ -59,7 +59,7 @@ namespace Orleans.Providers
             return serializer.Deserialize(bodyBytes.ToArray());
         }
 
-        void IOnDeserialized.OnDeserialized(ISerializerContext context)
+        void IOnDeserialized.OnDeserialized(DeserializationContext context)
         {
             this.serializer = context.ServiceProvider.GetRequiredService<Serializer<MemoryMessageBody>>();
         }

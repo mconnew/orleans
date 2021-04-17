@@ -11,7 +11,7 @@ namespace Orleans.Streams
     [Immutable]
     [Orleans.GenerateSerializer]
     [Orleans.SerializationCallbacks(typeof(OnDeserializedCallbacks))]
-    internal sealed class StreamImpl<T> : IAsyncStream<T>, IStreamControl, ISerializable, IOnDeserialized
+    internal sealed class StreamImpl<T> : IAsyncStream<T>, IStreamControl, IOnDeserialized
     {
         [Orleans.Id(1)]
         private readonly InternalStreamId                       streamId;
@@ -205,27 +205,7 @@ namespace Orleans.Streams
             return streamId.ToString();
         }
 
-        public void GetObjectData(SerializationInfo info, StreamingContext context)
-        {
-            // Use the AddValue method to specify serialized values.
-            info.AddValue("StreamId", streamId, typeof(InternalStreamId));
-            info.AddValue("IsRewindable", isRewindable, typeof(bool));
-        }
-
-        // The special constructor is used to deserialize values. 
-        private StreamImpl(SerializationInfo info, StreamingContext context)
-        {
-            // Reset the property value using the GetValue method.
-            streamId = (InternalStreamId)info.GetValue("StreamId", typeof(InternalStreamId));
-            isRewindable = info.GetBoolean("IsRewindable");
-            initLock = new object();
-
-            var serializerContext = context.Context as ISerializerContext;
-            ((IOnDeserialized)this).OnDeserialized(serializerContext);
-
-        }
-
-        void IOnDeserialized.OnDeserialized(ISerializerContext context)
+        void IOnDeserialized.OnDeserialized(DeserializationContext  context)
         {
             this.runtimeClient = context?.RuntimeClient as IRuntimeClient;
         }

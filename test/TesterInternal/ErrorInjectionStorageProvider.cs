@@ -78,7 +78,7 @@ namespace UnitTests.StorageTests
         public ErrorInjectionStorageProvider(
             ILogger<ErrorInjectionStorageProvider> logger,
             ILoggerFactory loggerFactory,
-            SerializationManager serializationManager) : base(loggerFactory, serializationManager)
+            DeepCopier copier) : base(loggerFactory, copier)
         {
             this.logger = logger;
             SetErrorInjection(ErrorInjectionBehavior.None);

@@ -46,7 +46,7 @@ namespace Orleans.Providers.Streams.AzureQueue
             return azureQueueBatch;
         }
 
-        void IOnDeserialized.OnDeserialized(ISerializerContext context)
+        void IOnDeserialized.OnDeserialized(DeserializationContext context)
         {
             this.serializer = context.ServiceProvider.GetRequiredService<Serializer<AzureQueueBatchContainer>>();
         }
@@ -89,7 +89,7 @@ namespace Orleans.Providers.Streams.AzureQueue
             return azureQueueBatch;
         }
 
-        void IOnDeserialized.OnDeserialized(ISerializerContext context)
+        void IOnDeserialized.OnDeserialized(DeserializationContext context)
         {
             this.serializer = context.ServiceProvider.GetRequiredService<Serializer<AzureQueueBatchContainerV2>>();
         }

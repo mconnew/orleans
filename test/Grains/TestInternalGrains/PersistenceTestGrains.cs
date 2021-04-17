@@ -162,13 +162,13 @@ namespace UnitTests.Grains
     [Orleans.Providers.StorageProvider(ProviderName = "ErrorInjector")]
     public class PersistenceUserHandledErrorGrain : Grain<PersistenceTestGrainState>, IPersistenceUserHandledErrorGrain
     {
-        private readonly SerializationManager serializationManager;
         private readonly ILogger logger;
+        private readonly DeepCopier<PersistenceTestGrainState> copier;
 
-        public PersistenceUserHandledErrorGrain(ILoggerFactory loggerFactory, SerializationManager serializationManager)
+        public PersistenceUserHandledErrorGrain(ILoggerFactory loggerFactory, DeepCopier<PersistenceTestGrainState> copier)
         {
             this.logger = loggerFactory.CreateLogger($"{this.GetType().Name}-{this.IdentityString}");
-            this.serializationManager = serializationManager;
+            this.copier = copier;
         }
 
         public Task<int> GetValue()
@@ -178,7 +178,7 @@ namespace UnitTests.Grains
 
         public async Task DoWrite(int val, bool recover)
         {
-            var original = this.serializationManager.DeepCopy(State);
+            var original = this.copier.Copy(State);
             try
             {
                 State.Field1 = val;
@@ -195,7 +195,7 @@ namespace UnitTests.Grains
 
         public async Task<int> DoRead(bool recover)
         {
-            var original = this.serializationManager.DeepCopy(State);
+            var original = this.copier.Copy(State);
             try
             {
                 await ReadStateAsync();
@@ -1104,120 +1104,6 @@ namespace UnitTests.Grains
             State.Field1 = val;
             logger.Info("SetValue {0}", val);
             return WriteStateAsync();
-        }
-    }
-
-    public class SerializationTestGrain : Grain, ISerializationTestGrain
-    {
-        private static int _staticFilterValue1 = 41;
-        private static int _staticFilterValue2 = 42;
-        private static int _staticFilterValue3 = 43;
-        private static int _staticFilterValue4 = 44;
-
-        private readonly int _instanceFilterValue2 = _staticFilterValue2;
-
-        private readonly ILogger logger;
-        private readonly SerializationManager serializationManager;
-
-        public SerializationTestGrain(ILoggerFactory loggerFactory, SerializationManager serializationManager)
-        {
-            this.logger = loggerFactory.CreateLogger($"{this.GetType().Name}-{this.IdentityString}");
-            this.serializationManager = serializationManager;
-        }
-
-        public Task Test_Serialize_Func()
-        {
-            Func<int, bool> staticFilterFunc = i => i == _staticFilterValue3;
-
-            //int instanceFilterValue2 = _staticFilterValue2;
-            //
-            //Func<int, bool> instanceFilterFunc = i => i == instanceFilterValue2;
-
-            Func<int, bool> staticFuncInGrainClass = PredFuncStatic;
-            //Func<int, bool> instanceFuncInGrainClass = this.PredFuncInstance;
-
-            // Works OK
-            TestSerializeFuncPtr("Func Lambda - Static field", staticFilterFunc);
-            TestSerializeFuncPtr("Static Func In Grain Class", staticFuncInGrainClass);
-
-            // Fails
-            //TestSerializeFuncPtr("Instance Func In Grain Class", instanceFuncInGrainClass);
-            //TestSerializeFuncPtr("Func Lambda - Instance field", instanceFilterFunc);
-
-            return Task.CompletedTask;
-        }
-
-        public Task Test_Serialize_Predicate()
-        {
-            Predicate<int> staticPredicate = i => i == _staticFilterValue2;
-
-            //int instanceFilterValue2 = _staticFilterValue2;
-            //
-            //Predicate<int> instancePredicate = i => i == instanceFilterValue2;
-
-            // Works OK
-            TestSerializePredicate("Predicate Lambda - Static field", staticPredicate);
-
-            // Fails
-            //TestSerializePredicate("Predicate Lambda - Instance field", instancePredicate);
-
-            return Task.CompletedTask;
-        }
-
-        public Task Test_Serialize_Predicate_Class()
-        {
-            IMyPredicate pred = new MyPredicate(_staticFilterValue2);
-
-            // Works OK
-            TestSerializePredicate("Predicate Class Instance", pred.FilterFunc);
-
-            return Task.CompletedTask;
-        }
-
-        public Task Test_Serialize_Predicate_Class_Param(IMyPredicate pred)
-        {
-            // Works OK
-            TestSerializePredicate("Predicate Class Instance passed as param", pred.FilterFunc);
-
-            return Task.CompletedTask;
-        }
-
-        // Utility methods
-
-        private void TestSerializeFuncPtr(string what, Func<int, bool> func1)
-        {
-            object obj2 = this.serializationManager.RoundTripSerializationForTesting(func1);
-            var func2 = (Func<int, bool>) obj2;
-
-            foreach (
-                var val in new[] {_staticFilterValue1, _staticFilterValue2, _staticFilterValue3, _staticFilterValue4})
-            {
-                logger.LogDebug("{0} -- Compare value={1}", what, val);
-                Assert.Equal(func1(val), func2(val));
-            }
-        }
-
-        private void TestSerializePredicate(string what, Predicate<int> pred1)
-        {
-            object obj2 = this.serializationManager.RoundTripSerializationForTesting(pred1);
-            var pred2 = (Predicate<int>) obj2;
-
-            foreach (
-                var val in new[] {_staticFilterValue1, _staticFilterValue2, _staticFilterValue3, _staticFilterValue4})
-            {
-                logger.LogDebug("{0} -- Compare value={1}", what, val);
-                Assert.Equal(pred1(val), pred2(val));
-            }
-        }
-
-        public bool PredFuncInstance(int i)
-        {
-            return i == _instanceFilterValue2;
-        }
-
-        public static bool PredFuncStatic(int i)
-        {
-            return i == _staticFilterValue2;
         }
     }
 }

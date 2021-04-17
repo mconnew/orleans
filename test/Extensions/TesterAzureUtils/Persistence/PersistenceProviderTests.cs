@@ -12,6 +12,7 @@ using Orleans.Configuration;
 using Orleans.Internal;
 using Orleans.Providers;
 using Orleans.Runtime;
+using Orleans.Serialization.TypeSystem;
 using Orleans.Storage;
 using Samples.StorageProviders;
 using TestExtensions;

@@ -80,17 +80,6 @@ namespace Orleans.Runtime
             return GetGuidId(id);
         }
 
-        public void SerializeToStream(IBinaryTokenStreamWriter stream)
-        {
-            stream.Write(this.Guid);
-        }
-
-        internal static GuidId DeserializeFromStream(IBinaryTokenStreamReader stream)
-        {
-            Guid guid = stream.ReadGuid();
-            return GuidId.GetGuidId(guid);
-        }
-
         public static bool operator ==(GuidId a, GuidId b)
         {
             if (ReferenceEquals(a, b)) return true;

@@ -34,6 +34,23 @@ namespace Orleans.Configuration
         /// The invariant name for storage.
         /// </summary>
         public string Invariant { get; set; } = DEFAULT_ADONET_INVARIANT;
+
+        /// <summary>
+        /// Whether storage string payload should be formatted in JSON.
+        /// <remarks>If neither <see cref="UseJsonFormat"/> nor <see cref="UseXmlFormat"/> is set to true, then BinaryFormatSerializer will be configured to format storage string payload.</remarks>
+        /// </summary>
+        public bool UseJsonFormat { get; set; }
+        public bool UseFullAssemblyNames { get; set; }
+        public bool IndentJson { get; set; }
+        public TypeNameHandling? TypeNameHandling { get; set; }
+
+        public Action<JsonSerializerSettings> ConfigureJsonSerializerSettings { get; set; }
+
+        /// <summary>
+        /// Whether storage string payload should be formatted in Xml.
+        /// <remarks>If neither <see cref="UseJsonFormat"/> nor <see cref="UseXmlFormat"/> is set to true, then BinaryFormatSerializer will be configured to format storage string payload.</remarks>
+        /// </summary>
+        public bool UseXmlFormat { get; set; }
     }
 
     /// <summary>
@@ -66,6 +83,11 @@ namespace Orleans.Configuration
             if (string.IsNullOrWhiteSpace(this.options.ConnectionString))
             {
                 throw new OrleansConfigurationException($"Invalid {nameof(AdoNetGrainStorageOptions)} values for {nameof(AdoNetGrainStorage)} \"{name}\". {nameof(options.ConnectionString)} is required.");
+            }
+
+            if (options.UseXmlFormat&&options.UseJsonFormat)
+            {
+                throw new OrleansConfigurationException($"Invalid {nameof(AdoNetGrainStorageOptions)} values for {nameof(AdoNetGrainStorage)} \"{name}\". {nameof(options.UseXmlFormat)} and {nameof(options.UseJsonFormat)} cannot both be set to true");
             }
         }
     }

@@ -56,7 +56,7 @@ namespace Orleans.Runtime
         void BreakOutstandingMessagesToDeadSilo(SiloAddress deadSilo);
     }
 
-    public class OnDeserializedCallbacks : ISerializerContext
+    public class OnDeserializedCallbacks : DeserializationContext
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IRuntimeClient _runtimeClient;
@@ -67,9 +67,9 @@ namespace Orleans.Runtime
             _runtimeClient = serviceProvider.GetRequiredService<IRuntimeClient>();
         }
 
-        public IServiceProvider ServiceProvider => _serviceProvider;
+        public override IServiceProvider ServiceProvider => _serviceProvider;
 
-        public object RuntimeClient => _runtimeClient;
+        public override object RuntimeClient => _runtimeClient;
 
         public void OnDeserialized(IOnDeserialized value) => value.OnDeserialized(this);
     }

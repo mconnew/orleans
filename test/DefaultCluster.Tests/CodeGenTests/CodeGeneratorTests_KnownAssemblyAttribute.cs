@@ -26,7 +26,7 @@ namespace DefaultCluster.Tests.General
 
         private void ClientSerializerExists(Type t)
         {
-            Assert.True(this.HostedCluster.SerializationManager.HasSerializer(t));
+            Assert.True(this.HostedCluster.GetSerializer().CanSerialize(t));
         }
 
         [Fact, TestCategory("BVT"), TestCategory("CodeGen"), TestCategory("Serialization")]

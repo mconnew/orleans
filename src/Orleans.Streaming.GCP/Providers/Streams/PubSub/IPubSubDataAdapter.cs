@@ -34,7 +34,6 @@ namespace Orleans.Providers.GCP.Streams.PubSub
         /// <summary>
         /// Initializes a new instance of the <seealso cref="PubSubDataAdapter"/> class.
         /// </summary>
-        /// <param name="serializer">The <seealso cref="SerializationManager"/> injected at runtime.</param>
         public PubSubDataAdapter(Serializer<PubSubBatchContainer> serializer)
         {
             _serializer = serializer;
@@ -57,7 +56,7 @@ namespace Orleans.Providers.GCP.Streams.PubSub
             return new PubsubMessage { Data = ByteString.CopyFrom(rawBytes) };
         }
 
-        void IOnDeserialized.OnDeserialized(ISerializerContext context)
+        void IOnDeserialized.OnDeserialized(DeserializationContext context)
         {
             _serializer = context.ServiceProvider.GetRequiredService<Serializer<PubSubBatchContainer>>();
         }

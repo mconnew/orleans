@@ -130,7 +130,6 @@ namespace Orleans.Runtime
             logger.Info(ErrorCode.SiloInitConfig, "Starting silo {0}", name);
 
             var siloMessagingOptions = this.Services.GetRequiredService<IOptions<SiloMessagingOptions>>();
-            BufferPool.InitGlobalBufferPool(siloMessagingOptions.Value);
 
             try
             {

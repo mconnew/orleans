@@ -38,7 +38,6 @@ namespace Tester.AzureUtils.Streaming
             this.output = output;
             this.fixture = fixture;
             this.loggerFactory = this.fixture.Services.GetService<ILoggerFactory>();
-            BufferPool.InitGlobalBufferPool(new SiloMessagingOptions());
         }
 
         public Task InitializeAsync() => Task.CompletedTask;

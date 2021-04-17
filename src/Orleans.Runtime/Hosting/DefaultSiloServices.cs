@@ -88,7 +88,6 @@ namespace Orleans.Hosting
             services.TryAddSingleton<ApplicationRequestsStatisticsGroup>();
             services.TryAddSingleton<StageAnalysisStatisticsGroup>();
             services.TryAddSingleton<SchedulerStatisticsGroup>();
-            services.TryAddSingleton<SerializationStatisticsGroup>();
             services.TryAddSingleton<OverloadDetector>();
 
             services.TryAddSingleton<FallbackSystemTarget>();
@@ -115,7 +114,6 @@ namespace Orleans.Hosting
             services.AddSingleton<IConfigureGrainContextProvider, MayInterleaveConfiguratorProvider>();
             services.AddSingleton<IConfigureGrainTypeComponents, ReentrantSharedComponentsConfigurator>();
             services.TryAddSingleton<NewRpcProvider>();
-            services.TryAddSingleton<GrainReferenceSerializer>();
             services.TryAddSingleton<GrainReferenceKeyStringConverter>();
             services.AddSingleton<GrainVersionManifest>();
             services.TryAddSingleton<GrainBindingsResolver>();
@@ -270,12 +268,6 @@ namespace Orleans.Hosting
 
             services.TryAddSingleton(typeof(IKeyedServiceCollection<,>), typeof(KeyedServiceCollection<,>));
 
-            // Serialization
-            services.TryAddSingleton<SerializationManager>(sp=>ActivatorUtilities.CreateInstance<SerializationManager>(sp,
-                sp.GetRequiredService<IOptions<SiloMessagingOptions>>().Value.LargeMessageWarningThreshold));
-            services.TryAddSingleton<ITypeResolver, Orleans.Runtime.CachedTypeResolver>();
-            services.TryAddSingleton<IFieldUtils, FieldUtils>();
-
             services.AddSingleton<IConfigureOptions<GrainTypeOptions>, DefaultGrainTypeOptionsProvider>();
 
             // Type metadata
@@ -283,7 +275,6 @@ namespace Orleans.Hosting
             services.AddSingleton<GrainClassMap>(sp => sp.GetRequiredService<SiloManifestProvider>().GrainTypeMap);
             services.AddSingleton<GrainTypeResolver>();
             services.AddSingleton<IGrainTypeProvider, AttributeGrainTypeProvider>();
-            services.AddSingleton<IGrainTypeProvider, LegacyGrainTypeResolver>();
             services.AddSingleton<GrainPropertiesResolver>();
             services.AddSingleton<GrainInterfaceTypeResolver>();
             services.AddSingleton<IGrainInterfacePropertiesProvider, AttributeGrainInterfacePropertiesProvider>();
@@ -295,7 +286,6 @@ namespace Orleans.Hosting
             services.AddSingleton<ClusterManifestProvider>();
             services.AddFromExisting<IClusterManifestProvider, ClusterManifestProvider>();
             services.AddFromExisting<ILifecycleParticipant<ISiloLifecycle>, ClusterManifestProvider>();
-            services.AddSingleton<Orleans.Runtime.TypeConverter>();
 
             //Add default option formatter if none is configured, for options which are required to be configured
             services.ConfigureFormatter<SiloOptions>();
@@ -338,7 +328,7 @@ namespace Orleans.Hosting
                         var attr = grainClass.GetCustomAttribute<CollectionAgeLimitAttribute>();
                         if (attr != null)
                         {
-                            var className = TypeUtils.GetFullName(grainClass);
+                            var className = RuntimeTypeNameFormatter.Format(grainClass);
                             options.ClassSpecificCollectionAge[className] = attr.Amount;
                         }
                     }

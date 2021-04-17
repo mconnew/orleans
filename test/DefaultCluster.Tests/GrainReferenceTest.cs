@@ -151,7 +151,7 @@ namespace DefaultCluster.Tests.General
             Assert.Same(g1, g2); // Should be same / interned GrainReference object
 
             // Round-trip through Serializer
-            var g3 = this.HostedCluster.SerializationManager.RoundTripSerializationForTesting(g1);
+            var g3 = this.HostedCluster.RoundTripSerializationForTesting(g1);
             Assert.Equal(g3, g1);
             Assert.Equal(g3, g2);
             Assert.Same(g3, g1);

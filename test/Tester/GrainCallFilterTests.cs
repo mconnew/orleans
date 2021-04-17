@@ -117,13 +117,11 @@ namespace UnitTests.General
         [SuppressMessage("ReSharper", "NotAccessedField.Local")]
         public class GrainCallFilterWithDependencies : IIncomingGrainCallFilter
         {
-            private readonly SerializationManager serializationManager;
             private readonly Silo silo;
             private readonly IGrainFactory grainFactory;
 
-            public GrainCallFilterWithDependencies(SerializationManager serializationManager, Silo silo, IGrainFactory grainFactory)
+            public GrainCallFilterWithDependencies(Silo silo, IGrainFactory grainFactory)
             {
-                this.serializationManager = serializationManager;
                 this.silo = silo;
                 this.grainFactory = grainFactory;
             }

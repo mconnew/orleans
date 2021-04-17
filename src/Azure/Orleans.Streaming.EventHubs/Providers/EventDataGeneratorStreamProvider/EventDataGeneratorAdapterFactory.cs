@@ -30,10 +30,9 @@ namespace Orleans.ServiceBus.Providers.Testing
             StreamStatisticOptions statisticOptions,
             IEventHubDataAdapter dataAdapter,
             IServiceProvider serviceProvider,
-            SerializationManager serializationManager,
             ITelemetryProducer telemetryProducer,
             ILoggerFactory loggerFactory)
-            : base(name, ehOptions, receiverOptions, cacheOptions, evictionOptions, statisticOptions, dataAdapter, serviceProvider, serializationManager, telemetryProducer, loggerFactory)
+            : base(name, ehOptions, receiverOptions, cacheOptions, evictionOptions, statisticOptions, dataAdapter, serviceProvider, telemetryProducer, loggerFactory)
         {
             this.ehGeneratorOptions = options;
         }
