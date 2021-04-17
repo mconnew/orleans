@@ -33,6 +33,16 @@ namespace Orleans.Serialization
         public Serializer<T> GetSerializer<T>() => new(_codecProvider, _sessionPool);
 
         /// <summary>
+        /// Returns <see langword="true"/> if the provided type, <typeparamref name="T"/>, can be serialized, and <see langword="false"/> otherwise.
+        /// </summary>
+        public bool CanSerialize<T>() => _codecProvider.TryGetCodec(typeof(T)) is { };
+
+        /// <summary>
+        /// Returns <see langword="true"/> if the provided type, <paramref name="type"/>, can be serialized, and <see langword="false"/> otherwise.
+        /// </summary>
+        public bool CanSerialize(Type type) => _codecProvider.TryGetCodec(type) is { };
+
+        /// <summary>
         /// Serializes the provided <paramref name="value"/> into a new array.
         /// </summary>
         /// <typeparam name="T">The expected type of <paramref name="value"/>.</typeparam>

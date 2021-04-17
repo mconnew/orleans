@@ -1,6 +1,7 @@
 using Orleans.Configuration;
 using Orleans.Runtime;
 using TestExtensions;
+using UnitTests.Serialization;
 using Xunit;
 
 namespace UnitTests.OrleansRuntime
@@ -13,7 +14,6 @@ namespace UnitTests.OrleansRuntime
         public ExceptionsTests(TestEnvironmentFixture fixture)
         {
             this.fixture = fixture;
-            BufferPool.InitGlobalBufferPool(new ClientMessagingOptions());
         }
 
         [Fact, TestCategory("Functional"), TestCategory("Serialization")]

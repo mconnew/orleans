@@ -7,7 +7,7 @@ namespace Orleans.Serialization.TypeSystem
     /// <summary>
     /// Represents a type.
     /// </summary>
-    internal abstract class TypeSpec
+    public abstract class TypeSpec
     {
         /// <summary>
         /// Formats this instance in a way that can be parsed by <see cref="RuntimeTypeNameParser"/>.
@@ -18,7 +18,7 @@ namespace Orleans.Serialization.TypeSystem
     /// <summary>
     /// Represents a pointer (*) type.
     /// </summary>
-    internal class PointerTypeSpec : TypeSpec
+    public class PointerTypeSpec : TypeSpec
     {
         public PointerTypeSpec(TypeSpec elementType)
         {
@@ -45,7 +45,7 @@ namespace Orleans.Serialization.TypeSystem
     /// <summary>
     /// Represents a reference (&amp;) type.
     /// </summary>
-    internal class ReferenceTypeSpec : TypeSpec
+    public class ReferenceTypeSpec : TypeSpec
     {
         public ReferenceTypeSpec(TypeSpec elementType)
         {
@@ -72,7 +72,7 @@ namespace Orleans.Serialization.TypeSystem
     /// <summary>
     /// Represents an array type.
     /// </summary>
-    internal class ArrayTypeSpec : TypeSpec
+    public class ArrayTypeSpec : TypeSpec
     {
         public ArrayTypeSpec(TypeSpec elementType, int dimensions)
         {
@@ -110,7 +110,7 @@ namespace Orleans.Serialization.TypeSystem
     /// <summary>
     /// Represents an constructed generic type.
     /// </summary>
-    internal class ConstructedGenericTypeSpec : TypeSpec
+    public class ConstructedGenericTypeSpec : TypeSpec
     {
         public ConstructedGenericTypeSpec(NamedTypeSpec unconstructedType, TypeSpec[] arguments)
         {
@@ -161,7 +161,7 @@ namespace Orleans.Serialization.TypeSystem
     /// <summary>
     /// Represents a named type, which may be an unconstructed generic type.
     /// </summary>
-    internal class NamedTypeSpec : TypeSpec
+    public class NamedTypeSpec : TypeSpec
     {
         public NamedTypeSpec(NamedTypeSpec containingType, string name, int arity)
         {
@@ -227,7 +227,7 @@ namespace Orleans.Serialization.TypeSystem
     /// <summary>
     /// Represents an assembly-qualified type.
     /// </summary>
-    internal class AssemblyQualifiedTypeSpec : TypeSpec
+    public class AssemblyQualifiedTypeSpec : TypeSpec
     {
         public AssemblyQualifiedTypeSpec(TypeSpec type, string assembly)
         {

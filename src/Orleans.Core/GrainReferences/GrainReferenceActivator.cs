@@ -11,6 +11,7 @@ using Orleans.Metadata;
 using Orleans.Runtime;
 using Orleans.Runtime.Versions;
 using Orleans.Serialization.Configuration;
+using Orleans.Serialization.TypeSystem;
 
 namespace Orleans.GrainReferences
 {

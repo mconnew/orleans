@@ -23,7 +23,6 @@ namespace Tester.AzureUtils.Persistence
                         .AddAzureBlobGrainStorage("GrainStorageForTest", (AzureBlobStorageOptions options) =>
                         {
                             options.ConfigureTestDefaults();
-                            options.UseJson = true;
                         });
                 }
             }

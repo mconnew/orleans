@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure;
@@ -10,7 +9,6 @@ using Azure.Storage.Blobs.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using Orleans.Configuration;
 using Orleans.Providers.Azure;
 using Orleans.Runtime;
@@ -25,33 +23,22 @@ namespace Orleans.Storage
     /// </summary>
     public class AzureBlobGrainStorage : IGrainStorage, ILifecycleParticipant<ISiloLifecycle>
     {
-        private JsonSerializerSettings jsonSettings;
-
+        private readonly Serializer serializer;
         private BlobContainerClient container;
         private ILogger logger;
         private readonly string name;
         private AzureBlobStorageOptions options;
-        private SerializationManager serializationManager;
-        private IGrainFactory grainFactory;
-        private ITypeResolver typeResolver;
-        private readonly IServiceProvider services;
 
         /// <summary> Default constructor </summary>
         public AzureBlobGrainStorage(
             string name,
             AzureBlobStorageOptions options,
-            SerializationManager serializationManager,
-            IGrainFactory grainFactory,
-            ITypeResolver typeResolver,
-            IServiceProvider services,
+            Serializer serializer,
             ILogger<AzureBlobGrainStorage> logger)
         {
+            this.serializer = serializer;
             this.name = name;
             this.options = options;
-            this.serializationManager = serializationManager;
-            this.grainFactory = grainFactory;
-            this.typeResolver = typeResolver;
-            this.services = services;
             this.logger = logger;
         }
 
@@ -224,9 +211,6 @@ namespace Orleans.Storage
             {
                 this.logger.LogInformation((int)AzureProviderErrorCode.AzureTableProvider_InitProvider, $"AzureTableGrainStorage initializing: {this.options.ToString()}");
                 this.logger.LogInformation((int)AzureProviderErrorCode.AzureTableProvider_ParamConnectionString, "AzureTableGrainStorage is using DataConnectionString: {0}", ConfigUtilities.RedactConnectionStringInfo(this.options.ConnectionString));
-                this.jsonSettings = OrleansJsonSerializer.UpdateSerializerSettings(OrleansJsonSerializer.GetDefaultSerializerSettings(this.services), this.options.UseFullAssemblyNames, this.options.IndentJson, this.options.TypeNameHandling);
-
-                this.options.ConfigureJsonSerializerSettings?.Invoke(this.jsonSettings);
 
                 var client = this.options.ServiceUri != null ? new BlobServiceClient(this.options.ServiceUri, this.options.TokenCredential) : new BlobServiceClient(this.options.ConnectionString);
                 container = client.GetBlobContainerClient(this.options.ContainerName);
@@ -255,16 +239,9 @@ namespace Orleans.Storage
         {
             byte[] data;
             string mimeType;
-            if (this.options.UseJson)
-            {
-                data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(grainState, this.jsonSettings));
-                mimeType = "application/json";
-            }
-            else
-            {
-                data = this.serializationManager.SerializeToByteArray(grainState);
-                mimeType = "application/octet-stream";
-            }
+
+            data = this.serializer.SerializeToArray(grainState);
+            mimeType = "application/octet-stream";
 
             return (data, mimeType);
         }
@@ -281,16 +258,7 @@ namespace Orleans.Storage
         private object ConvertFromStorageFormat(byte[] contents)
         {
             object result;
-            if (this.options.UseJson)
-            {
-                var str = Encoding.UTF8.GetString(contents);
-                result = JsonConvert.DeserializeObject<object>(str, this.jsonSettings);
-            }
-            else
-            {
-                result = this.serializationManager.DeserializeFromByteArray<object>(contents);
-            }
-
+            result = this.serializer.Deserialize<object>(contents);
             return result;
         }
     }

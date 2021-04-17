@@ -6,7 +6,7 @@ namespace Orleans.Serialization.TypeSystem
     /// <summary>
     /// Utility class for parsing CLR type names, as formatted by <see cref="RuntimeTypeNameFormatter"/>.
     /// </summary>
-    internal static class RuntimeTypeNameParser
+    public static class RuntimeTypeNameParser
     {
         private const int MaxAllowedGenericArity = 64;
         private const char PointerIndicator = '*';

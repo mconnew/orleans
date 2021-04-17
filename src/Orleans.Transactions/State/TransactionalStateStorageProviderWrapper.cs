@@ -7,6 +7,7 @@ using Orleans.Runtime;
 using Orleans.Storage;
 using Orleans.Utilities;
 using Orleans.Transactions.Abstractions;
+using Orleans.Serialization.TypeSystem;
 
 namespace Orleans.Transactions
 {

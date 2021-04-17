@@ -163,7 +163,7 @@ namespace Orleans.Serialization.TypeSystem
         /// <summary>
         /// Formats the provided type, rewriting elements using the provided delegate.
         /// </summary>
-        internal string Format(Type type, Func<TypeSpec, TypeSpec> rewriter) => FormatInternal(type, rewriter);
+        public string Format(Type type, Func<TypeSpec, TypeSpec> rewriter) => FormatInternal(type, rewriter);
 
         /// <summary>
         /// Parses the provided type string.

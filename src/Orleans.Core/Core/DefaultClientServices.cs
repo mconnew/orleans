@@ -39,7 +39,6 @@ namespace Orleans
             services.TryAddSingleton<ApplicationRequestsStatisticsGroup>();
             services.TryAddSingleton<StageAnalysisStatisticsGroup>();
             services.TryAddSingleton<SchedulerStatisticsGroup>();
-            services.TryAddSingleton<SerializationStatisticsGroup>();
             services.AddLogging();
             services.TryAddSingleton<GrainBindingsResolver>();
             services.TryAddSingleton<OutsideRuntimeClient>();
@@ -53,12 +52,10 @@ namespace Orleans
             services.AddSingleton<IGrainReferenceActivatorProvider, NewGrainReferenceActivatorProvider>();
             services.AddSingleton<IGrainReferenceActivatorProvider, UntypedGrainReferenceActivatorProvider>();
             services.TryAddSingleton<NewRpcProvider>();
-            services.TryAddSingleton<GrainReferenceSerializer>();
             services.TryAddSingleton<GrainReferenceKeyStringConverter>();
             services.TryAddSingleton<IGrainReferenceRuntime, GrainReferenceRuntime>();
             services.TryAddSingleton<GrainInterfaceTypeResolver>();
             services.TryAddSingleton<GrainPropertiesResolver>();
-            services.TryAddSingleton<Orleans.Runtime.TypeConverter>();
             services.TryAddSingleton<IGrainCancellationTokenRuntime, GrainCancellationTokenRuntime>();
             services.TryAddFromExisting<IGrainFactory, GrainFactory>();
             services.TryAddFromExisting<IInternalGrainFactory, GrainFactory>();
@@ -67,12 +64,6 @@ namespace Orleans
             services.TryAddFromExisting<IProviderRuntime, ClientProviderRuntime>();
             services.TryAddSingleton<IInternalClusterClient, ClusterClient>();
             services.TryAddFromExisting<IClusterClient, IInternalClusterClient>();
-
-            // Serialization
-            services.TryAddSingleton<SerializationManager>(sp => ActivatorUtilities.CreateInstance<SerializationManager>(sp,
-                sp.GetRequiredService<IOptions<ClientMessagingOptions>>().Value.LargeMessageWarningThreshold));
-            services.TryAddSingleton<ITypeResolver, Orleans.Runtime.CachedTypeResolver>();
-            services.TryAddSingleton<IFieldUtils, FieldUtils>();
 
             services.AddSingleton<IConfigureOptions<GrainTypeOptions>, DefaultGrainTypeOptionsProvider>();
             services.TryAddSingleton(typeof(IKeyedServiceCollection<,>), typeof(KeyedServiceCollection<,>));

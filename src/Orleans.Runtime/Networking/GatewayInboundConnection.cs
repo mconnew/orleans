@@ -12,7 +12,6 @@ namespace Orleans.Runtime.Messaging
     {
         private readonly MessageCenter messageCenter;
         private readonly ConnectionPreambleHelper connectionPreambleHelper;
-        private readonly ILocalSiloDetails siloDetails;
         private readonly ConnectionOptions connectionOptions;
         private readonly Gateway gateway;
         private readonly OverloadDetector overloadDetector;
@@ -34,7 +33,6 @@ namespace Orleans.Runtime.Messaging
             this.connectionOptions = connectionOptions;
             this.gateway = gateway;
             this.overloadDetector = overloadDetector;
-            this.siloDetails = siloDetails;
             this.messageCenter = messageCenter;
             this.connectionPreambleHelper = connectionPreambleHelper;
             this.loadSheddingCounter = CounterStatistic.FindOrCreate(StatisticNames.GATEWAY_LOAD_SHEDDING);

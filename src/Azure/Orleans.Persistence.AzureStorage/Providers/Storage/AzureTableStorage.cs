@@ -29,12 +29,11 @@ namespace Orleans.Storage
     {
         private readonly AzureTableStorageOptions options;
         private readonly ClusterOptions clusterOptions;
-        private readonly Orleans.Serialization.Serializer serializer;
+        private readonly Serializer serializer;
         private readonly IServiceProvider services;
         private readonly ILogger logger;
 
         private GrainStateTableDataManager tableDataManager;
-        private JsonSerializerSettings JsonSettings;
 
         // each property can hold 64KB of data and each entity can take 1MB in total, so 15 full properties take
         // 15 * 64 = 960 KB leaving room for the primary key, timestamp etc
@@ -51,7 +50,7 @@ namespace Orleans.Storage
             string name,
             AzureTableStorageOptions options,
             IOptions<ClusterOptions> clusterOptions,
-            Orleans.Serialization.Serializer serializer,
+            Serializer serializer,
             IServiceProvider services,
             ILogger<AzureTableGrainStorage> logger)
         {
@@ -480,8 +479,6 @@ namespace Orleans.Storage
             {
                 this.logger.LogInformation((int)AzureProviderErrorCode.AzureTableProvider_InitProvider, $"AzureTableGrainStorage {name} initializing: {this.options.ToString()}");
                 this.logger.LogInformation((int)AzureProviderErrorCode.AzureTableProvider_ParamConnectionString, $"AzureTableGrainStorage {name} is using DataConnectionString: {ConfigUtilities.RedactConnectionStringInfo(this.options.ConnectionString)}");
-                this.JsonSettings = OrleansJsonSerializer.UpdateSerializerSettings(OrleansJsonSerializer.GetDefaultSerializerSettings(this.services), this.options.UseFullAssemblyNames, this.options.IndentJson, this.options.TypeNameHandling);
-                this.options.ConfigureJsonSerializerSettings?.Invoke(this.JsonSettings);
                 this.tableDataManager = new GrainStateTableDataManager(this.options, this.logger);
                 await this.tableDataManager.InitTableAsync();
                 stopWatch.Stop();
