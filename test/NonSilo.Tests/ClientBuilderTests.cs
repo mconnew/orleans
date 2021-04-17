@@ -87,9 +87,9 @@ namespace NonSilo.Tests
             // Add only an assembly with generated serializers but no grain interfaces
             var clientBuilder = new ClientBuilder()
                 .UseLocalhostClustering()
-                .ConfigureApplicationParts(parts =>
+                .Configure<GrainTypeOptions>(options =>
                 {
-                    parts.ClearApplicationParts();
+                    options.Interfaces.Clear();
                 })
                 .ConfigureServices(services => services.AddSingleton<IGatewayListProvider, NoOpGatewaylistProvider>());
 

@@ -9,9 +9,9 @@ using BenchmarkGrainInterfaces.Ping;
 using BenchmarkGrains.Ping;
 using Microsoft.Extensions.DependencyInjection;
 using Orleans;
-using Orleans.ApplicationParts;
 using Orleans.Configuration;
 using Orleans.Hosting;
+using Orleans.Metadata;
 
 namespace Benchmarks.Ping
 {
@@ -46,7 +46,7 @@ namespace Benchmarks.Ping
 
                 if (i == 0 && grainsOnSecondariesOnly)
                 {
-                    siloBuilder.ConfigureApplicationParts(parts => parts.RemoveApplicationParts(p => p is AssemblyPart asmPart && asmPart.Assembly.Equals(typeof(PingGrain).Assembly)));
+                    siloBuilder.Configure<GrainTypeOptions>(options => options.Classes.Remove(typeof(PingGrain)));
                     siloBuilder.ConfigureServices(services =>
                     {
                         services.Remove(services.First(s => s.ImplementationType?.Name == "ApplicationPartValidator"));

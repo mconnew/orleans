@@ -32,8 +32,7 @@ namespace Orleans.Hosting
         public static ISiloBuilder AddSqsStreams(this ISiloBuilder builder, string name, Action<SiloSqsStreamConfigurator> configure)
         {
             var configurator = new SiloSqsStreamConfigurator(name,
-                configureServicesDelegate => builder.ConfigureServices(configureServicesDelegate),
-                configureAppPartsDelegate => builder.ConfigureApplicationParts(configureAppPartsDelegate));
+                configureServicesDelegate => builder.ConfigureServices(configureServicesDelegate));
             configure?.Invoke(configurator);
             return builder;
         }
@@ -44,8 +43,7 @@ namespace Orleans.Hosting
         public static ISiloHostBuilder AddSqsStreams(this ISiloHostBuilder builder, string name, Action<SiloSqsStreamConfigurator> configure)
         {
             var configurator = new SiloSqsStreamConfigurator(name,
-                configureServicesDelegate => builder.ConfigureServices(configureServicesDelegate),
-                configureAppPartsDelegate => builder.ConfigureApplicationParts(configureAppPartsDelegate));
+                configureServicesDelegate => builder.ConfigureServices(configureServicesDelegate));
             configure?.Invoke(configurator);
             return builder;
         }

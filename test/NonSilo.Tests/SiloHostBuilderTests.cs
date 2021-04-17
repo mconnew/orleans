@@ -338,9 +338,10 @@ namespace NonSilo.Tests
                 {
                     // Add only an assembly with generated serializers but no grain interfaces or grain classes
                     siloBuilder.UseLocalhostClustering()
-                    .ConfigureApplicationParts(parts =>
+                    .Configure<GrainTypeOptions>(options =>
                     {
-                        parts.ClearApplicationParts();
+                        options.Classes.Clear();
+                        options.Interfaces.Clear();
                     });
                 }).Build();
 

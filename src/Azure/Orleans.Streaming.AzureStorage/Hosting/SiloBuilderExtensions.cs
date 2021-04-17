@@ -16,8 +16,7 @@ namespace Orleans.Hosting
             Action<SiloAzureQueueStreamConfigurator> configure)
         {
             var configurator = new SiloAzureQueueStreamConfigurator(name,
-                configureServicesDelegate => builder.ConfigureServices(configureServicesDelegate),
-                configureAppPartsDelegate => builder.ConfigureApplicationParts(configureAppPartsDelegate));
+                configureServicesDelegate => builder.ConfigureServices(configureServicesDelegate));
             configure?.Invoke(configurator);
             return builder;
         }
@@ -39,8 +38,7 @@ namespace Orleans.Hosting
             Action<SiloAzureQueueStreamConfigurator> configure)
         {
             var configurator = new SiloAzureQueueStreamConfigurator(name,
-                configureServicesDelegate => builder.ConfigureServices(configureServicesDelegate),
-                configureAppPartsDelegate => builder.ConfigureApplicationParts(configureAppPartsDelegate));
+                configureServicesDelegate => builder.ConfigureServices(configureServicesDelegate));
             configure?.Invoke(configurator);
             return builder;
         }

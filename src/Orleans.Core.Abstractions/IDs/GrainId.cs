@@ -11,11 +11,9 @@ namespace Orleans.Runtime
     [Immutable]
     [Serializable]
     [StructLayout(LayoutKind.Auto)]
-    [Orleans.GenerateSerializer]
+    [GenerateSerializer]
     public readonly struct GrainId : IEquatable<GrainId>, IComparable<GrainId>, ISerializable
     {
-        internal static IGrainIdLoggingHelper GrainTypeNameMapper { get; set; }
-
         /// <summary>
         /// Creates a new <see cref="GrainType"/> instance.
         /// </summary>
@@ -156,8 +154,7 @@ namespace Orleans.Runtime
         /// <inheritdoc/>
         public override string ToString()
         {
-            var type = GrainTypeNameMapper?.GetGrainTypeName(Type) ?? Type.ToStringUtf8();
-            return $"{type}/{Key.ToStringUtf8()}";
+            return $"{Type.ToStringUtf8()}/{Key.ToStringUtf8()}";
         }
 
         private static void ThrowInvalidGrainId(string value) => throw new ArgumentException($"Unable to parse \"{value}\" as a grain id");

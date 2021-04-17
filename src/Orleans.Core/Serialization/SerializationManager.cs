@@ -10,7 +10,6 @@ using System.Runtime.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Orleans.ApplicationParts;
 using Orleans.CodeGeneration;
 using Orleans.Configuration;
 using Orleans.Metadata;
@@ -102,20 +101,6 @@ namespace Orleans.Serialization
         }
 
         internal SerializationProviderOptions SerializationProviderOptions { get; }
-
-        public void RegisterSerializers(IApplicationPartManager applicationPartManager)
-        {
-            var grainInterfaceFeature = applicationPartManager.CreateAndPopulateFeature<GrainInterfaceFeature>();
-            this.RegisterGrainReferenceSerializers(grainInterfaceFeature);
-        }
-
-        private void RegisterGrainReferenceSerializers(GrainInterfaceFeature grainInterfaceFeature)
-        {
-            foreach (var grainInterface in grainInterfaceFeature.Interfaces)
-            {
-                this.RegisterGrainReferenceSerializers(grainInterface.ReferenceType);
-            }
-        }
 
         /// <summary>
         /// Register a Type with the serialization system to use the specified DeepCopier, Serializer and Deserializer functions.

@@ -25,7 +25,6 @@ using Orleans.Versions.Selector;
 using Orleans.Providers;
 using Orleans.Runtime;
 using Microsoft.Extensions.Logging;
-using Orleans.ApplicationParts;
 using Orleans.Runtime.Utilities;
 using System;
 using System.Reflection;
@@ -277,13 +276,7 @@ namespace Orleans.Hosting
             services.TryAddSingleton<ITypeResolver, Orleans.Runtime.CachedTypeResolver>();
             services.TryAddSingleton<IFieldUtils, FieldUtils>();
 
-            // Application Parts
-            var applicationPartManager = services.GetApplicationPartManager();
-            applicationPartManager.AddApplicationPart(new AssemblyPart(typeof(RuntimeVersion).Assembly) { IsFrameworkAssembly = true });
-            applicationPartManager.AddApplicationPart(new AssemblyPart(typeof(Silo).Assembly) { IsFrameworkAssembly = true });
-            applicationPartManager.AddFeatureProvider(new AssemblyAttributeFeatureProvider<GrainInterfaceFeature>());
-            applicationPartManager.AddFeatureProvider(new AssemblyAttributeFeatureProvider<GrainClassFeature>());
-            services.AddTransient<IConfigurationValidator, ApplicationPartValidator>();
+            services.AddSingleton<IConfigureOptions<GrainTypeOptions>, DefaultGrainTypeOptionsProvider>();
 
             // Type metadata
             services.AddSingleton<SiloManifestProvider>();
@@ -338,17 +331,14 @@ namespace Orleans.Hosting
 
             // Enable collection specific Age limits
             services.AddOptions<GrainCollectionOptions>()
-                .Configure<IApplicationPartManager>((options, parts) =>
+                .Configure<IOptions<GrainTypeOptions>>((options, grainTypeOptions) =>
                 {
-                    var grainClasses = new GrainClassFeature();
-                    parts.PopulateFeature(grainClasses);
-
-                    foreach (var grainClass in grainClasses.Classes)
+                    foreach (var grainClass in grainTypeOptions.Value.Classes)
                     {
-                        var attr = grainClass.ClassType.GetCustomAttribute<CollectionAgeLimitAttribute>();
+                        var attr = grainClass.GetCustomAttribute<CollectionAgeLimitAttribute>();
                         if (attr != null)
                         {
-                            var className = TypeUtils.GetFullName(grainClass.ClassType);
+                            var className = TypeUtils.GetFullName(grainClass);
                             options.ClassSpecificCollectionAge[className] = attr.Amount;
                         }
                     }
@@ -401,12 +391,6 @@ namespace Orleans.Hosting
             services.AddSingleton<ILifecycleParticipant<ISiloLifecycle>, GatewayConnectionListener>();
             services.AddSingleton<SocketSchedulers>();
             services.AddSingleton<SharedMemoryPool>();
-
-            // Logging helpers
-            services.AddSingleton<SiloLoggingHelper>();
-            services.AddFromExisting<ILifecycleParticipant<ISiloLifecycle>, SiloLoggingHelper>();
-            services.AddFromExisting<IGrainIdLoggingHelper, SiloLoggingHelper>();
-            services.AddFromExisting<IInvokeMethodRequestLoggingHelper, SiloLoggingHelper>();
         }
 
         private class AllowOrleansTypes : ITypeFilter

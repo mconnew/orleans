@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Orleans.Configuration;
 using Orleans.ServiceBus.Providers;
 using Orleans.Providers.Streams.Common;
-using Orleans.ApplicationParts;
 using Orleans.ServiceBus.Providers.Testing;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -29,14 +28,9 @@ namespace Orleans.Hosting.Developer
     public class EventDataGeneratorStreamConfigurator : SiloRecoverableStreamConfigurator, IEventDataGeneratorStreamConfigurator
     {
         public EventDataGeneratorStreamConfigurator(string name,
-            Action<Action<IServiceCollection>> configureServicesDelegate, Action<Action<IApplicationPartManager>> configureAppPartsDelegate)
+            Action<Action<IServiceCollection>> configureServicesDelegate)
             : base(name, configureServicesDelegate, EventDataGeneratorAdapterFactory.Create)
         {
-            configureAppPartsDelegate(parts =>
-            {
-                parts.AddFrameworkPart(typeof(EventHubAdapterFactory).Assembly)
-                    .AddFrameworkPart(typeof(EventSequenceTokenV2).Assembly);
-            });
             this.ConfigureDelegate(services => services.ConfigureNamedOptionForLogging<EventHubOptions>(name)
                 .ConfigureNamedOptionForLogging<EventHubReceiverOptions>(name)
                 .ConfigureNamedOptionForLogging<EventHubStreamCachePressureOptions>(name)

@@ -28,8 +28,7 @@ namespace Orleans.Hosting
             where TDataAdapter : IPubSubDataAdapter
         {
             var configurator = new SiloPubSubStreamConfigurator<TDataAdapter>(name,
-                configureServicesDelegate => builder.ConfigureServices(configureServicesDelegate),
-                configureAppPartsDelegate => builder.ConfigureApplicationParts(configureAppPartsDelegate));
+                configureServicesDelegate => builder.ConfigureServices(configureServicesDelegate));
             configure?.Invoke(configurator);
             return builder;
         }
@@ -56,8 +55,7 @@ namespace Orleans.Hosting
             where TDataAdapter : IPubSubDataAdapter
         {
             var configurator = new SiloPubSubStreamConfigurator<TDataAdapter>(name,
-                configureServicesDelegate => builder.ConfigureServices(configureServicesDelegate),
-                configureAppPartsDelegate => builder.ConfigureApplicationParts(configureAppPartsDelegate));
+                configureServicesDelegate => builder.ConfigureServices(configureServicesDelegate));
             configure?.Invoke(configurator);
             return builder;
         }

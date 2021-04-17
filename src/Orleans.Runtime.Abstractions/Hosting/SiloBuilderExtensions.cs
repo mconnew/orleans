@@ -2,7 +2,6 @@ using System;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Orleans.ApplicationParts;
 using Orleans;
 
 namespace Orleans.Hosting
@@ -67,28 +66,6 @@ namespace Orleans.Hosting
         public static ISiloBuilder ConfigureLogging(this ISiloBuilder builder, Action<ILoggingBuilder> configureLogging)
         {
             return builder.ConfigureServices(collection => collection.AddLogging(configureLogging));
-        }
-
-        /// <summary>
-        /// Configures the <see cref="ApplicationPartManager"/> using the given <see cref="Action{IApplicationPartBuilder}"/>.
-        /// </summary>
-        /// <param name="builder">The builder.</param>
-        /// <param name="configure">The configuration delegate.</param>
-        /// <returns>The builder.</returns>
-        public static ISiloBuilder ConfigureApplicationParts(this ISiloBuilder builder, Action<IApplicationPartManager> configure)
-        {
-            if (builder == null)
-            {
-                throw new ArgumentNullException(nameof(builder));
-            }
-
-            if (configure == null)
-            {
-                throw new ArgumentNullException(nameof(configure));
-            }
-
-            builder.ConfigureServices(services => configure(services.GetApplicationPartManager()));
-            return builder;
         }
     }
 }

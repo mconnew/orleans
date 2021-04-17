@@ -16,7 +16,6 @@ using Orleans.Runtime.Messaging;
 using Orleans.Runtime.ReminderService;
 using Orleans.Runtime.Scheduler;
 using Orleans.Services;
-using Orleans.ApplicationParts;
 using Orleans.Configuration;
 using Orleans.Serialization;
 using Orleans.Internal;
@@ -102,8 +101,6 @@ namespace Orleans.Runtime
             }
 
             var localEndpoint = this.siloDetails.SiloAddress.Endpoint;
-
-            services.GetService<SerializationManager>().RegisterSerializers(services.GetService<IApplicationPartManager>());
 
             this.Services = services;
 
@@ -252,7 +249,6 @@ namespace Orleans.Runtime
                 // Start the reminder service system target
                 var timerFactory = this.Services.GetRequiredService<IAsyncTimerFactory>();
                 reminderService = new LocalReminderService(this, reminderTable, this.initTimeout, this.loggerFactory, timerFactory);
-                this.Services.GetService<SiloLoggingHelper>()?.RegisterGrainService(reminderService);
                 RegisterSystemTarget((SystemTarget)reminderService);
             }
 
@@ -387,10 +383,8 @@ namespace Orleans.Runtime
         private async Task CreateGrainServices()
         {
             var grainServices = this.Services.GetServices<IGrainService>();
-            var loggingHelper = this.Services.GetService<SiloLoggingHelper>();
             foreach (var grainService in grainServices)
             {
-                loggingHelper?.RegisterGrainService(grainService); 
                 await RegisterGrainService(grainService);
             }
         }

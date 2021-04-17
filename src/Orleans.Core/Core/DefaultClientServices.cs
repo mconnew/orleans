@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Connections;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
-using Orleans.ApplicationParts;
 using Orleans.Configuration.Internal;
 using Orleans.Configuration.Validators;
 using Orleans.GrainReferences;
@@ -75,13 +74,7 @@ namespace Orleans
             services.TryAddSingleton<ITypeResolver, Orleans.Runtime.CachedTypeResolver>();
             services.TryAddSingleton<IFieldUtils, FieldUtils>();
 
-            // Application parts
-            var parts = services.GetApplicationPartManager();
-            services.TryAddSingleton<IApplicationPartManager>(parts);
-            parts.AddApplicationPart(new AssemblyPart(typeof(RuntimeVersion).Assembly) { IsFrameworkAssembly = true });
-            parts.AddFeatureProvider(new AssemblyAttributeFeatureProvider<GrainInterfaceFeature>());
-            services.AddTransient<IConfigurationValidator, ApplicationPartValidator>();
-
+            services.AddSingleton<IConfigureOptions<GrainTypeOptions>, DefaultGrainTypeOptionsProvider>();
             services.TryAddSingleton(typeof(IKeyedServiceCollection<,>), typeof(KeyedServiceCollection<,>));
 
             // Add default option formatter if none is configured, for options which are required to be configured 
@@ -139,11 +132,6 @@ namespace Orleans
             services.AddSingleton<IGrainInterfacePropertiesProvider, TypeNameGrainPropertiesProvider>();
             services.AddSingleton<IGrainPropertiesProvider, TypeNameGrainPropertiesProvider>();
             services.AddSingleton<IGrainPropertiesProvider, ImplementedInterfaceProvider>();
-            // Logging helpers
-            services.AddSingleton<ClientLoggingHelper>();
-            services.AddFromExisting<ILifecycleParticipant<IClusterClientLifecycle>, ClientLoggingHelper>();
-            services.AddFromExisting<IGrainIdLoggingHelper, ClientLoggingHelper>();
-            services.AddFromExisting<IInvokeMethodRequestLoggingHelper, ClientLoggingHelper>();
         }
 
         private class AllowOrleansTypes : ITypeFilter
