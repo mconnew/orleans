@@ -133,8 +133,6 @@ namespace Orleans
                 
                 this.GrainReferenceRuntime = this.ServiceProvider.GetRequiredService<IGrainReferenceRuntime>();
 
-                BufferPool.InitGlobalBufferPool(this.clientMessagingOptions);
-
                 this.clientProviderRuntime = this.ServiceProvider.GetRequiredService<ClientProviderRuntime>();
 
                 this.localAddress = this.clientMessagingOptions.LocalAddress ?? ConfigUtilities.GetLocalIPAddress(this.clientMessagingOptions.PreferredFamily, this.clientMessagingOptions.NetworkInterfaceName);

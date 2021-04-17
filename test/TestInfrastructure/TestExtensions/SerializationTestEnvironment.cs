@@ -47,7 +47,6 @@ namespace TestExtensions
 
         internal IServiceProvider Services => this.Client.ServiceProvider;
 
-        public SerializationManager SerializationManager => this.RuntimeClient.ServiceProvider.GetRequiredService<SerializationManager>();
         public DeepCopier DeepCopier => this.RuntimeClient.ServiceProvider.GetRequiredService<DeepCopier>();
         public Serializer Serializer => RuntimeClient.ServiceProvider.GetRequiredService<Serializer>();
         

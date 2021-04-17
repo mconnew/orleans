@@ -30,7 +30,7 @@ namespace UnitTests.Serialization
             };
 
             // Verify that our behavior conforms to our expected behavior.
-            var result = (SimpleISerializableObject) BuiltInSerializerTests.OrleansSerializationLoop(this.environment.SerializationManager, input);
+            var result = (SimpleISerializableObject) BuiltInSerializerTests.OrleansSerializationLoop(this.environment.Serializer, input);
             Assert.Equal(
                 new[]
                 {
@@ -69,7 +69,7 @@ namespace UnitTests.Serialization
             };
 
             // Verify that our behavior conforms to our expected behavior.
-            var result = (SimpleISerializableStruct) BuiltInSerializerTests.OrleansSerializationLoop(this.environment.SerializationManager, input);
+            var result = (SimpleISerializableStruct) BuiltInSerializerTests.OrleansSerializationLoop(this.environment.Serializer, input);
             Assert.Equal(
                 new[]
                 {

@@ -54,29 +54,6 @@ namespace Orleans.Runtime
         /// <param name="request"></param>
         internal static void RegisterCancellationTokens(
             IGrainContext target,
-            InvokeMethodRequest request)
-        {
-            for (var i = 0; i < request.Arguments.Length; i++)
-            {
-                var arg = request.Arguments[i];
-                if (!(arg is GrainCancellationToken)) continue;
-                var grainToken = ((GrainCancellationToken) request.Arguments[i]);
-
-                var cancellationExtension = (CancellationSourcesExtension)target.GetGrainExtension<ICancellationSourcesExtension>(); 
-
-                // Replacing the half baked GrainCancellationToken that came from the wire with locally fully created one.
-                request.Arguments[i] = cancellationExtension.RecordCancellationToken(grainToken.Id, grainToken.IsCancellationRequested);
-            }
-        }
-
-        /// <summary>
-        /// Adds CancellationToken to the grain extension
-        /// so that it can be canceled through remote call to the CancellationSourcesExtension.
-        /// </summary>
-        /// <param name="target"></param>
-        /// <param name="request"></param>
-        internal static void RegisterCancellationTokens(
-            IGrainContext target,
             IInvokable request)
         {
             for (var i = 0; i < request.ArgumentCount; i++)

@@ -294,7 +294,7 @@ namespace Orleans
             [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
             private void ReportException(Message message, Exception exception)
             {
-                var request = (InvokeMethodRequest)message.BodyObject;
+                var request = (IInvokable)message.BodyObject;
                 switch (message.Direction)
                 {
                     case Message.Directions.OneWay:
@@ -302,8 +302,8 @@ namespace Orleans
                             _manager.logger.LogError(
                                 (int)ErrorCode.ProxyClient_OGC_UnhandledExceptionInOneWayInvoke,
                                 exception,
-                                "Exception during invocation of notification method {MethodId}, interface {Interface}. Ignoring exception because this is a one way request.",
-                                request.MethodId,
+                                "Exception during invocation of notification {Request}, interface {Interface}. Ignoring exception because this is a one way request.",
+                                request.ToString(),
                                 message.InterfaceType);
                             break;
                         }

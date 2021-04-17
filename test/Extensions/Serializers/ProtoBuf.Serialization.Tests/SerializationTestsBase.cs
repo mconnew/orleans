@@ -85,7 +85,7 @@ namespace ProtoBuf.Serialization.Tests
         public void ProtoBufSerializationTest_3_RegularOrleansSerializationStillWorks()
         {
             var input = new OrleansType();
-            var output = this._environment.SerializationManager.RoundTripSerializationForTesting(input);
+            var output = this._environment.Serializer.RoundTripSerializationForTesting(input);
             Assert.NotSame(input, output); //The serializer returned an instance of the same object
             input.ShouldBeEquivalentTo(output); //The serialization didn't preserve the proper value
         }
@@ -94,7 +94,7 @@ namespace ProtoBuf.Serialization.Tests
         public void ProtoBufSerializationTest_4_OtherPersonProtoBufType()
         {
             var input = CreatePerson();
-            var output = this._environment.SerializationManager.RoundTripSerializationForTesting(input);
+            var output = this._environment.Serializer.RoundTripSerializationForTesting(input);
             Assert.NotSame(input, output); //The serializer returned an instance of the same object
             input.ShouldBeEquivalentTo(output); //The serialization didn't preserve the proper value
         }
@@ -103,7 +103,7 @@ namespace ProtoBuf.Serialization.Tests
         public void ProtoBufSerializationTest_5_CounterProtoBufSerialization()
         {
             var input = CreateCounter();
-            var output = this._environment.SerializationManager.RoundTripSerializationForTesting(input);
+            var output = this._environment.Serializer.RoundTripSerializationForTesting(input);
             Assert.NotSame(input, output); //The serializer returned an instance of the same object
             input.ShouldBeEquivalentTo(output); //The serialization didn't preserve the proper value
         }
@@ -112,7 +112,7 @@ namespace ProtoBuf.Serialization.Tests
         public void ProtoBufSerializationTest_6_DeepCopy()
         {
             var input = CreatePerson();
-            var output = this._environment.SerializationManager.DeepCopy(input);
+            var output = this._environment.Serializer.DeepCopy(input);
             Assert.NotSame(input, output); //The serializer returned an instance of the same object
             input.ShouldBeEquivalentTo(output); ; //The serialization didn't preserve the proper value
         }
@@ -121,7 +121,7 @@ namespace ProtoBuf.Serialization.Tests
         public void ProtoBufSerializationTest_7_DeepCopyImmutableType()
         {
             var input = CreateImmutablePerson();
-            var output = this._environment.SerializationManager.DeepCopy(input);
+            var output = this._environment.Serializer.DeepCopy(input);
             Assert.Same(input, output); //The serializer returned an instance of the same object
         }
 
@@ -129,7 +129,7 @@ namespace ProtoBuf.Serialization.Tests
         public void ProtoBufSerializationTest_8_DefaultCounterMessageSerialization()
         {
             var input = CreateDefaultCounter();
-            var output = this._environment.SerializationManager.RoundTripSerializationForTesting(input);
+            var output = this._environment.Serializer.RoundTripSerializationForTesting(input);
             Assert.NotSame(input, output); //The serializer returned an instance of the same object
             input.ShouldBeEquivalentTo(output); //The serialization didn't preserve the proper value
         }

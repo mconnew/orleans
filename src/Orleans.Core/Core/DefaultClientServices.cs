@@ -93,6 +93,7 @@ namespace Orleans
             // Networking
             services.TryAddSingleton<ConnectionCommon>();
             services.TryAddSingleton<ConnectionManager>();
+            services.TryAddSingleton<ConnectionPreambleHelper>();
             services.AddSingleton<ILifecycleParticipant<IClusterClientLifecycle>, ConnectionManagerLifecycleAdapter<IClusterClientLifecycle>>();
 
             services.AddSingletonKeyedService<object, IConnectionFactory>(
@@ -123,7 +124,6 @@ namespace Orleans
             services.AddSingleton<IGrainInterfaceTypeProvider, AttributeGrainInterfaceTypeProvider>();
             services.AddSingleton<GrainTypeResolver>();
             services.AddSingleton<IGrainTypeProvider, AttributeGrainTypeProvider>();
-            services.AddSingleton<IGrainTypeProvider, LegacyGrainTypeResolver>();
             services.AddSingleton<GrainPropertiesResolver>();
             services.AddSingleton<GrainVersionManifest>();
             services.AddSingleton<GrainInterfaceTypeResolver>();

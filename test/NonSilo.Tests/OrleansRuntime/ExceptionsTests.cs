@@ -20,7 +20,7 @@ namespace UnitTests.OrleansRuntime
         public void SerializationTests_Exception_Orleans()
         {
             var original = new SiloUnavailableException("Some message");
-            var output = this.fixture.SerializationManager.RoundTripSerializationForTesting(original);
+            var output = this.fixture.Serializer.RoundTripSerializationForTesting(original);
 
             Assert.Equal(original.Message, output.Message);
         }

@@ -1,7 +1,4 @@
 using System;
-using System.Collections.Generic;
-using Orleans.CodeGeneration;
-using Orleans.Serialization;
 
 namespace UnitTests.Grains
 {
@@ -33,12 +30,6 @@ namespace UnitTests.Grains
     {
         public UnserializableException(string message) : base(message)
         { }
-
-        [CopierMethod]
-        static private object Copy(object input, ICopyContext context)
-        {
-            return input;
-        }
     }
 
     [Serializable]
@@ -49,31 +40,6 @@ namespace UnitTests.Grains
         public int A { get; set; }
         [Orleans.Id(1)]
         public int B { get; set; }
-    }
-
-    [Serializable]
-    [Orleans.GenerateSerializer]
-    public class ClassWithCustomCopier
-    {
-        [Orleans.Id(0)]
-        public int IntProperty { get; set; }
-        [Orleans.Id(1)]
-        public string StringProperty { get; set; }
-
-        public static int CopyCounter { get; set; }
-
-        static ClassWithCustomCopier()
-        {
-            CopyCounter = 0;
-        }
-
-        [CopierMethod]
-        private static object Copy(object input, ICopyContext context)
-        {
-            CopyCounter++;
-            var obj = input as ClassWithCustomCopier;
-            return new ClassWithCustomCopier() { IntProperty = obj.IntProperty, StringProperty = obj.StringProperty };
-        }
     }
 
     [Serializable]
@@ -92,145 +58,6 @@ namespace UnitTests.Grains
         {
             SerializeCounter = 0;
             DeserializeCounter = 0;
-        }
-
-        [SerializerMethod]
-        private static void Serialize(object input, ISerializationContext context, Type expected)
-        {
-            SerializeCounter++;
-            var obj = input as ClassWithCustomSerializer;
-            var stream = context.StreamWriter;
-            stream.Write(obj.IntProperty);
-            stream.Write(obj.StringProperty);
-        }
-
-        [DeserializerMethod]
-        private static object Deserialize(Type expected, IDeserializationContext context)
-        {
-            DeserializeCounter++;
-            var result = new ClassWithCustomSerializer();
-            var stream = context.StreamReader;
-            result.IntProperty = stream.ReadInt();
-            result.StringProperty = stream.ReadString();
-            return result;
-        }
-    }
-
-    public class FakeSerializer1 : IExternalSerializer
-    {
-        public static bool IsSupportedTypeCalled { get; private set; }
-
-        public static bool DeepCopyCalled { get; private set; }
-
-        public static bool SerializeCalled { get; private set; }
-
-        public static bool DeserializeCalled { get; private set; }
-
-        public static IList<Type> SupportedTypes { get; set; }
-
-        public static void Reset()
-        {
-            IsSupportedTypeCalled = DeepCopyCalled = SerializeCalled = DeserializeCalled = false;
-        }
-
-        public bool IsSupportedType(Type itemType)
-        {
-            IsSupportedTypeCalled = true;
-            return SupportedTypes == null ? false : SupportedTypes.Contains(itemType);
-        }
-
-        public object DeepCopy(object source, ICopyContext context)
-        {
-            DeepCopyCalled = true;
-            return source;
-        }
-
-        public void Serialize(object item, ISerializationContext context, Type expectedType)
-        {
-            SerializeCalled = true;
-        }
-
-        public object Deserialize(Type expectedType, IDeserializationContext context)
-        {
-            DeserializeCalled = true;
-            return null;
-        }
-    }
-
-    public class FakeSerializer2 : IExternalSerializer
-    {
-        public static bool IsSupportedTypeCalled { get; private set; }
-
-        public static bool DeepCopyCalled { get; private set; }
-
-        public static bool SerializeCalled { get; private set; }
-
-        public static bool DeserializeCalled { get; private set; }
-
-        public static IList<Type> SupportedTypes { get; set; }
-
-        public static void Reset()
-        {
-            IsSupportedTypeCalled = DeepCopyCalled = SerializeCalled = DeserializeCalled = false;
-        }
-
-        public bool IsSupportedType(Type itemType)
-        {
-            IsSupportedTypeCalled = true;
-            return SupportedTypes == null ? false : SupportedTypes.Contains(itemType);
-        }
-
-        public object DeepCopy(object source, ICopyContext context)
-        {
-            DeepCopyCalled = true;
-            return source;
-        }
-
-        public void Serialize(object item, ISerializationContext context, Type expectedType)
-        {
-            SerializeCalled = true;
-        }
-
-        public object Deserialize(Type expectedType, IDeserializationContext context)
-        {
-            DeserializeCalled = true;
-            return null;
-        }
-    }
-
-    public class FakeTypeToSerialize
-    {
-        public int SomeValue { get; set; }
-
-        public static bool CopyWasCalled { get; private set; }
-
-        public static bool SerializeWasCalled { get; private set; }
-
-        public static bool DeserializeWasCalled { get; private set; }
-
-        public static void Reset()
-        {
-            CopyWasCalled = SerializeWasCalled = DeserializeWasCalled = false;
-        }
-
-        [CopierMethod]
-        private static object Copy(object input, ICopyContext context)
-        {
-            CopyWasCalled = true;
-            return input;
-        }
-
-        [SerializerMethod]
-        private static void Serialize(object input, ISerializationContext context, Type expected)
-        {
-            SerializeWasCalled = true;
-        }
-
-        [DeserializerMethod]
-        private static object Deserialize(Type expected, IDeserializationContext context)
-        {
-            DeserializeWasCalled = true;
-            return null;
         }
     }
 }

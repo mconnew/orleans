@@ -28,7 +28,7 @@ namespace UnitTests.Serialization
         public void SerializationTests_CustomSerializerIsSupportedType()
         {
             var data = new FakeSerialized { SomeData = "some data" };
-            this.environment.SerializationManager.RoundTripSerializationForTesting(data);
+            this.environment.Serializer.RoundTripSerializationForTesting(data);
 
             Assert.True(FakeSerializer.IsSupportedTypeCalled, "type discovery failed");
         }
@@ -37,7 +37,7 @@ namespace UnitTests.Serialization
         public void SerializationTests_ThatSerializeAndDeserializeWereInvoked()
         {
             var data = new FakeSerialized { SomeData = "some data" };
-            this.environment.SerializationManager.RoundTripSerializationForTesting(data);
+            this.environment.Serializer.RoundTripSerializationForTesting(data);
             Assert.True(FakeSerializer.SerializeCalled);
             Assert.True(FakeSerializer.DeserializeCalled);
         }
@@ -46,7 +46,7 @@ namespace UnitTests.Serialization
         public void SerializationTests_ThatCopyWasInvoked()
         {
             var data = new FakeSerialized { SomeData = "some data" };
-            this.environment.SerializationManager.DeepCopy(data);
+            this.environment.Serializer.DeepCopy(data);
             Assert.True(FakeSerializer.DeepCopyCalled);
         }
 
@@ -54,7 +54,7 @@ namespace UnitTests.Serialization
         public void SerializationTests_ExternalSerializerUsedEvenIfCodegenDidntGenerateSerializersForIt()
         {
             var data = new FakeSerializedWithNoCodegenSerializers { SomeData = "some data", SomeMoreData = "more data" };
-            this.environment.SerializationManager.RoundTripSerializationForTesting(data);
+            this.environment.Serializer.RoundTripSerializationForTesting(data);
             Assert.True(FakeSerializer.SerializeCalled);
             Assert.True(FakeSerializer.DeserializeCalled);
         }

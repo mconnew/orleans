@@ -33,12 +33,6 @@ namespace UnitTests.Serialization
             this.messageSerializer = this.fixture.Services.GetRequiredService<IMessageSerializer>();
         }
 
-        [Fact, TestCategory("Functional"), TestCategory("Serialization")]
-        public void MessageTest_BinaryRoundTrip()
-        {
-            RunTest(1000);
-        }
-
         [Fact, TestCategory("Functional")]
         public async Task MessageTest_TtlUpdatedOnAccess()
         {
@@ -144,50 +138,6 @@ namespace UnitTests.Serialization
             var (requiredBytes, _, _) = this.messageSerializer.TryRead(ref reader, out var deserializedMessage);
             Assert.Equal(0, requiredBytes);
             return deserializedMessage;
-        }
-
-        private void RunTest(int numItems)
-        {
-            InvokeMethodRequest request = new InvokeMethodRequest(0, 2, null);
-            Message resp = this.messageFactory.CreateMessage(request, InvokeMethodOptions.None);
-            resp.Id = new CorrelationId();
-            resp.SendingSilo = SiloAddress.New(new IPEndPoint(IPAddress.Loopback, 200), 0);
-            resp.TargetSilo = SiloAddress.New(new IPEndPoint(IPAddress.Loopback, 300), 0);
-            resp.SendingGrain = LegacyGrainId.NewId();
-            resp.TargetGrain = LegacyGrainId.NewId();
-            resp.IsAlwaysInterleave = true;
-
-            List<object> requestBody = new List<object>();
-            for (int k = 0; k < numItems; k++)
-            {
-                requestBody.Add(k + ": test line");
-            }
-
-            resp.BodyObject = requestBody;
-
-            string s = resp.ToString();
-            output.WriteLine(s);
-            
-            var resp1 = RoundTripMessage(resp);
-
-            //byte[] serialized = resp.FormatForSending();
-            //Message resp1 = new Message(serialized, serialized.Length);
-            Assert.Equal(resp.Category, resp1.Category); //Category is incorrect"
-            Assert.Equal(resp.Direction, resp1.Direction); //Direction is incorrect
-            Assert.Equal(resp.Id, resp1.Id); //Correlation ID is incorrect
-            Assert.Equal(resp.IsAlwaysInterleave, resp1.IsAlwaysInterleave); //Foo Boolean is incorrect
-            Assert.Equal(resp.CacheInvalidationHeader, resp1.CacheInvalidationHeader); //Bar string is incorrect
-            Assert.True(resp.TargetSilo.Equals(resp1.TargetSilo));
-            Assert.True(resp.TargetGrain.Equals(resp1.TargetGrain));
-            Assert.True(resp.SendingGrain.Equals(resp1.SendingGrain));
-            Assert.True(resp.SendingSilo.Equals(resp1.SendingSilo)); //SendingSilo is incorrect
-            List<object> responseList = Assert.IsAssignableFrom<List<object>>(resp1.BodyObject);
-            Assert.Equal<int>(numItems, responseList.Count); //Body list has wrong number of entries
-            for (int k = 0; k < numItems; k++)
-            {
-                Assert.IsAssignableFrom<string>(responseList[k]); //Body list item " + k + " has wrong type
-                Assert.Equal((string)(requestBody[k]), (string)(responseList[k])); //Body list item " + k + " is incorrect
-            }
         }
     }
 }

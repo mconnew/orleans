@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Orleans.CodeGeneration;
 using Orleans.Serialization;
@@ -95,24 +95,6 @@ namespace Orleans
         public void Dispose()
         {
             _grainCancellationToken.Dispose();
-        }
-
-        [SerializerMethod]
-        internal static void SerializeGrainCancellationTokenSource(object obj, ISerializationContext context, Type expected)
-        {
-            throw new NotSupportedException("GrainCancellationTokenSource can not be serialized");
-        }
-
-        [DeserializerMethod]
-        internal static object DeserializeGrainCancellationTokenSource(Type expected, IDeserializationContext context)
-        {
-            throw new NotSupportedException("GrainCancellationTokenSource can not be deserialized");
-        }
-
-        [CopierMethod]
-        internal static object CopyGrainCancellationTokenSource(object obj, ICopyContext context)
-        {
-            throw new NotSupportedException("GrainCancellationTokenSource can not be deep copied");
         }
     }
 }

@@ -28,7 +28,7 @@ namespace UnitTests.Serialization
         [Fact]
         public void OrleansJsonSerializer_ExternalSerializer_Client()
         {
-            TestSerializationRoundTrip(this.environment.SerializationManager);
+            TestSerializationRoundTrip(this.environment.Serializer);
         }
 
         [Fact]
@@ -44,16 +44,16 @@ namespace UnitTests.Serialization
             TestSerializationRoundTrip(serializationManager);
         }
 
-        private static void TestSerializationRoundTrip(SerializationManager serializationManager)
+        private static void TestSerializationRoundTrip(Serializer serializer)
         {
             var data = new JsonPoco {Prop = "some data"};
-            var serialized = serializationManager.SerializeToByteArray(data);
+            var serialized = serializer.SerializeToArray(data);
             var subSequence = Encoding.UTF8.GetBytes("crazy_name");
 
             // The serialized data should have our custom [JsonProperty] name, 'crazy_name', in it.
             Assert.Contains(ToString(subSequence), ToString(serialized));
 
-            var deserialized = serializationManager.DeserializeFromByteArray<JsonPoco>(serialized);
+            var deserialized = serializer.Deserialize<JsonPoco>(serialized);
 
             Assert.Equal(data.Prop, deserialized.Prop);
         }

@@ -1,16 +1,13 @@
 using System.Threading.Tasks;
 using Orleans;
-using Orleans.CodeGeneration;
 using UnitTests.GrainInterfaces.Directories;
 
 namespace UnitTests.Grains.Directories
 {
-    [TypeCodeOverride(TYPECODE)]
+    [GrainType(DIRECTORY)]
     public class DefaultDirectoryGrain : Grain, IDefaultDirectoryGrain
     {
         private int counter = 0;
-
-        public const int TYPECODE = 1001;
 
         public const string DIRECTORY = "Default";
 
