@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Options;
+using Orleans.Runtime;
 using Orleans.Serialization.Configuration;
 
 namespace Orleans.Configuration
@@ -31,7 +32,7 @@ namespace Orleans.Configuration
         {
             foreach (var type in _typeManifestOptions.Interfaces)
             {
-                if (typeof(IGrain).IsAssignableFrom(type))
+                if (typeof(IAddressable).IsAssignableFrom(type))
                 {
                     options.Interfaces.Add(type switch
                     {

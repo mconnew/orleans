@@ -134,19 +134,25 @@ namespace Orleans.GrainReferences
         private readonly Dictionary<GrainInterfaceType, Type> _mapping;
 
         public NewRpcProvider(
-            IOptions<GrainTypeOptions> config,
+            IOptions<TypeManifestOptions> config,
             GrainInterfaceTypeResolver resolver,
             TypeConverter typeConverter)
         {
             _typeConverter = typeConverter;
-            var proxyTypes = config.Value.Interfaces;
+            var proxyTypes = config.Value.InterfaceProxies;
             _mapping = new Dictionary<GrainInterfaceType, Type>();
-            foreach (var type in proxyTypes)
+            foreach (var proxyType in proxyTypes)
             {
-                if (!typeof(IAddressable).IsAssignableFrom(type))
+                if (!typeof(IAddressable).IsAssignableFrom(proxyType))
                 {
                     continue;
                 }
+
+                var type = proxyType switch
+                {
+                    { IsGenericType: true } => proxyType.GetGenericTypeDefinition(),
+                    _ => proxyType
+                };
 
                 var grainInterface = GetMainInterface(type);
                 var id = resolver.GetGrainInterfaceType(grainInterface);
