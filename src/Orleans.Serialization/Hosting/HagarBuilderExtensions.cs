@@ -18,7 +18,8 @@ namespace Orleans.Serialization
 
         public static ISerializerBuilder AddAssembly(this ISerializerBuilder builder, Assembly assembly)
         {
-            var properties = ((ISerializerBuilderImplementation)builder).Properties;
+            var builderImpl = (ISerializerBuilderImplementation)builder;
+            var properties = builderImpl.Properties;
             HashSet<Assembly> assembliesSet;
             if (!properties.TryGetValue(_assembliesKey, out var assembliesSetObj))
             {
@@ -36,9 +37,10 @@ namespace Orleans.Serialization
             }
 
             var attrs = assembly.GetCustomAttributes<TypeManifestProviderAttribute>();
+
             foreach (var attr in attrs)
             {
-                _ = builder.Configure(sp => (IConfigureOptions<TypeManifestOptions>)ActivatorUtilities.GetServiceOrCreateInstance(sp, attr.ProviderType));
+                _ = builderImpl.ConfigureServices(services => services.AddSingleton(typeof(IConfigureOptions<TypeManifestOptions>), attr.ProviderType));
             }
 
             return builder;

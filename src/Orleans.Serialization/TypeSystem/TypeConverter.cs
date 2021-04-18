@@ -82,7 +82,10 @@ namespace Orleans.Serialization.TypeSystem
             AddFromMetadata(metadata.Copiers, typeof(IBaseCopier<>));
             foreach (var type in metadata.InterfaceProxies)
             {
-                AddAllowedType(type);
+                AddAllowedType(type switch {
+                    { IsGenericType: true} => type.GetGenericTypeDefinition(),
+                    _ => type
+                });
             }
 
             void AddFromMetadata(IEnumerable<Type> metadataCollection, Type genericType)

@@ -33,7 +33,11 @@ namespace Orleans.Configuration
             {
                 if (typeof(IGrain).IsAssignableFrom(type))
                 {
-                    options.Interfaces.Add(type);
+                    options.Interfaces.Add(type switch
+                    {
+                        { IsGenericType: true } => type.GetGenericTypeDefinition(),
+                        _ => type
+                    });
                 }
             }
 
@@ -41,7 +45,11 @@ namespace Orleans.Configuration
             {
                 if (typeof(Grain).IsAssignableFrom(type))
                 {
-                    options.Classes.Add(type);
+                    options.Classes.Add(type switch
+                    {
+                        { IsGenericType: true } => type.GetGenericTypeDefinition(),
+                        _ => type
+                    });
                 }
             }
         }

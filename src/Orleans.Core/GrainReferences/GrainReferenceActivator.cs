@@ -7,6 +7,7 @@ using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Orleans.CodeGeneration;
+using Orleans.Configuration;
 using Orleans.Metadata;
 using Orleans.Runtime;
 using Orleans.Runtime.Versions;
@@ -133,23 +134,23 @@ namespace Orleans.GrainReferences
         private readonly Dictionary<GrainInterfaceType, Type> _mapping;
 
         public NewRpcProvider(
-            IOptions<TypeManifestOptions> config,
+            IOptions<GrainTypeOptions> config,
             GrainInterfaceTypeResolver resolver,
             TypeConverter typeConverter)
         {
             _typeConverter = typeConverter;
-            var proxyTypes = config.Value.InterfaceProxies;
+            var proxyTypes = config.Value.Interfaces;
             _mapping = new Dictionary<GrainInterfaceType, Type>();
-            foreach (var proxyType in proxyTypes)
+            foreach (var type in proxyTypes)
             {
-                if (!typeof(IAddressable).IsAssignableFrom(proxyType))
+                if (!typeof(IAddressable).IsAssignableFrom(type))
                 {
                     continue;
                 }
 
-                var grainInterface = GetMainInterface(proxyType);
+                var grainInterface = GetMainInterface(type);
                 var id = resolver.GetGrainInterfaceType(grainInterface);
-                _mapping[id] = proxyType;
+                _mapping[id] = type;
             }
 
             static Type GetMainInterface(Type t)
@@ -158,7 +159,10 @@ namespace Orleans.GrainReferences
                 Type result = null;
                 foreach (var candidate in all)
                 {
-                    if (result is null) result = candidate;
+                    if (result is null)
+                    {
+                        result = candidate;
+                    }
                     else
                     {
                         if (result.IsAssignableFrom(candidate))
@@ -168,7 +172,11 @@ namespace Orleans.GrainReferences
                     }
                 }
 
-                return result;
+                return result switch
+                {
+                    { IsGenericType: true } => result.GetGenericTypeDefinition(),
+                    _ => result
+                };
             }
         }
 
