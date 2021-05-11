@@ -174,18 +174,6 @@ namespace Orleans
 
             foreach (var manifest in clusterManifest.AllGrainManifests)
             {
-                GrainType knownPrimary = default;
-                foreach (var grainInterface in manifest.Interfaces)
-                {
-                    var id = grainInterface.Key;
-
-                    if (grainInterface.Value.Properties.TryGetValue(WellKnownGrainInterfaceProperties.DefaultGrainType, out var defaultTypeString))
-                    {
-                        knownPrimary = GrainType.Create(defaultTypeString);
-                        continue;
-                    }
-                }
-
                 foreach (var grainType in manifest.Grains)
                 {
                     var id = grainType.Key;
@@ -203,6 +191,12 @@ namespace Orleans
                         else
                         {
                             interfaceTypeName = null;
+                        }
+
+                        GrainType knownPrimary = default;
+                        if (interfaceProperties is { } && interfaceProperties.Properties.TryGetValue(WellKnownGrainInterfaceProperties.DefaultGrainType, out var defaultTypeString))
+                        {
+                            knownPrimary = GrainType.Create(defaultTypeString);
                         }
 
                         // Try to work out the best primary implementation

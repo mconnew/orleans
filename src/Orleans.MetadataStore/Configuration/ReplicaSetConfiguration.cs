@@ -8,6 +8,7 @@ namespace Orleans.MetadataStore
 {
     [Immutable]
     [Serializable]
+    [GenerateSerializer]
     public class ReplicaSetConfiguration : IVersioned
     {
         public ReplicaSetConfiguration(
@@ -31,36 +32,43 @@ namespace Orleans.MetadataStore
         /// <summary>
         /// The addresses of all nodes.
         /// </summary>
+        [Id(0)]
         public SiloAddress[] Nodes { get; }
 
         /// <summary>
         /// The quorum size for Accept operations.
         /// </summary>
+        [Id(1)]
         public int AcceptQuorum { get; }
 
         /// <summary>
         /// The quorum size for Prepare operations.
         /// </summary>
+        [Id(2)]
         public int PrepareQuorum { get; }
 
         /// <summary>
         /// The unique ballot number of this configuration.
         /// </summary>
+        [Id(3)]
         public Ballot Stamp { get; }
 
         /// <summary>
         /// The monotonically increasing version number of this configuration.
         /// </summary>
+        [Id(4)]
         public long Version { get; }
 
         /// <summary>
         /// The partition range map, which divides a keyspace into a set of arbitrarily-sized partitions.
         /// </summary>
+        [Id(5)]
         public RangeMap Ranges { get; }
 
         /// <summary>
         /// Additional data stored with this configuration.
         /// </summary>
+        [Id(6)]
         public ImmutableDictionary<string, string> Values { get; } = ImmutableDictionary<string, string>.Empty;
 
         /// <inheritdoc />

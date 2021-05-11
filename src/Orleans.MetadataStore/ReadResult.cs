@@ -3,6 +3,7 @@ using System;
 namespace Orleans.MetadataStore
 {
     [Serializable]
+    [GenerateSerializer]
     public struct ReadResult<TValue> where TValue : class, IVersioned
     {
         public ReadResult(bool success, TValue value)
@@ -11,8 +12,10 @@ namespace Orleans.MetadataStore
             this.Value = value;
         }
 
+        [Id(0)]
         public TValue Value { get; set; }
 
+        [Id(1)]
         public bool Success { get; set; }
 
         public void Deconstruct(out bool success, out TValue value)

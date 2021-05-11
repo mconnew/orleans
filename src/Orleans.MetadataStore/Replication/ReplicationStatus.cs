@@ -1,5 +1,6 @@
-﻿namespace Orleans.MetadataStore
+namespace Orleans.MetadataStore
 {
+    [GenerateSerializer]
     public enum ReplicationStatus
     {
         Failed,

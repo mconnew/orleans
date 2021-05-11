@@ -1,26 +1,27 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+using Orleans.Concurrency;
 using Orleans.MetadataStore.Storage;
+using Orleans.Placement;
 using Orleans.Runtime;
 
 namespace Orleans.MetadataStore
 {
-    internal class RemoteMetadataStoreSystemTarget : SystemTarget, IRemoteMetadataStore
+    [Reentrant]
+    [GrainType(GrainTypeString)]
+    [FixedPlacement]
+    internal class RemoteMetadataStoreGrain : Grain, IRemoteMetadataStoreGrain
     {
+        public const string GrainTypeString = "sys.ckv";
+        public static readonly GrainType GrainType = GrainType.Create(GrainTypeString);
+
         private readonly MetadataStoreManager manager;
         private readonly ILocalStore store;
 
-        public RemoteMetadataStoreSystemTarget(
-            GrainId grainId,
-            ISiloRuntimeClient runtimeClient,
-            ILocalSiloDetails siloDetails,
-            ILoggerFactory loggerFactory,
+        public RemoteMetadataStoreGrain(
             MetadataStoreManager manager,
             ILocalStore store)
-            : base(grainId, siloDetails.SiloAddress, loggerFactory)
         {
-            this.RuntimeClient = runtimeClient;
             this.manager = manager;
             this.store = store;
         }

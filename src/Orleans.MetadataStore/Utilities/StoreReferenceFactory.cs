@@ -1,61 +1,43 @@
 using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using Orleans.MetadataStore.Storage;
 using Orleans.Runtime;
 
 namespace Orleans.MetadataStore
 {
     internal class StoreReferenceFactory : IStoreReferenceFactory
     {
-        private readonly IInternalGrainFactory grainFactory;
-        private readonly ILocalSiloDetails localSiloDetails;
-        private readonly IServiceProvider serviceProvider;
+        private IGrainFactory _grainFactory;
+        private readonly ILocalSiloDetails _localSiloDetails;
+        private readonly IServiceProvider _serviceProvider;
+        private LocalMetadataStore _localMetadataStore;
 
-        public StoreReferenceFactory(IInternalGrainFactory grainFactory, ILocalSiloDetails localSiloDetails, IServiceProvider serviceProvider)
+        public StoreReferenceFactory(ILocalSiloDetails localSiloDetails, IServiceProvider services)
         {
-            this.grainFactory = grainFactory;
-            this.localSiloDetails = localSiloDetails;
-            this.serviceProvider = serviceProvider;
+            _localSiloDetails = localSiloDetails;
+            _serviceProvider = services;
         }
 
         public SiloAddress GetAddress(IRemoteMetadataStore remoteStore)
         {
-            if (remoteStore is GrainReference grainReference) return grainReference.SystemTargetSilo;
-            if (remoteStore is LocalMetadataStore) return this.localSiloDetails.SiloAddress;
+            if (remoteStore is GrainReference grainReference) return FixedPlacement.ParseSiloAddress(grainReference.GrainId);
+            if (remoteStore is LocalMetadataStore) return _localSiloDetails.SiloAddress;
             throw new InvalidOperationException($"Object of type {remoteStore?.GetType()?.ToString() ?? "null"} is not an instance of type {typeof(GrainReference)}");
         }
 
         public IRemoteMetadataStore GetReference(SiloAddress address, short instanceNum)
         {
-            if (address.Endpoint.Equals(this.localSiloDetails.SiloAddress.Endpoint))
+            if (address.Endpoint.Equals(_localSiloDetails.SiloAddress.Endpoint))
             {
-                return ActivatorUtilities.CreateInstance<LocalMetadataStore>(this.serviceProvider);
+                return _localMetadataStore ??= ActivatorUtilities.CreateInstance<LocalMetadataStore>(_serviceProvider);
             }
 
-            var grainId = GrainId.GetGrainServiceGrainId(instanceNum, Constants.KeyValueStoreSystemTargetTypeCode);
-            return this.grainFactory.GetSystemTarget<IRemoteMetadataStore>(grainId, address);
-        }
-
-        internal class LocalMetadataStore : IRemoteMetadataStore
-        {
-            private readonly MetadataStoreManager manager;
-            private readonly ILocalStore store;
-
-            public LocalMetadataStore(
-                MetadataStoreManager manager,
-                ILocalStore store)
+            var grainId = FixedPlacement.CreateGrainId(RemoteMetadataStoreGrain.GrainType, address, "0"/*instancenum.tostring()*/);
+            if (_grainFactory is null)
             {
-                this.manager = manager;
-                this.store = store;
+                _grainFactory = _serviceProvider.GetRequiredService<IGrainFactory>();
             }
 
-            public ValueTask<PrepareResponse> Prepare(string key, Ballot proposerParentBallot, Ballot ballot) => this.manager.Prepare(key, proposerParentBallot, ballot);
-
-            public ValueTask<AcceptResponse> Accept(string key, Ballot proposerParentBallot, Ballot ballot, object value) => this.manager.Accept(key, proposerParentBallot, ballot, value);
-
-            public ValueTask<List<string>> GetKeys() => this.store.GetKeys(int.MaxValue);
+            return _grainFactory.GetGrain<IRemoteMetadataStoreGrain>(grainId);
         }
     }
 }

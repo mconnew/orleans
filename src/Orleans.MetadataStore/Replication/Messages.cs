@@ -4,6 +4,7 @@ using Orleans.Concurrency;
 namespace Orleans.MetadataStore
 {
     [Serializable]
+    [GenerateSerializer]
     public abstract class PrepareResponse
     {
         public static PrepareSuccess<TValue> Success<TValue>(Ballot accepted, TValue value) => new PrepareSuccess<TValue>(accepted, value);
@@ -12,6 +13,7 @@ namespace Orleans.MetadataStore
     }
 
     [Serializable]
+    [GenerateSerializer]
     public class PrepareSuccess<TValue> : PrepareResponse
     {
         public PrepareSuccess(Ballot accepted, TValue value)
@@ -20,8 +22,10 @@ namespace Orleans.MetadataStore
             Value = value;
         }
 
+        [Id(0)]
         public TValue Value { get; }
 
+        [Id(1)]
         public Ballot Accepted { get; }
 
         /// <inheritdoc />
@@ -33,6 +37,7 @@ namespace Orleans.MetadataStore
 
     [Immutable]
     [Serializable]
+    [GenerateSerializer]
     public class PrepareConflict : PrepareResponse
     {
         public PrepareConflict(Ballot conflicting)
@@ -40,6 +45,7 @@ namespace Orleans.MetadataStore
             this.Conflicting = conflicting;
         }
 
+        [Id(0)]
         public Ballot Conflicting { get; }
 
         /// <inheritdoc />
@@ -51,6 +57,7 @@ namespace Orleans.MetadataStore
 
     [Immutable]
     [Serializable]
+    [GenerateSerializer]
     public class PrepareConfigConflict : PrepareResponse
     {
         public PrepareConfigConflict(Ballot conflicting)
@@ -58,6 +65,7 @@ namespace Orleans.MetadataStore
             this.Conflicting = conflicting;
         }
 
+        [Id(0)]
         public Ballot Conflicting { get; }
 
         /// <inheritdoc />
@@ -68,6 +76,7 @@ namespace Orleans.MetadataStore
     }
 
     [Serializable]
+    [GenerateSerializer]
     public abstract class AcceptResponse
     {
         public static AcceptSuccess Success() => AcceptSuccess.Instance;
@@ -79,6 +88,7 @@ namespace Orleans.MetadataStore
 
     [Immutable]
     [Serializable]
+    [GenerateSerializer]
     public class AcceptSuccess : AcceptResponse
     {
         public static AcceptSuccess Instance { get; } = new AcceptSuccess();
@@ -92,6 +102,7 @@ namespace Orleans.MetadataStore
 
     [Immutable]
     [Serializable]
+    [GenerateSerializer]
     public class AcceptConflict : AcceptResponse
     {
         public AcceptConflict(Ballot conflicting)
@@ -99,6 +110,7 @@ namespace Orleans.MetadataStore
             Conflicting = conflicting;
         }
 
+        [Id(0)]
         public Ballot Conflicting { get; }
 
         /// <inheritdoc />
@@ -110,6 +122,7 @@ namespace Orleans.MetadataStore
 
     [Immutable]
     [Serializable]
+    [GenerateSerializer]
     public class AcceptConfigConflict : AcceptResponse
     {
         public AcceptConfigConflict(Ballot conflicting)
@@ -117,6 +130,7 @@ namespace Orleans.MetadataStore
             Conflicting = conflicting;
         }
 
+        [Id(0)]
         public Ballot Conflicting { get; }
 
         /// <inheritdoc />

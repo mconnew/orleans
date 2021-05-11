@@ -16,7 +16,7 @@ namespace Orleans.TestingHost
         private bool isActive = true;
         
         /// <summary>Gets a reference to the silo host.</summary>
-        public ISiloHost SiloHost { get; private set; }
+        public ISiloHost SiloHost { get; set; }
 
         /// <inheritdoc />
         public override bool IsActive => isActive;

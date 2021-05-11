@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Diagnostics.Contracts;
 
 namespace Orleans.MetadataStore
 {
+    [GenerateSerializer]
     public struct RangeMap
     {
         public RangeMap(int[] upperBounds, int[][] rangeNodes)
@@ -14,11 +15,13 @@ namespace Orleans.MetadataStore
         /// <summary>
         /// Upper bounds of successive ranges.
         /// </summary>
+        [Id(0)]
         public int[] UpperBounds { get; }
 
         /// <summary>
         /// Indices (into <see cref="ReplicaSetConfiguration.Nodes"/>) corresponding to each range in <see cref="UpperBounds"/>.
         /// </summary>
+        [Id(1)]
         public int[][] RangeNodes { get; }
 
         [Pure]

@@ -2,13 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using Orleans.Runtime;
 using Orleans.Serialization;
 
@@ -32,15 +30,13 @@ namespace Orleans.MetadataStore.Tests
 
 
 
-
-
     public class MetadataStoreMembershipTable : SystemTarget, IMembershipTable, ILifecycleParticipant<ISiloLifecycle>
     {
         private const string MembershipKey = "membership";
         private readonly ILocalSiloDetails localSiloDetails;
         private readonly ConfigurationManager configurationManager;
         private readonly IOptionsMonitor<MetadataStoreClusteringOptions> options;
-        private readonly SerializationManager serializationManager;
+        private readonly Serializer serializationManager;
         private readonly ConfigurationUpdater<MembershipTableData> updateMembershipTable;
         private readonly CancellationTokenSource shutdownTokenSource = new CancellationTokenSource();
         private readonly ILogger<MetadataStoreMembershipTable> log;
@@ -48,12 +44,12 @@ namespace Orleans.MetadataStore.Tests
         private Task waitForClusterStability = Task.CompletedTask;
 
         public MetadataStoreMembershipTable(
-                ILocalSiloDetails localSiloDetails,
-                ConfigurationManager configurationManager,
-                IOptionsMonitor<MetadataStoreClusteringOptions> options,
-                SerializationManager serializationManager,
-                ILogger<MetadataStoreMembershipTable> log,
-                IServiceProvider serviceProvider)
+            ILocalSiloDetails localSiloDetails,
+            ConfigurationManager configurationManager,
+            IOptionsMonitor<MetadataStoreClusteringOptions> options,
+            Serializer serializationManager,
+            ILogger<MetadataStoreMembershipTable> log,
+            IServiceProvider serviceProvider)
         {
             this.localSiloDetails = localSiloDetails;
             this.configurationManager = configurationManager;
@@ -89,10 +85,10 @@ namespace Orleans.MetadataStore.Tests
 
                     // First, find out what the accepted version of the configuration is telling us.
                     var accepted = this.configurationManager.AcceptedConfiguration?.Configuration;
-                    var acceptedSeedNodes = accepted?.Nodes?.ToSet() ?? new HashSet<SiloAddress>();
+                    var acceptedSeedNodes = accepted?.Nodes is { } nodes ? new HashSet<SiloAddress>(nodes) : new HashSet<SiloAddress>();
 
                     // Second, see what the configuration is telling us we should be seeing.
-                    var snapshotSeedNodes = snapshot.SeedNodes?.ToSet() ?? new HashSet<IPEndPoint>();
+                    var snapshotSeedNodes = snapshot.SeedNodes is { } seedNodes ? new HashSet<IPEndPoint>(seedNodes) : new HashSet<IPEndPoint>();
                     converged = acceptedSeedNodes.Count == snapshotSeedNodes.Count;
                     foreach (var node in snapshotSeedNodes)
                     {
@@ -344,7 +340,7 @@ namespace Orleans.MetadataStore.Tests
                 return null;
             }
 
-            return this.serializationManager.DeserializeFromByteArray<MembershipTableData>(Convert.FromBase64String(serialized));
+            return this.serializationManager.Deserialize<MembershipTableData>(Convert.FromBase64String(serialized));
         }
 
         private (bool ShouldUpdate, ReplicaSetConfigurationUpdate Update) UpdateMembershipTable(ReplicaSetConfiguration existing, MembershipTableData value)
@@ -352,11 +348,11 @@ namespace Orleans.MetadataStore.Tests
             var current = TryGetValue(existing);
             if (current is null || (string.Equals(current.Version.VersionEtag, value.Version.VersionEtag) && current.Version.Version < value.Version.Version))
             {
-                var serialized = Convert.ToBase64String(this.serializationManager.SerializeToByteArray(value));
+                var serialized = Convert.ToBase64String(this.serializationManager.SerializeToArray(value));
                 var updatedValues = existing.Values.SetItem(MembershipKey, serialized);
 
                 var existingNodes = existing.Nodes;
-                var proposedNodes = value.Members.Where(s => !s.Item1.Status.IsUnavailable()).Select(s => SiloAddress.New(s.Item1.SiloAddress.Endpoint, 0)).ToArray();
+                var proposedNodes = value.Members.Where(s => !s.Item1.Status.IsTerminating()).Select(s => SiloAddress.New(s.Item1.SiloAddress.Endpoint, 0)).ToArray();
                 var updatedNodes = GetUpdatedNodes(existingNodes, proposedNodes);
 
                 return (true, new ReplicaSetConfigurationUpdate(nodes: updatedNodes, ranges: existing.Ranges, updatedValues));

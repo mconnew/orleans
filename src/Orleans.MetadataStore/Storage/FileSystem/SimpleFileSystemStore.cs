@@ -40,9 +40,7 @@ namespace Orleans.MetadataStore.Storage
         {
             var fileText = JsonConvert.SerializeObject(value, this.options.JsonSettings);
             var fileName = key + ".json";
-            var tmpFile = Path.Combine(this.tmpDirectory, fileName);
             var targetFile = Path.Combine(this.directory, fileName);
-            var backupFile = Path.Combine(this.bakDirectory, fileName);
             await WriteFileAsync(targetFile, fileText);
             /*if (File.Exists(targetFile)) File.Replace(tmpFile, targetFile, backupFile);
             else File.Move(tmpFile, targetFile);*/

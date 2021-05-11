@@ -20,7 +20,6 @@ namespace Orleans.Hosting
         public static ISiloHostBuilder UseMetadataStore(this ISiloHostBuilder builder)
         {
             return builder
-                .ConfigureApplicationParts(parts => parts.AddFrameworkPart(typeof(IRemoteMetadataStore).Assembly))
                 .ConfigureServices((context, services) =>
                 {
                     if (context.Properties.TryGetValue(nameof(UseMetadataStore), out var _)) return;
@@ -33,7 +32,6 @@ namespace Orleans.Hosting
         public static ISiloBuilder UseMetadataStore(this ISiloBuilder builder)
         {
             return builder
-                .ConfigureApplicationParts(parts => parts.AddFrameworkPart(typeof(IRemoteMetadataStore).Assembly))
                 .ConfigureServices((context, services) =>
                 {
                     if (context.Properties.TryGetValue(nameof(UseMetadataStore), out var _)) return;
@@ -50,10 +48,6 @@ namespace Orleans.Hosting
             services.AddSingleton<MetadataStoreManager>();
             services.Add(new ServiceDescriptor(
                 typeof(IMetadataStore),
-                sp => sp.GetRequiredService<MetadataStoreManager>(),
-                ServiceLifetime.Singleton));
-            services.Add(new ServiceDescriptor(
-                typeof(ILifecycleParticipant<ISiloLifecycle>),
                 sp => sp.GetRequiredService<MetadataStoreManager>(),
                 ServiceLifetime.Singleton));
         }

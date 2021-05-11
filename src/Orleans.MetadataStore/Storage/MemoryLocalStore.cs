@@ -8,17 +8,17 @@ namespace Orleans.MetadataStore.Storage
 {
     public class MemoryLocalStore : ILocalStore
     {
-        private readonly ConcurrentDictionary<string, object> lookup = new ConcurrentDictionary<string, object>();
-        private readonly SerializationManager serializationManager;
+        private readonly ConcurrentDictionary<string, object> _lookup = new();
+        private readonly DeepCopier _copier;
 
-        public MemoryLocalStore(SerializationManager serializationManager)
+        public MemoryLocalStore(DeepCopier copier)
         {
-            this.serializationManager = serializationManager;
+            _copier = copier;
         }
 
         public ValueTask<TValue> Read<TValue>(string key)
         {
-            if (this.lookup.TryGetValue(key, out var value))
+            if (_lookup.TryGetValue(key, out var value))
             {
                 return new ValueTask<TValue>((TValue)value);
             }
@@ -28,7 +28,7 @@ namespace Orleans.MetadataStore.Storage
 
         public ValueTask Write<TValue>(string key, TValue value)
         {
-            this.lookup[key] = this.serializationManager.DeepCopy(value);
+            _lookup[key] = _copier.Copy(value);
             return default;
         }
 
@@ -36,7 +36,7 @@ namespace Orleans.MetadataStore.Storage
         {
             var include = afterKey == null;
             var results = new List<string>();
-            foreach (var pair in this.lookup)
+            foreach (var pair in _lookup)
             {
                 if (include)
                 {

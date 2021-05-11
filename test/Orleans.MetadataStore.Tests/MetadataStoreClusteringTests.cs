@@ -72,7 +72,6 @@ namespace Orleans.MetadataStore.Tests
                 // Start the new silos.
                 await testCluster.StartAdditionalSilosAsync(NumSilos);
 
-                testCluster.CreateMainClient();
                 UpdateClientGateways(testCluster);
 
                 _ = Task.Run(async () =>
@@ -84,17 +83,13 @@ namespace Orleans.MetadataStore.Tests
                     }
                 });
 
-                await testCluster.StartClientAsync(async exception =>
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(1)); return true;
-                });
-
+                testCluster.InitializeClient();
                 this.HostedCluster = testCluster;
             }
 
-            private async Task<SiloHandle> CreateSiloAsync(string siloName, IList<IConfigurationSource> configurationSources)
+            private async Task<SiloHandle> CreateSiloAsync(string siloName, IConfiguration configuration)
             {
-                var silo = TestClusterHostFactory.CreateSiloHost(siloName, configurationSources);
+                var silo = TestClusterHostFactory.CreateSiloHost(siloName, configuration);
                 var siloDetails = silo.Services.GetRequiredService<ILocalSiloDetails>();
                 var handle = new InProcessSiloHandle
                 {
@@ -184,8 +179,7 @@ namespace Orleans.MetadataStore.Tests
                         services.AddLogging(logging => logging.AddDebug());
                     })
                     .UseMetadataStore()
-                    .UseMemoryLocalStore()
-                    .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(IMetadataStoreGrain).Assembly));
+                    .UseMemoryLocalStore();
             }
         }
 
@@ -213,7 +207,7 @@ namespace Orleans.MetadataStore.Tests
         public async Task MetadataStore_Membership_Basic()
         {
             var log = new XunitLogger(this.output, $"Client-{1}");
-            var grain = this.fixture.Client.GetGrain<IMetadataStoreGrain>(Guid.NewGuid());
+            var grain = this.fixture.Client.GetGrain<IMetadataStoreTestGrain>(Guid.NewGuid());
             var result = await grain.TryUpdate("testKey", new MyVersionedData {Value = "initial", Version = 1});
             log.LogInformation($"Wrote data and got answer: {result}");
 

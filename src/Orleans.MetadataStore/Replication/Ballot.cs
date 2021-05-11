@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
 using Orleans.Concurrency;
@@ -7,18 +7,21 @@ namespace Orleans.MetadataStore
 {
     [Serializable]
     [Immutable]
+    [GenerateSerializer]
     public struct Ballot : IComparable<Ballot>, IComparable, ISerializable
     {
         /// <summary>
         /// The proposal number.
         /// </summary>
         [JsonProperty]
+        [Id(0)]
         public readonly int Counter;
 
         /// <summary>
         /// The unique identifier of the proposer.
         /// </summary>
         [JsonProperty]
+        [Id(1)]
         public readonly int Id;
 
         public Ballot(int counter, int id)

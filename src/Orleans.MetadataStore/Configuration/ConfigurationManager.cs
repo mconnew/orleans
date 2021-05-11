@@ -12,6 +12,7 @@ using AsyncEx = Nito.AsyncEx;
 
 namespace Orleans.MetadataStore
 {
+    [GenerateSerializer]
     public struct ReplicaSetConfigurationUpdate
     {
         public ReplicaSetConfigurationUpdate(SiloAddress[] nodes, RangeMap? ranges, ImmutableDictionary<string, string> values)
@@ -21,8 +22,13 @@ namespace Orleans.MetadataStore
             this.Values = values ?? ImmutableDictionary<string, string>.Empty;
         }
 
+        [Id(0)]
         public SiloAddress[] Nodes { get; }
+
+        [Id(1)]
         public RangeMap Ranges { get; }
+
+        [Id(2)]
         public ImmutableDictionary<string, string> Values { get; }
     }
 

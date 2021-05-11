@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Orleans.MetadataStore
 {
@@ -7,6 +7,7 @@ namespace Orleans.MetadataStore
     /// </summary>
     /// <typeparam name="TValue">The type of the value stored in the register.</typeparam>
     [Serializable]
+    [GenerateSerializer]
     public class RegisterState<TValue>
     {
         public RegisterState(Ballot promised, Ballot accepted, TValue value)
@@ -17,15 +18,17 @@ namespace Orleans.MetadataStore
         }
 
         public static RegisterState<TValue> Default { get; } = new RegisterState<TValue>(Ballot.Zero, Ballot.Zero, default(TValue));
-                
+
         /// <summary>
         /// The ballot that this node promised to commit to if no higher ballots come along before an accept request is made.
         /// </summary>
+        [Id(0)]
         public Ballot Promised { get; }
 
         /// <summary>
         /// The ballot corresponding to the most recently accepted value, held in <see cref="Value"/>.
         /// </summary>
+        [Id(1)]
         public Ballot Accepted { get; }
 
         /// <summary>
@@ -35,6 +38,7 @@ namespace Orleans.MetadataStore
         /// Note that this value is not necessarily committed and will not necessarily ever be committed.
         /// In order to determine a valid value for this register, a consensus round must be performed.
         /// </remarks>
+        [Id(2)]
         public TValue Value { get; }
 
         /// <inheritdoc />

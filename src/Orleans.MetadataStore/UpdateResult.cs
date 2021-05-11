@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 
 namespace Orleans.MetadataStore
 {
     [Serializable]
+    [GenerateSerializer]
     public struct UpdateResult<TState>
     {
         public UpdateResult(bool success, TState value)
@@ -11,8 +12,10 @@ namespace Orleans.MetadataStore
             Value = value;
         }
 
+        [Id(0)]
         public TState Value { get; set; }
 
+        [Id(1)]
         public bool Success { get; set; }
 
         public override string ToString()

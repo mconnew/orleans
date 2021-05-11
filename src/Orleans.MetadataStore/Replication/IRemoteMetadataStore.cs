@@ -1,10 +1,21 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Orleans.Metadata;
+using Orleans.Runtime;
 
 namespace Orleans.MetadataStore
 {
-    public interface IRemoteMetadataStore : ISystemTarget
+    public interface IRemoteMetadataStore
     {
+        /// <summary>
+        /// Prepares an operation.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="proposerParentBallot">
+        /// The ballot number for the configuration which the proposer is using, taken from <see cref="ReplicaSetConfiguration.Stamp"/>.
+        /// </param>
+        /// <param name="ballot"></param>
+        /// <returns></returns>
         ValueTask<PrepareResponse> Prepare(string key, Ballot proposerParentBallot, Ballot ballot);
 
         /// <summary>
@@ -23,5 +34,11 @@ namespace Orleans.MetadataStore
         /// </summary>
         /// <returns>The list of keys which are present on this instance.</returns>
         ValueTask<List<string>> GetKeys();
+    }
+
+    [GrainInterfaceType("ckv")]
+    [DefaultGrainType(RemoteMetadataStoreGrain.GrainTypeString)]
+    public interface IRemoteMetadataStoreGrain : IGrain, IRemoteMetadataStore
+    {
     }
 }

@@ -59,8 +59,7 @@ namespace Orleans.MetadataStore.Tests
                             options.Directory = $@"c:\tmp\db\{Guid.NewGuid().GetHashCode():X}";
                         }))*/
                     //.UseLiteDBLocalStore(options => options.ConnectionString = $@"c:\tmp\db\{Guid.NewGuid().GetHashCode():X}.db")
-                    .AddStartupTask<BootstrapCluster>()
-                    .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(IMetadataStoreGrain).Assembly));
+                    .AddStartupTask<BootstrapCluster>();
             }
         }
 
@@ -177,7 +176,7 @@ namespace Orleans.MetadataStore.Tests
         public async Task TryUpdate_SingleProposer()
         {
             var log = new XunitLogger(this.output, $"Client-{1}");
-            var grain = this.fixture.Client.GetGrain<IMetadataStoreGrain>(Guid.NewGuid());
+            var grain = this.fixture.Client.GetGrain<IMetadataStoreTestGrain>(Guid.NewGuid());
             var result = await grain.TryUpdate("testKey", new MyVersionedData {Value = "initial", Version = 1});
             log.LogInformation($"Wrote data and got answer: {result}");
 
@@ -208,12 +207,12 @@ namespace Orleans.MetadataStore.Tests
             const int outerLoopIterations = 100;
             const int innerLoopIterations = 1000;
 
-            var grains = new List<IMetadataStoreGrain>(innerLoopIterations);
+            var grains = new List<IMetadataStoreTestGrain>(innerLoopIterations);
             var keys = new List<string>(innerLoopIterations);
             var tasks = new List<Task>(innerLoopIterations);
             for (var i = 0; i < innerLoopIterations; i++)
             {
-                var grain = this.fixture.Client.GetGrain<IMetadataStoreGrain>(Guid.NewGuid());
+                var grain = this.fixture.Client.GetGrain<IMetadataStoreTestGrain>(Guid.NewGuid());
                 var key = i.ToString();
                 grains.Add(grain);
                 keys.Add(key);

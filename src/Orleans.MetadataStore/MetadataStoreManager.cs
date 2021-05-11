@@ -2,16 +2,12 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Orleans.MetadataStore.Storage;
-using Orleans.Runtime;
-using Orleans.Runtime.Scheduler;
 
 namespace Orleans.MetadataStore
 {
-    internal class MetadataStoreManager : IMetadataStore, ILifecycleParticipant<ISiloLifecycle>
+    internal class MetadataStoreManager : IMetadataStore
     {
         private readonly ConcurrentDictionary<string, IAcceptor<IVersioned>> acceptors = new ConcurrentDictionary<string, IAcceptor<IVersioned>>();
         private readonly ConcurrentDictionary<string, IProposer<IVersioned>> proposers = new ConcurrentDictionary<string, IProposer<IVersioned>>();
@@ -19,26 +15,14 @@ namespace Orleans.MetadataStore
         private readonly ChangeFunction<IVersioned, IVersioned> readFunction = (current, updated) => current;
         private readonly Func<string, IProposer<IVersioned>> proposerFactory;
         private readonly Func<string, IAcceptor<IVersioned>> acceptorFactory;
-        private readonly OrleansTaskScheduler taskScheduler;
-        private readonly ActivationDirectory activationDirectory;
-        private readonly IServiceProvider serviceProvider;
         private readonly ConfigurationManager configurationManager;
-        private readonly MetadataStoreOptions options;
 
         public MetadataStoreManager(
-            OrleansTaskScheduler taskScheduler,
-            ActivationDirectory activationDirectory,
-            IServiceProvider serviceProvider,
-            IOptions<MetadataStoreOptions> options,
             ConfigurationManager configurationManager,
             ILoggerFactory loggerFactory,
             ILocalStore localStore)
         {
-            this.taskScheduler = taskScheduler;
-            this.activationDirectory = activationDirectory;
-            this.serviceProvider = serviceProvider;
             this.configurationManager = configurationManager;
-            this.options = options.Value;
             this.configurationManager = configurationManager;
 
             // The configuration acceptor's stored configuration is used by itself as well as the storage proposers and acceptors.
@@ -88,27 +72,6 @@ namespace Orleans.MetadataStore
         {
             var acceptor = this.acceptors.GetOrAdd(key, this.acceptorFactory);
             return acceptor.Accept(proposerParentBallot, ballot, (IVersioned)value);
-        }
-
-        void ILifecycleParticipant<ISiloLifecycle>.Participate(ISiloLifecycle lifecycle)
-        {
-            lifecycle.Subscribe(nameof(MetadataStoreManager), ServiceLifecycleStage.RuntimeInitialize, this.OnRuntimeInitialize);
-        }
-
-        private async Task OnRuntimeInitialize(CancellationToken cancellationToken)
-        {
-            await this.configurationManager.Initialize();
-
-            for (short i = 0; i < this.options.InstancesPerSilo; i++)
-            {
-                // Create a new store service worker instance.
-                var grainId = GrainId.GetGrainServiceGrainId(i, Constants.KeyValueStoreSystemTargetTypeCode);
-                var instance = ActivatorUtilities.CreateInstance<RemoteMetadataStoreSystemTarget>(this.serviceProvider, grainId);
-
-                // Register the instance so that it can send and receive messages.
-                this.taskScheduler.RegisterWorkContext(instance.SchedulingContext);
-                this.activationDirectory.RecordNewSystemTarget(instance);
-            }
         }
     }
 }
