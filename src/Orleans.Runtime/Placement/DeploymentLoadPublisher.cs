@@ -124,7 +124,7 @@ namespace Orleans.Runtime
         public Task UpdateRuntimeStatistics(SiloAddress siloAddress, SiloRuntimeStatistics siloStats)
         {
             if (logger.IsEnabled(LogLevel.Debug)) logger.Debug("UpdateRuntimeStatistics from {0}", siloAddress);
-            if (this.siloStatusOracle.GetApproximateSiloStatus(siloAddress) != SiloStatus.Active)
+            if (this.siloStatusOracle.GetSiloStatus(siloAddress) != SiloStatus.Active)
                 return Task.CompletedTask;
 
             SiloRuntimeStatistics old;

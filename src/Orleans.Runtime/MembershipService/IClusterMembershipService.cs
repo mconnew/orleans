@@ -15,5 +15,7 @@ namespace Orleans.Runtime
         /// Unilaterally declares the specified silo defunct.
         /// </summary>
         Task<bool> TryKill(SiloAddress siloAddress);
+
+        SiloStatus CurrentStatus { get; }
     }
 }

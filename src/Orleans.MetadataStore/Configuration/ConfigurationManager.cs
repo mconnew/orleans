@@ -148,7 +148,7 @@ namespace Orleans.MetadataStore
         public async Task<ReadResult<ReplicaSetConfiguration>> TryRead(CancellationToken cancellationToken = default)
         {
             var result = await this.proposer.TryUpdate(null, this.readFunction, cancellationToken);
-            return new ReadResult<ReplicaSetConfiguration>(result.Item1 == ReplicationStatus.Success, result.Item2 as ReplicaSetConfiguration);
+            return new ReadResult<ReplicaSetConfiguration>(result.Status == ReplicationStatus.Success, result.Value as ReplicaSetConfiguration);
         }
 
         private async Task<UpdateResult<ReplicaSetConfiguration>> ModifyConfiguration<T>(ConfigurationUpdater<T> changeFunc, T input)

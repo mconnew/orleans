@@ -1,12 +1,12 @@
-using System;
+﻿using System;
 
 namespace Orleans.Runtime
 {
     [Serializable]
     [GenerateSerializer]
-    public sealed class ClusterMember : IEquatable<ClusterMember>
+    public sealed class ClusterMemberInfo : IEquatable<ClusterMemberInfo>
     {
-        public ClusterMember(SiloAddress siloAddress, SiloStatus status, string name)
+        public ClusterMemberInfo(SiloAddress siloAddress, SiloStatus status, string name)
         {
             this.SiloAddress = siloAddress ?? throw new ArgumentNullException(nameof(siloAddress));
             this.Status = status;
@@ -22,9 +22,9 @@ namespace Orleans.Runtime
         [Id(3)]
         public string Name { get; }
 
-        public override bool Equals(object obj) => this.Equals(obj as ClusterMember);
+        public override bool Equals(object obj) => this.Equals(obj as ClusterMemberInfo);
 
-        public bool Equals(ClusterMember other) => other != null
+        public bool Equals(ClusterMemberInfo other) => other != null
             && this.SiloAddress.Equals(other.SiloAddress)
             && this.Status == other.Status
             && string.Equals(this.Name, other.Name, StringComparison.Ordinal);

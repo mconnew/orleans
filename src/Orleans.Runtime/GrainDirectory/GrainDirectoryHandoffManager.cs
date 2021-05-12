@@ -152,7 +152,7 @@ namespace Orleans.Runtime.GrainDirectory
         {
             if (!this.localDirectory.Running) return;
 
-            if (this.siloStatusOracle.GetApproximateSiloStatus(addedSilo) == SiloStatus.Active)
+            if (this.siloStatusOracle.GetSiloStatus(addedSilo) == SiloStatus.Active)
             {
                 if (splitPartListSingle.Count > 0)
                 {
@@ -251,7 +251,7 @@ namespace Orleans.Runtime.GrainDirectory
                     {
                         logger.Warn(ErrorCode.DirectoryUnexpectedDelta,
                             String.Format("Got delta of the directory partition from silo {0} (Membership status {1}) while not holding a full copy. Membership active cluster size is {2}",
-                                source, this.siloStatusOracle.GetApproximateSiloStatus(source),
+                                source, this.siloStatusOracle.GetSiloStatus(source),
                                 this.siloStatusOracle.GetApproximateSiloStatuses(true).Count));
                     }
 
@@ -310,7 +310,7 @@ namespace Orleans.Runtime.GrainDirectory
             while (duplicates.Count > 0)
             {
                 var pair = duplicates.FirstOrDefault();
-                if (this.siloStatusOracle.GetApproximateSiloStatus(pair.Key) == SiloStatus.Active)
+                if (this.siloStatusOracle.GetSiloStatus(pair.Key) == SiloStatus.Active)
                 {
                     if (this.logger.IsEnabled(LogLevel.Debug))
                     {

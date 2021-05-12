@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
 
@@ -36,6 +37,18 @@ namespace Orleans.Runtime
             }
 
             return status;
+        }
+
+        public Dictionary<SiloAddress, SiloStatus> GetSiloStatuses(Func<SiloStatus, bool> filter, SiloAddress myAddress)
+        {
+            var result = new Dictionary<SiloAddress, SiloStatus>();
+            foreach (var memberEntry in this.Members)
+            {
+                var entry = memberEntry.Value;
+                if (filter(entry.Status)) result[entry.SiloAddress] = entry.Status;
+            }
+
+            return result;
         }
 
         public ClusterMembershipUpdate AsUpdate() => new ClusterMembershipUpdate(this, this.Members.Values.ToImmutableArray());

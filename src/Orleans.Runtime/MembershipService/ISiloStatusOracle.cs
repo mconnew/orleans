@@ -30,7 +30,7 @@ namespace Orleans.Runtime
         /// </summary>
         /// <param name="siloAddress">A silo whose status we are interested in.</param>
         /// <returns>The status of a given silo.</returns>
-        SiloStatus GetApproximateSiloStatus(SiloAddress siloAddress);
+        SiloStatus GetSiloStatus(SiloAddress siloAddress);
 
         /// <summary>
         /// Get the statuses of all silo. 
