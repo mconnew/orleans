@@ -12,6 +12,60 @@ namespace Orleans.MetadataStore
         public static PrepareConfigConflict ConfigConflict(Ballot conflicting) => new PrepareConfigConflict(conflicting);
     }
 
+    [GenerateSerializer]
+    public enum PrepareStatus : byte
+    {
+        Unknown = 0,
+        Conflict = 1,
+        ConfigConflict = 2,
+        Success = 3
+    }
+
+    [GenerateSerializer]
+    public struct PackedPrepareResponse<TValue>
+    {
+        [Id(0)]
+        public byte Status;
+
+        [Id(1)]
+        public Ballot Ballot;
+
+        [Id(2)]
+        public TValue Value;
+
+        public static PackedPrepareResponse<TValue> Success(Ballot accepted, TValue value) => new()
+        {
+            Status = (byte)PrepareStatus.Success,
+            Ballot = accepted,
+            Value = value,
+        };
+
+        public static PackedPrepareResponse<TValue> Conflict(Ballot conflicting) => new() 
+        {
+            Status = (byte)PrepareStatus.Conflict,
+            Ballot = conflicting,
+        };
+
+        public static PackedPrepareResponse<TValue> ConfigConflict(Ballot conflicting) => new()
+        {
+            Status = (byte)PrepareStatus.ConfigConflict,
+            Ballot = conflicting,
+        };
+
+        public void Deconstruct(out PrepareStatus status, out Ballot accepted, out TValue value)
+        {
+            status = (PrepareStatus)Status;
+            accepted = Ballot;
+            value = Value;
+        }
+
+        public void Deconstruct(out PrepareStatus status, out Ballot conflict)
+        {
+            status = (PrepareStatus)Status;
+            conflict = Ballot;
+        }
+    }
+
     [Serializable]
     [GenerateSerializer]
     public class PrepareSuccess<TValue> : PrepareResponse
@@ -42,17 +96,14 @@ namespace Orleans.MetadataStore
     {
         public PrepareConflict(Ballot conflicting)
         {
-            this.Conflicting = conflicting;
+            Conflicting = conflicting;
         }
 
         [Id(0)]
         public Ballot Conflicting { get; }
 
         /// <inheritdoc />
-        public override string ToString()
-        {
-            return $"{nameof(PrepareConflict)}({nameof(Conflicting)}: {Conflicting})";
-        }
+        public override string ToString() => $"{nameof(PrepareConflict)}({nameof(Conflicting)}: {Conflicting})";
     }
 
     [Immutable]
@@ -62,7 +113,7 @@ namespace Orleans.MetadataStore
     {
         public PrepareConfigConflict(Ballot conflicting)
         {
-            this.Conflicting = conflicting;
+            Conflicting = conflicting;
         }
 
         [Id(0)]
@@ -84,6 +135,53 @@ namespace Orleans.MetadataStore
         public static AcceptConflict Conflict(Ballot conflicting) => new AcceptConflict(conflicting);
 
         public static AcceptConfigConflict ConfigConflict(Ballot conflicting) => new AcceptConfigConflict(conflicting);
+    }
+
+    [GenerateSerializer]
+    public enum AcceptStatus : byte
+    {
+        Unknown = 0,
+        Conflict = 1,
+        ConfigConflict = 2,
+        Success = 3
+    }
+
+    [GenerateSerializer]
+    public struct PackedAcceptResponse
+    {
+        [Id(0)]
+        public byte Status;
+
+        [Id(1)]
+        public Ballot Ballot;
+
+        public static PackedAcceptResponse Success() => new()
+        {
+            Status = (byte)AcceptStatus.Success,
+        };
+
+        public static PackedAcceptResponse Conflict(Ballot conflicting) => new() 
+        {
+            Status = (byte)AcceptStatus.Conflict,
+            Ballot = conflicting,
+        };
+
+        public static PackedAcceptResponse ConfigConflict(Ballot conflicting) => new()
+        {
+            Status = (byte)AcceptStatus.ConfigConflict,
+            Ballot = conflicting,
+        };
+
+        public void Deconstruct(out AcceptStatus status, out Ballot conflict)
+        {
+            status = (AcceptStatus)Status;
+            conflict = Ballot;
+        }
+
+        public void Deconstruct(out AcceptStatus status)
+        {
+            status = (AcceptStatus)Status;
+        }
     }
 
     [Immutable]

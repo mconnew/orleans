@@ -19,8 +19,16 @@ namespace Orleans.MetadataStore
 
         public SiloAddress GetAddress(IRemoteMetadataStore remoteStore)
         {
-            if (remoteStore is GrainReference grainReference) return FixedPlacement.ParseSiloAddress(grainReference.GrainId);
-            if (remoteStore is LocalMetadataStore) return _localSiloDetails.SiloAddress;
+            if (remoteStore is GrainReference grainReference)
+            {
+                return FixedPlacement.ParseSiloAddress(grainReference.GrainId);
+            }
+
+            if (remoteStore is LocalMetadataStore)
+            {
+                return _localSiloDetails.SiloAddress;
+            }
+
             throw new InvalidOperationException($"Object of type {remoteStore?.GetType()?.ToString() ?? "null"} is not an instance of type {typeof(GrainReference)}");
         }
 

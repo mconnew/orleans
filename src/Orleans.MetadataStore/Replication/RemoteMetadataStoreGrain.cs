@@ -15,21 +15,21 @@ namespace Orleans.MetadataStore
         public const string GrainTypeString = "sys.ckv";
         public static readonly GrainType GrainType = GrainType.Create(GrainTypeString);
 
-        private readonly MetadataStoreManager manager;
-        private readonly ILocalStore store;
+        private readonly MetadataStoreManager _manager;
+        private readonly ILocalStore _store;
 
         public RemoteMetadataStoreGrain(
             MetadataStoreManager manager,
             ILocalStore store)
         {
-            this.manager = manager;
-            this.store = store;
+            _manager = manager;
+            _store = store;
         }
 
-        public ValueTask<PrepareResponse> Prepare(string key, Ballot proposerParentBallot, Ballot ballot) => this.manager.Prepare(key, proposerParentBallot, ballot);
+        public ValueTask<PrepareResponse> Prepare(string key, Ballot proposerParentBallot, Ballot ballot) => _manager.Prepare(key, proposerParentBallot, ballot);
 
-        public ValueTask<AcceptResponse> Accept(string key, Ballot proposerParentBallot, Ballot ballot, object value) => this.manager.Accept(key, proposerParentBallot, ballot, value);
+        public ValueTask<AcceptResponse> Accept(string key, Ballot proposerParentBallot, Ballot ballot, object value) => _manager.Accept(key, proposerParentBallot, ballot, value);
 
-        public ValueTask<List<string>> GetKeys() => this.store.GetKeys(int.MaxValue);
+        public ValueTask<List<string>> GetKeys() => _store.GetKeys(int.MaxValue);
     }
 }

@@ -6,15 +6,15 @@ namespace Orleans.MetadataStore.Storage
 {
     public class SimpleFileSystemStoreOptionsValidator : IConfigurationValidator
     {
-        private readonly IOptions<SimpleFileSystemStoreOptions> options;
+        private readonly IOptions<SimpleFileSystemStoreOptions> _options;
         public SimpleFileSystemStoreOptionsValidator(IOptions<SimpleFileSystemStoreOptions> options)
         {
-            this.options = options;
+            _options = options;
         }
 
         public void ValidateConfiguration()
         {
-            var dir = this.options.Value.Directory;
+            var dir = _options.Value.Directory;
             if (string.IsNullOrWhiteSpace(dir))
             {
                 throw new OrleansConfigurationException($"{nameof(SimpleFileSystemStoreOptions)}.{nameof(SimpleFileSystemStoreOptions.Directory)} must have a value.");

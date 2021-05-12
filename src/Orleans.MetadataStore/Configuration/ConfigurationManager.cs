@@ -17,9 +17,9 @@ namespace Orleans.MetadataStore
     {
         public ReplicaSetConfigurationUpdate(SiloAddress[] nodes, RangeMap? ranges, ImmutableDictionary<string, string> values)
         {
-            this.Nodes = nodes;
-            this.Ranges = ranges ?? default;
-            this.Values = values ?? ImmutableDictionary<string, string>.Empty;
+            Nodes = nodes;
+            Ranges = ranges ?? default;
+            Values = values ?? ImmutableDictionary<string, string>.Empty;
         }
 
         [Id(0)]
@@ -48,21 +48,21 @@ namespace Orleans.MetadataStore
         public const string ClusterConfigurationKey = "MDS.Config";
         private const string NodeIdKey = "MDS.NodeId";
 
-        private static readonly Func<Ballot> getAcceptorParentBallot = () => Ballot.Zero;
-        private readonly ILocalStore store;
-        private readonly IStoreReferenceFactory referenceFactory;
-        private readonly IServiceProvider serviceProvider;
-        private readonly MetadataStoreOptions options;
+        private static readonly Func<Ballot> _getAcceptorParentBallot = () => Ballot.Zero;
+        private readonly ILocalStore _store;
+        private readonly IStoreReferenceFactory _referenceFactory;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly MetadataStoreOptions _options;
 
-        private readonly ChangeFunction<ReplicaSetConfiguration, IVersioned> updateFunction =
+        private readonly ChangeFunction<ReplicaSetConfiguration, IVersioned> _updateFunction =
             (current, updated) => (current?.Version ?? 0) == updated.Version - 1 ? updated : current;
-        private readonly ConfigurationUpdater<SiloAddress> addFunction;
-        private readonly ConfigurationUpdater<SiloAddress> removeFunction;
-        private readonly ChangeFunction<object, IVersioned> readFunction = (current, updated) => current;
-        private readonly AsyncEx.AsyncLock updateLock = new AsyncEx.AsyncLock();
-        private readonly Proposer<IVersioned> proposer;
-        private readonly Acceptor<IVersioned> acceptor;
-        private readonly ILogger<ConfigurationManager> log;
+        private readonly ConfigurationUpdater<SiloAddress> _addFunction;
+        private readonly ConfigurationUpdater<SiloAddress> _removeFunction;
+        private readonly ChangeFunction<object, IVersioned> _readFunction = (current, updated) => current;
+        private readonly AsyncEx.AsyncLock _updateLock = new AsyncEx.AsyncLock();
+        private readonly Proposer<IVersioned> _proposer;
+        private readonly Acceptor<IVersioned> _acceptor;
+        private readonly ILogger<ConfigurationManager> _log;
 
         public ConfigurationManager(
             ILocalStore store,
@@ -71,27 +71,27 @@ namespace Orleans.MetadataStore
             IOptions<MetadataStoreOptions> options,
             IServiceProvider serviceProvider)
         {
-            this.store = store;
-            this.referenceFactory = referenceFactory;
-            this.serviceProvider = serviceProvider;
-            this.log = loggerFactory.CreateLogger<ConfigurationManager>();
-            this.options = options.Value;
-            this.addFunction = this.AddServer;
-            this.removeFunction = this.RemoveServer;
+            _store = store;
+            _referenceFactory = referenceFactory;
+            _serviceProvider = serviceProvider;
+            _log = loggerFactory.CreateLogger<ConfigurationManager>();
+            _options = options.Value;
+            _addFunction = AddServer;
+            _removeFunction = RemoveServer;
 
-            this.acceptor = new Acceptor<IVersioned>(
+            _acceptor = new Acceptor<IVersioned>(
                 key: ClusterConfigurationKey,
                 store: store,
-                getParentBallot: getAcceptorParentBallot,
-                onUpdateState: this.OnUpdateConfiguration,
+                getParentBallot: _getAcceptorParentBallot,
+                onUpdateState: OnUpdateConfiguration,
                 log: loggerFactory.CreateLogger("MetadataStore.ConfigAcceptor")
             );
 
             // The config proposer always uses the configuration which it's proposing.
-            this.proposer = new Proposer<IVersioned>(
+            _proposer = new Proposer<IVersioned>(
                 key: ClusterConfigurationKey,
                 initialBallot: Ballot.Zero,
-                getConfiguration: () => this.AcceptedConfiguration,
+                getConfiguration: () => AcceptedConfiguration,
                 log: loggerFactory.CreateLogger("MetadataStore.ConfigProposer")
             );
         }
@@ -100,7 +100,7 @@ namespace Orleans.MetadataStore
         {
             //using (await this.updateLock.LockAsync())
             {
-                this.AcceptedConfiguration = ExpandedReplicaSetConfiguration.Create((ReplicaSetConfiguration)state.Value, this.options, this.referenceFactory);
+                AcceptedConfiguration = ExpandedReplicaSetConfiguration.Create((ReplicaSetConfiguration)state.Value, _options, _referenceFactory);
                 //this.ProposedConfiguration = null;
             }
             return default;
@@ -119,7 +119,7 @@ namespace Orleans.MetadataStore
         /// <summary>
         /// Returns the active configuration.
         /// </summary>
-        public ExpandedReplicaSetConfiguration ActiveConfiguration => this.ProposedConfiguration ?? this.AcceptedConfiguration;
+        public ExpandedReplicaSetConfiguration ActiveConfiguration => ProposedConfiguration ?? AcceptedConfiguration;
 
         public int NodeId { get; set; }
 
@@ -127,27 +127,27 @@ namespace Orleans.MetadataStore
         {
             // TODO: Implement some persistence for NodeId?
             //this.NodeId = await this.store.Read<int>(NodeIdKey);
-            if (this.NodeId == 0)
+            if (NodeId == 0)
             {
-                this.NodeId = Math.Abs(Guid.NewGuid().GetHashCode());
+                NodeId = Math.Abs(Guid.NewGuid().GetHashCode());
                 //await this.store.Write(NodeIdKey, this.NodeId);
             }
 
-            this.proposer.Ballot = new Ballot(0, this.NodeId);
-            await this.acceptor.EnsureStateLoaded();
+            _proposer.Ballot = new Ballot(0, NodeId);
+            await _acceptor.EnsureStateLoaded();
         }
 
-        public Task ForceLocalConfiguration(ReplicaSetConfiguration configuration) => this.acceptor.ForceState(configuration);
+        public Task ForceLocalConfiguration(ReplicaSetConfiguration configuration) => _acceptor.ForceState(configuration);
 
-        public Task<UpdateResult<ReplicaSetConfiguration>> TryAddServer(SiloAddress address) => this.ModifyConfiguration(this.addFunction, address);
+        public Task<UpdateResult<ReplicaSetConfiguration>> TryAddServer(SiloAddress address) => ModifyConfiguration(_addFunction, address);
 
-        public Task<UpdateResult<ReplicaSetConfiguration>> TryRemoveServer(SiloAddress address) => this.ModifyConfiguration(this.removeFunction, address);
+        public Task<UpdateResult<ReplicaSetConfiguration>> TryRemoveServer(SiloAddress address) => ModifyConfiguration(_removeFunction, address);
 
-        public Task<UpdateResult<ReplicaSetConfiguration>> TryUpdate<T>(ConfigurationUpdater<T> func, T state) => this.ModifyConfiguration(func, state);
+        public Task<UpdateResult<ReplicaSetConfiguration>> TryUpdate<T>(ConfigurationUpdater<T> func, T state) => ModifyConfiguration(func, state);
 
         public async Task<ReadResult<ReplicaSetConfiguration>> TryRead(CancellationToken cancellationToken = default)
         {
-            var result = await this.proposer.TryUpdate(null, this.readFunction, cancellationToken);
+            var result = await _proposer.TryUpdate(null, _readFunction, cancellationToken);
             return new ReadResult<ReplicaSetConfiguration>(result.Status == ReplicationStatus.Success, result.Value as ReplicaSetConfiguration);
         }
 
@@ -163,10 +163,10 @@ namespace Orleans.MetadataStore
             // that configuration. The effect is that the majority may see a configuration change which changes by two
             // or more nodes simultaneously.
             var cancellation = CancellationToken.None;
-            using (await this.updateLock.LockAsync())
+            using (await _updateLock.LockAsync())
             {
                 // Read the currently committed configuration, potentially committing a partially-committed configuration in the process.
-                var (status, committedValue) = await this.proposer.TryUpdate(null, this.readFunction, cancellation);
+                var (status, committedValue) = await _proposer.TryUpdate(null, _readFunction, cancellation);
                 var committedConfig = (ReplicaSetConfiguration) committedValue;
                 if (status != ReplicationStatus.Success)
                 {
@@ -182,9 +182,9 @@ namespace Orleans.MetadataStore
                 }
 
                 // Assemble the new configuration.
-                var committedStamp = committedConfig?.Stamp ?? default(Ballot);
-                this.proposer.Ballot = this.proposer.Ballot.AdvanceTo(committedStamp);
-                var newStamp = this.proposer.Ballot.Successor();
+                var committedStamp = committedConfig?.Stamp ?? default;
+                _proposer.Ballot = _proposer.Ballot.AdvanceTo(committedStamp);
+                var newStamp = _proposer.Ballot.Successor();
 
                 var quorum = update.Nodes.Length / 2 + 1;
                 var updatedConfig = new ReplicaSetConfiguration(
@@ -199,10 +199,10 @@ namespace Orleans.MetadataStore
 
                 try
                 {
-                    this.ProposedConfiguration = ExpandedReplicaSetConfiguration.Create(updatedConfig, this.options, this.referenceFactory);
+                    ProposedConfiguration = ExpandedReplicaSetConfiguration.Create(updatedConfig, _options, _referenceFactory);
 
                     // Attempt to commit the new configuration.
-                    (status, committedValue) = await this.proposer.TryUpdate(updatedConfig, this.updateFunction, cancellation);
+                    (status, committedValue) = await _proposer.TryUpdate(updatedConfig, _updateFunction, cancellation);
                     success = status == ReplicationStatus.Success;
 
                     // Ensure that a quorum of acceptors have the latest value for all keys.
@@ -212,7 +212,10 @@ namespace Orleans.MetadataStore
                 }
                 finally
                 {
-                    if (success) this.AcceptedConfiguration = this.ProposedConfiguration;
+                    if (success)
+                    {
+                        AcceptedConfiguration = ProposedConfiguration;
+                    }
                 }
             }
         }
@@ -222,11 +225,11 @@ namespace Orleans.MetadataStore
             var (success, allKeys) = await GetAllKeys();
             if (success)
             {
-                this.log.LogError($"Failed to successfully read keys from a quorum of nodes.");
+                _log.LogError($"Failed to successfully read keys from a quorum of nodes.");
                 return false;
             }
 
-            var storeManager = this.serviceProvider.GetRequiredService<IMetadataStore>();
+            var storeManager = _serviceProvider.GetRequiredService<IMetadataStore>();
             var batchTasks = new List<Task>(100);
             foreach (var batch in allKeys.BatchIEnumerable(100))
             {
@@ -243,9 +246,9 @@ namespace Orleans.MetadataStore
 
         private async Task<(bool, HashSet<string>)> GetAllKeys()
         {
-            var quorum = this.ActiveConfiguration.Configuration.PrepareQuorum;
+            var quorum = ActiveConfiguration.Configuration.PrepareQuorum;
             var remainingConfirmations = quorum;
-            var storeReferences = this.ActiveConfiguration.StoreReferences;
+            var storeReferences = ActiveConfiguration.StoreReferences;
             var allKeys = new HashSet<string>();
             foreach (var storeReference in storeReferences)
             {
@@ -262,11 +265,14 @@ namespace Orleans.MetadataStore
 
                     --remainingConfirmations;
 
-                    if (remainingConfirmations == 0) break;
+                    if (remainingConfirmations == 0)
+                    {
+                        break;
+                    }
                 }
                 catch (Exception exception)
                 {
-                    this.log.LogWarning($"Exception calling {nameof(IRemoteMetadataStore.GetKeys)} on remote store {remoteMetadataStore}: {exception}");
+                    _log.LogWarning($"Exception calling {nameof(IRemoteMetadataStore.GetKeys)} on remote store {remoteMetadataStore}: {exception}");
                 }
             }
 
@@ -302,7 +308,10 @@ namespace Orleans.MetadataStore
         private (bool ShouldUpdate, ReplicaSetConfigurationUpdate Update) RemoveServer(ReplicaSetConfiguration existingConfiguration, SiloAddress nodeToRemove)
         {
             var existingNodes = existingConfiguration?.Nodes;
-            if (existingNodes == null || existingNodes.Length == 0) return (false, default);
+            if (existingNodes == null || existingNodes.Length == 0)
+            {
+                return (false, default);
+            }
 
             // Remove the node from the list of nodes.
             var newNodes = new SiloAddress[existingNodes.Length - 1];
@@ -322,7 +331,10 @@ namespace Orleans.MetadataStore
             }
 
             // If no nodes changed, return a reference to the original configuration.
-            if (!removed) return (false, default);
+            if (!removed)
+            {
+                return (false, default);
+            }
 
             return (true, new ReplicaSetConfigurationUpdate(newNodes, existingConfiguration?.Ranges, existingConfiguration?.Values));
         }
@@ -331,12 +343,12 @@ namespace Orleans.MetadataStore
             TArg value,
             ChangeFunction<TArg, IVersioned> changeFunction,
             CancellationToken cancellationToken) =>
-            this.proposer.TryUpdate(value, changeFunction, cancellationToken);
+            _proposer.TryUpdate(value, changeFunction, cancellationToken);
 
         ValueTask<PrepareResponse> IAcceptor<IVersioned>.Prepare(Ballot proposerParentBallot, Ballot ballot) =>
-            this.acceptor.Prepare(proposerParentBallot, ballot);
+            _acceptor.Prepare(proposerParentBallot, ballot);
 
         ValueTask<AcceptResponse> IAcceptor<IVersioned>.Accept(Ballot proposerParentBallot, Ballot ballot, IVersioned value) =>
-            this.acceptor.Accept(proposerParentBallot, ballot, value);
+            _acceptor.Accept(proposerParentBallot, ballot, value);
     }
 }

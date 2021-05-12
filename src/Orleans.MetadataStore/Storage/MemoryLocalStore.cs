@@ -43,8 +43,15 @@ namespace Orleans.MetadataStore.Storage
                     results.Add(pair.Key);
                 }
 
-                if (string.Equals(pair.Key, afterKey, StringComparison.Ordinal)) include = true;
-                if (results.Count >= maxResults) break;
+                if (string.Equals(pair.Key, afterKey, StringComparison.Ordinal))
+                {
+                    include = true;
+                }
+
+                if (results.Count >= maxResults)
+                {
+                    break;
+                }
             }
 
             return new ValueTask<List<string>>(results);

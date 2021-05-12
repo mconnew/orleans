@@ -20,7 +20,7 @@ namespace Orleans.MetadataStore
 
         public override string ToString()
         {
-            return $"{nameof(UpdateResult<TState>)}({nameof(Success)}: {this.Success}, {nameof(Value)}: {this.Value})";
+            return $"{nameof(UpdateResult<TState>)}({nameof(Success)}: {Success}, {nameof(Value)}: {Value})";
         }
     }
 }

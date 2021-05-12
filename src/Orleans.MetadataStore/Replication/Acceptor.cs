@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Orleans.MetadataStore.Storage;
@@ -8,13 +9,13 @@ namespace Orleans.MetadataStore
 {
     public class Acceptor<TValue> : IAcceptor<TValue>, Acceptor<TValue>.ITestAccessor
     {
-        private readonly AsyncEx.AsyncLock lockObj;
-        private readonly ILocalStore store;
-        private readonly Func<Ballot> getParentBallot;
-        private readonly Func<RegisterState<TValue>, ValueTask> onUpdateState;
-        private readonly string key;
-        private readonly ILogger log;
-        private RegisterState<TValue> state;
+        private readonly AsyncEx.AsyncLock _lockObj;
+        private readonly ILocalStore _store;
+        private readonly Func<Ballot> _getParentBallot;
+        private readonly Func<RegisterState<TValue>, ValueTask> _onUpdateState;
+        private readonly string _key;
+        private readonly ILogger _log;
+        private RegisterState<TValue> _state;
         
         public Acceptor(
             string key,
@@ -23,25 +24,25 @@ namespace Orleans.MetadataStore
             Func<RegisterState<TValue>, ValueTask> onUpdateState,
             ILogger log)
         {
-            this.lockObj = new AsyncEx.AsyncLock();
-            this.key = key;
-            this.store = store;
-            this.getParentBallot = getParentBallot;
-            this.onUpdateState = onUpdateState;
-            this.log = log;
+            _lockObj = new AsyncEx.AsyncLock();
+            _key = key;
+            _store = store;
+            _getParentBallot = getParentBallot;
+            _onUpdateState = onUpdateState;
+            _log = log;
         }
 
-        RegisterState<TValue> ITestAccessor.VolatileState { get => this.state; set => this.state = value; }
+        RegisterState<TValue> ITestAccessor.VolatileState { get => _state; set => _state = value; }
 
         public async ValueTask<PrepareResponse> Prepare(Ballot proposerParentBallot, Ballot ballot)
         {
-            using (await this.lockObj.LockAsync())
+            using (await _lockObj.LockAsync())
             {
                 // Initialize the register state if it's not yet initialized.
-                await this.EnsureStateLoadedNoLock();
+                await EnsureStateLoadedNoLock();
 
                 PrepareResponse result;
-                var parentBallot = this.getParentBallot();
+                var parentBallot = _getParentBallot();
                 if (parentBallot > proposerParentBallot)
                 {
                     // If the proposer is using a cluster configuration version which is lower than the highest
@@ -50,24 +51,24 @@ namespace Orleans.MetadataStore
                 }
                 else
                 {
-                    if (this.state.Promised > ballot)
+                    if (_state.Promised > ballot)
                     {
                         // If a Prepare with a higher ballot has already been encountered, reject this.
-                        result = PrepareResponse.Conflict(this.state.Promised);
+                        result = PrepareResponse.Conflict(_state.Promised);
                     }
-                    else if (this.state.Accepted > ballot)
+                    else if (_state.Accepted > ballot)
                     {
                         // If an Accept with a higher ballot has already been encountered, reject this.
-                        result = PrepareResponse.Conflict(this.state.Accepted);
+                        result = PrepareResponse.Conflict(_state.Accepted);
                     }
                     else
                     {
                         // Record a tentative promise to accept this proposer's value.
-                        var newState = new RegisterState<TValue>(ballot, this.state.Accepted, this.state.Value);
-                        await this.store.Write(this.key, newState);
-                        this.state = newState;
+                        var newState = new RegisterState<TValue>(ballot, _state.Accepted, _state.Value);
+                        await _store.Write(_key, newState);
+                        _state = newState;
 
-                        result = PrepareResponse.Success(this.state.Accepted, this.state.Value);
+                        result = PrepareResponse.Success(_state.Accepted, _state.Value);
                     }
                 }
 
@@ -78,13 +79,13 @@ namespace Orleans.MetadataStore
 
         public async ValueTask<AcceptResponse> Accept(Ballot proposerParentBallot, Ballot ballot, TValue value)
         {
-            using (await this.lockObj.LockAsync())
+            using (await _lockObj.LockAsync())
             {
                 // Initialize the register state if it's not yet initialized.
-                await this.EnsureStateLoadedNoLock();
+                await EnsureStateLoadedNoLock();
 
                 AcceptResponse result;
-                var parentBallot = this.getParentBallot();
+                var parentBallot = _getParentBallot();
                 if (parentBallot > proposerParentBallot)
                 {
                     // If the proposer is using a cluster configuration version which is lower than the highest
@@ -93,23 +94,27 @@ namespace Orleans.MetadataStore
                 }
                 else
                 {
-                    if (this.state.Promised > ballot)
+                    if (_state.Promised > ballot)
                     {
                         // If a Prepare with a higher ballot has already been encountered, reject this.
-                        result = AcceptResponse.Conflict(this.state.Promised);
+                        result = AcceptResponse.Conflict(_state.Promised);
                     }
-                    else if (this.state.Accepted > ballot)
+                    else if (_state.Accepted > ballot)
                     {
                         // If an Accept with a higher ballot has already been encountered, reject this.
-                        result = AcceptResponse.Conflict(this.state.Accepted);
+                        result = AcceptResponse.Conflict(_state.Accepted);
                     }
                     else
                     {
                         // Record the new state.
                         var newState = new RegisterState<TValue>(ballot, ballot, value);
-                        await this.store.Write(this.key, newState);
-                        this.state = newState;
-                        if (this.onUpdateState?.Invoke(this.state) is ValueTask task) await task;
+                        await _store.Write(_key, newState);
+                        _state = newState;
+                        if (_onUpdateState?.Invoke(_state) is ValueTask task)
+                        {
+                            await task;
+                        }
+
                         result = AcceptResponse.Success();
                     }
                 }
@@ -121,34 +126,39 @@ namespace Orleans.MetadataStore
 
         internal async Task ForceState(TValue newState)
         {
-            using (await this.lockObj.LockAsync())
+            using (await _lockObj.LockAsync())
             {
-                this.state = new RegisterState<TValue>(Ballot.Zero, Ballot.Zero, newState);
-                if (this.onUpdateState?.Invoke(this.state) is ValueTask task) await task;
+                _state = new RegisterState<TValue>(Ballot.Zero, Ballot.Zero, newState);
+                if (_onUpdateState?.Invoke(_state) is ValueTask task)
+                {
+                    await task;
+                }
             }
         }
 
+        [Conditional("DEBUG")]
         private void LogPrepare(Ballot parentBallot, Ballot ballot, PrepareResponse result)
         {
-            if (this.log.IsEnabled(LogLevel.Trace))
+            if (_log.IsEnabled(LogLevel.Trace))
             {
-                this.log.LogTrace("Prepare(parentBallot: {ParentBallot}, ballot: {Ballot}) -> {Result}", parentBallot, ballot, result);
+                _log.LogTrace("Prepare(parentBallot: {ParentBallot}, ballot: {Ballot}) -> {Result}", parentBallot, ballot, result);
             }
         }
 
+        [Conditional("DEBUG")]
         private void LogAccept(Ballot ballot, TValue value, AcceptResponse result)
         {
-            if (this.log.IsEnabled(LogLevel.Trace))
+            if (_log.IsEnabled(LogLevel.Trace))
             {
-                this.log.LogTrace("Accept({Ballot}, {Value}) -> {Result}", ballot, value, result);
+                _log.LogTrace("Accept({Ballot}, {Value}) -> {Result}", ballot, value, result);
             }
         }
 
-        Task ITestAccessor.EnsureStateLoaded() => this.EnsureStateLoaded();
+        Task ITestAccessor.EnsureStateLoaded() => EnsureStateLoaded();
 
         internal async Task EnsureStateLoaded()
         {
-            using (await this.lockObj.LockAsync())
+            using (await _lockObj.LockAsync())
             {
                 await EnsureStateLoadedNoLock();
             }
@@ -156,19 +166,25 @@ namespace Orleans.MetadataStore
 
         private ValueTask EnsureStateLoadedNoLock()
         {
-            if (this.state is object) return default;
+            if (_state is object)
+            {
+                return default;
+            }
 
             return EnsureStateLoadedNoLockAsync();
 
             async ValueTask EnsureStateLoadedNoLockAsync()
             {
-                var stored = await this.store.Read<RegisterState<TValue>>(this.key);
-                this.state = stored ?? RegisterState<TValue>.Default;
-                this.onUpdateState?.Invoke(this.state);
-
-                if (this.log.IsEnabled(LogLevel.Trace))
+                var stored = await _store.Read<RegisterState<TValue>>(_key);
+                _state = stored ?? RegisterState<TValue>.Default;
+                if (_onUpdateState is { } func)
                 {
-                    this.log.LogTrace("Initialized with register state {State}", this.state);
+                    await func(_state);
+                }
+
+                if (_log.IsEnabled(LogLevel.Trace))
+                {
+                    _log.LogTrace("Initialized with register state {State}", _state);
                 }
             }
         }

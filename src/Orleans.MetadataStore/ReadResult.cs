@@ -8,8 +8,8 @@ namespace Orleans.MetadataStore
     {
         public ReadResult(bool success, TValue value)
         {
-            this.Success = success;
-            this.Value = value;
+            Success = success;
+            Value = value;
         }
 
         [Id(0)]
@@ -20,13 +20,13 @@ namespace Orleans.MetadataStore
 
         public void Deconstruct(out bool success, out TValue value)
         {
-            success = this.Success;
-            value = this.Value;
+            success = Success;
+            value = Value;
         }
 
         public override string ToString()
         {
-            return $"{nameof(ReadResult<TValue>)}({nameof(Success)}: {this.Success}, {nameof(Value)}: {this.Value})";
+            return $"{nameof(ReadResult<TValue>)}({nameof(Success)}: {Success}, {nameof(Value)}: {Value})";
         }
     }
 }

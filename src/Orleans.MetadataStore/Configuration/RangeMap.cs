@@ -28,7 +28,10 @@ namespace Orleans.MetadataStore
         public static RangeMap SplitAt(RangeMap range, int newBoundary)
         {
             var splitIndex = range.GetRangeIndexForKey(newBoundary);
-            if (newBoundary == range.UpperBounds[splitIndex]) throw new ArgumentException($"Cannot split a range at an existing bound. Bound = {newBoundary}", nameof(newBoundary));
+            if (newBoundary == range.UpperBounds[splitIndex])
+            {
+                throw new ArgumentException($"Cannot split a range at an existing bound. Bound = {newBoundary}", nameof(newBoundary));
+            }
 
             var oldLength = range.UpperBounds.Length;
             var newBounds = new int[oldLength + 1];
@@ -68,23 +71,35 @@ namespace Orleans.MetadataStore
             {
                 if (range.UpperBounds[i] == boundary)
                 {
-                    if (i + 1 == range.UpperBounds.Length) throw new InvalidOperationException("Cannot join at the upper-most bound");
+                    if (i + 1 == range.UpperBounds.Length)
+                    {
+                        throw new InvalidOperationException("Cannot join at the upper-most bound");
+                    }
 
                     var current = range.RangeNodes[i];
                     var next = range.RangeNodes[i + 1];
 
                     if (current.Length != next.Length)
+                    {
                         throw new InvalidOperationException("Ranges with non-identical nodes cannot be joined.");
+                    }
 
                     for (var j = 0; j < current.Length; j++)
+                    {
                         if (current[j] != next[j])
+                        {
                             throw new InvalidOperationException("Ranges with non-identical nodes cannot be joined.");
+                        }
+                    }
 
                     removed = 1;
                     continue;
                 }
 
-                if (i - removed == newBounds.Length) throw new InvalidOperationException($"Cannot remove boundary {boundary} from a set which does not contain it.");
+                if (i - removed == newBounds.Length)
+                {
+                    throw new InvalidOperationException($"Cannot remove boundary {boundary} from a set which does not contain it.");
+                }
 
                 newBounds[i - removed] = range.UpperBounds[i];
                 newNodes[i - removed] = range.RangeNodes[i];
@@ -116,10 +131,17 @@ namespace Orleans.MetadataStore
                             current[j] = toAdd;
                             added = 1;
 
-                            if (isLastElement) break;
+                            if (isLastElement)
+                            {
+                                break;
+                            }
                         }
 
-                        if (existing[j] == toAdd) throw new InvalidOperationException($"Cannot add node {toAdd} to a set which already contains it");
+                        if (existing[j] == toAdd)
+                        {
+                            throw new InvalidOperationException($"Cannot add node {toAdd} to a set which already contains it");
+                        }
+
                         current[j + added] = existing[j];
                     }
                 }
@@ -161,11 +183,18 @@ namespace Orleans.MetadataStore
                             current[j - removed] = existing[j];
                         }
 
-                        if (strict && removed == 0) throw new InvalidOperationException($"Cannot remove node {toRemove} from a set which does not contain it");
+                        if (strict && removed == 0)
+                        {
+                            throw new InvalidOperationException($"Cannot remove node {toRemove} from a set which does not contain it");
+                        }
                     }
                     else
                     {
-                        if (strict) throw new InvalidOperationException("Cannot remove a node from an empty set");
+                        if (strict)
+                        {
+                            throw new InvalidOperationException("Cannot remove a node from an empty set");
+                        }
+
                         current = existing;
                     }
                 }
@@ -181,17 +210,20 @@ namespace Orleans.MetadataStore
         }
 
         [Pure]
-        public int[] GetNodesForKey(int key) => this.RangeNodes[this.GetRangeIndexForKey(key)];
+        public int[] GetNodesForKey(int key) => RangeNodes[GetRangeIndexForKey(key)];
 
         [Pure]
         public int GetRangeIndexForKey(int key)
         {
-            for (var i = 0; i < this.UpperBounds.Length; i++)
+            for (var i = 0; i < UpperBounds.Length; i++)
             {
-                if (key <= this.UpperBounds[i]) return i;
+                if (key <= UpperBounds[i])
+                {
+                    return i;
+                }
             }
 
-            return this.UpperBounds.Length - 1;
+            return UpperBounds.Length - 1;
         }
     }
 }

@@ -21,6 +21,8 @@ namespace UnitTests.Directory
 
         IAsyncEnumerable<ClusterMembershipSnapshot> IClusterMembershipService.MembershipUpdates => this.updates;
 
+        public SiloStatus CurrentStatus { get; }
+
         public IClusterMembershipService Target => this;
 
         public MockClusterMembershipService(Dictionary<SiloAddress, (SiloStatus Status, string Name)> initialStatuses = null)

@@ -33,58 +33,58 @@ namespace Orleans.MetadataStore.Tests
     public class MetadataStoreMembershipTable : SystemTarget, IMembershipTable, ILifecycleParticipant<ISiloLifecycle>
     {
         private const string MembershipKey = "membership";
-        private readonly ILocalSiloDetails localSiloDetails;
-        private readonly ConfigurationManager configurationManager;
-        private readonly IOptionsMonitor<MetadataStoreClusteringOptions> options;
-        private readonly Serializer serializationManager;
-        private readonly ConfigurationUpdater<MembershipTableData> updateMembershipTable;
-        private readonly CancellationTokenSource shutdownTokenSource = new CancellationTokenSource();
-        private readonly ILogger<MetadataStoreMembershipTable> log;
-        private readonly IServiceProvider serviceProvider;
-        private Task waitForClusterStability = Task.CompletedTask;
+        private readonly ILocalSiloDetails _localSiloDetails;
+        private readonly ConfigurationManager _configurationManager;
+        private readonly IOptionsMonitor<MetadataStoreClusteringOptions> _options;
+        private readonly Serializer _serializer;
+        private readonly ConfigurationUpdater<MembershipTableData> _updateMembershipTable;
+        private readonly CancellationTokenSource _shutdownTokenSource = new();
+        private readonly ILogger<MetadataStoreMembershipTable> _log;
+        private readonly IServiceProvider _serviceProvider;
+        private Task _waitForClusterStability = Task.CompletedTask;
 
         public MetadataStoreMembershipTable(
             ILocalSiloDetails localSiloDetails,
             ConfigurationManager configurationManager,
             IOptionsMonitor<MetadataStoreClusteringOptions> options,
-            Serializer serializationManager,
+            Serializer serializer,
             ILogger<MetadataStoreMembershipTable> log,
             IServiceProvider serviceProvider)
         {
-            this.localSiloDetails = localSiloDetails;
-            this.configurationManager = configurationManager;
-            this.options = options;
-            this.serializationManager = serializationManager;
-            this.log = log;
-            this.serviceProvider = serviceProvider;
-            this.updateMembershipTable = this.UpdateMembershipTable;
+            _localSiloDetails = localSiloDetails;
+            _configurationManager = configurationManager;
+            _options = options;
+            _serializer = serializer;
+            _log = log;
+            _serviceProvider = serviceProvider;
+            _updateMembershipTable = UpdateMembershipTable;
         }
 
         private async Task MonitorSeedNodesAsync()
         {
             var semaphore = new SemaphoreSlim(1);
-            using var onChangeHandler = this.options.OnChange(_ => semaphore.Release());
+            using var onChangeHandler = _options.OnChange(_ => semaphore.Release());
 
-            var clusterMembershipService = this.serviceProvider.GetRequiredService<IClusterMembershipService>();
+            var clusterMembershipService = _serviceProvider.GetRequiredService<IClusterMembershipService>();
             var converged = false;
             var random = new Random();
 
             var waitSignal = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
-            //this.waitForClusterStability = waitSignal.Task;
+            _waitForClusterStability = waitSignal.Task;
 
-            while (!this.shutdownTokenSource.IsCancellationRequested)
+            while (!_shutdownTokenSource.IsCancellationRequested)
             {
                 try
                 {
                     if (converged)
                     {
-                        await semaphore.WaitAsync(this.shutdownTokenSource.Token);
+                        await semaphore.WaitAsync(_shutdownTokenSource.Token);
                     }
 
-                    var snapshot = this.options.CurrentValue;
+                    var snapshot = _options.CurrentValue;
 
                     // First, find out what the accepted version of the configuration is telling us.
-                    var accepted = this.configurationManager.AcceptedConfiguration?.Configuration;
+                    var accepted = _configurationManager.AcceptedConfiguration?.Configuration;
                     var acceptedSeedNodes = accepted?.Nodes is { } nodes ? new HashSet<SiloAddress>(nodes) : new HashSet<SiloAddress>();
 
                     // Second, see what the configuration is telling us we should be seeing.
@@ -104,21 +104,21 @@ namespace Orleans.MetadataStore.Tests
                     {
                         if (waitSignal.Task.IsCompleted)
                         {
-                            this.log.LogInformation("Pausing cluster membership operations while waiting for more nodes.");
-                            //waitSignal = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
-                            //this.waitForClusterStability = waitSignal.Task;
+                            _log.LogInformation("Pausing cluster membership operations while waiting for more nodes.");
+                            waitSignal = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+                            _waitForClusterStability = waitSignal.Task;
                         }
                     }
                     else if (!waitSignal.Task.IsCompleted)
                     {
-                        this.log.LogInformation("Resuming cluster membership operations");
+                        _log.LogInformation("Resuming cluster membership operations");
                         waitSignal.TrySetResult(0);
                     }
 
                     // Ensure that any differences are accounted for.
                     if (!converged)
                     {
-                        this.log.LogInformation("Converging with configuration snapshot {Configuration}", snapshot);
+                        _log.LogInformation("Converging with configuration snapshot {Configuration}", snapshot);
 
                         if (snapshotSeedNodes.Count >= snapshot.MinimumNodes)
                         {
@@ -133,28 +133,28 @@ namespace Orleans.MetadataStore.Tests
                                         prepareQuorum: quorumSize,
                                         ranges: accepted?.Ranges ?? default,
                                         values: accepted?.Values);
-                                this.log.LogInformation("Insufficient nodes in accepted configuration {Accepted}. Locally forcing configuration {ForcedConfiguration}", accepted, forcedConfiguration);
-                                await this.configurationManager.ForceLocalConfiguration(forcedConfiguration);
+                                _log.LogInformation("Insufficient nodes in accepted configuration {Accepted}. Locally forcing configuration {ForcedConfiguration}", accepted, forcedConfiguration);
+                                await _configurationManager.ForceLocalConfiguration(forcedConfiguration);
                             }
 
                             // TODO: we must enforce changes to be at most one node at a time to maintain linearizability.
                             // The order should be: remove dead nodes, add new live nodes. This process should repeat until convergence.
-                            var result = await this.configurationManager.TryUpdate(UpdateSeedConfiguration, snapshot);
+                            var result = await _configurationManager.TryUpdate(UpdateSeedConfiguration, snapshot);
 
                             if (result.Success)
                             {
-                                this.log.LogInformation("Successfully converged with configuration snapshot. Replica Set Configuration: {ReplicaSetConfiguration}", result.Value);
+                                _log.LogInformation("Successfully converged with configuration snapshot. Replica Set Configuration: {ReplicaSetConfiguration}", result.Value);
                                 converged = true;
                             }
                         }
                         else
                         {
-                            this.log.LogInformation("Insufficient seed nodes in configuration: {Configuration}", snapshot);
+                            _log.LogInformation("Insufficient seed nodes in configuration: {Configuration}", snapshot);
                         }
 
                         if (!converged)
                         {
-                            this.log.LogInformation("Unable to converge with configuration snapshot");
+                            _log.LogInformation("Unable to converge with configuration snapshot");
 
                             // Wait a pseudorandom amount of time to reduce the chance of repeated races.
                             await Task.Delay(random.Next(500, 5_000));
@@ -166,13 +166,13 @@ namespace Orleans.MetadataStore.Tests
                     }
                     else
                     {
-                        this.log.LogInformation("Converged with configuration snapshot {Configuration}", snapshot);
+                        _log.LogInformation("Converged with configuration snapshot {Configuration}", snapshot);
                     }
                 }
                 catch (OperationCanceledException) { }
                 catch (Exception exception)
                 {
-                    this.log.LogError(exception, "Error while applying configuration");
+                    _log.LogError(exception, "Error while applying configuration");
                     await Task.Delay(1_000);
                 }
             }
@@ -186,23 +186,23 @@ namespace Orleans.MetadataStore.Tests
 
         public async Task CleanupDefunctSiloEntries(DateTimeOffset beforeDate)
         {
-            await waitForClusterStability;
+            await _waitForClusterStability;
             // TODO: impl
             throw new NotImplementedException();
         }
 
         public async Task DeleteMembershipTableEntries(string clusterId)
         {
-            await waitForClusterStability;
+            await _waitForClusterStability;
             // TODO: impl
             throw new NotImplementedException();
         }
 
-        public Task InitializeMembershipTable(bool tryInitTableVersion) => this.waitForClusterStability;
+        public Task InitializeMembershipTable(bool tryInitTableVersion) => _waitForClusterStability;
 
         public async Task<bool> InsertRow(MembershipEntry entry, TableVersion tableVersion)
         {
-            await waitForClusterStability;
+            await _waitForClusterStability;
             var existing = await RefreshCommitted(tableVersion);
             if (existing is null || existing.Version.Version >= tableVersion.Version)
             {
@@ -224,21 +224,21 @@ namespace Orleans.MetadataStore.Tests
             };
 
             var updated = new MembershipTableData(updatedMembers, tableVersion);
-            var result = await this.configurationManager.TryUpdate(this.updateMembershipTable, updated);
+            var result = await _configurationManager.TryUpdate(_updateMembershipTable, updated);
             return result.Success;
         }
 
         public async Task<MembershipTableData> ReadAll()
         {
-            await waitForClusterStability;
+            await _waitForClusterStability;
             
-            var (success, result) = await this.configurationManager.TryRead();
+            var (success, result) = await _configurationManager.TryRead();
             if (!success)
             {
                 return Zero();
             }
 
-            return this.TryGetValue(result) ?? Zero();
+            return TryGetValue(result) ?? Zero();
 
             static MembershipTableData Zero() => new MembershipTableData(new List<Tuple<MembershipEntry, string>>(), new TableVersion(0, "zero"));
         }
@@ -247,7 +247,7 @@ namespace Orleans.MetadataStore.Tests
 
         public async Task UpdateIAmAlive(MembershipEntry entry)
         {
-            await waitForClusterStability;
+            await _waitForClusterStability;
             var existing = await ReadAll();
             if (existing is null)
             {
@@ -275,7 +275,7 @@ namespace Orleans.MetadataStore.Tests
             }
 
             var updated = new MembershipTableData(updatedMembers, existing.Version);
-            var result = await this.configurationManager.TryUpdate(this.updateMembershipTable, updated);
+            var result = await _configurationManager.TryUpdate(_updateMembershipTable, updated);
             if (!result.Success)
             {
                 // TODO: log error/retry - failed.
@@ -285,7 +285,7 @@ namespace Orleans.MetadataStore.Tests
 
         public async Task<bool> UpdateRow(MembershipEntry entry, string etag, TableVersion tableVersion)
         {
-            await waitForClusterStability;
+            await _waitForClusterStability;
             var existing = await RefreshCommitted(tableVersion);
             if (existing is null || existing.Version.Version >= tableVersion.Version)
             {
@@ -311,7 +311,7 @@ namespace Orleans.MetadataStore.Tests
             }
 
             var updated = new MembershipTableData(updatedMembers, tableVersion);
-            var result = await this.configurationManager.TryUpdate(this.updateMembershipTable, updated);
+            var result = await _configurationManager.TryUpdate(_updateMembershipTable, updated);
             return result.Success;
         }
 
@@ -323,12 +323,12 @@ namespace Orleans.MetadataStore.Tests
                 return new ValueTask<MembershipTableData>(result);
             }
 
-            return new ValueTask<MembershipTableData>(this.ReadAll());
+            return new ValueTask<MembershipTableData>(ReadAll());
         }
 
         private MembershipTableData TryGetAcceptedValue()
         {
-            var accepted = this.configurationManager.AcceptedConfiguration?.Configuration;
+            var accepted = _configurationManager.AcceptedConfiguration?.Configuration;
             return TryGetValue(accepted);
         }
 
@@ -340,7 +340,7 @@ namespace Orleans.MetadataStore.Tests
                 return null;
             }
 
-            return this.serializationManager.Deserialize<MembershipTableData>(Convert.FromBase64String(serialized));
+            return _serializer.Deserialize<MembershipTableData>(Convert.FromBase64String(serialized));
         }
 
         private (bool ShouldUpdate, ReplicaSetConfigurationUpdate Update) UpdateMembershipTable(ReplicaSetConfiguration existing, MembershipTableData value)
@@ -348,7 +348,7 @@ namespace Orleans.MetadataStore.Tests
             var current = TryGetValue(existing);
             if (current is null || (string.Equals(current.Version.VersionEtag, value.Version.VersionEtag) && current.Version.Version < value.Version.Version))
             {
-                var serialized = Convert.ToBase64String(this.serializationManager.SerializeToArray(value));
+                var serialized = Convert.ToBase64String(_serializer.SerializeToArray(value));
                 var updatedValues = existing.Values.SetItem(MembershipKey, serialized);
 
                 var existingNodes = existing.Nodes;
@@ -464,12 +464,12 @@ namespace Orleans.MetadataStore.Tests
                 ServiceLifecycleStage.RuntimeInitialize + 1,
                 cancellation =>
                 {
-                    monitorOptionsTask[0] = Task.Run(this.MonitorSeedNodesAsync);
+                    monitorOptionsTask[0] = Task.Run(MonitorSeedNodesAsync);
                     return Task.CompletedTask;
                 },
                 async cancellation =>
                 {
-                    this.shutdownTokenSource.Cancel();
+                    _shutdownTokenSource.Cancel();
                     if (monitorOptionsTask[0] is Task task) await task;
                 });
         }

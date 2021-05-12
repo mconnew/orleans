@@ -1,7 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Orleans.MetadataStore;
 using Orleans.MetadataStore.Storage;
-using Orleans.Runtime;
 
 namespace Orleans.Hosting
 {
@@ -22,7 +21,11 @@ namespace Orleans.Hosting
             return builder
                 .ConfigureServices((context, services) =>
                 {
-                    if (context.Properties.TryGetValue(nameof(UseMetadataStore), out var _)) return;
+                    if (context.Properties.TryGetValue(nameof(UseMetadataStore), out var _))
+                    {
+                        return;
+                    }
+
                     context.Properties[nameof(UseMetadataStore)] = nameof(UseMetadataStore);
 
                     ConfigureServices(services);
@@ -34,7 +37,11 @@ namespace Orleans.Hosting
             return builder
                 .ConfigureServices((context, services) =>
                 {
-                    if (context.Properties.TryGetValue(nameof(UseMetadataStore), out var _)) return;
+                    if (context.Properties.TryGetValue(nameof(UseMetadataStore), out var _))
+                    {
+                        return;
+                    }
+
                     context.Properties[nameof(UseMetadataStore)] = nameof(UseMetadataStore);
 
                     ConfigureServices(services);

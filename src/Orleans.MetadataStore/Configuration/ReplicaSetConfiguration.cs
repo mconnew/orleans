@@ -20,13 +20,13 @@ namespace Orleans.MetadataStore
             RangeMap ranges,
             ImmutableDictionary<string, string> values)
         {
-            this.Stamp = stamp;
-            this.Version = version;
-            this.Nodes = nodes;
-            this.AcceptQuorum = acceptQuorum;
-            this.PrepareQuorum = prepareQuorum;
-            this.Ranges = ranges;
-            this.Values = values ?? ImmutableDictionary<string, string>.Empty;
+            Stamp = stamp;
+            Version = version;
+            Nodes = nodes;
+            AcceptQuorum = acceptQuorum;
+            PrepareQuorum = prepareQuorum;
+            Ranges = ranges;
+            Values = values ?? ImmutableDictionary<string, string>.Empty;
         }
 
         /// <summary>
@@ -74,8 +74,8 @@ namespace Orleans.MetadataStore
         /// <inheritdoc />
         public override string ToString()
         {
-            var nodes = this.Nodes == null ? "[]" : $"[{string.Join(", ", this.Nodes.Select(_ => _.ToString()))}]";
-            var values = (this.Values is null || this.Values.Count == 0) ? "[]" : $"[{string.Join(", ", this.Values.Select(_ => $"\"{_.Key}\"=\"{_.Value}\""))}]";
+            var nodes = Nodes == null ? "[]" : $"[{string.Join(", ", Nodes.Select(_ => _.ToString()))}]";
+            var values = (Values is null || Values.Count == 0) ? "[]" : $"[{string.Join(", ", Values.Select(_ => $"\"{_.Key}\"=\"{_.Value}\""))}]";
             return $"{nameof(Stamp)}: {Stamp}, {nameof(Version)}: {Version}, {nameof(Nodes)}: {nodes}, {nameof(AcceptQuorum)}: {AcceptQuorum}, {nameof(PrepareQuorum)}: {PrepareQuorum}, {nameof(Values)}: {values}";
         }
     }
