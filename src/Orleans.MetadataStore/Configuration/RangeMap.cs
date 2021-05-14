@@ -4,6 +4,7 @@ using System.Diagnostics.Contracts;
 namespace Orleans.MetadataStore
 {
     [GenerateSerializer]
+    [Immutable]
     public struct RangeMap
     {
         public RangeMap(int[] upperBounds, int[][] rangeNodes)

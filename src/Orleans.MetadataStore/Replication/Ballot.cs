@@ -41,15 +41,7 @@ namespace Orleans.MetadataStore
         }
 
         /// <inheritdoc />
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj))
-            {
-                return false;
-            }
-
-            return obj is Ballot ballot && Equals(ballot);
-        }
+        public override bool Equals(object obj) => obj is Ballot ballot && Equals(ballot);
 
         /// <inheritdoc />
         public int CompareTo(Ballot other)

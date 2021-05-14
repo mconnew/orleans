@@ -9,7 +9,7 @@ namespace Orleans.MetadataStore
 {
     [Reentrant]
     [GrainType(GrainTypeString)]
-    [FixedPlacement]
+    [SiloServicePlacement]
     internal class RemoteMetadataStoreGrain : Grain, IRemoteMetadataStoreGrain
     {
         public const string GrainTypeString = "sys.ckv";

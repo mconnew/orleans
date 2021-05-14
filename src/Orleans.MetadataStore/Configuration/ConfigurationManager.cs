@@ -178,7 +178,7 @@ namespace Orleans.MetadataStore
                 if (!shouldUpdate)
                 {
                     // The new address was already in the committed configuration, so no additional work needs to be done.
-                    return new UpdateResult<ReplicaSetConfiguration>(false, committedConfig);
+                    return new UpdateResult<ReplicaSetConfiguration>(true, committedConfig);
                 }
 
                 // Assemble the new configuration.
@@ -206,7 +206,10 @@ namespace Orleans.MetadataStore
                     success = status == ReplicationStatus.Success;
 
                     // Ensure that a quorum of acceptors have the latest value for all keys.
-                    //if (success) success = await this.CatchupAllAcceptors();
+                    if (success)
+                    {
+                        success = await CatchupAllAcceptors();
+                    }
 
                     return new UpdateResult<ReplicaSetConfiguration>(success, (ReplicaSetConfiguration)committedValue);
                 }
@@ -233,6 +236,7 @@ namespace Orleans.MetadataStore
             var batchTasks = new List<Task>(100);
             foreach (var batch in allKeys.BatchIEnumerable(100))
             {
+                batchTasks.Clear();
                 foreach (var key in batch)
                 {
                     batchTasks.Add(storeManager.TryGet<IVersioned>(key));
@@ -293,7 +297,7 @@ namespace Orleans.MetadataStore
                     // If the configuration already contains the specified node, return the already-confirmed configuration.
                     if (existingNodes[i].Equals(nodeToAdd))
                     {
-                        return (false, default);
+                        return (false, new ReplicaSetConfigurationUpdate(existingNodes, existingConfiguration?.Ranges, existingConfiguration?.Values));
                     }
 
                     newNodes[i] = existingNodes[i];
@@ -301,7 +305,7 @@ namespace Orleans.MetadataStore
             }
 
             // Add the new node at the end.
-            newNodes[newNodes.Length - 1] = nodeToAdd;
+            newNodes[^1] = nodeToAdd;
             return (true, new ReplicaSetConfigurationUpdate(newNodes, existingConfiguration?.Ranges, existingConfiguration?.Values));
         }
 
@@ -314,29 +318,16 @@ namespace Orleans.MetadataStore
             }
 
             // Remove the node from the list of nodes.
-            var newNodes = new SiloAddress[existingNodes.Length - 1];
-            var removed = false;
-            for (var i = 0; i < existingNodes.Length; i++)
-            {
-                var current = existingNodes[i];
-
-                // If the node is encountered, skip it.
-                if (current.Equals(nodeToRemove))
-                {
-                    removed = true;
-                    continue;
-                }
-
-                newNodes[i - (removed ? 1 : 0)] = current;
-            }
+            var newNodes = new List<SiloAddress>(existingNodes);
+            var removed = newNodes.Remove(nodeToRemove);
 
             // If no nodes changed, return a reference to the original configuration.
             if (!removed)
             {
-                return (false, default);
+                return (false, new ReplicaSetConfigurationUpdate(existingNodes, existingConfiguration?.Ranges, existingConfiguration?.Values));
             }
 
-            return (true, new ReplicaSetConfigurationUpdate(newNodes, existingConfiguration?.Ranges, existingConfiguration?.Values));
+            return (true, new ReplicaSetConfigurationUpdate(newNodes.ToArray(), existingConfiguration?.Ranges, existingConfiguration?.Values));
         }
 
         Task<(ReplicationStatus, IVersioned)> IProposer<IVersioned>.TryUpdate<TArg>(

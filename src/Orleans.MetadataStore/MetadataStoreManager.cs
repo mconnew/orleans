@@ -9,8 +9,8 @@ namespace Orleans.MetadataStore
 {
     internal class MetadataStoreManager : IMetadataStore
     {
-        private readonly ConcurrentDictionary<string, IAcceptor<IVersioned>> _acceptors = new ConcurrentDictionary<string, IAcceptor<IVersioned>>();
-        private readonly ConcurrentDictionary<string, IProposer<IVersioned>> _proposers = new ConcurrentDictionary<string, IProposer<IVersioned>>();
+        private readonly ConcurrentDictionary<string, IAcceptor<IVersioned>> _acceptors = new();
+        private readonly ConcurrentDictionary<string, IProposer<IVersioned>> _proposers = new();
         private readonly ChangeFunction<IVersioned, IVersioned> _updateFunction = (current, updated) => (current?.Version ?? 0) == updated.Version - 1 ? updated : current;
         private readonly ChangeFunction<IVersioned, IVersioned> _readFunction = (current, updated) => current;
         private readonly Func<string, IProposer<IVersioned>> _proposerFactory;

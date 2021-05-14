@@ -81,9 +81,9 @@ namespace Orleans.Placement
     /// Marks a grain class as using the <c>FixedPlacement</c> policy.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
-    public sealed class FixedPlacementAttribute : PlacementAttribute
+    public sealed class SiloServicePlacementAttribute : PlacementAttribute
     {
-        public FixedPlacementAttribute() :
+        public SiloServicePlacementAttribute() :
             base(FixedPlacement.Singleton)
         {
         }

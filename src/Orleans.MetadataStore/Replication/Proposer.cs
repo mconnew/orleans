@@ -276,7 +276,6 @@ namespace Orleans.MetadataStore
             return achievedQuorum;
         }
 
-        [Conditional("DEBUG")]
         private void LogPrepareException(Exception exception)
         {
             if (_log.IsEnabled(LogLevel.Warning))
@@ -285,7 +284,6 @@ namespace Orleans.MetadataStore
             }
         }
 
-        [Conditional("DEBUG")]
         private void LogAcceptException(Exception exception)
         {
             if (_log.IsEnabled(LogLevel.Warning))
