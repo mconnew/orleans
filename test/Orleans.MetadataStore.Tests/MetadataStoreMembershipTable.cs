@@ -85,7 +85,7 @@ namespace Orleans.MetadataStore.Tests
 
                     // First, find out what the accepted version of the configuration is telling us.
                     var accepted = _configurationManager.AcceptedConfiguration?.Configuration;
-                    var acceptedSeedNodes = accepted?.Nodes is { } nodes ? new HashSet<SiloAddress>(nodes) : new HashSet<SiloAddress>();
+                    var acceptedSeedNodes = accepted?.Members is { } nodes ? new HashSet<SiloAddress>(nodes) : new HashSet<SiloAddress>();
 
                     // Second, see what the configuration is telling us we should be seeing.
                     var snapshotSeedNodes = snapshot.SeedNodes is { } seedNodes ? new HashSet<IPEndPoint>(seedNodes) : new HashSet<IPEndPoint>();
@@ -122,17 +122,15 @@ namespace Orleans.MetadataStore.Tests
 
                         if (snapshotSeedNodes.Count >= snapshot.MinimumNodes)
                         {
-                            if (accepted?.Nodes is null || accepted.Nodes.Length < snapshot.MinimumNodes)
+                            if (accepted?.Members is null || accepted.Members.Length < snapshot.MinimumNodes)
                             {
                                 var quorumSize = Math.Max(snapshotSeedNodes.Count / 2 + 1, snapshot.MinimumNodes);
                                 var forcedConfiguration = new ReplicaSetConfiguration(
                                         stamp: accepted?.Stamp.Successor() ?? Ballot.Zero,
                                         version: (accepted?.Version ?? 0) + 1,
-                                        nodes: snapshotSeedNodes.Select(s => SiloAddress.New(s, 0)).ToArray(),
+                                        members: snapshotSeedNodes.Select(s => SiloAddress.New(s, 0)).ToArray(),
                                         acceptQuorum: quorumSize,
-                                        prepareQuorum: quorumSize,
-                                        ranges: accepted?.Ranges ?? default,
-                                        values: accepted?.Values);
+                                        prepareQuorum: quorumSize);
                                 _log.LogInformation("Insufficient nodes in accepted configuration {Accepted}. Locally forcing configuration {ForcedConfiguration}", accepted, forcedConfiguration);
                                 await _configurationManager.ForceLocalConfiguration(forcedConfiguration);
                             }
@@ -180,7 +178,7 @@ namespace Orleans.MetadataStore.Tests
             static (bool ShouldUpdate, ReplicaSetConfigurationUpdate Update) UpdateSeedConfiguration(ReplicaSetConfiguration existing, MetadataStoreClusteringOptions snapshot)
             {
                 var seedNodes = snapshot.SeedNodes ?? Array.Empty<IPEndPoint>();
-                return (true, new ReplicaSetConfigurationUpdate(nodes: seedNodes.Select(s => SiloAddress.New(s, 0)).ToArray(), ranges: existing.Ranges, values: existing.Values));
+                return (true, new ReplicaSetConfigurationUpdate(members: seedNodes.Select(s => SiloAddress.New(s, 0)).ToArray()));
             }
         }
 
@@ -334,13 +332,7 @@ namespace Orleans.MetadataStore.Tests
 
         private MembershipTableData TryGetValue(ReplicaSetConfiguration configuration)
         {
-            string serialized = null;
-            if (configuration?.Values?.TryGetValue(MembershipKey, out serialized) != true || string.IsNullOrWhiteSpace(serialized))
-            {
-                return null;
-            }
-
-            return _serializer.Deserialize<MembershipTableData>(Convert.FromBase64String(serialized));
+            return default;
         }
 
         private (bool ShouldUpdate, ReplicaSetConfigurationUpdate Update) UpdateMembershipTable(ReplicaSetConfiguration existing, MembershipTableData value)
@@ -349,13 +341,12 @@ namespace Orleans.MetadataStore.Tests
             if (current is null || (string.Equals(current.Version.VersionEtag, value.Version.VersionEtag) && current.Version.Version < value.Version.Version))
             {
                 var serialized = Convert.ToBase64String(_serializer.SerializeToArray(value));
-                var updatedValues = existing.Values.SetItem(MembershipKey, serialized);
 
-                var existingNodes = existing.Nodes;
+                var existingNodes = existing.Members;
                 var proposedNodes = value.Members.Where(s => !s.Item1.Status.IsTerminating()).Select(s => SiloAddress.New(s.Item1.SiloAddress.Endpoint, 0)).ToArray();
                 var updatedNodes = GetUpdatedNodes(existingNodes, proposedNodes);
 
-                return (true, new ReplicaSetConfigurationUpdate(nodes: updatedNodes, ranges: existing.Ranges, updatedValues));
+                return (true, new ReplicaSetConfigurationUpdate(updatedNodes));
             }
             else
             {

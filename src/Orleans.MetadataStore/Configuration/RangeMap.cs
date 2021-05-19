@@ -20,7 +20,7 @@ namespace Orleans.MetadataStore
         public int[] UpperBounds { get; }
 
         /// <summary>
-        /// Indices (into <see cref="ReplicaSetConfiguration.Nodes"/>) corresponding to each range in <see cref="UpperBounds"/>.
+        /// Indices (into <see cref="ReplicaSetConfiguration.Members"/>) corresponding to each range in <see cref="UpperBounds"/>.
         /// </summary>
         [Id(1)]
         public int[][] RangeNodes { get; }

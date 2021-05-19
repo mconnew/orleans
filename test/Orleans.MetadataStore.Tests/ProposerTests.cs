@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading;
-using System.Threading.Channels;
 using System.Threading.Tasks;
 using Orleans.Runtime;
 using Xunit;
@@ -41,7 +39,7 @@ namespace Orleans.MetadataStore.Tests
                 this.remoteStores.Add(store);
             }
             this.options = new MetadataStoreOptions { InstancesPerSilo = 2 };
-            this.config = new ReplicaSetConfiguration(new Ballot(2, 2), 1, this.silos, 2, 2, default, null);
+            this.config = new ReplicaSetConfiguration(new Ballot(2, 2), 1, this.silos, 2, 2);
             this.proposer = new Proposer<int>(
                 Key,
                 Ballot.Zero,

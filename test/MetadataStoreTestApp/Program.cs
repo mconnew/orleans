@@ -226,9 +226,7 @@ internal class ClusterBootstrapper : BackgroundService
                 1,
                 new[] {_localSiloDetails.SiloAddress},
                 1,
-                1,
-                ranges: default,
-                values: default));
+                1));
         }
 
         await _configurationManager.TryAddServer(_localSiloDetails.SiloAddress);

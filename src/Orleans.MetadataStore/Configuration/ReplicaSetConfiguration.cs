@@ -14,26 +14,22 @@ namespace Orleans.MetadataStore
         public ReplicaSetConfiguration(
             Ballot stamp,
             long version,
-            SiloAddress[] nodes,
+            SiloAddress[] members,
             int acceptQuorum,
-            int prepareQuorum,
-            RangeMap ranges,
-            ImmutableDictionary<string, string> values)
+            int prepareQuorum)
         {
             Stamp = stamp;
             Version = version;
-            Nodes = nodes;
+            Members = members;
             AcceptQuorum = acceptQuorum;
             PrepareQuorum = prepareQuorum;
-            Ranges = ranges;
-            Values = values ?? ImmutableDictionary<string, string>.Empty;
         }
 
         /// <summary>
-        /// The addresses of all nodes.
+        /// The addresses of all members.
         /// </summary>
         [Id(0)]
-        public SiloAddress[] Nodes { get; }
+        public SiloAddress[] Members { get; }
 
         /// <summary>
         /// The quorum size for Accept operations.
@@ -59,24 +55,11 @@ namespace Orleans.MetadataStore
         [Id(4)]
         public long Version { get; }
 
-        /// <summary>
-        /// The partition range map, which divides a keyspace into a set of arbitrarily-sized partitions.
-        /// </summary>
-        [Id(5)]
-        public RangeMap Ranges { get; }
-
-        /// <summary>
-        /// Additional data stored with this configuration.
-        /// </summary>
-        [Id(6)]
-        public ImmutableDictionary<string, string> Values { get; } = ImmutableDictionary<string, string>.Empty;
-
         /// <inheritdoc />
         public override string ToString()
         {
-            var nodes = Nodes == null ? "[]" : $"[{string.Join(", ", Nodes.Select(_ => _.ToString()))}]";
-            var values = (Values is null || Values.Count == 0) ? "[]" : $"[{string.Join(", ", Values.Select(_ => $"\"{_.Key}\"=\"{_.Value}\""))}]";
-            return $"{nameof(Stamp)}: {Stamp}, {nameof(Version)}: {Version}, {nameof(Nodes)}: {nodes}, {nameof(AcceptQuorum)}: {AcceptQuorum}, {nameof(PrepareQuorum)}: {PrepareQuorum}, {nameof(Values)}: {values}";
+            var nodes = Members == null ? "[]" : $"[{string.Join(", ", Members.Select(_ => _.ToString()))}]";
+            return $"{nameof(Stamp)}: {Stamp}, {nameof(Version)}: {Version}, {nameof(Members)}: {nodes}, {nameof(AcceptQuorum)}: {AcceptQuorum}, {nameof(PrepareQuorum)}: {PrepareQuorum}";
         }
     }
 }

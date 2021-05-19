@@ -22,16 +22,16 @@
             IStoreReferenceFactory factory)
         {
             IRemoteMetadataStore[][] refs;
-            if (config?.Nodes != null)
+            if (config?.Members != null)
             {
-                refs = new IRemoteMetadataStore[config.Nodes.Length][];
-                for (var i = 0; i < config.Nodes.Length; i++)
+                refs = new IRemoteMetadataStore[config.Members.Length][];
+                for (var i = 0; i < config.Members.Length; i++)
                 {
                     var instances = refs[i] = new IRemoteMetadataStore[options.InstancesPerSilo];
 
                     for (short j = 0; j < options.InstancesPerSilo; j++)
                     {
-                        instances[j] = factory.GetReference(config.Nodes[i], j);
+                        instances[j] = factory.GetReference(config.Members[i], j);
                     }
                 }
             }
