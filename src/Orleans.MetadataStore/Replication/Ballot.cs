@@ -52,7 +52,7 @@ namespace Orleans.MetadataStore
                 return counterComparison;
             }
 
-            return Id - other.Id;
+            return Id.CompareTo(other.Id);
         }
 
         public static bool operator ==(Ballot left, Ballot right) => left.Equals(right);
@@ -83,7 +83,7 @@ namespace Orleans.MetadataStore
         {
             unchecked
             {
-                return (Counter * 397) ^ Id;
+                return (Counter.GetHashCode() * 397) ^ Id.GetHashCode();
             }
         }
     }

@@ -130,11 +130,11 @@ namespace Orleans.MetadataStore
                 return (false, default);
             }
 
-            var prepareTasks = new List<Task<PrepareResponse>>(config.StoreReferences.Length);
+            var prepareTasks = new List<Task<PrepareResponse<TValue>>>(config.StoreReferences.Length);
             foreach (var acceptors in config.StoreReferences)
             {
                 var acceptor = SelectInstance(acceptors);
-                prepareTasks.Add(acceptor.Prepare(_key, config.Configuration.Stamp, prepareBallot).AsTask());
+                prepareTasks.Add(acceptor.Prepare<TValue>(_key, config.Configuration.Stamp, prepareBallot).AsTask());
             }
 
             // Run a Prepare round in order to learn the current value of the register and secure a promise that a quorum
@@ -153,24 +153,24 @@ namespace Orleans.MetadataStore
                     var prepareResult = await resultTask;
                     switch (prepareResult)
                     {
-                        case PrepareSuccess<TValue> success:
+                        case { Status: PrepareStatus.Success } success:
                             --requiredConfirmations;
-                            if (success.Accepted >= maxSuccess)
+                            if (success.Ballot >= maxSuccess)
                             {
-                                maxSuccess = success.Accepted;
+                                maxSuccess = success.Ballot;
                                 currentValue = success.Value;
                             }
 
                             break;
-                        case PrepareConflict conflict:
+                        case { Status: PrepareStatus.Conflict } conflict:
                             --remainingAllowedFailures;
-                            if (conflict.Conflicting > maxConflict)
+                            if (conflict.Ballot > maxConflict)
                             {
-                                maxConflict = conflict.Conflicting;
+                                maxConflict = conflict.Ballot;
                             }
 
                             break;
-                        case PrepareConfigConflict _:
+                        case { Status: PrepareStatus.ConfigConflict } _:
                             --remainingAllowedFailures;
                             // Nothing needs to be done when encountering a configuration conflict, however it
                             // poses a good opportunity to ensure that this node's configuration is up-to-date.
@@ -234,18 +234,18 @@ namespace Orleans.MetadataStore
                     var acceptResult = await resultTask;
                     switch (acceptResult)
                     {
-                        case AcceptSuccess:
+                        case { Status: AcceptStatus.Success }:
                             --requiredConfirmations;
                             break;
-                        case AcceptConflict conflict:
+                        case { Status: AcceptStatus.Conflict } conflict:
                             --remainingAllowedFailures;
-                            if (conflict.Conflicting > maxConflict)
+                            if (conflict.Ballot > maxConflict)
                             {
-                                maxConflict = conflict.Conflicting;
+                                maxConflict = conflict.Ballot;
                             }
 
                             break;
-                        case AcceptConfigConflict _:
+                        case { Status: AcceptStatus.ConfigConflict } _:
                             // Nothing needs to be done when encountering a configuration conflict, however it
                             // poses a good opportunity to ensure that this node's configuration is up-to-date.
                             // TODO: Signal to configuration manager that we need to update configuration?

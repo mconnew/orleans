@@ -26,9 +26,9 @@ namespace Orleans.MetadataStore
             _store = store;
         }
 
-        public ValueTask<PrepareResponse> Prepare(string key, Ballot proposerParentBallot, Ballot ballot) => _manager.Prepare(key, proposerParentBallot, ballot);
+        public ValueTask<PrepareResponse<TValue>> Prepare<TValue>(string key, Ballot proposerParentBallot, Ballot ballot) => _manager.Prepare<TValue>(key, proposerParentBallot, ballot);
 
-        public ValueTask<AcceptResponse> Accept(string key, Ballot proposerParentBallot, Ballot ballot, object value) => _manager.Accept(key, proposerParentBallot, ballot, value);
+        public ValueTask<AcceptResponse> Accept<TValue>(string key, Ballot proposerParentBallot, Ballot ballot, TValue value) => _manager.Accept(key, proposerParentBallot, ballot, value);
 
         public ValueTask<List<string>> GetKeys() => _store.GetKeys(int.MaxValue);
     }

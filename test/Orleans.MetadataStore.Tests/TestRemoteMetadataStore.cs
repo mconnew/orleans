@@ -7,6 +7,8 @@ using Xunit;
 
 namespace Orleans.MetadataStore.Tests
 {
+    public delegate ValueTask<PrepareResponse<TValue>> OnPrepare<TValue>((string Key, Ballot OroposerParentBallot, Ballot Ballot) args);
+
     public class TestRemoteMetadataStore : IRemoteMetadataStore
     {
         private readonly Channel<(string Key, Ballot ProposerParentBallot, Ballot Ballot)> prepareCallChannel = Channel.CreateUnbounded<(string Key, Ballot ProposerParentBallot, Ballot Ballot)>();
@@ -25,10 +27,9 @@ namespace Orleans.MetadataStore.Tests
 
         public Func<(string Key, Ballot ProposerParentBallot, Ballot Ballot, object Value), ValueTask<AcceptResponse>> OnAccept { get; set; }
         public Func<ValueTask<List<string>>> OnGetKeys { get; set; }
-        public Func<(string Key, Ballot OroposerParentBallot, Ballot Ballot), ValueTask<PrepareResponse>> OnPrepare { get; set; }
+        public OnPrepare<object> OnPrepare { get; set; }
 
-
-        public ValueTask<AcceptResponse> Accept(string key, Ballot proposerParentBallot, Ballot ballot, object value)
+        public ValueTask<AcceptResponse> Accept<TValue>(string key, Ballot proposerParentBallot, Ballot ballot, TValue value)
         {
             var args = (key, proposerParentBallot, ballot, value);
             Assert.True(this.acceptCallChannel.Writer.TryWrite(args));
@@ -37,11 +38,24 @@ namespace Orleans.MetadataStore.Tests
 
         public ValueTask<List<string>> GetKeys() => this.OnGetKeys?.Invoke() ?? default;
 
-        public ValueTask<PrepareResponse> Prepare(string key, Ballot proposerParentBallot, Ballot ballot)
+        public async ValueTask<PrepareResponse<TValue>> Prepare<TValue>(string key, Ballot proposerParentBallot, Ballot ballot)
         {
             var args = (key, proposerParentBallot, ballot);
             Assert.True(this.prepareCallChannel.Writer.TryWrite(args));
-            return this.OnPrepare?.Invoke(args) ?? default;
+
+            if (OnPrepare is { } func)
+            {
+                var res = await func(args);
+                return new PrepareResponse<TValue>
+                {
+                    _status = res._status,
+                    Ballot = res.Ballot,
+                    Value = res.Value is not null ? (TValue)res.Value : default
+                };
+            }
+
+            return default;
         }
     }
 }
+

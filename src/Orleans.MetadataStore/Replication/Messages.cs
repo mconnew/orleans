@@ -1,15 +1,10 @@
-using System;
-using Orleans.Concurrency;
-
 namespace Orleans.MetadataStore
 {
-    [Serializable]
-    [GenerateSerializer]
-    public abstract class PrepareResponse
+    public static class PrepareResponse
     {
-        public static PrepareSuccess<TValue> Success<TValue>(Ballot accepted, TValue value) => new PrepareSuccess<TValue>(accepted, value);
-        public static PrepareConflict Conflict(Ballot conflicting) => new PrepareConflict(conflicting);
-        public static PrepareConfigConflict ConfigConflict(Ballot conflicting) => new PrepareConfigConflict(conflicting);
+        public static PrepareResponse<TValue> Success<TValue>(Ballot accepted, TValue value) => PrepareResponse<TValue>.Success(accepted, value);
+        public static PrepareResponse<TValue> Conflict<TValue>(Ballot conflicting) => PrepareResponse<TValue>.Conflict(conflicting);
+        public static PrepareResponse<TValue> ConfigConflict<TValue>(Ballot conflicting) => PrepareResponse<TValue>.ConfigConflict(conflicting);
     }
 
     [GenerateSerializer]
@@ -22,10 +17,12 @@ namespace Orleans.MetadataStore
     }
 
     [GenerateSerializer]
-    public struct PackedPrepareResponse<TValue>
+    public struct PrepareResponse<TValue>
     {
         [Id(0)]
-        public byte Status;
+        public byte _status;
+
+        public PrepareStatus Status => (PrepareStatus)_status;
 
         [Id(1)]
         public Ballot Ballot;
@@ -33,108 +30,37 @@ namespace Orleans.MetadataStore
         [Id(2)]
         public TValue Value;
 
-        public static PackedPrepareResponse<TValue> Success(Ballot accepted, TValue value) => new()
+        public static PrepareResponse<TValue> Success(Ballot accepted, TValue value) => new()
         {
-            Status = (byte)PrepareStatus.Success,
+            _status = (byte)PrepareStatus.Success,
             Ballot = accepted,
             Value = value,
         };
 
-        public static PackedPrepareResponse<TValue> Conflict(Ballot conflicting) => new() 
+        public static PrepareResponse<TValue> Conflict(Ballot conflicting) => new() 
         {
-            Status = (byte)PrepareStatus.Conflict,
+            _status = (byte)PrepareStatus.Conflict,
             Ballot = conflicting,
         };
 
-        public static PackedPrepareResponse<TValue> ConfigConflict(Ballot conflicting) => new()
+        public static PrepareResponse<TValue> ConfigConflict(Ballot conflicting) => new()
         {
-            Status = (byte)PrepareStatus.ConfigConflict,
+            _status = (byte)PrepareStatus.ConfigConflict,
             Ballot = conflicting,
         };
 
         public void Deconstruct(out PrepareStatus status, out Ballot accepted, out TValue value)
         {
-            status = (PrepareStatus)Status;
+            status = Status;
             accepted = Ballot;
             value = Value;
         }
 
         public void Deconstruct(out PrepareStatus status, out Ballot conflict)
         {
-            status = (PrepareStatus)Status;
+            status = Status;
             conflict = Ballot;
         }
-    }
-
-    [Serializable]
-    [GenerateSerializer]
-    public class PrepareSuccess<TValue> : PrepareResponse
-    {
-        public PrepareSuccess(Ballot accepted, TValue value)
-        {
-            Accepted = accepted;
-            Value = value;
-        }
-
-        [Id(0)]
-        public TValue Value { get; }
-
-        [Id(1)]
-        public Ballot Accepted { get; }
-
-        /// <inheritdoc />
-        public override string ToString()
-        {
-            return $"{nameof(PrepareSuccess<TValue>)}({nameof(Accepted)}: {Accepted}, {nameof(Value)}: {Value})";
-        }
-    }
-
-    [Immutable]
-    [Serializable]
-    [GenerateSerializer]
-    public class PrepareConflict : PrepareResponse
-    {
-        public PrepareConflict(Ballot conflicting)
-        {
-            Conflicting = conflicting;
-        }
-
-        [Id(0)]
-        public Ballot Conflicting { get; }
-
-        /// <inheritdoc />
-        public override string ToString() => $"{nameof(PrepareConflict)}({nameof(Conflicting)}: {Conflicting})";
-    }
-
-    [Immutable]
-    [Serializable]
-    [GenerateSerializer]
-    public class PrepareConfigConflict : PrepareResponse
-    {
-        public PrepareConfigConflict(Ballot conflicting)
-        {
-            Conflicting = conflicting;
-        }
-
-        [Id(0)]
-        public Ballot Conflicting { get; }
-
-        /// <inheritdoc />
-        public override string ToString()
-        {
-            return $"{nameof(PrepareConfigConflict)}({nameof(Conflicting)}: {Conflicting})";
-        }
-    }
-
-    [Serializable]
-    [GenerateSerializer]
-    public abstract class AcceptResponse
-    {
-        public static AcceptSuccess Success() => AcceptSuccess.Instance;
-
-        public static AcceptConflict Conflict(Ballot conflicting) => new AcceptConflict(conflicting);
-
-        public static AcceptConfigConflict ConfigConflict(Ballot conflicting) => new AcceptConfigConflict(conflicting);
     }
 
     [GenerateSerializer]
@@ -146,95 +72,44 @@ namespace Orleans.MetadataStore
         Success = 3
     }
 
+    [Immutable]
     [GenerateSerializer]
-    public struct PackedAcceptResponse
+    public struct AcceptResponse
     {
         [Id(0)]
-        public byte Status;
+        public byte _status;
+
+        public AcceptStatus Status => (AcceptStatus)_status;
 
         [Id(1)]
         public Ballot Ballot;
 
-        public static PackedAcceptResponse Success() => new()
+        public static AcceptResponse Success() => new()
         {
-            Status = (byte)AcceptStatus.Success,
+            _status = (byte)AcceptStatus.Success,
         };
 
-        public static PackedAcceptResponse Conflict(Ballot conflicting) => new() 
+        public static AcceptResponse Conflict(Ballot conflicting) => new() 
         {
-            Status = (byte)AcceptStatus.Conflict,
+            _status = (byte)AcceptStatus.Conflict,
             Ballot = conflicting,
         };
 
-        public static PackedAcceptResponse ConfigConflict(Ballot conflicting) => new()
+        public static AcceptResponse ConfigConflict(Ballot conflicting) => new()
         {
-            Status = (byte)AcceptStatus.ConfigConflict,
+            _status = (byte)AcceptStatus.ConfigConflict,
             Ballot = conflicting,
         };
 
         public void Deconstruct(out AcceptStatus status, out Ballot conflict)
         {
-            status = (AcceptStatus)Status;
+            status = (AcceptStatus)_status;
             conflict = Ballot;
         }
 
         public void Deconstruct(out AcceptStatus status)
         {
-            status = (AcceptStatus)Status;
-        }
-    }
-
-    [Immutable]
-    [Serializable]
-    [GenerateSerializer]
-    public class AcceptSuccess : AcceptResponse
-    {
-        public static AcceptSuccess Instance { get; } = new AcceptSuccess();
-
-        /// <inheritdoc />
-        public override string ToString()
-        {
-            return $"{nameof(AcceptSuccess)}()";
-        }
-    }
-
-    [Immutable]
-    [Serializable]
-    [GenerateSerializer]
-    public class AcceptConflict : AcceptResponse
-    {
-        public AcceptConflict(Ballot conflicting)
-        {
-            Conflicting = conflicting;
-        }
-
-        [Id(0)]
-        public Ballot Conflicting { get; }
-
-        /// <inheritdoc />
-        public override string ToString()
-        {
-            return $"{nameof(AcceptConflict)}({nameof(Conflicting)}: {Conflicting})";
-        }
-    }
-
-    [Immutable]
-    [Serializable]
-    [GenerateSerializer]
-    public class AcceptConfigConflict : AcceptResponse
-    {
-        public AcceptConfigConflict(Ballot conflicting)
-        {
-            Conflicting = conflicting;
-        }
-
-        [Id(0)]
-        public Ballot Conflicting { get; }
-
-        /// <inheritdoc />
-        public override string ToString()
-        {
-            return $"{nameof(AcceptConflict)}({nameof(Conflicting)}: {Conflicting})";
+            status = (AcceptStatus)_status;
         }
     }
 }

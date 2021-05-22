@@ -323,7 +323,7 @@ namespace Orleans.MetadataStore
             CancellationToken cancellationToken) =>
             _proposer.TryUpdate(value, changeFunction, cancellationToken);
 
-        ValueTask<PrepareResponse> IAcceptor<IVersioned>.Prepare(Ballot proposerParentBallot, Ballot ballot) =>
+        ValueTask<PrepareResponse<IVersioned>> IAcceptor<IVersioned>.Prepare(Ballot proposerParentBallot, Ballot ballot) =>
             _acceptor.Prepare(proposerParentBallot, ballot);
 
         ValueTask<AcceptResponse> IAcceptor<IVersioned>.Accept(Ballot proposerParentBallot, Ballot ballot, IVersioned value) =>

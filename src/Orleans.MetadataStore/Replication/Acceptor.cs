@@ -34,32 +34,32 @@ namespace Orleans.MetadataStore
 
         RegisterState<TValue> ITestAccessor.VolatileState { get => _state; set => _state = value; }
 
-        public async ValueTask<PrepareResponse> Prepare(Ballot proposerParentBallot, Ballot ballot)
+        public async ValueTask<PrepareResponse<TValue>> Prepare(Ballot proposerParentBallot, Ballot ballot)
         {
             using (await _lockObj.LockAsync())
             {
                 // Initialize the register state if it's not yet initialized.
                 await EnsureStateLoadedNoLock();
 
-                PrepareResponse result;
+                PrepareResponse<TValue> result;
                 var parentBallot = _getParentBallot();
                 if (parentBallot > proposerParentBallot)
                 {
                     // If the proposer is using a cluster configuration version which is lower than the highest
                     // cluster configuration version observed by this node, then the Prepare is rejected.
-                    result = PrepareResponse.ConfigConflict(parentBallot);
+                    result = PrepareResponse<TValue>.ConfigConflict(parentBallot);
                 }
                 else
                 {
                     if (_state.Promised > ballot)
                     {
                         // If a Prepare with a higher ballot has already been encountered, reject this.
-                        result = PrepareResponse.Conflict(_state.Promised);
+                        result = PrepareResponse<TValue>.Conflict(_state.Promised);
                     }
                     else if (_state.Accepted > ballot)
                     {
                         // If an Accept with a higher ballot has already been encountered, reject this.
-                        result = PrepareResponse.Conflict(_state.Accepted);
+                        result = PrepareResponse<TValue>.Conflict(_state.Accepted);
                     }
                     else
                     {
@@ -68,7 +68,7 @@ namespace Orleans.MetadataStore
                         await _store.Write(_key, newState);
                         _state = newState;
 
-                        result = PrepareResponse.Success(_state.Accepted, _state.Value);
+                        result = PrepareResponse<TValue>.Success(_state.Accepted, _state.Value);
                     }
                 }
 
@@ -137,7 +137,7 @@ namespace Orleans.MetadataStore
         }
 
         [Conditional("DEBUG")]
-        private void LogPrepare(Ballot parentBallot, Ballot ballot, PrepareResponse result)
+        private void LogPrepare(Ballot parentBallot, Ballot ballot, PrepareResponse<TValue> result)
         {
             if (_log.IsEnabled(LogLevel.Trace))
             {

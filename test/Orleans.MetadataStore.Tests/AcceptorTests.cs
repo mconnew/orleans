@@ -64,8 +64,8 @@ namespace Orleans.MetadataStore.Tests
             // The acceptor has a higher parent ballot than the proposer
             acceptorInternal.VolatileState = new RegisterState<int>(promised: Ballot.Zero, accepted: new Ballot(3, 4), value: 42);
             var response = await this.acceptor.Prepare(proposerParentBallot: new Ballot(1, 7), ballot: new Ballot(2, 7));
-            var conflict = Assert.IsType<PrepareConfigConflict>(response);
-            Assert.Equal(conflict.Conflicting, this.acceptorParentBallot);
+            Assert.Equal(PrepareStatus.ConfigConflict, response.Status);
+            Assert.Equal(response.Ballot, this.acceptorParentBallot);
 
             // No change
             var expected = new RegisterState<int>(promised: Ballot.Zero, accepted: new Ballot(3, 4), value: 42);
@@ -85,8 +85,8 @@ namespace Orleans.MetadataStore.Tests
             // The acceptor has a higher accepted ballot than the proposer, which results in a rejection.
             acceptorInternal.VolatileState = new RegisterState<int>(promised: Ballot.Zero, accepted: new Ballot(3, 4), value: 42);
             var response = await this.acceptor.Prepare(proposerParentBallot: this.acceptorParentBallot, ballot: new Ballot(2, 7));
-            var conflict = Assert.IsType<PrepareConflict>(response);
-            Assert.Equal(conflict.Conflicting, new Ballot(3, 4));
+            Assert.Equal(PrepareStatus.Conflict, response.Status);
+            Assert.Equal(response.Ballot, new Ballot(3, 4));
 
             // No change
             var expected = new RegisterState<int>(promised: Ballot.Zero, accepted: new Ballot(3, 4), value: 42);
@@ -99,8 +99,8 @@ namespace Orleans.MetadataStore.Tests
             // The acceptor has a higher promised ballot than the proposer, which results in a rejection.
             acceptorInternal.VolatileState = new RegisterState<int>(promised: new Ballot(3, 4), accepted: Ballot.Zero, value: 42);
             response = await this.acceptor.Prepare(proposerParentBallot: this.acceptorParentBallot, ballot: new Ballot(2, 7));
-            conflict = Assert.IsType<PrepareConflict>(response);
-            Assert.Equal(conflict.Conflicting, new Ballot(3, 4));
+            Assert.Equal(PrepareStatus.Conflict, response.Status);
+            Assert.Equal(response.Ballot, new Ballot(3, 4));
 
             // No change
             expected = new RegisterState<int>(promised: new Ballot(3, 4), accepted: Ballot.Zero, value: 42);
@@ -119,9 +119,9 @@ namespace Orleans.MetadataStore.Tests
 
             acceptorInternal.VolatileState = new RegisterState<int>(promised: Ballot.Zero, accepted: new Ballot(3, 4), value: 42);
             var response = await this.acceptor.Prepare(proposerParentBallot: this.acceptorParentBallot, ballot: new Ballot(3, 7));
-            var success = Assert.IsType<PrepareSuccess<int>>(response);
-            Assert.Equal(42, success.Value);
-            Assert.Equal(new Ballot(3, 4), success.Accepted);
+            Assert.Equal(PrepareStatus.Success, response.Status);
+            Assert.Equal(42, response.Value);
+            Assert.Equal(new Ballot(3, 4), response.Ballot);
             Assert.False(this.acceptorStates.Reader.TryRead(out _));
             var writtenState = (RegisterState<int>)this.store.Values[Key];
             Assert.Equal(new Ballot(3, 7), acceptorInternal.VolatileState.Promised);
@@ -137,8 +137,8 @@ namespace Orleans.MetadataStore.Tests
             // The acceptor has a higher parent ballot than the proposer
             acceptorInternal.VolatileState = new RegisterState<int>(promised: new Ballot(2, 7), accepted: Ballot.Zero, value: 42);
             var response = await this.acceptor.Accept(proposerParentBallot: new Ballot(1, 7), ballot: new Ballot(2, 7), 43);
-            var conflict = Assert.IsType<AcceptConfigConflict>(response);
-            Assert.Equal(conflict.Conflicting, this.acceptorParentBallot);
+            Assert.Equal(AcceptStatus.ConfigConflict, response.Status);
+            Assert.Equal(response.Ballot, this.acceptorParentBallot);
 
             // No change
             var expected = new RegisterState<int>(promised: new Ballot(2, 7), accepted: Ballot.Zero, value: 42);
@@ -158,8 +158,8 @@ namespace Orleans.MetadataStore.Tests
             // The acceptor has a higher accepted ballot than the proposer, which results in a rejection.
             acceptorInternal.VolatileState = new RegisterState<int>(promised: Ballot.Zero, accepted: new Ballot(3, 4), value: 42);
             var response = await this.acceptor.Accept(proposerParentBallot: this.acceptorParentBallot, ballot: new Ballot(2, 7), 43);
-            var conflict = Assert.IsType<AcceptConflict>(response);
-            Assert.Equal(conflict.Conflicting, new Ballot(3, 4));
+            Assert.Equal(AcceptStatus.Conflict, response.Status);
+            Assert.Equal(response.Ballot, new Ballot(3, 4));
 
             // No change
             var expected = new RegisterState<int>(promised: Ballot.Zero, accepted: new Ballot(3, 4), value: 42);
@@ -172,8 +172,8 @@ namespace Orleans.MetadataStore.Tests
             // The acceptor has a higher promised ballot than the proposer, which results in a rejection.
             acceptorInternal.VolatileState = new RegisterState<int>(promised: new Ballot(3, 4), accepted: Ballot.Zero, value: 42);
             response = await this.acceptor.Accept(proposerParentBallot: this.acceptorParentBallot, ballot: new Ballot(2, 7), 43);
-            conflict = Assert.IsType<AcceptConflict>(response);
-            Assert.Equal(conflict.Conflicting, new Ballot(3, 4));
+            Assert.Equal(AcceptStatus.Conflict, response.Status);
+            Assert.Equal(response.Ballot, new Ballot(3, 4));
 
             // No change
             expected = new RegisterState<int>(promised: new Ballot(3, 4), accepted: Ballot.Zero, value: 42);
@@ -192,7 +192,7 @@ namespace Orleans.MetadataStore.Tests
 
             acceptorInternal.VolatileState = new RegisterState<int>(promised: new Ballot(3, 4), accepted: Ballot.Zero, value: 42);
             var response = await this.acceptor.Accept(this.acceptorParentBallot, new Ballot(3, 4), 43);
-            Assert.IsType<AcceptSuccess>(response);
+            Assert.Equal(AcceptStatus.Success, response.Status);
             Assert.True(this.acceptorStates.Reader.TryRead(out var updatedState));
             var writtenState = (RegisterState<int>)this.store.Values[Key];
 

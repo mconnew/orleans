@@ -16,7 +16,7 @@ namespace Orleans.MetadataStore
         /// </param>
         /// <param name="ballot"></param>
         /// <returns></returns>
-        ValueTask<PrepareResponse> Prepare(string key, Ballot proposerParentBallot, Ballot ballot);
+        ValueTask<PrepareResponse<TValue>> Prepare<TValue>(string key, Ballot proposerParentBallot, Ballot ballot);
 
         /// <summary>
         /// </summary>
@@ -27,7 +27,7 @@ namespace Orleans.MetadataStore
         /// <param name="ballot"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        ValueTask<AcceptResponse> Accept(string key, Ballot proposerParentBallot, Ballot ballot, object value);
+        ValueTask<AcceptResponse> Accept<TValue>(string key, Ballot proposerParentBallot, Ballot ballot, TValue value);
 
         /// <summary>
         /// Returns the list of keys which are present on this instance.

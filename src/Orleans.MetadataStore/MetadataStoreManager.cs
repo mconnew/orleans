@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -61,16 +62,16 @@ namespace Orleans.MetadataStore
             return new UpdateResult<TValue>(status == ReplicationStatus.Success, (TValue)value);
         }
 
-        public ValueTask<PrepareResponse> Prepare(string key, Ballot proposerParentBallot, Ballot ballot)
+        public ValueTask<PrepareResponse<TValue>> Prepare<TValue>(string key, Ballot proposerParentBallot, Ballot ballot)
         {
             var acceptor = _acceptors.GetOrAdd(key, _acceptorFactory);
-            return acceptor.Prepare(proposerParentBallot, ballot);
+            return ((IAcceptor<TValue>)acceptor).Prepare(proposerParentBallot, ballot);
         }
 
-        public ValueTask<AcceptResponse> Accept(string key, Ballot proposerParentBallot, Ballot ballot, object value)
+        public ValueTask<AcceptResponse> Accept<TValue>(string key, Ballot proposerParentBallot, Ballot ballot, TValue value)
         {
             var acceptor = _acceptors.GetOrAdd(key, _acceptorFactory);
-            return acceptor.Accept(proposerParentBallot, ballot, (IVersioned)value);
+            return ((IAcceptor<TValue>)acceptor).Accept(proposerParentBallot, ballot, value);
         }
     }
 }

@@ -54,7 +54,7 @@ namespace Orleans.MetadataStore.Tests
 
             foreach (var store in this.remoteStores)
             {
-                store.OnPrepare = (args) => new ValueTask<PrepareResponse>(PrepareResponse.Success(new Ballot(1, 1), 42));
+                store.OnPrepare = (args) => new ValueTask<PrepareResponse<object>>(PrepareResponse.Success<object>(new Ballot(1, 1), 42));
                 store.OnAccept = (args) => new ValueTask<AcceptResponse>(AcceptResponse.Success());
             }
 
@@ -77,14 +77,14 @@ namespace Orleans.MetadataStore.Tests
         {
             var proposerAccessor = (Proposer<int>.ITestAccessor)this.proposer;
 
-            this.remoteStores[0].OnPrepare = (args) => new ValueTask<PrepareResponse>(PrepareResponse.Success(new Ballot(1, 1), 42));
+            this.remoteStores[0].OnPrepare = (args) => new ValueTask<PrepareResponse<object>>(PrepareResponse<object>.Success(new Ballot(1, 1), 42));
             this.remoteStores[0].OnAccept = (args) => new ValueTask<AcceptResponse>(AcceptResponse.Success());
 
-            this.remoteStores[1].OnPrepare = (args) => new ValueTask<PrepareResponse>(PrepareResponse.Success(new Ballot(1, 1), 42));
+            this.remoteStores[1].OnPrepare = (args) => new ValueTask<PrepareResponse<object>>(PrepareResponse<object>.Success(new Ballot(1, 1), 42));
             this.remoteStores[1].OnAccept = (args) => new ValueTask<AcceptResponse>(AcceptResponse.Success());
 
             // Conflict!
-            this.remoteStores[2].OnPrepare = (args) => new ValueTask<PrepareResponse>(PrepareResponse.Conflict(new Ballot(3, 1)));
+            this.remoteStores[2].OnPrepare = (args) => new ValueTask<PrepareResponse<object>>(PrepareResponse<object>.Conflict(new Ballot(3, 1)));
             this.remoteStores[2].OnAccept = (args) => new ValueTask<AcceptResponse>(AcceptResponse.Success());
 
             proposerAccessor.Ballot = new Ballot(2, 1);
@@ -96,14 +96,14 @@ namespace Orleans.MetadataStore.Tests
 
             await this.AssertSuccess(expectedValue: 43, expectedBallot: expectedBallot);
 
-            this.remoteStores[0].OnPrepare = (args) => new ValueTask<PrepareResponse>(PrepareResponse.Success(new Ballot(1, 2), 99));
+            this.remoteStores[0].OnPrepare = (args) => new ValueTask<PrepareResponse<object>>(PrepareResponse<object>.Success(new Ballot(1, 2), 99));
             this.remoteStores[0].OnAccept = (args) => new ValueTask<AcceptResponse>(AcceptResponse.Success());
 
             // Conflict!
-            this.remoteStores[1].OnPrepare = (args) => new ValueTask<PrepareResponse>(PrepareResponse.Conflict(new Ballot(7, 2)));
+            this.remoteStores[1].OnPrepare = (args) => new ValueTask<PrepareResponse<object>>(PrepareResponse<object>.Conflict(new Ballot(7, 2)));
             this.remoteStores[1].OnAccept = (args) => new ValueTask<AcceptResponse>(AcceptResponse.Conflict(new Ballot(3, 2)));
 
-            this.remoteStores[2].OnPrepare = (args) => new ValueTask<PrepareResponse>(PrepareResponse.Conflict(new Ballot(7, 2)));
+            this.remoteStores[2].OnPrepare = (args) => new ValueTask<PrepareResponse<object>>(PrepareResponse<object>.Conflict(new Ballot(7, 2)));
             this.remoteStores[2].OnAccept = (args) => new ValueTask<AcceptResponse>(AcceptResponse.Conflict(new Ballot(3, 2)));
 
             proposerAccessor.Ballot = new Ballot(2, 1);
@@ -142,7 +142,7 @@ namespace Orleans.MetadataStore.Tests
 
             foreach (var store in this.remoteStores)
             {
-                store.OnPrepare = (args) => new ValueTask<PrepareResponse>(Task.FromException<PrepareResponse>(new Exception("nope!")));
+                store.OnPrepare = (args) => new ValueTask<PrepareResponse<object>>(Task.FromException<PrepareResponse<object>>(new Exception("nope!")));
                 store.OnAccept = (args) => new ValueTask<AcceptResponse>(Task.FromException<AcceptResponse>(new Exception("nope!")));
             }
 
@@ -181,7 +181,7 @@ namespace Orleans.MetadataStore.Tests
 
             foreach (var store in this.remoteStores)
             {
-                store.OnPrepare = (args) => new ValueTask<PrepareResponse>(PrepareResponse.Success(new Ballot(1, 2), 42));
+                store.OnPrepare = (args) => new ValueTask<PrepareResponse<object>>(PrepareResponse.Success<object>(new Ballot(1, 2), 42));
                 store.OnAccept = (args) => new ValueTask<AcceptResponse>(Task.FromException<AcceptResponse>(new Exception("nope!")));
             }
 
