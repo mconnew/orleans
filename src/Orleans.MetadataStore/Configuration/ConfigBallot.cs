@@ -53,7 +53,13 @@ namespace Orleans.MetadataStore
                 return counterComparison;
             }
 
-            return Id.CompareTo(other.Id);
+            return (Id, other.Id) switch
+            {
+                (null, null) => 0,
+                (null, not null) => -1,
+                (not null, null) => 1,
+                _ => Id.CompareTo(other.Id)
+            };
         }
 
         public static bool operator ==(ConfigBallot left, ConfigBallot right) => left.Equals(right);
@@ -84,7 +90,7 @@ namespace Orleans.MetadataStore
         {
             unchecked
             {
-                return (Counter * 397) ^ Id.GetConsistentHashCode();
+                return (Counter.GetHashCode() * 397) ^ (Id?.GetConsistentHashCode() ?? 0);
             }
         }
     }
