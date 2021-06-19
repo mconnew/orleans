@@ -362,18 +362,12 @@ namespace Orleans.Runtime
             result.Append(InterfaceName);
             if (GetTarget<object>() is { } target)
             {
-                result.Append("[(");
-                result.Append(InterfaceName);
-                result.Append(')');
+                result.Append('[');
                 result.Append(target.ToString());
                 result.Append(']');
-            }
-            else
-            {
-                result.Append(InterfaceName);
+                result.Append('.');
             }
 
-            result.Append('.');
             result.Append(MethodName);
             result.Append('(');
             for (var n = 0; n < ArgumentCount; n++)
