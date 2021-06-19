@@ -837,14 +837,14 @@ namespace Orleans.Runtime
         {
             if (list == null || list.Count == 0) return;
 
-            if (logger.IsEnabled(LogLevel.Debug)) logger.Debug("DeactivateActivations: {0} activations.", list.Count);
+            if (logger.IsEnabled(LogLevel.Debug)) logger.LogDebug("DeactivateActivations: {Count} activations.", list.Count);
 
             await Task.WhenAll(list.Select(DeactivateActivation));
         }
 
         public Task DeactivateAllActivations()
         {
-            logger.Info(ErrorCode.Catalog_DeactivateAllActivations, "DeactivateAllActivations.");
+            logger.LogDebug((int)ErrorCode.Catalog_DeactivateAllActivations, "DeactivateAllActivations.");
             var activationsToShutdown = activations.Where(kv => !kv.Value.IsExemptFromCollection).Select(kv => kv.Value).ToList();
             return DeactivateActivations(activationsToShutdown);
         }
@@ -856,7 +856,7 @@ namespace Orleans.Runtime
                 List<Message> msgs = activation.DequeueAllWaitingMessages();
                 if (msgs == null || msgs.Count <= 0) return;
 
-                if (logger.IsEnabled(LogLevel.Debug)) logger.Debug(ErrorCode.Catalog_RerouteAllQueuedMessages, String.Format("RerouteAllQueuedMessages: {0} msgs from Invalid activation {1}.", msgs.Count, activation));
+                if (logger.IsEnabled(LogLevel.Debug)) logger.LogDebug((int)ErrorCode.Catalog_RerouteAllQueuedMessages, "Rerouting {MessageCount} messages from invalid activation {Activation}", msgs.Count, activation);
                 this.directory.InvalidateCacheEntry(activation.Address);
                 this.Dispatcher.ProcessRequestsToInvalidActivation(msgs, activation.Address, forwardingAddress, failedOperation, exc);
             }
@@ -879,9 +879,10 @@ namespace Orleans.Runtime
                 if (msgs == null || msgs.Count <= 0) return;
 
                 if (logger.IsEnabled(LogLevel.Debug))
-                    logger.Debug(
-                        ErrorCode.Catalog_RerouteAllQueuedMessages,
-                        string.Format("RejectAllQueuedMessages: {0} msgs from Invalid activation {1}.", msgs.Count, activation));
+                {
+                    logger.LogDebug((int)ErrorCode.Catalog_RerouteAllQueuedMessages, "RejectAllQueuedMessages: {MessageCount} messages from invalid activation {Activation}.", msgs.Count, activation);
+                }
+
                 this.directory.InvalidateCacheEntry(activation.Address);
                 this.Dispatcher.ProcessRequestsToInvalidActivation(
                     msgs,
