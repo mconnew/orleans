@@ -221,6 +221,7 @@ namespace Tester.AzureUtils.Persistence
         {
             const string testName = nameof(PersistenceProvider_Memory_FixedLatency_WriteRead);
             TimeSpan expectedLatency = TimeSpan.FromMilliseconds(200);
+            var expectedMinimumLatency = expectedLatency - TimeSpan.FromMilliseconds(15);
             MemoryGrainStorageWithLatency store = new MemoryGrainStorageWithLatency(testName, new MemoryStorageWithLatencyOptions()
             {
                 Latency = expectedLatency,
@@ -234,14 +235,14 @@ namespace Tester.AzureUtils.Persistence
             await store.WriteStateAsync(testName, reference, state);
             TimeSpan writeTime = sw.Elapsed;
             this.output.WriteLine("{0} - Write time = {1}", store.GetType().FullName, writeTime);
-            Assert.True(writeTime >= expectedLatency, $"Write: Expected minimum latency = {expectedLatency} Actual = {writeTime}");
+            Assert.True(writeTime >= expectedMinimumLatency, $"Write: Expected minimum latency = {expectedMinimumLatency} Actual = {writeTime}");
 
             sw.Restart();
             var storedState = new GrainState<TestStoreGrainState>();
             await store.ReadStateAsync(testName, reference, storedState);
             TimeSpan readTime = sw.Elapsed;
             this.output.WriteLine("{0} - Read time = {1}", store.GetType().FullName, readTime);
-            Assert.True(readTime >= expectedLatency, $"Read: Expected minimum latency = {expectedLatency} Actual = {readTime}");
+            Assert.True(readTime >= expectedMinimumLatency, $"Read: Expected minimum latency = {expectedMinimumLatency} Actual = {readTime}");
         }
 
         [Fact, TestCategory("Functional")]
