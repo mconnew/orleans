@@ -17,6 +17,7 @@ using Orleans.Statistics;
 using Orleans.TestingHost.Utils;
 using Orleans.TestingHost.Logging;
 using Orleans.Configuration.Internal;
+using Microsoft.Extensions.Logging;
 
 namespace Orleans.TestingHost
 {
@@ -63,13 +64,10 @@ namespace Orleans.TestingHost
                 ConfigureListeningPorts(context.Configuration, services);
 
                 TryConfigureClusterMembership(context.Configuration, services);
-                TryConfigureFileLogging(configuration, services, siloName);
 
-                if (Debugger.IsAttached)
-                {
-                    // Test is running inside debugger - Make timeout ~= infinite
-                    services.Configure<SiloMessagingOptions>(op => op.ResponseTimeout = TimeSpan.FromMilliseconds(1000000));
-                }
+                // Configure logging
+                TryConfigureFileLogging(configuration, services, siloName);
+                services.AddLogging(logging => logging.AddDebug().SetMinimumLevel(LogLevel.Debug));
             });
 
             var host = hostBuilder.Build();
@@ -95,6 +93,7 @@ namespace Orleans.TestingHost
             {
                 TryConfigureClientMembership(configuration, services);
                 TryConfigureFileLogging(configuration, services, hostName);
+                services.AddLogging(logging => logging.AddDebug().SetMinimumLevel(LogLevel.Debug));
             });
 
             ConfigureAppServices(configuration, builder);

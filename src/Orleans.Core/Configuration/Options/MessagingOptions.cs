@@ -27,7 +27,7 @@ namespace Orleans.Configuration
         /// and the value from this field will be used.
         /// </summary>
         public TimeSpan ResponseTimeoutWithDebugger { get; set; } = RESPONSE_TIMEOUT_WITH_DEBUGGER;
-        public static readonly TimeSpan RESPONSE_TIMEOUT_WITH_DEBUGGER = TimeSpan.FromMinutes(30);
+        public static readonly TimeSpan RESPONSE_TIMEOUT_WITH_DEBUGGER = TimeSpan.FromSeconds(30);
 
         /// <summary>
         /// The DropExpiredMessages attribute specifies whether the message should be dropped if it has expired, that is if it was not delivered 

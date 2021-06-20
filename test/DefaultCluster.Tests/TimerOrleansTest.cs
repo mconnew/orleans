@@ -90,47 +90,51 @@ namespace DefaultCluster.Tests.TimerTests
         [Fact, TestCategory("BVT"), TestCategory("Timers")]
         public async Task TimerOrleansTest_Migration()
         {
-            ITimerGrain grain = GrainFactory.GetGrain<ITimerGrain>(GetRandomGrainId());
-            TimeSpan period = await grain.GetTimerPeriod();
-
-            // Ensure that the grain works as it should.
-            var last = await grain.GetCounter();
-            var stopwatch = Stopwatch.StartNew();
-            var timeout = period.Multiply(50);
-            while (stopwatch.Elapsed < timeout && last < 10)
+            while (true)
             {
-                await Task.Delay(period.Divide(2));
+                ITimerGrain grain = GrainFactory.GetGrain<ITimerGrain>(GetRandomGrainId());
+                TimeSpan period = await grain.GetTimerPeriod();
+
+                // Ensure that the grain works as it should.
+                var last = await grain.GetCounter();
+                var stopwatch = Stopwatch.StartNew();
+                var timeout = period.Multiply(50);
+                while (stopwatch.Elapsed < timeout && last < 10)
+                {
+                    await Task.Delay(period.Divide(2));
+                    last = await grain.GetCounter();
+                }
+
                 last = await grain.GetCounter();
-            }
+                output.WriteLine("value = " + last);
 
-            last = await grain.GetCounter();
-            output.WriteLine("value = " + last);
-
-            // Restart the grain.
-            await grain.Deactivate();
-            stopwatch.Restart();
-            last = await grain.GetCounter();
-            Assert.True(last == 0, "Restarted grains should have zero ticks. Actual: " + last);
-            period = await grain.GetTimerPeriod();
-
-            // Poke the grain and ensure it still works as it should.
-            while (stopwatch.Elapsed < timeout && last < 10)
-            {
-                await Task.Delay(period.Divide(2));
+                // Restart the grain.
+                await grain.Deactivate();
+                stopwatch.Restart();
                 last = await grain.GetCounter();
+                Assert.True(last == 0, "Restarted grains should have zero ticks. Actual: " + last);
+                period = await grain.GetTimerPeriod();
+
+                // Poke the grain and ensure it still works as it should.
+                while (stopwatch.Elapsed < timeout && last < 10)
+                {
+                    await Task.Delay(period.Divide(2));
+                    last = await grain.GetCounter();
+                }
+
+                last = await grain.GetCounter();
+                stopwatch.Stop();
+
+                double maximalNumTicks = stopwatch.Elapsed.Divide(period);
+                Assert.True(
+                    last <= maximalNumTicks,
+                    $"Assert: last <= maximalNumTicks. Actual: last = {last}, maximalNumTicks = {maximalNumTicks}");
+
+                output.WriteLine(
+                    "Total Elapsed time = " + (stopwatch.Elapsed.TotalSeconds) + " sec. Expected Ticks = " + maximalNumTicks +
+                    ". Actual ticks = " + last);
+                await grain.Deactivate();
             }
-
-            last = await grain.GetCounter();
-            stopwatch.Stop();
-
-            double maximalNumTicks = stopwatch.Elapsed.Divide(period);
-            Assert.True(
-                last <= maximalNumTicks,
-                $"Assert: last <= maximalNumTicks. Actual: last = {last}, maximalNumTicks = {maximalNumTicks}");
-
-            output.WriteLine(
-                "Total Elapsed time = " + (stopwatch.Elapsed.TotalSeconds) + " sec. Expected Ticks = " + maximalNumTicks +
-                ". Actual ticks = " + last);
         }
 
         [Fact, TestCategory("SlowBVT"), TestCategory("Functional"), TestCategory("Timers")]
