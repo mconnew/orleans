@@ -31,14 +31,6 @@ namespace Benchmarks.Ping
                 var primary = i == 0 ? null : new IPEndPoint(IPAddress.Loopback, 11111);
                 var siloBuilder = new SiloHostBuilder()
                     .ConfigureDefaults()
-                    /*
-                    .ConfigureLogging(logging =>
-                    {
-                        logging.SetMinimumLevel(LogLevel.Warning);
-                        logging.AddConsole();
-                    })
-                    */
-                    //.Configure<ConnectionOptions>(options => { options.ConnectionsPerEndpoint = 10; options.ProtocolVersion = NetworkProtocolVersion.Version2; })
                     .UseLocalhostClustering(
                         siloPort: 11111 + i,
                         gatewayPort: 30000 + i,
@@ -47,10 +39,6 @@ namespace Benchmarks.Ping
                 if (i == 0 && grainsOnSecondariesOnly)
                 {
                     siloBuilder.Configure<GrainTypeOptions>(options => options.Classes.Remove(typeof(PingGrain)));
-                    siloBuilder.ConfigureServices(services =>
-                    {
-                        services.Remove(services.First(s => s.ImplementationType?.Name == "ApplicationPartValidator"));
-                    });
                 }
 
                 var silo = siloBuilder.Build();
@@ -64,14 +52,6 @@ namespace Benchmarks.Ping
             if (startClient)
             {
                 var clientBuilder = new ClientBuilder()
-                    /*
-                    .ConfigureLogging(logging =>
-                    {
-                        logging.SetMinimumLevel(LogLevel.Warning);
-                        logging.AddConsole();
-                    })
-                    */
-                    //.Configure<ConnectionOptions>(options => { options.ConnectionsPerEndpoint = 10; options.ProtocolVersion = NetworkProtocolVersion.Version2; })
                     .Configure<ClusterOptions>(options => options.ClusterId = options.ServiceId = "dev");
 
                 if (numSilos == 1)
