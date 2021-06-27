@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -11,6 +12,12 @@ namespace Orleans.CodeGenerator
     {
         public void Execute(GeneratorExecutionContext context)
         {
+            var processName = Process.GetCurrentProcess().ProcessName.ToLowerInvariant();
+            if (processName.Contains("devenv") || processName.Contains("servicehub"))
+            {
+                return;
+            }
+
             if (context.AnalyzerConfigOptions.GlobalOptions.TryGetValue("build_property.orleans_designtimebuild", out var isDesignTimeBuild)
                 && string.Equals("true", isDesignTimeBuild, StringComparison.OrdinalIgnoreCase))
             {
@@ -20,7 +27,7 @@ namespace Orleans.CodeGenerator
             if (context.AnalyzerConfigOptions.GlobalOptions.TryGetValue("build_property.orleans_attachdebugger", out var attachDebuggerOption)
                 && string.Equals("true", attachDebuggerOption, StringComparison.OrdinalIgnoreCase))
             {
-                System.Diagnostics.Debugger.Launch();
+                Debugger.Launch();
             }
 
             var options = new CodeGeneratorOptions();
