@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Immutable;
-using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -26,28 +24,36 @@ namespace Orleans.Analyzers
         {
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
             context.EnableConcurrentExecution();
-            context.RegisterSymbolAction(
-                AnalyzeSymbol,
-                SymbolKind.Method);
+            context.RegisterSyntaxNodeAction(
+                AnalyzeSyntax,
+                SyntaxKind.MethodDeclaration);
         }
 
-        private void AnalyzeSymbol(SymbolAnalysisContext context)
+        private static void AnalyzeSyntax(SyntaxNodeAnalysisContext context)
         {
-            if (context.Symbol.ContainingSymbol is not INamedTypeSymbol containing || containing.TypeKind != TypeKind.Class)
+            var alwaysInterleaveAttribute = context.Compilation.GetTypeByMetadataName(AlwaysInterleaveAttributeName);
+
+            var syntax = (MethodDeclarationSyntax)context.Node;
+            var symbol = context.SemanticModel.GetDeclaredSymbol(syntax);
+
+            if (symbol.ContainingType.TypeKind == TypeKind.Interface)
             {
+                // TODO: Check that interface inherits from IGrain
                 return;
             }
 
-            foreach (var attr in context.Symbol.GetAttributes())
+            foreach (var attribute in symbol.GetAttributes())
             {
-                if (attr.AttributeClass is { } attrType && attrType.MetadataName.Equals(AlwaysInterleaveAttributeName))
+                if (!SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, alwaysInterleaveAttribute))
                 {
-                    var syntaxReference = attr.ApplicationSyntaxReference;
-                    context.ReportDiagnostic(
-                        Diagnostic.Create(Rule, Location.Create(syntaxReference.SyntaxTree, syntaxReference.Span)));
+                    return;
                 }
+
+                var syntaxReference = attribute.ApplicationSyntaxReference;
+
+                context.ReportDiagnostic(
+                    Diagnostic.Create(Rule, Location.Create(syntaxReference.SyntaxTree, syntaxReference.Span)));
             }
         }
     }
 }
-

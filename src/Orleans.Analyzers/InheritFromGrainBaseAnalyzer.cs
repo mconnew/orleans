@@ -32,35 +32,27 @@ namespace Orleans.Analyzers
         {
             var namedSymbol = context.Symbol as INamedTypeSymbol;
 
-            // Continue if the class is not abstract.
+            // continue if the class is not abstract.
             if (namedSymbol == null || namedSymbol.IsAbstract) return;
 
-            // Continue only if there is no issue inside the class.
+            // continue only if there is no issue inside the class.
             var diagnostics = context.Compilation.GetDeclarationDiagnostics();
             if (diagnostics.Any()) return;
 
-            // Continue only if the class implements IGrain
-            var implementsGrainInterface = false;
-            foreach (var iface in namedSymbol.AllInterfaces)
-            {
-                if (iface.MetadataName.Equals(BaseInterfaceName))
-                {
-                    implementsGrainInterface = true;
-                }
-            }
-
-            if (!implementsGrainInterface)
-            {
-                return;
-            }
-
+            // continue only if the class implements IGrain
+            var orleansIGrainType = context.Compilation.GetTypeByMetadataName(BaseInterfaceName);
+            if (orleansIGrainType == null || !namedSymbol.AllInterfaces.Contains(orleansIGrainType)) return;
 
             // Get the base type of the class
+            var orleansGrainBaseType = context.Compilation.GetTypeByMetadataName(BaseClassName);
+            var orleansGrainReferenceBaseType = context.Compilation.GetTypeByMetadataName(BaseGrainReferenceName);
             var baseType = namedSymbol.BaseType;
+
+            // Check equality with the class hierarchy
             bool hasGrainBase = false;
             while (baseType is { })
             {
-                if (baseType.MetadataName.Equals(BaseClassName) || baseType.MetadataName.Equals(BaseGrainReferenceName))
+                if (SymbolEqualityComparer.Default.Equals(baseType, orleansGrainBaseType) || SymbolEqualityComparer.Default.Equals(baseType, orleansGrainReferenceBaseType))
                 {
                     hasGrainBase = true;
                     break;
