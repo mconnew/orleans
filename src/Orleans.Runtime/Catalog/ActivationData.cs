@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -471,6 +470,23 @@ namespace Orleans.Runtime
             await GetDeactivationCompletionSource().Task;
         }
 
+        private void DeactivateStuckActivation()
+        {
+            IsStuckProcessingMessage = true;
+            var msg = $"Activation {this} has been processing request {Blocking} since {currentRequestStartTime} and is likely stuck";
+            DeactivationReason = new(DeactivationReasonCode.StuckProcessingMessage, msg);
+
+            // Mark the grain as deactivating so that messages are forwarded instead of being invoked
+            Deactivate();
+
+            // Try to remove this activation from the catalog and directory
+            // This leaves this activation dangling, stuck processing the current request until it eventually completes
+            // (which likely will never happen at this point, since if the grain was deemed stuck then there is probably some kind of
+            // application bug, perhaps a deadlock)
+            _runtime.Catalog.UnregisterMessageTarget(this);
+            _runtime.GrainLocator.Unregister(Address, UnregistrationCause.Force).Ignore();
+        }
+
         internal void AddTimer(IGrainTimer timer)
         {
             lock (this)
@@ -509,7 +525,7 @@ namespace Orleans.Runtime
             }
         }
 
-        internal Task WaitForAllTimersToFinish()
+        internal Task WaitForAllTimersToFinish(CancellationToken cancellationToken)
         {
             lock (this)
             {
@@ -517,6 +533,7 @@ namespace Orleans.Runtime
                 {
                     return Task.CompletedTask;
                 }
+
                 var tasks = new List<Task>();
                 var timerCopy = Timers.ToList(); // need to copy since OnTimerDisposed will change the timers set.
                 foreach (var timer in timerCopy)
@@ -526,7 +543,7 @@ namespace Orleans.Runtime
                     tasks.Add(timer.GetCurrentlyExecutingTickTask());
                 }
 
-                return Task.WhenAll(tasks);
+                return Task.WhenAll(tasks).WithCancellation(cancellationToken);
             }
         }
 
@@ -798,10 +815,7 @@ namespace Orleans.Runtime
                                 var currentRequestActiveTime = DateTime.UtcNow - currentRequestStartTime;
                                 if (currentRequestActiveTime > maxRequestProcessingTime && !IsStuckProcessingMessage)
                                 {
-                                    IsStuckProcessingMessage = true;
-                                    var msg = $"Activation {this} has been processing request {Blocking} since {currentRequestStartTime} and is likely stuck";
-                                    DeactivationReason = new(DeactivationReasonCode.StuckProcessingMessage, msg);
-                                    Deactivate(new CancellationTokenSource(_runtime.CollectionOptions.Value.DeactivationTimeout).Token);
+                                    DeactivateStuckActivation();
                                 }
                                 else if (currentRequestActiveTime > maxWarningRequestProcessingTime)
                                 {
@@ -1376,21 +1390,11 @@ namespace Orleans.Runtime
                     logger.LogTrace("FinishDeactivating activation {Activation}", this.ToDetailedString());
                 }
 
-                /*
-                lock (this)
-                {
-                    if (State is ActivationState.Invalid)
-                    {
-                        return;
-                    }
-                }
-                */
-
                 StartDeactivating();
                 StopAllTimers();
 
                 // Wait timers and call OnDeactivateAsync()
-                await WaitForAllTimersToFinish();
+                await WaitForAllTimersToFinish(cancellationToken);
                 await CallGrainDeactivate(cancellationToken);
 
                 // Unregister from directory
