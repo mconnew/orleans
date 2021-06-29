@@ -22,7 +22,7 @@ namespace Tester.StreamingTests
 
         // Custom batch container that enable filtering for all provider
         [GenerateSerializer]
-        protected class CustomBatchContainer : IBatchContainer
+        public class CustomBatchContainer : IBatchContainer
         {
             [Id(0)]
             private IBatchContainer batchContainer;
