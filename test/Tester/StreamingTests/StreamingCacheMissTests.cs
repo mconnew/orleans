@@ -21,8 +21,10 @@ namespace Tester.StreamingTests
         private readonly ITestOutputHelper output;
 
         // Custom batch container that enable filtering for all provider
+        [GenerateSerializer]
         protected class CustomBatchContainer : IBatchContainer
         {
+            [Id(0)]
             private IBatchContainer batchContainer;
 
             public CustomBatchContainer(IBatchContainer batchContainer)
