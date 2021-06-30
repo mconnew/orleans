@@ -955,6 +955,12 @@ namespace Orleans.Runtime
                             case Command.Deactivate deactivation:
                                 await FinishDeactivating(deactivation.CancellationToken);
                                 break;
+                            case Command.Delay delay:
+                                await Task.Delay(delay.Duration);
+                                break;
+                            case Command.UnregisterMessageTarget:
+                                _runtime.Catalog.UnregisterMessageTarget(this);
+                                break;
                             default:
                                 throw new NotSupportedException($"Encountered unknown operation of type {op?.GetType().ToString() ?? "null"} {op}");
                         }
@@ -1075,6 +1081,9 @@ namespace Orleans.Runtime
                 if (State == ActivationState.Invalid || State == ActivationState.FailedToActivate)
                 {
                     _runtime.MessagingTrace.OnDispatcherReceiveInvalidActivation(message, State);
+
+                    // Always process responses
+                    _runtime.RuntimeClient.ReceiveResponse(message);
                     return;
                 }
 
@@ -1262,10 +1271,8 @@ namespace Orleans.Runtime
                     // Unregister this as a message target after some period of time.
                     // This is delayed so that consistently failing activation, perhaps due to an application bug or network
                     // issue, does not cause a flood of doomed activations.
-                    _ = Task.Delay(TimeSpan.FromSeconds(5)).ContinueWith(_ =>
-                    {
-                        _runtime.Catalog.UnregisterMessageTarget(this);
-                    });
+                    ScheduleOperation(new Command.Delay(TimeSpan.FromSeconds(5)));
+                    ScheduleOperation(new Command.UnregisterMessageTarget());
 
                     lock (this)
                     {
@@ -1343,7 +1350,6 @@ namespace Orleans.Runtime
 
                     _runtime.Catalog.UnregisterMessageTarget(this);
                     DeactivationReason = new(DeactivationReasonCode.GrainDirectoryFailure, registrationException, "Failed to register activation in grain directory");
-                    SetState(ActivationState.Invalid);
                     logger.LogWarning((int)ErrorCode.Runtime_Error_100064, registrationException, "Failed to register grain {Grain} in grain directory", ToString());
                 }
             }
@@ -1519,6 +1525,8 @@ namespace Orleans.Runtime
 
         private class Command
         {
+            protected Command() { }
+
             public class Deactivate : Command
             {
                 public Deactivate(CancellationToken cancellation) => CancellationToken = cancellation;
@@ -1535,6 +1543,20 @@ namespace Orleans.Runtime
 
                 public Dictionary<string, object> RequestContext { get; }
                 public CancellationToken CancellationToken { get; }
+            }
+
+            public class Delay : Command
+            {
+                public Delay(TimeSpan duration)
+                {
+                    Duration = duration;
+                }
+
+                public TimeSpan Duration { get; }
+            }
+
+            public class UnregisterMessageTarget : Command
+            {
             }
         }
     }
