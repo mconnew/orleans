@@ -1,4 +1,4 @@
-﻿using Orleans.Serialization.Buffers;
+using Orleans.Serialization.Buffers;
 using Orleans.Serialization.Cloning;
 using Orleans.Serialization.Codecs;
 using Orleans.Serialization.GeneratedCodeHelpers;
@@ -307,7 +307,7 @@ namespace Orleans.Serialization.ISerializableSupport
             }
             else if (typeof(Exception).IsAssignableFrom(type))
             {
-                result = (Exception)ActivatorUtilities.GetServiceOrCreateInstance(_serviceProvider, type);
+                result = (Exception)Activator.CreateInstance(type);
             }
             else
             {
