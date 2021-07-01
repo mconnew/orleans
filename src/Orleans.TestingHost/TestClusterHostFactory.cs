@@ -17,6 +17,7 @@ using Orleans.Statistics;
 using Orleans.TestingHost.Utils;
 using Orleans.TestingHost.Logging;
 using Orleans.Configuration.Internal;
+using Microsoft.Extensions.Logging;
 
 namespace Orleans.TestingHost
 {
@@ -231,7 +232,7 @@ namespace Orleans.TestingHost
             if (configureFileLogging)
             {
                 var fileName = TestingUtils.CreateTraceFileName(name, configuration[nameof(TestClusterOptions.ClusterId)]);
-                services.AddLogging(loggingBuilder => loggingBuilder.AddFile(fileName));
+                services.AddLogging(loggingBuilder => loggingBuilder.AddFile(fileName).AddDebug().SetMinimumLevel(LogLevel.Debug));
             }
         }
 
