@@ -6,8 +6,9 @@ using System.Threading.Tasks.Sources;
 
 namespace Orleans.Runtime
 {
-    internal sealed class SingleWaiterSemaphore : IValueTaskSource
+    internal sealed class SingleWaiterAutoResetEvent : IValueTaskSource
     {
+        private Action _signalAction;
         private ManualResetValueTaskSourceCore<bool> _waitSource;
         private int _hasWaiter = 1;
 
@@ -16,6 +17,8 @@ namespace Orleans.Runtime
             get => _waitSource.RunContinuationsAsynchronously;
             set => _waitSource.RunContinuationsAsynchronously = value;
         }
+
+        public Action SignalAction => _signalAction ??= Signal;
 
         ValueTaskSourceStatus IValueTaskSource.GetStatus(short token) => _waitSource.GetStatus(token);
 
@@ -45,5 +48,23 @@ namespace Orleans.Runtime
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ThrowConcurrencyViolation() => throw new InvalidOperationException("Concurrent use is not supported");
+    }
+
+    internal static class SingleWaiterSemaphoreExtensions
+    {
+        public static void SignalOnCompleted(this Task task, SingleWaiterAutoResetEvent semaphore)
+        {
+            task.GetAwaiter().UnsafeOnCompleted(semaphore.SignalAction);
+        }
+
+        public static void SignalOnCompleted(this ValueTask task, SingleWaiterAutoResetEvent semaphore)
+        {
+            task.GetAwaiter().UnsafeOnCompleted(semaphore.SignalAction);
+        }
+
+        public static void SignalOnCompleted<T>(this ValueTask<T> task, SingleWaiterAutoResetEvent semaphore)
+        {
+            task.GetAwaiter().UnsafeOnCompleted(semaphore.SignalAction);
+        }
     }
 }
