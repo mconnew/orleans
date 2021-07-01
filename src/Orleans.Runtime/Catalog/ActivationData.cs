@@ -37,7 +37,7 @@ namespace Orleans.Runtime
         private readonly WorkItemGroup _workItemGroup;
         private Dictionary<Type, object> _components;
         private readonly List<Message> _waitingRequests = new();
-        private readonly SingleWaiterSemaphore _messagesSemaphore = new() { RunContinuationsAsynchronously = true };
+        private readonly SingleWaiterAutoResetEvent _messagesSemaphore = new() { RunContinuationsAsynchronously = true };
         private readonly GrainLifecycle lifecycle;
         private readonly Task _messageLoopTask;
         private bool isInWorkingSet;
