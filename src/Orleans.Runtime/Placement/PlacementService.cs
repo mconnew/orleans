@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Orleans.Configuration;
+using Orleans.Internal;
 using Orleans.Runtime.GrainDirectory;
 using Orleans.Runtime.Versions;
 
@@ -62,7 +63,7 @@ namespace Orleans.Runtime.Placement
         public SiloStatus LocalSiloStatus => _siloStatusOracle.CurrentStatus;
 
         /// <summary>
-        /// Gets or places an activation.
+        /// Gets or places an activation.a
         /// </summary>
         public Task AddressMessage(Message message)
         {
@@ -283,7 +284,7 @@ namespace Orleans.Runtime.Placement
                 {
                     foreach (var message in messages)
                     {
-                        message.Completion.TrySetException(resultTask.Exception);
+                        message.Completion.TrySetException(resultTask.Exception.OriginalException());
                     }
 
                     messages.Clear();
