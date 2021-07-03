@@ -67,6 +67,7 @@ namespace Orleans.Runtime
 
     internal interface IActivationData : IGrainContext
     {
+        IGrainRuntime GrainRuntime { get; }
         void DeactivateOnIdle();
         void DelayDeactivation(TimeSpan timeSpan);
     }

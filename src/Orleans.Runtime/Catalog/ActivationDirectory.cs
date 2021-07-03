@@ -3,21 +3,16 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Extensions.Logging;
 
 namespace Orleans.Runtime
 {
     internal class ActivationDirectory : IEnumerable<KeyValuePair<GrainId, IGrainContext>>
     {
-        private readonly ILogger logger;
-
         private readonly ConcurrentDictionary<GrainId, IGrainContext> activations = new();                // Activation data (app grains) only.
         private readonly ConcurrentDictionary<ActivationId, SystemTarget> systemTargets = new();                // SystemTarget only.
         private readonly ConcurrentDictionary<GrainId, List<IGrainContext>> grainToActivationsMap = new();     // Activation data (app grains) only.
         private readonly ConcurrentDictionary<string, CounterStatistic> grainCounts = new();                    // simple statistics type->count
         private readonly ConcurrentDictionary<string, CounterStatistic> systemTargetCounts = new();             // simple statistics systemTargetTypeName->count
-
-        public ActivationDirectory(ILogger<ActivationDirectory> logger) => this.logger = logger;
 
         public int Count => activations.Count;
 
@@ -26,28 +21,6 @@ namespace Orleans.Runtime
         public IGrainContext FindTarget(GrainId key) => activations.TryGetValue(key, out var v) ? v : null;
 
         public SystemTarget FindSystemTarget(ActivationId key) => systemTargets.TryGetValue(key, out var v) ? v : null;
-
-        internal void IncrementGrainCounter(string grainTypeName)
-        {
-            if (logger.IsEnabled(LogLevel.Trace)) logger.Trace("Increment Grain Counter {0}", grainTypeName);
-            CounterStatistic ctr = FindGrainCounter(grainTypeName);
-            ctr.Increment();
-        }
-
-        internal void DecrementGrainCounter(string grainTypeName)
-        {
-            if (logger.IsEnabled(LogLevel.Trace)) logger.Trace("Decrement Grain Counter {0}", grainTypeName);
-            CounterStatistic ctr = FindGrainCounter(grainTypeName);
-            ctr.DecrementBy(1);
-        }
-
-        private CounterStatistic FindGrainCounter(string grainTypeName)
-        {
-            if (grainCounts.TryGetValue(grainTypeName, out var ctr)) return ctr;
-
-            var counterName = new StatisticName(StatisticNames.GRAIN_COUNTS_PER_GRAIN, grainTypeName);
-            return grainCounts.GetOrAdd(grainTypeName, CounterStatistic.FindOrCreate(counterName, false));
-        }
 
         private CounterStatistic FindSystemTargetCounter(string systemTargetTypeName)
         {
@@ -135,6 +108,19 @@ namespace Orleans.Runtime
             return null;
         }
 
+        //TODO
+        //TODO
+        //TODO
+        //TODO
+        //TODO
+        //TODO
+        //TODO
+        //TODO
+        //TODO
+        //TODO
+        //TODO
+        //TODO
+        //TODO
         public IEnumerable<KeyValuePair<string, long>> GetSimpleGrainStatistics()
         {
             return grainCounts

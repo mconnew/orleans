@@ -7,13 +7,13 @@ namespace Orleans.Runtime
         /// </summary>
         /// <param name="item">The activation to be scheduled.</param>
         /// <returns></returns>
-        void ScheduleCollection(IGrainContext item);
+        void ScheduleCollection(ActivationData item);
 
         /// <summary>
         /// Attempt to reschedule collection.
         /// </summary>
         /// <param name="item">The activation to be rescheduled.</param>
         /// <returns></returns>
-        bool TryRescheduleCollection(IGrainContext item);
+        bool TryRescheduleCollection(ActivationData item);
     }
 }

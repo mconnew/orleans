@@ -211,7 +211,7 @@ namespace Orleans.Runtime
             activations.RemoveTarget(activation);
 
             // this should be removed once we've refactored the deactivation code path. For now safe to keep.
-            this.activationCollector.TryCancelCollection(activation);
+            this.activationCollector.TryCancelCollection((ActivationData)activation);
             activationsDestroyed.Increment();
         }
 

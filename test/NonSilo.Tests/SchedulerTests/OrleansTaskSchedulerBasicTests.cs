@@ -35,8 +35,14 @@ namespace UnitTests.SchedulerTests
 
         public IWorkItemScheduler Scheduler { get; set; }
 
+        public bool IsExemptFromCollection => throw new NotImplementedException();
+
+        public PlacementStrategy PlacementStrategy => throw new NotImplementedException();
+
         IAddressable IGrainContext.GrainInstance => throw new NotImplementedException();
 
+        public void Activate(Dictionary<string, object> requestContext, CancellationToken? cancellationToken = null) => throw new NotImplementedException();
+        public Task DeactivateAsync(CancellationToken? cancellationToken = null) => throw new NotImplementedException();
         public void Dispose() => (Scheduler as IDisposable)?.Dispose();
         public TComponent GetComponent<TComponent>() => throw new NotImplementedException();
         public TTarget GetTarget<TTarget>() => throw new NotImplementedException();

@@ -6,7 +6,6 @@ using Microsoft.Extensions.Options;
 using Orleans.Configuration;
 using Orleans.GrainReferences;
 using Orleans.Metadata;
-using Orleans.Runtime.Placement;
 using Orleans.Runtime.Scheduler;
 
 namespace Orleans.Runtime
@@ -14,35 +13,23 @@ namespace Orleans.Runtime
     internal class ActivationDataActivatorProvider : IGrainContextActivatorProvider
     {
         private readonly IServiceProvider _serviceProvider;
-        private readonly PlacementStrategyResolver _placementStrategyResolver;
-        private readonly GrainManifest _siloManifest;
         private readonly IActivationWorkingSet _activationWorkingSet;
         private readonly ILogger<WorkItemGroup> _workItemGroupLogger;
         private readonly ILogger<ActivationTaskScheduler> _activationTaskSchedulerLogger;
         private readonly SchedulerStatisticsGroup _schedulerStatisticsGroup;
         private readonly IOptions<SchedulingOptions> _schedulingOptions;
         private readonly IOptions<StatisticsOptions> _statisticsOptions;
-        private readonly GrainTypeComponentsResolver _sharedComponentsResolver;
+        private readonly GrainTypeSharedContextResolver _sharedComponentsResolver;
         private readonly GrainClassMap _grainClassMap;
-        private readonly GrainCollectionOptions _collectionOptions;
-        private readonly IOptions<SiloMessagingOptions> _messagingOptions;
-        private readonly TimeSpan _maxWarningRequestProcessingTime;
-        private readonly TimeSpan _maxRequestProcessingTime;
         private readonly ILoggerFactory _loggerFactory;
         private readonly GrainReferenceActivator _grainReferenceActivator;
-        private InternalGrainRuntime _activationMessageScheduler;
-        private IGrainRuntime _grainRuntime;
 
         public ActivationDataActivatorProvider(
             GrainClassMap grainClassMap,
             IServiceProvider serviceProvider,
-            PlacementStrategyResolver placementStrategyResolver,
-            IClusterManifestProvider clusterManifestProvider,
-            IOptions<SiloMessagingOptions> messagingOptions,
-            IOptions<GrainCollectionOptions> collectionOptions,
             ILoggerFactory loggerFactory,
             GrainReferenceActivator grainReferenceActivator,
-            GrainTypeComponentsResolver sharedComponentsResolver,
+            GrainTypeSharedContextResolver sharedComponentsResolver,
             IActivationWorkingSet activationWorkingSet,
             ILogger<WorkItemGroup> workItemGroupLogger,
             ILogger<ActivationTaskScheduler> activationTaskSchedulerLogger,
@@ -59,12 +46,6 @@ namespace Orleans.Runtime
             _sharedComponentsResolver = sharedComponentsResolver;
             _grainClassMap = grainClassMap;
             _serviceProvider = serviceProvider;
-            _placementStrategyResolver = placementStrategyResolver;
-            _siloManifest = clusterManifestProvider.LocalGrainManifest;
-            _collectionOptions = collectionOptions.Value;
-            _messagingOptions = messagingOptions;
-            _maxWarningRequestProcessingTime = messagingOptions.Value.ResponseTimeout.Multiply(5);
-            _maxRequestProcessingTime = messagingOptions.Value.MaxRequestProcessingTime;
             _loggerFactory = loggerFactory;
             _grainReferenceActivator = grainReferenceActivator;
         }
@@ -85,8 +66,6 @@ namespace Orleans.Runtime
                 throw new InvalidOperationException($"Could not find a suitable {nameof(IGrainActivator)} implementation for grain type {grainType}");
             }
 
-            var collectionAgeLimit = GetCollectionAgeLimit(grainType, grainClass);
-
             activator = new ActivationDataActivator(
                 instanceActivator,
                 _serviceProvider,
@@ -99,30 +78,6 @@ namespace Orleans.Runtime
             return true;
         }
 
-        private TimeSpan GetCollectionAgeLimit(GrainType grainType, Type grainClass)
-        {
-            if (_siloManifest.Grains.TryGetValue(grainType, out var properties)
-                && properties.Properties.TryGetValue(WellKnownGrainTypeProperties.IdleDeactivationPeriod, out var idleTimeoutString))
-            {
-                if (string.Equals(idleTimeoutString, WellKnownGrainTypeProperties.IndefiniteIdleDeactivationPeriodValue))
-                {
-                    return Timeout.InfiniteTimeSpan;
-                }
-
-                if (TimeSpan.TryParse(idleTimeoutString, out var result))
-                {
-                    return result;
-                }
-            }
-
-            if (_collectionOptions.ClassSpecificCollectionAge.TryGetValue(grainClass.FullName, out var specified))
-            {
-                return specified;
-            }
-
-            return _collectionOptions.CollectionAge;
-        }
-
         private class ActivationDataActivator : IGrainContextActivator
         {
             private readonly ILogger<WorkItemGroup> _workItemGroupLogger;
@@ -132,14 +87,13 @@ namespace Orleans.Runtime
             private readonly IOptions<StatisticsOptions> _statisticsOptions;
             private readonly IGrainActivator _grainActivator;
             private readonly IServiceProvider _serviceProvider;
-            private readonly GrainReferenceActivator _grainReferenceActivator;
             private readonly GrainTypeSharedContext _sharedComponents;
             private readonly Func<IGrainContext, WorkItemGroup> _createWorkItemGroup;
 
             public ActivationDataActivator(
                 IGrainActivator grainActivator,
                 IServiceProvider serviceProvider,
-                GrainTypeSharedContext  sharedComponents,
+                GrainTypeSharedContext sharedComponents,
                 ILogger<WorkItemGroup> workItemGroupLogger,
                 ILogger<ActivationTaskScheduler> activationTaskSchedulerLogger,
                 SchedulerStatisticsGroup schedulerStatisticsGroup,
@@ -169,7 +123,6 @@ namespace Orleans.Runtime
                     activationAddress,
                     _createWorkItemGroup,
                     _serviceProvider,
-                    _grainReferenceActivator,
                     _sharedComponents);
 
                 RuntimeContext.SetExecutionContext(context, out var existingContext);

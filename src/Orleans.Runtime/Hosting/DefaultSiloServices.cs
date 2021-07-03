@@ -116,7 +116,7 @@ namespace Orleans.Hosting
             services.TryAddSingleton<GrainReferenceKeyStringConverter>();
             services.AddSingleton<GrainVersionManifest>();
             services.TryAddSingleton<GrainBindingsResolver>();
-            services.TryAddSingleton<GrainTypeComponentsResolver>();
+            services.TryAddSingleton<GrainTypeSharedContextResolver>();
             services.TryAddSingleton<ActivationDirectory>();
             services.AddSingleton<ActivationCollector>();
             services.AddFromExisting<IHealthCheckParticipant, ActivationCollector>();

@@ -6,7 +6,7 @@ using Orleans.Runtime.Scheduler;
 
 namespace Orleans.Runtime
 {
-    internal class GrainTimer : IGrainTimer
+    internal sealed class GrainTimer : IGrainTimer
     {
         private Func<object, Task> asyncCallback;
         private AsyncTaskSafeTimer timer;
@@ -165,17 +165,7 @@ namespace Orleans.Runtime
 
         public void Dispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        // Maybe called by finalizer thread with disposing=false. As per guidelines, in such a case do not touch other objects.
-        // Dispose() may be called multiple times
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposing)
-                DisposeTimer();
-            
+            DisposeTimer();
             asyncCallback = null;
         }
 
