@@ -355,10 +355,8 @@ namespace Orleans.Runtime
 
         void IActivationWorkingSetObserver.OnActive(IActivationWorkingSetMember member)
         {
-            if (member is ActivationData activation)
-            {
-                TryRescheduleCollection(activation);
-            }
+            // We do not need to do anything when a grain becomes active, since we can lazily handle it when scanning its bucket instead.
+            // This reduces the amount of work needed to be performed.
         }
 
         void IActivationWorkingSetObserver.OnEvicted(IActivationWorkingSetMember member)

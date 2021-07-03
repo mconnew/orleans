@@ -15,7 +15,7 @@ namespace UnitTests.Grains
     [StatelessWorker(MaxLocalWorkers)]
     public class StatelessWorkerGrain : Grain, IStatelessWorkerGrain
     {
-        public const int MaxLocalWorkers = 1;
+        public const int MaxLocalWorkers = 10;
 
         private Guid activationGuid;
         private readonly List<Tuple<DateTime, DateTime>> calls = new List<Tuple<DateTime, DateTime>>();

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Orleans.Serialization.Invocation;
@@ -57,14 +58,32 @@ namespace Orleans.Runtime
         void ReceiveMessage(object message);
 
         IWorkItemScheduler Scheduler { get; }
+        bool IsExemptFromCollection { get; }
+        PlacementStrategy PlacementStrategy { get; }
+
+        void Activate(Dictionary<string, object> requestContext, CancellationToken? cancellationToken = default);
+        Task DeactivateAsync(CancellationToken? cancellationToken = default);
     }
 
     internal interface IActivationData : IGrainContext
     {
-        IGrainRuntime Runtime { get; }
-
         void DeactivateOnIdle();
         void DelayDeactivation(TimeSpan timeSpan);
+    }
+
+    internal interface ICollectibleGrainContext
+    {
+        TimeSpan CollectionAgeLimit { get; }
+        DateTime CollectionTicket { get; set; }
+        bool ShouldBeKeptAlive { get; }
+        bool IsInactive { get; }
+        void ResetCollectionTicket();
+        bool IsStale(DateTime now);
+        void StartDeactivating();
+    }
+
+    internal interface IGrainTimerRegistry
+    {
         void OnTimerCreated(IGrainTimer timer);
         void OnTimerDisposed(IGrainTimer timer);
     }

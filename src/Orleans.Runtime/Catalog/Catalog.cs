@@ -77,8 +77,10 @@ namespace Orleans.Runtime
                 {
                     foreach (var activation in activations)
                     {
-                        ActivationData data = activation.Value;
-                        counter += data.GetRequestCount();
+                        if (activation.Value is ActivationData data)
+                        {
+                            counter += data.GetRequestCount();
+                        }
                     }
                 }
                 return counter;
@@ -94,7 +96,7 @@ namespace Orleans.Runtime
             {
                 foreach (var activation in activations)
                 {
-                    ActivationData data = activation.Value;
+                    var data = activation.Value;
                     if (data == null || data.GrainInstance == null) continue;
 
                     // TODO: generic type expansion
@@ -124,7 +126,7 @@ namespace Orleans.Runtime
             {
                 foreach (var activation in activations)
                 {
-                    ActivationData data = activation.Value;
+                    var data = activation.Value;
                     if (data == null || data.GrainInstance == null) continue;
 
                     var grainType = RuntimeTypeNameFormatter.Format(data.GrainInstance.GetType());
@@ -171,9 +173,16 @@ namespace Orleans.Runtime
                 report.GrainClassTypeName = exc.ToString();
             }
 
-            List<ActivationData> acts = activations.FindTargets(grain);
+            List<IGrainContext> acts = activations.FindTargets(grain);
             report.LocalActivations = acts != null ? 
-                acts.Select(activationData => activationData.ToDetailedString()).ToList() : 
+                acts.Select(activationData =>
+                {
+                    return activationData switch
+                    {
+                        ActivationData data => data.ToDetailedString(),
+                        _ => activationData.ToString()
+                    };
+                }).ToList() : 
                 new List<string>();
             return report;
         }
@@ -182,7 +191,7 @@ namespace Orleans.Runtime
         /// Register a new object to which messages can be delivered with the local lookup table and scheduler.
         /// </summary>
         /// <param name="activation"></param>
-        public void RegisterMessageTarget(ActivationData activation)
+        public void RegisterMessageTarget(IGrainContext activation)
         {
             activations.RecordNewTarget(activation);
             activationsCreated.Increment();
@@ -192,11 +201,11 @@ namespace Orleans.Runtime
         /// Unregister message target and stop delivering messages to it
         /// </summary>
         /// <param name="activation"></param>
-        public void UnregisterMessageTarget(ActivationData activation)
+        public void UnregisterMessageTarget(IGrainContext activation)
         {
             if (logger.IsEnabled(LogLevel.Trace))
             {
-                logger.LogTrace("Unregistering activation {Activation}", activation.ToDetailedString());
+                logger.LogTrace("Unregistering activation {Activation}", activation.ToString());
             }
 
             activations.RemoveTarget(activation);
@@ -204,13 +213,6 @@ namespace Orleans.Runtime
             // this should be removed once we've refactored the deactivation code path. For now safe to keep.
             this.activationCollector.TryCancelCollection(activation);
             activationsDestroyed.Increment();
-
-            if (activation.GrainInstance is object grainInstance)
-            {
-                var grainTypeName = RuntimeTypeNameFormatter.Format(grainInstance.GetType());
-                activations.DecrementGrainCounter(grainTypeName);
-                activation.SetGrainInstance(null);
-            }
         }
 
         /// <summary>
@@ -263,11 +265,11 @@ namespace Orleans.Runtime
         /// <param name="address">Grain's activation address</param>
         /// <param name="requestContextData">Request context data.</param>
         /// <returns></returns>
-        public ActivationData GetOrCreateActivation(
+        public IGrainContext GetOrCreateActivation(
             ActivationAddress address,
             Dictionary<string, object> requestContextData)
         {
-            if (TryGetActivationData(address.Activation, out var result))
+            if (TryGetActivationData(address.Grain, out var result))
             {
                 return result;
             }
@@ -275,7 +277,7 @@ namespace Orleans.Runtime
             // Lock over all activations to try to prevent multiple instances of the same activation being created concurrently.
             lock (activations)
             {
-                if (TryGetActivationData(address.Activation, out result))
+                if (TryGetActivationData(address.Grain, out result))
                 {
                     return result;
                 }
@@ -284,35 +286,32 @@ namespace Orleans.Runtime
                 {
                     result = (ActivationData)this.grainActivator.CreateInstance(address);
 
-                    if (result.PlacedUsing is StatelessWorkerPlacement st)
+                    if (result.PlacementStrategy is StatelessWorkerPlacement st)
                     {
                         // Check if there is already enough StatelessWorker created
-                        if (LocalLookup(address.Grain, out var local) && local.Count >= st.MaxLocal)
+                        if (LocalLookup(address.Grain, out var local))
                         {
-                            // Redirect directly to an already created StatelessWorker
-                            // It's a bit hacky since we will return an activation with a different
-                            // ActivationId than the one requested, but StatelessWorker are local only,
-                            // so no need to clear the cache. This will avoid unecessary and costly redirects.
-                            var redirect = StatelessWorkerDirector.PickRandom(local);
-                            if (logger.IsEnabled(LogLevel.Debug))
+                            if (local.Count >= st.MaxLocal)
                             {
-                                logger.LogDebug(
-                                    (int)ErrorCode.Catalog_DuplicateActivation,
-                                    "Trying to create too many {GrainType} activations on this silo. Redirecting to activation {RedirectActivation}",
-                                    result.Name,
-                                    redirect.ActivationId);
-                            }
+                                // Redirect directly to an already created StatelessWorker
+                                // It's a bit hacky since we will return an activation with a different
+                                // ActivationId than the one requested, but StatelessWorker are local only,
+                                // so no need to clear the cache. This will avoid unecessary and costly redirects.
+                                var redirect = StatelessWorkerDirector.PickRandom(local);
+                                if (logger.IsEnabled(LogLevel.Debug))
+                                {
+                                    logger.LogDebug(
+                                        (int)ErrorCode.Catalog_DuplicateActivation,
+                                        "Trying to create too many {GrainType} activations on this silo. Redirecting to activation {RedirectActivation}",
+                                        result.GrainId.ToString(),
+                                        redirect.ActivationId);
+                                }
 
-                            return redirect;
+                                return redirect;
+                            }
                         }
 
                         // The newly created StatelessWorker will be registered in RegisterMessageTarget()
-                    }
-
-                    if (result.GrainInstance is object grainInstance)
-                    {
-                        var grainTypeName = RuntimeTypeNameFormatter.Format(grainInstance.GetType());
-                        activations.IncrementGrainCounter(grainTypeName);
                     }
 
                     RegisterMessageTarget(result);
@@ -342,7 +341,7 @@ namespace Orleans.Runtime
             else
             {
                 // Initialize the new activation asynchronously.
-                result.Activate(requestContextData);
+                result.Activate(requestContextData, CancellationToken.None);
                 return result;
             }
         }
@@ -366,12 +365,9 @@ namespace Orleans.Runtime
         /// <summary>
         /// Try to get runtime data for an activation
         /// </summary>
-        /// <param name="activationId"></param>
-        /// <param name="data"></param>
-        /// <returns></returns>
-        public bool TryGetActivationData(ActivationId activationId, out ActivationData data)
+        public bool TryGetActivationData(GrainId grainId, out IGrainContext data)
         {
-            data = activations.FindTarget(activationId);
+            data = activations.FindTarget(grainId);
             return data != null;
         }
 
@@ -382,7 +378,7 @@ namespace Orleans.Runtime
         /// </summary>
         /// <param name="list"></param>
         /// <returns></returns>
-        internal async Task DeactivateActivations(List<ActivationData> list)
+        internal async Task DeactivateActivations(List<IGrainContext> list)
         {
             if (list == null || list.Count == 0) return;
 
@@ -399,7 +395,7 @@ namespace Orleans.Runtime
             return DeactivateActivations(activationsToShutdown);
         }
 
-        public bool LocalLookup(GrainId grain, out List<ActivationData> addresses)
+        public bool LocalLookup(GrainId grain, out List<IGrainContext> addresses)
         {
             addresses = activations.FindTargets(grain);
             return addresses != null;
@@ -415,14 +411,16 @@ namespace Orleans.Runtime
 
         public Task DeleteActivations(List<ActivationAddress> addresses)
         {
-            List<ActivationData> TryGetActivationDatas(List<ActivationAddress> addresses)
+            List<IGrainContext> TryGetActivationDatas(List<ActivationAddress> addresses)
             {
-                var datas = new List<ActivationData>(addresses.Count);
+                var datas = new List<IGrainContext>(addresses.Count);
                 foreach (var activationAddress in addresses)
                 {
-                    ActivationData data;
-                    if (TryGetActivationData(activationAddress.Activation, out data))
+                    IGrainContext data;
+                    if (TryGetActivationData(activationAddress.Grain, out data))
+                    {
                         datas.Add(data);
+                    }
                 }
                 return datas;
             }
@@ -452,7 +450,7 @@ namespace Orleans.Runtime
                 this.RuntimeClient.BreakOutstandingMessagesToDeadSilo(updatedSilo);
             }
 
-            var activationsToShutdown = new List<ActivationData>();
+            var activationsToShutdown = new List<IGrainContext>();
             try
             {
                 // scan all activations in activation directory and deactivate the ones that the removed silo is their primary partition owner.
@@ -463,26 +461,26 @@ namespace Orleans.Runtime
                         try
                         {
                             var activationData = activation.Value;
-                            if (!activationData.IsUsingGrainDirectory || grainDirectoryResolver.HasNonDefaultDirectory(activationData.GrainId.Type)) continue;
+                            if (!activationData.PlacementStrategy.IsUsingGrainDirectory || grainDirectoryResolver.HasNonDefaultDirectory(activationData.GrainId.Type)) continue;
                             if (!updatedSilo.Equals(directory.GetPrimaryForGrain(activationData.GrainId))) continue;
 
-                            lock (activationData)
-                            {
-                                // adapted from InsideGrainClient.DeactivateOnIdle().
-                                activationData.ResetKeepAliveRequest();
-                                activationsToShutdown.Add(activationData);
-                            }
+                            activationsToShutdown.Add(activationData);
                         }
                         catch (Exception exc)
                         {
-                            logger.Error(ErrorCode.Catalog_SiloStatusChangeNotification_Exception,
-                                String.Format("Catalog has thrown an exception while executing OnSiloStatusChange of silo {0}.", updatedSilo.ToStringWithHashCode()), exc);
+                            logger.LogError(
+                                (int)ErrorCode.Catalog_SiloStatusChangeNotification_Exception,
+                                exc,
+                               "Catalog has thrown an exception while handling removal of silo {Silo}", updatedSilo.ToStringWithHashCode());
                         }
                     }
                 }
-                logger.Info(ErrorCode.Catalog_SiloStatusChangeNotification,
-                    String.Format("Catalog is deactivating {0} activations due to a failure of silo {1}, since it is a primary directory partition to these grain ids.",
-                        activationsToShutdown.Count, updatedSilo.ToStringWithHashCode()));
+
+                logger.LogInformation(
+                    (int)ErrorCode.Catalog_SiloStatusChangeNotification,
+                    "Catalog is deactivating {Count} activations due to a failure of silo {Silo}, since it is a primary directory partition to these grain ids.",
+                    activationsToShutdown.Count,
+                    updatedSilo.ToStringWithHashCode());
             }
             finally
             {

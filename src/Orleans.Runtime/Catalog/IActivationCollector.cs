@@ -1,4 +1,4 @@
-﻿namespace Orleans.Runtime
+namespace Orleans.Runtime
 {
     internal interface IActivationCollector
     {
@@ -7,13 +7,13 @@
         /// </summary>
         /// <param name="item">The activation to be scheduled.</param>
         /// <returns></returns>
-        void ScheduleCollection(ActivationData item);
+        void ScheduleCollection(IGrainContext item);
 
         /// <summary>
         /// Attempt to reschedule collection.
         /// </summary>
         /// <param name="item">The activation to be rescheduled.</param>
         /// <returns></returns>
-        bool TryRescheduleCollection(ActivationData item);
+        bool TryRescheduleCollection(IGrainContext item);
     }
 }

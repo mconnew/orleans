@@ -7,8 +7,6 @@ namespace Orleans.Runtime
     {
         public PlacementStrategy PlacementStrategy { get; private set; }
 
-        public bool IsNewPlacement => PlacementStrategy != null;
-
         public ActivationId Activation { get; private set; }
         public SiloAddress Silo { get; private set; }
 
@@ -47,10 +45,6 @@ namespace Orleans.Runtime
 
         public ActivationAddress ToAddress(GrainId grainId) => ActivationAddress.GetAddress(Silo, grainId, Activation);
 
-        public override string ToString()
-        {
-            var placementStr = IsNewPlacement ? PlacementStrategy.ToString() : "*not-new*";
-            return $"PlacementResult({this.Silo}, {this.Activation}, {placementStr})";
-        }
+        public override string ToString() => $"PlacementResult({this.Silo}, {this.Activation}, {PlacementStrategy.ToString()})";
     }
 }

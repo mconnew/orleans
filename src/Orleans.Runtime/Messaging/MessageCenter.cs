@@ -388,7 +388,6 @@ namespace Orleans.Runtime.Messaging
             else if (forwardingAddress != null)
             {
                 message.TargetAddress = forwardingAddress;
-                message.IsNewPlacement = false;
                 SendMessage(message);
             }
             else

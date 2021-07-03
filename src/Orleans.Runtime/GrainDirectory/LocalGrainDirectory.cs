@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using Orleans.GrainDirectory;
 using Orleans.Configuration;
 using System.Collections.Immutable;
+using System.Runtime.Serialization;
 
 namespace Orleans.Runtime.GrainDirectory
 {
@@ -500,7 +501,7 @@ namespace Orleans.Runtime.GrainDirectory
             if (owner == null)
             {
                 // We don't know about any other silos, and we're stopping, so throw
-                throw new InvalidOperationException("Grain directory is stopping");
+                throw new OrleansGrainDirectoryException("Grain directory is stopping");
             }
 
             if (owner.Equals(MyAddress))
@@ -983,8 +984,30 @@ namespace Orleans.Runtime.GrainDirectory
 
             public static DirectoryMembership Default { get; } = new DirectoryMembership(ImmutableList<SiloAddress>.Empty, ImmutableHashSet<SiloAddress>.Empty);
 
+
             public ImmutableList<SiloAddress> MembershipRingList { get; }
             public ImmutableHashSet<SiloAddress> MembershipCache { get; }
+        }
+    }
+
+    [Serializable]
+    [GenerateSerializer]
+    public class OrleansGrainDirectoryException : OrleansException
+    {
+        public OrleansGrainDirectoryException()
+        {
+        }
+
+        public OrleansGrainDirectoryException(string message) : base(message)
+        {
+        }
+
+        public OrleansGrainDirectoryException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+
+        protected OrleansGrainDirectoryException(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
         }
     }
 }

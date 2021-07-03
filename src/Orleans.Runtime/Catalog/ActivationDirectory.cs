@@ -7,13 +7,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Orleans.Runtime
 {
-    internal class ActivationDirectory : IEnumerable<KeyValuePair<ActivationId, ActivationData>>
+    internal class ActivationDirectory : IEnumerable<KeyValuePair<GrainId, IGrainContext>>
     {
         private readonly ILogger logger;
 
-        private readonly ConcurrentDictionary<ActivationId, ActivationData> activations = new();                // Activation data (app grains) only.
+        private readonly ConcurrentDictionary<GrainId, IGrainContext> activations = new();                // Activation data (app grains) only.
         private readonly ConcurrentDictionary<ActivationId, SystemTarget> systemTargets = new();                // SystemTarget only.
-        private readonly ConcurrentDictionary<GrainId, List<ActivationData>> grainToActivationsMap = new();     // Activation data (app grains) only.
+        private readonly ConcurrentDictionary<GrainId, List<IGrainContext>> grainToActivationsMap = new();     // Activation data (app grains) only.
         private readonly ConcurrentDictionary<string, CounterStatistic> grainCounts = new();                    // simple statistics type->count
         private readonly ConcurrentDictionary<string, CounterStatistic> systemTargetCounts = new();             // simple statistics systemTargetTypeName->count
 
@@ -23,7 +23,7 @@ namespace Orleans.Runtime
 
         public IEnumerable<SystemTarget> AllSystemTargets() => systemTargets.Select(i => i.Value);
 
-        public ActivationData FindTarget(ActivationId key) => activations.TryGetValue(key, out var v) ? v : null;
+        public IGrainContext FindTarget(GrainId key) => activations.TryGetValue(key, out var v) ? v : null;
 
         public SystemTarget FindSystemTarget(ActivationId key) => systemTargets.TryGetValue(key, out var v) ? v : null;
 
@@ -57,9 +57,9 @@ namespace Orleans.Runtime
             return systemTargetCounts.GetOrAdd(systemTargetTypeName, CounterStatistic.FindOrCreate(counterName, false));
         }
 
-        public void RecordNewTarget(ActivationData target)
+        public void RecordNewTarget(IGrainContext target)
         {
-            if (!activations.TryAdd(target.ActivationId, target))
+            if (!activations.TryAdd(target.GrainId, target))
             {
                 return;
             }
@@ -89,9 +89,9 @@ namespace Orleans.Runtime
             }
         }
 
-        public void RemoveTarget(ActivationData target)
+        public void RemoveTarget(IGrainContext target)
         {
-            if (!activations.TryRemove(target.ActivationId, out _))
+            if (!activations.TryRemove(target.GrainId, out _))
                 return;
 
             if (grainToActivationsMap.TryGetValue(target.GrainId, out var list))
@@ -101,7 +101,7 @@ namespace Orleans.Runtime
                     list.Remove(target);
                     if (list.Count == 0)
                     {
-                        List<ActivationData> list2; // == list
+                        List<IGrainContext> list2; // == list
                         if (grainToActivationsMap.TryRemove(target.GrainId, out list2))
                         {
                             lock (list2)
@@ -122,9 +122,9 @@ namespace Orleans.Runtime
         /// <summary>
         /// Returns null if no activations exist for this grain ID, rather than an empty list
         /// </summary>
-        public List<ActivationData> FindTargets(GrainId key)
+        public List<IGrainContext> FindTargets(GrainId key)
         {
-            List<ActivationData> tmp;
+            List<IGrainContext> tmp;
             if (grainToActivationsMap.TryGetValue(key, out tmp))
             {
                 lock (tmp)
@@ -142,7 +142,7 @@ namespace Orleans.Runtime
                 .Where(p => p.Value > 0);
         }
 
-        public IEnumerator<KeyValuePair<ActivationId, ActivationData>> GetEnumerator() => activations.GetEnumerator();
+        public IEnumerator<KeyValuePair<GrainId, IGrainContext>> GetEnumerator() => activations.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }

@@ -24,7 +24,7 @@ namespace Orleans
         private readonly ILogger logger;
         private int? highStage = null;
 
-        public LifecycleSubject(ILogger<LifecycleSubject> logger)
+        public LifecycleSubject(ILogger logger)
         {
             this.logger = logger;
             this.subscribers = new List<OrderedObserver>();

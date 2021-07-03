@@ -16,7 +16,7 @@ namespace Orleans.Runtime
         private int totalNumTicks;
         private readonly ILogger logger;
         private Task currentlyExecutingTickTask;
-        private readonly IActivationData activationData;
+        private readonly IGrainContext grainContext;
 
         public string Name { get; }
         
@@ -33,7 +33,7 @@ namespace Orleans.Runtime
                      + "which will be the case if you create it inside Task.Run.");
             }
 
-            this.activationData = activationData;
+            this.grainContext = activationData;
             this.logger = logger;
             this.Name = name;
             this.asyncCallback = asyncCallback;
@@ -187,7 +187,7 @@ namespace Orleans.Runtime
             Utils.SafeExecute(tmp.Dispose);
             timer = null;
             asyncCallback = null;
-            activationData?.OnTimerDisposed(this);
+            grainContext?.GetComponent<IGrainTimerRegistry>().OnTimerDisposed(this);
         }
     }
 }

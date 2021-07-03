@@ -19,77 +19,123 @@ using Orleans.Serialization.TypeSystem;
 namespace Orleans.Runtime
 {
     /// <summary>
+    /// Functionality which is shared between all instances of a grain type.
+    /// </summary>
+    public class GrainTypeSharedContext
+    {
+        private readonly CounterStatistic _grainCountsPerGrain;
+
+        public GrainTypeSharedContext(Type grainClassType)
+        {
+            var grainTypeName = RuntimeTypeNameFormatter.Format(grainClassType);
+            var counterName = new StatisticName(StatisticNames.GRAIN_COUNTS_PER_GRAIN, grainTypeName);
+            _grainCountsPerGrain = CounterStatistic.FindOrCreate(counterName, false);
+        }
+
+        private Dictionary<Type, object> _components = new Dictionary<Type, object>();
+
+        /// <summary>
+        /// Gets a component.
+        /// </summary>
+        /// <typeparam name="TComponent">The type specified in the corresponding <see cref="SetComponent{TComponent}"/> call.</typeparam>
+        public TComponent GetComponent<TComponent>()
+        {
+            if (_components is null) return default;
+            _components.TryGetValue(typeof(TComponent), out var resultObj);
+            return (TComponent)resultObj;
+        }
+
+        /// <summary>
+        /// Registers a component.
+        /// </summary>
+        /// <typeparam name="TComponent">The type which can be used as a key to <see cref="GetComponent{TComponent}"/>.</typeparam>
+        public void SetComponent<TComponent>(TComponent instance)
+        {
+            if (instance == null)
+            {
+                _components?.Remove(typeof(TComponent));
+                return;
+            }
+
+            if (_components is null) _components = new Dictionary<Type, object>();
+            _components[typeof(TComponent)] = instance;
+        }
+
+        public readonly TimeSpan CollectionAgeLimit;
+        public readonly ILogger logger;
+        internal readonly InternalGrainRuntime _runtime;
+        public readonly SiloMessagingOptions messagingOptions;
+        public readonly GrainReferenceActivator referenceActivator;
+
+        // This is the maximum amount of time we expect a request to continue processing
+        public readonly TimeSpan maxRequestProcessingTime;
+        public readonly TimeSpan maxWarningRequestProcessingTime;
+        public PlacementStrategy PlacementStrategy { get; }
+        public IGrainRuntime Runtime { get; }
+        public void OnCreateActivation()
+        {
+            _grainCountsPerGrain.Increment();
+        }
+        public void OnDestroyActivation()
+        {
+            _grainCountsPerGrain.DecrementBy(1);
+        }
+    }
+
+    /// <summary>
     /// Maintains additional per-activation state that is required for Orleans internal operations.
     /// MUST lock this object for any concurrent access
     /// Consider: compartmentalize by usage, e.g., using separate interfaces for data for catalog, etc.
     /// </summary>
-    internal class ActivationData : IActivationData, IGrainExtensionBinder, IAsyncDisposable, IActivationWorkingSetMember
+    internal class ActivationData : IActivationData, IGrainExtensionBinder, IAsyncDisposable, IActivationWorkingSetMember, IGrainTimerRegistry
     {
-        // This is the maximum amount of time we expect a request to continue processing
-        private readonly TimeSpan maxRequestProcessingTime;
-        private readonly TimeSpan maxWarningRequestProcessingTime;
-        private readonly SiloMessagingOptions messagingOptions;
-        private readonly ILogger logger;
+        private readonly GrainTypeSharedContext _shared;
         private readonly IServiceScope serviceScope;
-        public readonly TimeSpan CollectionAgeLimit;
-        private readonly GrainTypeComponents _shared;
-        private readonly InternalGrainRuntime _runtime;
         private readonly WorkItemGroup _workItemGroup;
-        private Dictionary<Type, object> _components;
         private readonly List<Message> _waitingRequests = new();
         private readonly SingleWaiterAutoResetEvent _messagesSemaphore = new() { RunContinuationsAsynchronously = true };
         private readonly GrainLifecycle lifecycle;
-        private readonly Task _messageLoopTask;
+        private Dictionary<Type, object> _components;
         private bool isInWorkingSet;
         private DateTime currentRequestStartTime;
         private DateTime becameIdle;
         private bool collectionCancelledFlag;
         private DateTime keepAliveUntil;
+        private GrainReference _selfReference;
+
+        // Values which are needed less frequently and do not warrant living directly on activation for object size reasons.
+        // The values in this field are typically used to represent termination state of an activation or features which are not
+        // used by all grains, such as grain timers.
         private ActivationDataExtra _extras;
+
+        // The task representing this activation's message loop.
+        // This field is assigned and never read and exists only for debugging purposes (eg, in memory dumps).
+        private readonly Task _messageLoopTask;
 
         public ActivationData(
             ActivationAddress addr,
             Func<IGrainContext, WorkItemGroup> createWorkItemGroup,
-            PlacementStrategy placedUsing,
-            TimeSpan ageLimit,
-            IOptions<SiloMessagingOptions> messagingOptions,
-            TimeSpan maxWarningRequestProcessingTime,
-            TimeSpan maxRequestProcessingTime,
-            ILoggerFactory loggerFactory,
             IServiceProvider applicationServices,
-            IGrainRuntime grainRuntime,
-            GrainReferenceActivator referenceActivator,
-            GrainTypeComponents sharedComponents,
-            InternalGrainRuntime runtime)
+            GrainTypeSharedContext shared)
         {
+            _shared = shared;
             Address = addr ?? throw new ArgumentNullException(nameof(addr));
-            PlacedUsing = placedUsing ?? throw new ArgumentNullException(nameof(placedUsing));
-
-            _shared = sharedComponents;
-            _runtime = runtime;
-            logger = loggerFactory.CreateLogger<ActivationData>();
-            lifecycle = new GrainLifecycle(loggerFactory.CreateLogger<LifecycleSubject>());
-            this.maxRequestProcessingTime = maxRequestProcessingTime;
-            this.maxWarningRequestProcessingTime = maxWarningRequestProcessingTime;
-            this.messagingOptions = messagingOptions.Value;
+            lifecycle = new GrainLifecycle(_shared.logger);
             State = ActivationState.Create;
-            CollectionAgeLimit = ageLimit;
-            GrainReference = referenceActivator.CreateReference(addr.Grain, default);
             serviceScope = applicationServices.CreateScope();
-            Runtime = grainRuntime;
             isInWorkingSet = true;
             keepAliveUntil = DateTime.MinValue;
             _workItemGroup = createWorkItemGroup(this);
             _messageLoopTask = this.RunOrQueueTask(RunMessagePump);
         }
 
-        public IGrainRuntime Runtime { get; }
+        public IGrainRuntime Runtime => _shared.Runtime;
         public IAddressable GrainInstance { get; private set; }
         public ActivationAddress Address { get; private set; }
-        public GrainReference GrainReference { get; }
+        public GrainReference GrainReference => _selfReference ??= _shared.referenceActivator.CreateReference(GrainId, default);
         public ActivationState State { get; private set; }
         public List<object> _pendingOperations { get; private set; }
-        public PlacementStrategy PlacedUsing { get; private set; }
+        public PlacementStrategy PlacementStrategy => _shared.PlacementStrategy;
         public Message Blocking { get; private set; }
         public Dictionary<Message, DateTime> RunningRequests { get; } = new Dictionary<Message, DateTime>();
         public DateTime CollectionTicket { get; private set; }
@@ -99,17 +145,17 @@ namespace Orleans.Runtime
         public IGrainLifecycle ObservableLifecycle => lifecycle;
         internal ILifecycleObserver Lifecycle => lifecycle;
         public GrainId GrainId => Address.Grain;
-        internal bool IsExemptFromCollection => CollectionAgeLimit == Timeout.InfiniteTimeSpan;
+        public bool IsExemptFromCollection => _shared.CollectionAgeLimit == Timeout.InfiniteTimeSpan;
         public bool ShouldBeKeptAlive => keepAliveUntil != default && keepAliveUntil >= DateTime.UtcNow;
 
         // Currently, the only supported multi-activation grain is one using the StatelessWorkerPlacement strategy.
-        internal bool IsStatelessWorker => PlacedUsing is StatelessWorkerPlacement;
+        internal bool IsStatelessWorker => PlacementStrategy is StatelessWorkerPlacement;
 
         /// <summary>
         /// Returns a value indicating whether or not this placement strategy requires activations to be registered in
         /// the grain directory.
         /// </summary>
-        internal bool IsUsingGrainDirectory => PlacedUsing.IsUsingGrainDirectory;
+        internal bool IsUsingGrainDirectory => PlacementStrategy.IsUsingGrainDirectory;
 
         public int WaitingCount => _waitingRequests.Count;
         public bool IsInactive => !IsCurrentlyExecuting && _waitingRequests.Count == 0;
@@ -202,6 +248,8 @@ namespace Orleans.Runtime
                      ActivationId,
                      GetActivationInfoString());
 
+        public TimeSpan CollectionAgeLimit => _shared.CollectionAgeLimit;
+
         public TTarget GetTarget<TTarget>() => (TTarget)GrainInstance;
 
         TComponent ITargetHolder.GetComponent<TComponent>()
@@ -270,6 +318,21 @@ namespace Orleans.Runtime
 
         internal void SetGrainInstance(Grain grainInstance)
         {
+            switch (GrainInstance, grainInstance)
+            {
+                case (null, not null):
+                    _shared.OnCreateActivation();
+                    break;
+                case (not null, null):
+                    _shared.OnDestroyActivation();
+                    break;
+            }
+
+            if (grainInstance is ILifecycleParticipant<IGrainLifecycle> participant)
+            {
+                participant.Participate(ObservableLifecycle);
+            }
+
             GrainInstance = grainInstance;
         }
 
@@ -325,13 +388,13 @@ namespace Orleans.Runtime
         public LimitExceededException CheckOverloaded()
         {
             string limitName = LimitNames.LIMIT_MAX_ENQUEUED_REQUESTS;
-            int maxRequestsHardLimit = messagingOptions.MaxEnqueuedRequestsHardLimit;
-            int maxRequestsSoftLimit = messagingOptions.MaxEnqueuedRequestsSoftLimit;
+            int maxRequestsHardLimit = _shared.messagingOptions.MaxEnqueuedRequestsHardLimit;
+            int maxRequestsSoftLimit = _shared.messagingOptions.MaxEnqueuedRequestsSoftLimit;
             if (IsStatelessWorker)
             {
                 limitName = LimitNames.LIMIT_MAX_ENQUEUED_REQUESTS_STATELESS_WORKER;
-                maxRequestsHardLimit = messagingOptions.MaxEnqueuedRequestsHardLimit_StatelessWorker;
-                maxRequestsSoftLimit = messagingOptions.MaxEnqueuedRequestsSoftLimit_StatelessWorker;
+                maxRequestsHardLimit = _shared.messagingOptions.MaxEnqueuedRequestsHardLimit_StatelessWorker;
+                maxRequestsSoftLimit = _shared.messagingOptions.MaxEnqueuedRequestsSoftLimit_StatelessWorker;
             }
 
             if (maxRequestsHardLimit <= 0 && maxRequestsSoftLimit <= 0) return null; // No limits are set
@@ -340,7 +403,7 @@ namespace Orleans.Runtime
 
             if (maxRequestsHardLimit > 0 && count > maxRequestsHardLimit) // Hard limit
             {
-                logger.LogWarning(
+                _shared.logger.LogWarning(
                     (int)ErrorCode.Catalog_Reject_ActivationTooManyRequests,
                     "Overload - {Count} enqueued requests for activation {Activation}, exceeding hard limit rejection threshold of {HardLimit}",
                     count,
@@ -352,7 +415,7 @@ namespace Orleans.Runtime
 
             if (maxRequestsSoftLimit > 0 && count > maxRequestsSoftLimit) // Soft limit
             {
-                logger.LogWarning(
+                _shared.logger.LogWarning(
                     (int)ErrorCode.Catalog_Warn_ActivationTooManyRequests,
                     "Hot - {Count} enqueued requests for activation {Activation}, exceeding soft limit warning threshold of {SoftLimit}",
                     count,
@@ -400,7 +463,7 @@ namespace Orleans.Runtime
         /// </summary>
         public bool IsStale(DateTime now)
         {
-            return GetIdleness(now) >= CollectionAgeLimit;
+            return GetIdleness(now) >= _shared.CollectionAgeLimit;
         }
 
         public void DelayDeactivation(TimeSpan timespan)
@@ -439,7 +502,7 @@ namespace Orleans.Runtime
 
         public void DeactivateOnIdle()
         {
-            var token = new CancellationTokenSource(_runtime.CollectionOptions.Value.DeactivationTimeout).Token;
+            var token = new CancellationTokenSource(_shared._runtime.CollectionOptions.Value.DeactivationTimeout).Token;
             lock (this)
             {
                 if (State is ActivationState.Activating or ActivationState.Create)
@@ -456,15 +519,20 @@ namespace Orleans.Runtime
             Deactivate(token);
         }
 
-        public void Deactivate() => Deactivate(new CancellationTokenSource(_runtime.CollectionOptions.Value.DeactivationTimeout).Token);
+        public void Deactivate() => Deactivate();
 
-        public void Deactivate(CancellationToken token)
+        public void Deactivate(CancellationToken? token)
         {
+            if (!token.HasValue)
+            {
+                token = new CancellationTokenSource(_shared._runtime.CollectionOptions.Value.DeactivationTimeout).Token;
+            }
+            
             StartDeactivating();
-            ScheduleOperation(new Command.Deactivate(token));
+            ScheduleOperation(new Command.Deactivate(token.Value));
         }
 
-        public async Task DeactivateAsync(CancellationToken token)
+        public async Task DeactivateAsync(CancellationToken? token)
         {
             Deactivate(token);
             await GetDeactivationCompletionSource().Task;
@@ -483,8 +551,8 @@ namespace Orleans.Runtime
             // This leaves this activation dangling, stuck processing the current request until it eventually completes
             // (which likely will never happen at this point, since if the grain was deemed stuck then there is probably some kind of
             // application bug, perhaps a deadlock)
-            _runtime.Catalog.UnregisterMessageTarget(this);
-            _runtime.GrainLocator.Unregister(Address, UnregistrationCause.Force).Ignore();
+            UnregisterFromCatalog();
+            _shared._runtime.GrainLocator.Unregister(Address, UnregistrationCause.Force).Ignore();
         }
 
         internal void AddTimer(IGrainTimer timer)
@@ -539,7 +607,7 @@ namespace Orleans.Runtime
                 foreach (var timer in timerCopy)
                 {
                     // first call dispose, then wait to finish.
-                    Utils.SafeExecute(timer.Dispose, logger, "timer.Dispose has thrown");
+                    Utils.SafeExecute(timer.Dispose, _shared.logger, "timer.Dispose has thrown");
                     tasks.Add(timer.GetCurrentlyExecutingTickTask());
                 }
 
@@ -654,14 +722,14 @@ namespace Orleans.Runtime
                 return
                     $"[Activation: {Address.Silo.ToLongString()}/{GrainId.ToString()}{ActivationId} {GetActivationInfoString()} "
                     + $"State={State} NonReentrancyQueueSize={WaitingCount} NumRunning={RunningRequests.Count} "
-                    + $"IdlenessTimeSpan={GetIdleness(DateTime.UtcNow)} CollectionAgeLimit={CollectionAgeLimit}"
+                    + $"IdlenessTimeSpan={GetIdleness(DateTime.UtcNow)} CollectionAgeLimit={_shared.CollectionAgeLimit}"
                     + $"{((includeExtraDetails && Blocking != null) ? " CurrentlyExecuting=" + Blocking : "")}]";
             }
         }
 
         private string GetActivationInfoString()
         {
-            var placement = PlacedUsing != null ? PlacedUsing.GetType().Name : "";
+            var placement = PlacementStrategy != null ? PlacementStrategy.GetType().Name : "";
             return GrainInstance is null ? $"#Placement={placement}" : $"#GrainType={RuntimeTypeNameFormatter.Format(GrainInstance?.GetType())} Placement={placement}";
         }
 
@@ -780,7 +848,7 @@ namespace Orleans.Runtime
                 }
                 catch (Exception exception)
                 {
-                    _runtime.MessagingTrace.LogError(exception, "Error in grain message loop");
+                    _shared._runtime.MessagingTrace.LogError(exception, "Error in grain message loop");
                 }
             }
 
@@ -813,14 +881,14 @@ namespace Orleans.Runtime
                             if (Blocking != null)
                             {
                                 var currentRequestActiveTime = DateTime.UtcNow - currentRequestStartTime;
-                                if (currentRequestActiveTime > maxRequestProcessingTime && !IsStuckProcessingMessage)
+                                if (currentRequestActiveTime > _shared.maxRequestProcessingTime && !IsStuckProcessingMessage)
                                 {
                                     DeactivateStuckActivation();
                                 }
-                                else if (currentRequestActiveTime > maxWarningRequestProcessingTime)
+                                else if (currentRequestActiveTime > _shared.maxWarningRequestProcessingTime)
                                 {
                                     // Consider: Handle long request detection for reentrant activations -- this logic only works for non-reentrant activations
-                                    logger.LogWarning(
+                                    _shared.logger.LogWarning(
                                         (int)ErrorCode.Dispatcher_ExtendedMessageProcessing,
                                         "Current request has been active for {CurrentRequestActiveTime} for grain {Grain}. Currently executing {BlockingRequest}. Trying to enqueue {Message}.",
                                         currentRequestActiveTime,
@@ -836,8 +904,8 @@ namespace Orleans.Runtime
                         // If the current message is incompatible, deactivate this activation and eventually forward the message to a new incarnation.
                         if (message.InterfaceVersion > 0)
                         {
-                            var compatibilityDirector = _runtime.CompatibilityDirectorManager.GetDirector(message.InterfaceType);
-                            var currentVersion = _runtime.GrainVersionManifest.GetLocalVersion(message.InterfaceType);
+                            var compatibilityDirector = _shared._runtime.CompatibilityDirectorManager.GetDirector(message.InterfaceType);
+                            var currentVersion = _shared._runtime.GrainVersionManifest.GetLocalVersion(message.InterfaceType);
                             if (!compatibilityDirector.IsCompatible(message.InterfaceVersion, currentVersion))
                             {
                                 DeactivationReason = new(
@@ -886,7 +954,7 @@ namespace Orleans.Runtime
                 if (State is ActivationState.Deactivating)
                 {
                     var deactivatingTime = DateTime.UtcNow - DeactivationStartTime.Value;
-                    if (deactivatingTime > maxRequestProcessingTime && !IsStuckDeactivating)
+                    if (deactivatingTime > _shared.maxRequestProcessingTime && !IsStuckDeactivating)
                     {
                         IsStuckDeactivating = true;
                         if (DeactivationReason.Text is { Length: > 0})
@@ -958,8 +1026,8 @@ namespace Orleans.Runtime
                             case Command.Delay delay:
                                 await Task.Delay(delay.Duration);
                                 break;
-                            case Command.UnregisterMessageTarget:
-                                _runtime.Catalog.UnregisterMessageTarget(this);
+                            case Command.UnregisterFromCatalog:
+                                UnregisterFromCatalog();
                                 break;
                             default:
                                 throw new NotSupportedException($"Encountered unknown operation of type {op?.GetType().ToString() ?? "null"} {op}");
@@ -967,7 +1035,7 @@ namespace Orleans.Runtime
                     }
                     catch (Exception exception)
                     {
-                        logger.LogError(exception, "Error in RunOnInactive for grain activation {Activation}", this);
+                        _shared.logger.LogError(exception, "Error in RunOnInactive for grain activation {Activation}", this);
                     }
                 }
             }
@@ -980,11 +1048,11 @@ namespace Orleans.Runtime
         private void InvokeIncomingRequest(Message message)
         {
             MessagingProcessingStatisticsGroup.OnDispatcherMessageProcessedOk(message);
-            _runtime.MessagingTrace.OnScheduleMessage(message);
+            _shared._runtime.MessagingTrace.OnScheduleMessage(message);
 
             try
             {
-                var task = _runtime.RuntimeClient.Invoke(this, message);
+                var task = _shared._runtime.RuntimeClient.Invoke(this, message);
 
                 // Note: This runs for all outcomes - both Success or Fault
                 if (task.IsCompleted)
@@ -1036,7 +1104,7 @@ namespace Orleans.Runtime
                 if (!isInWorkingSet)
                 {
                     isInWorkingSet = true;
-                    _runtime.ActivationWorkingSet.OnActive(this);
+                    _shared._runtime.ActivationWorkingSet.OnActive(this);
                 }
 
                 // The below logic only works for non-reentrant activations
@@ -1054,13 +1122,13 @@ namespace Orleans.Runtime
         public void ReceiveMessage(object message) => ReceiveMessage((Message)message);
         public void ReceiveMessage(Message message)
         {
-            _runtime.MessagingTrace.OnDispatcherReceiveMessage(message);
+            _shared._runtime.MessagingTrace.OnDispatcherReceiveMessage(message);
 
             // Don't process messages that have already timed out
             if (message.IsExpired)
             {
                 MessagingProcessingStatisticsGroup.OnDispatcherMessageProcessedError(message);
-                _runtime.MessagingTrace.OnDropExpiredMessage(message, MessagingStatisticsGroup.Phase.Dispatch);
+                _shared._runtime.MessagingTrace.OnDropExpiredMessage(message, MessagingStatisticsGroup.Phase.Dispatch);
                 return;
             }
 
@@ -1080,15 +1148,15 @@ namespace Orleans.Runtime
             {
                 if (State == ActivationState.Invalid || State == ActivationState.FailedToActivate)
                 {
-                    _runtime.MessagingTrace.OnDispatcherReceiveInvalidActivation(message, State);
+                    _shared._runtime.MessagingTrace.OnDispatcherReceiveInvalidActivation(message, State);
 
                     // Always process responses
-                    _runtime.RuntimeClient.ReceiveResponse(message);
+                    _shared._runtime.RuntimeClient.ReceiveResponse(message);
                     return;
                 }
 
                 MessagingProcessingStatisticsGroup.OnDispatcherMessageProcessedOk(message);
-                _runtime.RuntimeClient.ReceiveResponse(message);
+                _shared._runtime.RuntimeClient.ReceiveResponse(message);
             }
         }
 
@@ -1098,7 +1166,7 @@ namespace Orleans.Runtime
             if (overloadException != null)
             {
                 MessagingProcessingStatisticsGroup.OnDispatcherMessageProcessedError(message);
-                _runtime.MessageCenter.RejectMessage(message, Message.RejectionTypes.Overloaded, overloadException, "Target activation is overloaded " + this);
+                _shared._runtime.MessageCenter.RejectMessage(message, Message.RejectionTypes.Overloaded, overloadException, "Target activation is overloaded " + this);
                 return;
             }
 
@@ -1129,12 +1197,12 @@ namespace Orleans.Runtime
                 List<Message> msgs = DequeueAllWaitingRequests();
                 if (msgs == null || msgs.Count <= 0) return;
 
-                if (logger.IsEnabled(LogLevel.Debug))
-                    logger.Debug(
+                if (_shared.logger.IsEnabled(LogLevel.Debug))
+                    _shared.logger.Debug(
                         ErrorCode.Catalog_RerouteAllQueuedMessages,
                         string.Format("RejectAllQueuedMessages: {0} msgs from Invalid activation {1}.", msgs.Count, this));
-                _runtime.LocalGrainDirectory.InvalidateCacheEntry(Address);
-                _runtime.MessageCenter.ProcessRequestsToInvalidActivation(
+                _shared._runtime.LocalGrainDirectory.InvalidateCacheEntry(Address);
+                _shared._runtime.MessageCenter.ProcessRequestsToInvalidActivation(
                     msgs,
                     Address,
                     forwardingAddress: null,
@@ -1154,19 +1222,22 @@ namespace Orleans.Runtime
                     return;
                 }
 
-                if (logger.IsEnabled(LogLevel.Debug)) logger.LogDebug((int)ErrorCode.Catalog_RerouteAllQueuedMessages, "Rerouting {NumMessages} messages from invalid grain activation {Grain}", msgs.Count, this);
-                _runtime.LocalGrainDirectory.InvalidateCacheEntry(Address);
-                _runtime.MessageCenter.ProcessRequestsToInvalidActivation(msgs, Address, ForwardingAddress, DeactivationReason.Text, DeactivationException);
+                if (_shared.logger.IsEnabled(LogLevel.Debug)) _shared.logger.LogDebug((int)ErrorCode.Catalog_RerouteAllQueuedMessages, "Rerouting {NumMessages} messages from invalid grain activation {Grain}", msgs.Count, this);
+                _shared._runtime.LocalGrainDirectory.InvalidateCacheEntry(Address);
+                _shared._runtime.MessageCenter.ProcessRequestsToInvalidActivation(msgs, Address, ForwardingAddress, DeactivationReason.Text, DeactivationException);
             }
         }
 
         #region Activation
 
-        public void Activate(Dictionary<string, object> requestContext) => Activate(requestContext, CancellationToken.None/*new CancellationTokenSource(_runtime.CollectionOptions.Value.ActivationTimeout).Token*/);
-
-        public void Activate(Dictionary<string, object> requestContext, CancellationToken cancellationToken)
+        public void Activate(Dictionary<string, object> requestContext, CancellationToken? cancellationToken)
         {
-            ScheduleOperation(new Command.Activate(requestContext, cancellationToken));
+            if (!cancellationToken.HasValue)
+            {
+                cancellationToken = new CancellationTokenSource(_shared._runtime.CollectionOptions.Value.DeactivationTimeout).Token;
+            }
+
+            ScheduleOperation(new Command.Activate(requestContext, cancellationToken.Value));
         }
 
         private async Task ActivateAsync(Dictionary<string, object> requestContextData, CancellationToken cancellationToken)
@@ -1194,15 +1265,15 @@ namespace Orleans.Runtime
                     return;
                 }
 
-                _runtime.ActivationWorkingSet.OnActivated(this);
-                if (logger.IsEnabled(LogLevel.Debug))
+                _shared._runtime.ActivationWorkingSet.OnActivated(this);
+                if (_shared.logger.IsEnabled(LogLevel.Debug))
                 {
-                    logger.Debug("InitActivation is done: {0}", Address);
+                    _shared.logger.Debug("InitActivation is done: {0}", Address);
                 }
             }
             catch (Exception exception)
             {
-                logger.LogError(exception, "Activation of grain {Grain} failed", this);
+                _shared.logger.LogError(exception, "Activation of grain {Grain} failed", this);
             }
             finally
             {
@@ -1211,9 +1282,9 @@ namespace Orleans.Runtime
 
             async Task<bool> CallActivateAsync(Dictionary<string, object> requestContextData, CancellationToken cancellationToken)
             {
-                if (logger.IsEnabled(LogLevel.Debug))
+                if (_shared.logger.IsEnabled(LogLevel.Debug))
                 {
-                    logger.LogDebug((int)ErrorCode.Catalog_BeforeCallingActivate, "Activating grain {Grain}", this);
+                    _shared.logger.LogDebug((int)ErrorCode.Catalog_BeforeCallingActivate, "Activating grain {Grain}", this);
                 }
 
                 // Start grain lifecycle within try-catch wrapper to safely capture any exceptions thrown from called function
@@ -1230,9 +1301,9 @@ namespace Orleans.Runtime
                         }
                     }
 
-                    if (logger.IsEnabled(LogLevel.Debug))
+                    if (_shared.logger.IsEnabled(LogLevel.Debug))
                     {
-                        logger.LogDebug((int)ErrorCode.Catalog_AfterCallingActivate, "Finished activating grain {Grain}", this);
+                        _shared.logger.LogDebug((int)ErrorCode.Catalog_AfterCallingActivate, "Finished activating grain {Grain}", this);
                     }
 
                     return true;
@@ -1243,7 +1314,7 @@ namespace Orleans.Runtime
 
                     // Capture the exeption so that it can be propagated to rejection messages
                     var sourceException = (exception as OrleansLifecycleCanceledException)?.InnerException ?? exception;
-                    logger.LogError((int)ErrorCode.Catalog_ErrorCallingActivate, sourceException, "Error activating grain {Grain}", this);
+                    _shared.logger.LogError((int)ErrorCode.Catalog_ErrorCallingActivate, sourceException, "Error activating grain {Grain}", this);
 
                     // Unregister the activation from the directory so other silo don't keep sending message to it
                     lock (this)
@@ -1256,11 +1327,11 @@ namespace Orleans.Runtime
                     {
                         try
                         {
-                            await _runtime.GrainLocator.Unregister(Address, UnregistrationCause.Force);
+                            await _shared._runtime.GrainLocator.Unregister(Address, UnregistrationCause.Force);
                         }
                         catch (Exception ex)
                         {
-                            logger.LogWarning(
+                            _shared.logger.LogWarning(
                                 (int)ErrorCode.Catalog_UnregisterAsync,
                                 ex,
                                 "Failed to unregister grain activation {Grain} after activation failed",
@@ -1272,7 +1343,7 @@ namespace Orleans.Runtime
                     // This is delayed so that consistently failing activation, perhaps due to an application bug or network
                     // issue, does not cause a flood of doomed activations.
                     ScheduleOperation(new Command.Delay(TimeSpan.FromSeconds(5)));
-                    ScheduleOperation(new Command.UnregisterMessageTarget());
+                    ScheduleOperation(new Command.UnregisterFromCatalog());
 
                     lock (this)
                     {
@@ -1304,7 +1375,7 @@ namespace Orleans.Runtime
                 Exception registrationException;
                 try
                 {
-                    var result = await _runtime.GrainLocator.Register(Address);
+                    var result = await _shared._runtime.GrainLocator.Register(Address);
                     if (Address.Equals(result))
                     {
                         success = true;
@@ -1319,17 +1390,17 @@ namespace Orleans.Runtime
                         CounterStatistic
                             .FindOrCreate(StatisticNames.CATALOG_ACTIVATION_CONCURRENT_REGISTRATION_ATTEMPTS)
                             .Increment();
-                        if (logger.IsEnabled(LogLevel.Debug))
+                        if (_shared.logger.IsEnabled(LogLevel.Debug))
                         {
                             // If this was a duplicate, it's not an error, just a race.
                             // Forward on all of the pending messages, and then forget about this activation.
-                            var primary = _runtime.LocalGrainDirectory.GetPrimaryForGrain(ForwardingAddress.Grain);
+                            var primary = _shared._runtime.LocalGrainDirectory.GetPrimaryForGrain(ForwardingAddress.Grain);
                             var logMsg =
                                 $"Tried to create a duplicate activation {Address}, but we'll use {ForwardingAddress} instead. " +
                                 $"GrainInstance Type is {GrainInstance?.GetType()}. " +
                                 $"{(primary != null ? "Primary Directory partition for this grain is " + primary + ". " : string.Empty)}" +
                                 $"Full activation address is {Address.ToFullString()}. We have {WaitingCount} messages to forward.";
-                            logger.Debug(ErrorCode.Catalog_DuplicateActivation, logMsg);
+                            _shared.logger.Debug(ErrorCode.Catalog_DuplicateActivation, logMsg);
                         }
                     }
 
@@ -1348,9 +1419,9 @@ namespace Orleans.Runtime
                         SetState(ActivationState.Invalid);
                     }
 
-                    _runtime.Catalog.UnregisterMessageTarget(this);
+                    UnregisterFromCatalog();
                     DeactivationReason = new(DeactivationReasonCode.GrainDirectoryFailure, registrationException, "Failed to register activation in grain directory");
-                    logger.LogWarning((int)ErrorCode.Runtime_Error_100064, registrationException, "Failed to register grain {Grain} in grain directory", ToString());
+                    _shared.logger.LogWarning((int)ErrorCode.Runtime_Error_100064, registrationException, "Failed to register grain {Grain} in grain directory", ToString());
                 }
             }
 
@@ -1379,7 +1450,7 @@ namespace Orleans.Runtime
                     StopAllTimers();
                 }
 
-                _runtime.ActivationWorkingSet.OnDeactivating(this);
+                _shared._runtime.ActivationWorkingSet.OnDeactivating(this);
             }
         }
 
@@ -1391,9 +1462,9 @@ namespace Orleans.Runtime
         {
             try
             {
-                if (logger.IsEnabled(LogLevel.Trace))
+                if (_shared.logger.IsEnabled(LogLevel.Trace))
                 {
-                    logger.LogTrace("FinishDeactivating activation {Activation}", this.ToDetailedString());
+                    _shared.logger.LogTrace("FinishDeactivating activation {Activation}", this.ToDetailedString());
                 }
 
                 StartDeactivating();
@@ -1404,15 +1475,15 @@ namespace Orleans.Runtime
                 await CallGrainDeactivate(cancellationToken);
 
                 // Unregister from directory
-                await _runtime.GrainLocator.Unregister(Address, UnregistrationCause.Force);
-                if (logger.IsEnabled(LogLevel.Trace))
+                await _shared._runtime.GrainLocator.Unregister(Address, UnregistrationCause.Force);
+                if (_shared.logger.IsEnabled(LogLevel.Trace))
                 {
-                    logger.LogTrace("Completed async portion of FinishDeactivating for activation {Activation}", this.ToDetailedString());
+                    _shared.logger.LogTrace("Completed async portion of FinishDeactivating for activation {Activation}", this.ToDetailedString());
                 }
             }
             catch (Exception ex)
             {
-                logger.LogWarning((int)ErrorCode.Catalog_DeactivateActivation_Exception, ex, "Exception when trying to deactivate {Activation}", this);
+                _shared.logger.LogWarning((int)ErrorCode.Catalog_DeactivateActivation_Exception, ex, "Exception when trying to deactivate {Activation}", this);
             }
 
             lock (this)
@@ -1433,25 +1504,25 @@ namespace Orleans.Runtime
                 CounterStatistic.FindOrCreate(StatisticNames.CATALOG_ACTIVATION_SHUTDOWN_VIA_COLLECTION).Increment();
             }
 
-            _runtime.ActivationWorkingSet.OnDeactivated(this);
+            _shared._runtime.ActivationWorkingSet.OnDeactivated(this);
 
             try
             {
-                _runtime.Catalog.UnregisterMessageTarget(this);
+                UnregisterFromCatalog();
                 await DisposeAsync();
             }
             catch (Exception exception)
             {
-                logger.LogWarning(exception, "Exception disposing activation {Activation}", (ActivationData)this);
+                _shared.logger.LogWarning(exception, "Exception disposing activation {Activation}", (ActivationData)this);
             }
 
             // Signal deactivation
             GetDeactivationCompletionSource().TrySetResult(true);
             _messagesSemaphore.Signal();
 
-            if (logger.IsEnabled(LogLevel.Trace))
+            if (_shared.logger.IsEnabled(LogLevel.Trace))
             {
-                logger.LogTrace("Completed final portion of FinishDeactivating for activation {Activation}", this.ToDetailedString());
+                _shared.logger.LogTrace("Completed final portion of FinishDeactivating for activation {Activation}", this.ToDetailedString());
             }
 
             async Task CallGrainDeactivate(CancellationToken ct)
@@ -1459,7 +1530,7 @@ namespace Orleans.Runtime
                 try
                 {
                     // Note: This call is being made from within Scheduler.Queue wrapper, so we are already executing on worker thread
-                    if (logger.IsEnabled(LogLevel.Debug)) logger.Debug(ErrorCode.Catalog_BeforeCallingDeactivate, "About to call {1} grain's OnDeactivateAsync() method {0}", this, GrainInstance?.GetType().FullName);
+                    if (_shared.logger.IsEnabled(LogLevel.Debug)) _shared.logger.Debug(ErrorCode.Catalog_BeforeCallingDeactivate, "About to call {1} grain's OnDeactivateAsync() method {0}", this, GrainInstance?.GetType().FullName);
 
                     // Call OnDeactivateAsync inline, but within try-catch wrapper to safely capture any exceptions thrown from called function
                     try
@@ -1471,17 +1542,17 @@ namespace Orleans.Runtime
                             await Lifecycle.OnStop(ct).WithCancellation(ct);
                         }
 
-                        if (logger.IsEnabled(LogLevel.Debug)) logger.Debug(ErrorCode.Catalog_AfterCallingDeactivate, "Returned from calling {1} grain's OnDeactivateAsync() method {0}", this, GrainInstance?.GetType().FullName);
+                        if (_shared.logger.IsEnabled(LogLevel.Debug)) _shared.logger.Debug(ErrorCode.Catalog_AfterCallingDeactivate, "Returned from calling {1} grain's OnDeactivateAsync() method {0}", this, GrainInstance?.GetType().FullName);
                     }
                     catch (Exception exc)
                     {
-                        logger.Error(ErrorCode.Catalog_ErrorCallingDeactivate,
+                        _shared.logger.Error(ErrorCode.Catalog_ErrorCallingDeactivate,
                             string.Format("Error calling grain's OnDeactivateAsync() method - Grain type = {1} Activation = {0}", this, GrainInstance?.GetType().FullName), exc);
                     }
                 }
                 catch (Exception exc)
                 {
-                    logger.Error(ErrorCode.Catalog_FinishGrainDeactivateAndCleanupStreams_Exception, string.Format("CallGrainDeactivateAndCleanupStreams Activation = {0} failed.", this), exc);
+                    _shared.logger.Error(ErrorCode.Catalog_FinishGrainDeactivateAndCleanupStreams_Exception, string.Format("CallGrainDeactivateAndCleanupStreams Activation = {0} failed.", this), exc);
                 }
             }
         }
@@ -1495,6 +1566,15 @@ namespace Orleans.Runtime
             }
         }
 
+        private void UnregisterFromCatalog()
+        {
+            _shared._runtime.Catalog.UnregisterMessageTarget(this);
+            if (GrainInstance is object)
+            {
+                SetGrainInstance(null);
+            }
+        }
+
         #endregion
 
         /// <summary>
@@ -1502,6 +1582,8 @@ namespace Orleans.Runtime
         /// </summary>
         private class ActivationDataExtra
         {
+            public HashSet<IGrainTimer> Timers { get; set; }
+
             /// <summary>
             /// If State == Invalid, this may contain a forwarding address for incoming messages
             /// </summary>
@@ -1511,8 +1593,6 @@ namespace Orleans.Runtime
             /// A <see cref="TaskCompletionSource{TResult}"/> which completes when a grain has deactivated.
             /// </summary>
             public TaskCompletionSource<bool> DeactivationTask { get; set; }
-
-            public HashSet<IGrainTimer> Timers { get; set; }
 
             public DateTime? DeactivationStartTime { get; set; }
 
@@ -1555,7 +1635,7 @@ namespace Orleans.Runtime
                 public TimeSpan Duration { get; }
             }
 
-            public class UnregisterMessageTarget : Command
+            public class UnregisterFromCatalog : Command
             {
             }
         }
@@ -1589,7 +1669,6 @@ namespace Orleans.Runtime
     internal enum DeactivationReasonCode : byte
     {
         None,
-        IdleActivationCollector,
         FailedToActivate,
         GrainDirectoryFailure,
         ActivationInitiated, // DeactivateOnIdle

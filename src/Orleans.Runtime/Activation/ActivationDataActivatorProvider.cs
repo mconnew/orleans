@@ -15,7 +15,6 @@ namespace Orleans.Runtime
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly PlacementStrategyResolver _placementStrategyResolver;
-        private readonly IActivationCollector _activationCollector;
         private readonly GrainManifest _siloManifest;
         private readonly IActivationWorkingSet _activationWorkingSet;
         private readonly ILogger<WorkItemGroup> _workItemGroupLogger;
@@ -38,7 +37,6 @@ namespace Orleans.Runtime
             GrainClassMap grainClassMap,
             IServiceProvider serviceProvider,
             PlacementStrategyResolver placementStrategyResolver,
-            IActivationCollector activationCollector,
             IClusterManifestProvider clusterManifestProvider,
             IOptions<SiloMessagingOptions> messagingOptions,
             IOptions<GrainCollectionOptions> collectionOptions,
@@ -62,7 +60,6 @@ namespace Orleans.Runtime
             _grainClassMap = grainClassMap;
             _serviceProvider = serviceProvider;
             _placementStrategyResolver = placementStrategyResolver;
-            _activationCollector = activationCollector;
             _siloManifest = clusterManifestProvider.LocalGrainManifest;
             _collectionOptions = collectionOptions.Value;
             _messagingOptions = messagingOptions;
@@ -92,18 +89,8 @@ namespace Orleans.Runtime
 
             activator = new ActivationDataActivator(
                 instanceActivator,
-                _placementStrategyResolver.GetPlacementStrategy(grainType),
-                collectionAgeLimit,
-                _messagingOptions,
-                _maxWarningRequestProcessingTime,
-                _maxRequestProcessingTime,
-                _loggerFactory,
                 _serviceProvider,
-                _grainRuntime ??= _serviceProvider.GetRequiredService<IGrainRuntime>(),
-                _grainReferenceActivator,
                 sharedComponents,
-                _activationMessageScheduler ??= _serviceProvider.GetRequiredService<InternalGrainRuntime>(),
-                _activationWorkingSet,
                 _workItemGroupLogger,
                 _activationTaskSchedulerLogger,
                 _schedulerStatisticsGroup,
@@ -138,64 +125,35 @@ namespace Orleans.Runtime
 
         private class ActivationDataActivator : IGrainContextActivator
         {
-            private readonly IActivationWorkingSet _activationWorkingSet;
             private readonly ILogger<WorkItemGroup> _workItemGroupLogger;
             private readonly ILogger<ActivationTaskScheduler> _activationTaskSchedulerLogger;
             private readonly SchedulerStatisticsGroup _schedulerStatisticsGroup;
             private readonly IOptions<SchedulingOptions> _schedulingOptions;
             private readonly IOptions<StatisticsOptions> _statisticsOptions;
             private readonly IGrainActivator _grainActivator;
-            private readonly PlacementStrategy _placementStrategy;
-            private readonly TimeSpan _collectionAgeLimit;
-            private readonly IOptions<SiloMessagingOptions> _messagingOptions;
-            private readonly TimeSpan _maxWarningRequestProcessingTime;
-            private readonly TimeSpan _maxRequestProcessingTime;
-            private readonly ILoggerFactory _loggerFactory;
             private readonly IServiceProvider _serviceProvider;
-            private readonly IGrainRuntime _grainRuntime;
             private readonly GrainReferenceActivator _grainReferenceActivator;
-            private readonly GrainTypeComponents _sharedComponents;
-            private readonly InternalGrainRuntime _runtime;
+            private readonly GrainTypeSharedContext _sharedComponents;
             private readonly Func<IGrainContext, WorkItemGroup> _createWorkItemGroup;
 
             public ActivationDataActivator(
                 IGrainActivator grainActivator,
-                PlacementStrategy placementStrategy,
-                TimeSpan collectionAgeLimit,
-                IOptions<SiloMessagingOptions> messagingOptions,
-                TimeSpan maxWarningRequestProcessingTime,
-                TimeSpan maxRequestProcessingTime,
-                ILoggerFactory loggerFactory,
                 IServiceProvider serviceProvider,
-                IGrainRuntime grainRuntime,
-                GrainReferenceActivator grainReferenceActivator,
-                GrainTypeComponents sharedComponents,
-                InternalGrainRuntime activationMessageScheduler,
-                IActivationWorkingSet activationWorkingSet,
+                GrainTypeSharedContext  sharedComponents,
                 ILogger<WorkItemGroup> workItemGroupLogger,
                 ILogger<ActivationTaskScheduler> activationTaskSchedulerLogger,
                 SchedulerStatisticsGroup schedulerStatisticsGroup,
                 IOptions<SchedulingOptions> schedulingOptions,
                 IOptions<StatisticsOptions> statisticsOptions)
             {
-                _activationWorkingSet = activationWorkingSet;
                 _workItemGroupLogger = workItemGroupLogger;
                 _activationTaskSchedulerLogger = activationTaskSchedulerLogger;
                 _schedulerStatisticsGroup = schedulerStatisticsGroup;
                 _schedulingOptions = schedulingOptions;
                 _statisticsOptions = statisticsOptions;
                 _grainActivator = grainActivator;
-                _placementStrategy = placementStrategy;
-                _collectionAgeLimit = collectionAgeLimit;
-                _messagingOptions = messagingOptions;
-                _maxWarningRequestProcessingTime = maxWarningRequestProcessingTime;
-                _maxRequestProcessingTime = maxRequestProcessingTime;
-                _loggerFactory = loggerFactory;
                 _serviceProvider = serviceProvider;
-                _grainRuntime = grainRuntime;
-                _grainReferenceActivator = grainReferenceActivator;
                 _sharedComponents = sharedComponents;
-                _runtime = activationMessageScheduler;
                 _createWorkItemGroup = context => new WorkItemGroup(
                     context,
                     _workItemGroupLogger,
@@ -210,17 +168,9 @@ namespace Orleans.Runtime
                 var context = new ActivationData(
                     activationAddress,
                     _createWorkItemGroup,
-                    _placementStrategy,
-                    _collectionAgeLimit,
-                    _messagingOptions,
-                    _maxWarningRequestProcessingTime,
-                    _maxRequestProcessingTime,
-                    _loggerFactory,
                     _serviceProvider,
-                    _grainRuntime,
                     _grainReferenceActivator,
-                    _sharedComponents,
-                    _runtime);
+                    _sharedComponents);
 
                 RuntimeContext.SetExecutionContext(context, out var existingContext);
 
@@ -229,8 +179,6 @@ namespace Orleans.Runtime
                     // Instantiate the grain itself
                     var grainInstance = (Grain)_grainActivator.CreateInstance(context);
                     context.SetGrainInstance(grainInstance);
-
-                    (grainInstance as ILifecycleParticipant<IGrainLifecycle>)?.Participate(context.ObservableLifecycle);
                 }
                 finally
                 {

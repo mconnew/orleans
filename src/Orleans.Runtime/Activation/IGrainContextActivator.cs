@@ -199,41 +199,6 @@ namespace Orleans.Runtime
         void Configure(GrainType grainType, GrainProperties properties, GrainTypeComponents shared);
     }
 
-    /// <summary>
-    /// Components common to all grains of a given <see cref="GrainType"/>.
-    /// </summary>
-    public class GrainTypeComponents
-    {
-        private Dictionary<Type, object> _components = new Dictionary<Type, object>();
-
-        /// <summary>
-        /// Gets a component.
-        /// </summary>
-        /// <typeparam name="TComponent">The type specified in the corresponding <see cref="SetComponent{TComponent}"/> call.</typeparam>
-        public TComponent GetComponent<TComponent>()
-        {
-            if (_components is null) return default;
-            _components.TryGetValue(typeof(TComponent), out var resultObj);
-            return (TComponent)resultObj;
-        }
-
-        /// <summary>
-        /// Registers a component.
-        /// </summary>
-        /// <typeparam name="TComponent">The type which can be used as a key to <see cref="GetComponent{TComponent}"/>.</typeparam>
-        public void SetComponent<TComponent>(TComponent instance)
-        {
-            if (instance == null)
-            {
-                _components?.Remove(typeof(TComponent));
-                return;
-            }
-
-            if (_components is null) _components = new Dictionary<Type, object>();
-            _components[typeof(TComponent)] = instance;
-        }
-    }
-
     internal class ReentrantSharedComponentsConfigurator : IConfigureGrainTypeComponents
     {
         public void Configure(GrainType grainType, GrainProperties properties, GrainTypeComponents shared)

@@ -58,7 +58,7 @@ namespace Orleans
             }
 
             this.Data = data;
-            this.Runtime = data.Runtime;
+            this.Runtime = data.GetComponent<IGrainRuntime>();
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
