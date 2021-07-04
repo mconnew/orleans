@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Orleans.Runtime
 {
@@ -131,5 +132,54 @@ namespace Orleans.Runtime
         public IEnumerator<KeyValuePair<GrainId, IGrainContext>> GetEnumerator() => activations.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        private readonly struct DirectoryEntry
+        {
+            private readonly object _value;
+
+            public bool IsMultipleActivationGrain { get; }
+
+            public IGrainContext SingleActivationValue
+            {
+                get
+                {
+                    if (IsMultipleActivationGrain)
+                    {
+                        ThrowNotSingleActivation();
+                    }
+
+                    return Unsafe.As<IGrainContext>(_value);
+                }
+            }
+
+            public List<IGrainContext> MultipleActivationValue
+            {
+                get
+                {
+                    if (!IsMultipleActivationGrain)
+                    {
+                        ThrowNotMultipleActivation();
+                    }
+
+                    return Unsafe.As<List<IGrainContext>>(_value);
+                }
+            }
+
+            private DirectoryEntry(object value, bool isMultipleActivationGrain)
+            {
+                _value = value;
+                IsMultipleActivationGrain = isMultipleActivationGrain;
+            }
+
+            public static DirectoryEntry Create(IGrainContext grainContext) => new DirectoryEntry(grainContext, isMultipleActivationGrain: false);
+
+            public static DirectoryEntry CreateMultiple() => new (new List<IGrainContext>(), isMultipleActivationGrain: true);
+
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            private static void ThrowNotSingleActivation() => throw new InvalidOperationException("Attempted to access a multiple activation entry as a single activation entry");
+
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            private static void ThrowNotMultipleActivation() => throw new InvalidOperationException("Attempted to access a single activation entry as a multipleActivation activation entry");
+        }
     }
 }

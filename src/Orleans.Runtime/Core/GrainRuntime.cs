@@ -5,14 +5,11 @@ using Orleans.Configuration;
 using Orleans.Core;
 using Orleans.Timers;
 using Orleans.Storage;
-using Orleans.Runtime.Versions.Compatibility;
-using Orleans.Runtime.Versions;
 
 namespace Orleans.Runtime
 {
     internal class GrainRuntime : IGrainRuntime
     {
-        private readonly InsideRuntimeClient runtimeClient;
         private readonly ILoggerFactory loggerFactory;
         private readonly IServiceProvider serviceProvider;
         private readonly IReminderRegistry reminderRegistry;
@@ -26,10 +23,8 @@ namespace Orleans.Runtime
             ITimerRegistry timerRegistry,
             IReminderRegistry reminderRegistry,
             IServiceProvider serviceProvider,
-            InsideRuntimeClient runtimeClient,
             ILoggerFactory loggerFactory)
         {
-            this.runtimeClient = runtimeClient;
             ServiceId = clusterOptions.Value.ServiceId;
             SiloAddress = localSiloDetails.SiloAddress;
             SiloIdentity = SiloAddress.ToLongString();
@@ -85,7 +80,7 @@ namespace Orleans.Runtime
         public void DeactivateOnIdle(Grain grain)
         {
             CheckRuntimeContext();
-            _ = grain.Data.DeactivateAsync();
+            grain.Data.DeactivateOnIdle();
         }
 
         public void DelayDeactivation(Grain grain, TimeSpan timeSpan)

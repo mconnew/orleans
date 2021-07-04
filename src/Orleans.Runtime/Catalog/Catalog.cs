@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -226,7 +225,9 @@ namespace Orleans.Runtime
 
             int numActsBefore = acts.Count;
             foreach (var act in acts)
+            {
                 UnregisterMessageTarget(act);
+            }
             
             return numActsBefore;
         }
@@ -284,7 +285,7 @@ namespace Orleans.Runtime
 
                 if (!SiloStatusOracle.CurrentStatus.IsTerminating())
                 {
-                    result = (ActivationData)this.grainActivator.CreateInstance(address);
+                    result = this.grainActivator.CreateInstance(address);
 
                     if (result.PlacementStrategy is StatelessWorkerPlacement st)
                     {

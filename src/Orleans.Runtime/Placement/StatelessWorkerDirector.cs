@@ -27,6 +27,5 @@ namespace Orleans.Runtime.Placement
         }
 
         internal static IGrainContext PickRandom(List<IGrainContext> local) => local[local.Count == 1 ? 0 : ThreadSafeRandom.Next(local.Count)];
-
     }
 }
