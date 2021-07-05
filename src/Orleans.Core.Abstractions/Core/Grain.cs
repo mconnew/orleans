@@ -51,7 +51,7 @@ namespace Orleans
                 return;
             }
 
-            if (context is not IActivationData data)
+            if (!(context is IActivationData data))
             {
                 ThrowInvalidContext();
                 return;

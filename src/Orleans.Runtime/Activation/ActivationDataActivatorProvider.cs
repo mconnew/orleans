@@ -59,22 +59,32 @@ namespace Orleans.Runtime
                 return false;
             }
 
-            var sharedComponents = _sharedComponentsResolver.GetComponents(grainType);
-            IGrainActivator instanceActivator = sharedComponents.GetComponent<IGrainActivator>();
+            var sharedContext = _sharedComponentsResolver.GetComponents(grainType);
+            var instanceActivator = sharedContext.GetComponent<IGrainActivator>();
             if (instanceActivator is null)
             {
                 throw new InvalidOperationException($"Could not find a suitable {nameof(IGrainActivator)} implementation for grain type {grainType}");
             }
 
-            activator = new ActivationDataActivator(
+            var innerActivator = new ActivationDataActivator(
                 instanceActivator,
                 _serviceProvider,
-                sharedComponents,
+                sharedContext,
                 _workItemGroupLogger,
                 _activationTaskSchedulerLogger,
                 _schedulerStatisticsGroup,
                 _schedulingOptions,
                 _statisticsOptions);
+
+            if (sharedContext.PlacementStrategy is StatelessWorkerPlacement)
+            {
+                activator = new StatelessWorkerActivator(sharedContext, innerActivator);
+            }
+            else
+            {
+                activator = innerActivator;
+            }
+
             return true;
         }
 
@@ -143,4 +153,17 @@ namespace Orleans.Runtime
         }
     }
 
+    internal class StatelessWorkerActivator : IGrainContextActivator
+    {
+        private readonly IGrainContextActivator _innerActivator;
+        private readonly GrainTypeSharedContext _sharedContext;
+
+        public StatelessWorkerActivator(GrainTypeSharedContext sharedContext, IGrainContextActivator innerActivator)
+        {
+            _innerActivator = innerActivator;
+            _sharedContext = sharedContext;
+        }
+
+        public IGrainContext CreateContext(ActivationAddress address) => new StatelessWorkerGrainContext(address, _sharedContext, _innerActivator);
+    }
 }

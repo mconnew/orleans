@@ -49,38 +49,43 @@ namespace Orleans.Runtime
         /// <typeparam name="TComponent">The type used to lookup this component.</typeparam>
         /// <param name="value">The component instance.</param>
         void SetComponent<TComponent>(TComponent value);
-            
-        /// <summary>
-        /// Gets the component of the specified type.
-        /// </summary>
-        //TComponent GetComponent<TComponent>();
 
         void ReceiveMessage(object message);
 
         IWorkItemScheduler Scheduler { get; }
-        bool IsExemptFromCollection { get; }
         PlacementStrategy PlacementStrategy { get; }
 
         void Activate(Dictionary<string, object> requestContext, CancellationToken? cancellationToken = default);
-        Task DeactivateAsync(CancellationToken? cancellationToken = default);
+        void Deactivate(CancellationToken? cancellationToken = default);
+        Task Deactivated { get; }
     }
 
-    internal interface IActivationData : IGrainContext
+    public static class GrainContextExtensions
     {
-        IGrainRuntime GrainRuntime { get; }
-        void DeactivateOnIdle();
+        public static Task DeactivateAsync(this IGrainContext grainContext, CancellationToken? cancellationToken = default)
+        {
+            grainContext.Deactivate(cancellationToken);
+            return grainContext.Deactivated;
+        }
+    }
+
+    internal interface ICollectibleGrainContext : IGrainContext
+    {
+        bool IsValid { get; }
+        bool IsExemptFromCollection { get; }
+        TimeSpan CollectionAgeLimit { get; }
+        DateTime KeepAliveUntil { get; }
+        DateTime CollectionTicket { get; set; }
+        bool IsInactive { get; }
+        bool IsStale(DateTime now);
+        TimeSpan GetIdleness(DateTime now);
+        void StartDeactivating();
         void DelayDeactivation(TimeSpan timeSpan);
     }
 
-    internal interface ICollectibleGrainContext
+    internal interface IActivationData : ICollectibleGrainContext
     {
-        TimeSpan CollectionAgeLimit { get; }
-        DateTime CollectionTicket { get; set; }
-        bool ShouldBeKeptAlive { get; }
-        bool IsInactive { get; }
-        void ResetCollectionTicket();
-        bool IsStale(DateTime now);
-        void StartDeactivating();
+        IGrainRuntime GrainRuntime { get; }
     }
 
     internal interface IGrainTimerRegistry

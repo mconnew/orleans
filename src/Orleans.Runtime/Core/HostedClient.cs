@@ -350,6 +350,7 @@ namespace Orleans.Runtime
 
         public TTarget GetTarget<TTarget>() => throw new NotImplementedException();
         public void Activate(Dictionary<string, object> requestContext, CancellationToken? cancellationToken = null) { }
-        public Task DeactivateAsync(CancellationToken? cancellationToken = null) => Task.CompletedTask;
+        public void Deactivate(CancellationToken? cancellationToken = null) { }
+        public Task Deactivated => Task.CompletedTask;
     }
 }

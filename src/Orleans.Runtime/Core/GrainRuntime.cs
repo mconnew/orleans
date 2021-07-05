@@ -25,7 +25,6 @@ namespace Orleans.Runtime
             IServiceProvider serviceProvider,
             ILoggerFactory loggerFactory)
         {
-            ServiceId = clusterOptions.Value.ServiceId;
             SiloAddress = localSiloDetails.SiloAddress;
             SiloIdentity = SiloAddress.ToLongString();
             this.grainFactory = grainFactory;
@@ -80,7 +79,7 @@ namespace Orleans.Runtime
         public void DeactivateOnIdle(Grain grain)
         {
             CheckRuntimeContext();
-            grain.Data.DeactivateOnIdle();
+            grain.Data.Deactivate();
         }
 
         public void DelayDeactivation(Grain grain, TimeSpan timeSpan)

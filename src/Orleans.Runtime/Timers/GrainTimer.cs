@@ -22,7 +22,7 @@ namespace Orleans.Runtime
         
         private bool TimerAlreadyStopped { get { return timer == null || asyncCallback == null; } }
 
-        private GrainTimer(IActivationData activationData, ILogger logger, Func<object, Task> asyncCallback, object state, TimeSpan dueTime, TimeSpan period, string name)
+        private GrainTimer(IGrainContext activationData, ILogger logger, Func<object, Task> asyncCallback, object state, TimeSpan dueTime, TimeSpan period, string name)
         {
             var ctxt = RuntimeContext.CurrentGrainContext;
             if (ctxt is null)
@@ -53,7 +53,7 @@ namespace Orleans.Runtime
             TimeSpan dueTime,
             TimeSpan period,
             string name = null,
-            IActivationData activationData = null)
+            IGrainContext activationData = null)
         {
             return new GrainTimer(activationData, logger, asyncCallback, state, dueTime, period, name);
         }

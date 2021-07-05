@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -13,12 +15,37 @@ using Orleans.Serialization.TypeSystem;
 namespace Orleans.Runtime
 {
     /// <summary>
+    /// Centralized statistics on per-grain-type activation counts.
+    /// </summary>
+    internal class GrainCountStatistics
+    {
+        private static readonly Func<string, CounterStatistic> CreateCounter = Create;
+        private readonly ConcurrentDictionary<string, CounterStatistic> _grainCounts = new();
+        public CounterStatistic GetGrainCount(string grainTypeName) => _grainCounts.GetOrAdd(grainTypeName, CreateCounter);
+
+        public IEnumerable<KeyValuePair<string, long>> GetSimpleGrainStatistics()
+        {
+            return _grainCounts
+                .Select(s => new KeyValuePair<string, long>(s.Key, s.Value.GetCurrentValue()))
+                .Where(p => p.Value > 0);
+        }
+
+        private static CounterStatistic Create(string grainTypeName)
+        {
+            var counterName = new StatisticName(StatisticNames.GRAIN_COUNTS_PER_GRAIN, grainTypeName);
+            return CounterStatistic.FindOrCreate(counterName, false);
+        }
+    }
+
+    /// <summary>
     /// Functionality which is shared between all instances of a grain type.
     /// </summary>
     public class GrainTypeSharedContext
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly CounterStatistic _grainCountsPerGrain;
+        private readonly GrainCountStatistics _grainCountStatistics;
+        private readonly Dictionary<Type, object> _components = new();
         private InternalGrainRuntime _internalGrainRuntime;
 
         public GrainTypeSharedContext(
@@ -39,8 +66,8 @@ namespace Orleans.Runtime
             }
 
             var grainTypeName = RuntimeTypeNameFormatter.Format(grainClass);
-            var counterName = new StatisticName(StatisticNames.GRAIN_COUNTS_PER_GRAIN, grainTypeName);
-            _grainCountsPerGrain = CounterStatistic.FindOrCreate(counterName, false);
+            _grainCountStatistics = serviceProvider.GetRequiredService<GrainCountStatistics>();
+            _grainCountsPerGrain = _grainCountStatistics.GetGrainCount(grainTypeName);
             Logger = logger;
             MessagingOptions = messagingOptions.Value;
             GrainReferenceActivator = grainReferenceActivator;
@@ -81,9 +108,6 @@ namespace Orleans.Runtime
             return collectionOptions.CollectionAge;
         }
 
-
-        private Dictionary<Type, object> _components = new Dictionary<Type, object>();
-
         /// <summary>
         /// Gets a component.
         /// </summary>
@@ -103,11 +127,10 @@ namespace Orleans.Runtime
         {
             if (instance == null)
             {
-                _components?.Remove(typeof(TComponent));
+                _components.Remove(typeof(TComponent));
                 return;
             }
 
-            if (_components is null) _components = new Dictionary<Type, object>();
             _components[typeof(TComponent)] = instance;
         }
 
@@ -126,14 +149,20 @@ namespace Orleans.Runtime
 
         internal InternalGrainRuntime InternalRuntime => _internalGrainRuntime ??= _serviceProvider.GetRequiredService<InternalGrainRuntime>();
 
-        public void OnCreateActivation()
+        public void OnCreateActivation(IGrainContext grainContext)
         {
             _grainCountsPerGrain.Increment();
         }
 
-        public void OnDestroyActivation()
+        public void OnDestroyActivation(IGrainContext grainContext)
         {
             _grainCountsPerGrain.DecrementBy(1);
         }
+    }
+
+    internal interface IActivationLifecycleObserver
+    {
+        void OnCreateActivation(IGrainContext grainContext);
+        void OnDestroyActivation(IGrainContext grainContext);
     }
 }

@@ -143,11 +143,6 @@ namespace Orleans.Runtime
             return stats;
         }
 
-        public IEnumerable<KeyValuePair<string, long>> GetSimpleGrainStatistics()
-        {
-            return activations.GetSimpleGrainStatistics();
-        }
-
         public DetailedGrainReport GetDetailedGrainReport(GrainId grain)
         {
             var report = new DetailedGrainReport
@@ -392,7 +387,18 @@ namespace Orleans.Runtime
         public Task DeactivateAllActivations()
         {
             logger.Info(ErrorCode.Catalog_DeactivateAllActivations, "DeactivateAllActivations.");
-            var activationsToShutdown = activations.Where(kv => !kv.Value.IsExemptFromCollection).Select(kv => kv.Value).ToList();
+            var activationsToShutdown = new List<IGrainContext>();
+            foreach (var pair in activations)
+            {
+                var activation = pair.Value;
+                if (activation is not ICollectibleGrainContext collectible || collectible.IsExemptFromCollection)
+                {
+                    continue;
+                }
+
+                activationsToShutdown.Add(activation);
+            }
+
             return DeactivateActivations(activationsToShutdown);
         }
 

@@ -206,6 +206,7 @@ namespace UnitTests.Grains
 
     internal class OneWayGrain : Grain, IOneWayGrain, ISimpleGrainObserver
     {
+        private readonly string _id = Guid.NewGuid().ToString();
         private int count;
         private TaskCompletionSource<int> tcs = new TaskCompletionSource<int>();
         private IOneWayGrain other;
@@ -272,6 +273,10 @@ namespace UnitTests.Grains
                     }
                 }
             }
+        }
+        public Task<string> GetActivationAddress()
+        {
+            return Task.FromResult(_id);
         }
 
         public Task<string> GetActivationAddress(IGrain grain)

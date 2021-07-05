@@ -6,10 +6,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Orleans.Configuration;
 using Orleans.GrainDirectory;
-using Orleans.GrainReferences;
 using Orleans.Internal;
 using Orleans.Runtime.Configuration;
 using Orleans.Runtime.Scheduler;
@@ -23,7 +21,7 @@ namespace Orleans.Runtime
     /// MUST lock this object for any concurrent access
     /// Consider: compartmentalize by usage, e.g., using separate interfaces for data for catalog, etc.
     /// </summary>
-    internal class ActivationData : IActivationData, IGrainExtensionBinder, IAsyncDisposable, IActivationWorkingSetMember, IGrainTimerRegistry
+    internal class ActivationData : IActivationData, IGrainExtensionBinder, ICollectibleGrainContext, IAsyncDisposable, IActivationWorkingSetMember, IGrainTimerRegistry
     {
         private readonly GrainTypeSharedContext _shared;
         private readonly IServiceScope serviceScope;
@@ -38,8 +36,6 @@ namespace Orleans.Runtime
         private bool isInWorkingSet;
         private DateTime currentRequestStartTime;
         private DateTime becameIdle;
-        private bool collectionCancelledFlag;
-        private DateTime keepAliveUntil;
         private GrainReference _selfReference;
 
         // Values which are needed less frequently and do not warrant living directly on activation for object size reasons.
@@ -63,9 +59,8 @@ namespace Orleans.Runtime
             State = ActivationState.Create;
             serviceScope = applicationServices.CreateScope();
             isInWorkingSet = true;
-            keepAliveUntil = DateTime.MinValue;
             _workItemGroup = createWorkItemGroup(this);
-            _messageLoopTask = this.RunOrQueueTask(RunMessagePump);
+            _messageLoopTask = this.RunOrQueueTask(RunMessageLoop);
         }
 
         public IGrainRuntime GrainRuntime => _shared.Runtime;
@@ -74,7 +69,7 @@ namespace Orleans.Runtime
         public GrainReference GrainReference => _selfReference ??= _shared.GrainReferenceActivator.CreateReference(GrainId, default);
         public ActivationState State { get; private set; }
         public PlacementStrategy PlacementStrategy => _shared.PlacementStrategy;
-        public DateTime CollectionTicket { get; private set; }
+        public DateTime CollectionTicket { get; set; }
         public IServiceProvider ActivationServices => serviceScope.ServiceProvider;
         public ActivationId ActivationId => Address.Activation;
         public IServiceProvider ServiceProvider => serviceScope?.ServiceProvider;
@@ -82,7 +77,8 @@ namespace Orleans.Runtime
         internal ILifecycleObserver Lifecycle => lifecycle;
         public GrainId GrainId => Address.Grain;
         public bool IsExemptFromCollection => _shared.CollectionAgeLimit == Timeout.InfiniteTimeSpan;
-        public bool ShouldBeKeptAlive => keepAliveUntil != default && keepAliveUntil >= DateTime.UtcNow;
+        public DateTime KeepAliveUntil { get; set; } = DateTime.MinValue;
+        public bool IsValid => State is ActivationState.Valid;
 
         // Currently, the only supported multi-activation grain is one using the StatelessWorkerPlacement strategy.
         internal bool IsStatelessWorker => PlacementStrategy is StatelessWorkerPlacement;
@@ -97,6 +93,7 @@ namespace Orleans.Runtime
         public bool IsInactive => !IsCurrentlyExecuting && _waitingRequests.Count == 0;
         public bool IsCurrentlyExecuting => _runningRequests.Count > 0;
         public IWorkItemScheduler Scheduler => _workItemGroup;
+        public Task Deactivated => GetDeactivationCompletionSource().Task;
 
         public ActivationAddress ForwardingAddress
         {
@@ -250,10 +247,12 @@ namespace Orleans.Runtime
             switch (GrainInstance, grainInstance)
             {
                 case (null, not null):
-                    _shared.OnCreateActivation();
+                    _shared.OnCreateActivation(this);
+                    GetComponent<IActivationLifecycleObserver>()?.OnCreateActivation(this);
                     break;
                 case (not null, null):
-                    _shared.OnDestroyActivation();
+                    _shared.OnDestroyActivation(this);
+                    GetComponent<IActivationLifecycleObserver>()?.OnDestroyActivation(this);
                     break;
             }
 
@@ -268,40 +267,6 @@ namespace Orleans.Runtime
         public void SetState(ActivationState state)
         {
             State = state;
-        }
-
-        public bool TrySetCollectionCancelledFlag()
-        {
-            lock (this)
-            {
-                if (default(DateTime) == CollectionTicket || collectionCancelledFlag) return false;
-                collectionCancelledFlag = true;
-                return true;
-            }
-        }
-
-        public void ResetCollectionCancelledFlag()
-        {
-            lock (this)
-            {
-                collectionCancelledFlag = false;
-            }
-        }
-
-        public void ResetCollectionTicket()
-        {
-            CollectionTicket = default(DateTime);
-        }
-
-        public void SetCollectionTicket(DateTime ticket)
-        {
-            if (ticket == default(DateTime)) throw new ArgumentException("default(DateTime) is disallowed", "ticket");
-            if (CollectionTicket != default(DateTime))
-            {
-                throw new InvalidOperationException("call ResetCollectionTicket before calling SetCollectionTicket.");
-            }
-
-            CollectionTicket = ticket;
         }
 
         /// <summary>
@@ -385,10 +350,7 @@ namespace Orleans.Runtime
         /// <summary>
         /// Returns whether this activation has been idle long enough to be collected.
         /// </summary>
-        public bool IsStale(DateTime now)
-        {
-            return GetIdleness(now) >= _shared.CollectionAgeLimit;
-        }
+        public bool IsStale(DateTime now) => GetIdleness(now) >= _shared.CollectionAgeLimit;
 
         public void DelayDeactivation(TimeSpan timespan)
         {
@@ -400,17 +362,17 @@ namespace Orleans.Runtime
             else if (timespan == TimeSpan.MaxValue)
             {
                 // otherwise creates negative time.
-                keepAliveUntil = DateTime.MaxValue;
+                KeepAliveUntil = DateTime.MaxValue;
             }
             else
             {
-                keepAliveUntil = DateTime.UtcNow + timespan;
+                KeepAliveUntil = DateTime.UtcNow + timespan;
             }
         }
 
         public void ResetKeepAliveRequest()
         {
-            keepAliveUntil = DateTime.MinValue;
+            KeepAliveUntil = DateTime.MinValue;
         }
 
         private void ScheduleOperation(object operation)
@@ -424,28 +386,7 @@ namespace Orleans.Runtime
             _messagesSemaphore.Signal();
         }
 
-        public void DeactivateOnIdle()
-        {
-            var token = new CancellationTokenSource(_shared.InternalRuntime.CollectionOptions.Value.DeactivationTimeout).Token;
-            lock (this)
-            {
-                if (State is ActivationState.Activating or ActivationState.Create)
-                {
-                    throw new InvalidOperationException("Calling DeactivateOnIdle from within OnActivateAsync is not supported");
-                }
-
-                if (DeactivationReason.Code == DeactivationReasonCode.None)
-                {
-                    DeactivationReason = new(DeactivationReasonCode.ActivationInitiated, "DeactivateOnIdle");
-                }
-            }
-
-            Deactivate(token);
-        }
-
-        public void Deactivate() => Deactivate();
-
-        public void Deactivate(CancellationToken? token)
+        public void Deactivate(CancellationToken? token = default)
         {
             if (!token.HasValue)
             {
@@ -469,13 +410,13 @@ namespace Orleans.Runtime
             DeactivationReason = new(DeactivationReasonCode.StuckProcessingMessage, msg);
 
             // Mark the grain as deactivating so that messages are forwarded instead of being invoked
-            Deactivate();
+            Deactivate(token: default);
 
             // Try to remove this activation from the catalog and directory
             // This leaves this activation dangling, stuck processing the current request until it eventually completes
             // (which likely will never happen at this point, since if the grain was deemed stuck then there is probably some kind of
             // application bug, perhaps a deadlock)
-            UnregisterFromCatalog();
+            UnregisterMessageTarget();
             _shared.InternalRuntime.GrainLocator.Unregister(Address, UnregistrationCause.Force).Ignore();
         }
 
@@ -740,7 +681,7 @@ namespace Orleans.Runtime
             }
         }
 
-        private async Task RunMessagePump()
+        private async Task RunMessageLoop()
         {
             // Note that this loop never terminates. That might look strange, but there is a reason for it:
             // an activation must always accept and process any incoming messages. How an activation processes
@@ -842,7 +783,7 @@ namespace Orleans.Runtime
                                     DeactivationReasonCode.IncompatibleRequest,
                                     $"Received incompatible request for interface {message.InterfaceType} version {message.InterfaceVersion}. This activation supports version {currentVersion}");
 
-                                Deactivate();
+                                Deactivate(token: default);
                                 return;
                             }
                         }
@@ -957,7 +898,7 @@ namespace Orleans.Runtime
                                 await Task.Delay(delay.Duration);
                                 break;
                             case Command.UnregisterFromCatalog:
-                                UnregisterFromCatalog();
+                                UnregisterMessageTarget();
                                 break;
                             default:
                                 throw new NotSupportedException($"Encountered unknown operation of type {op?.GetType().ToString() ?? "null"} {op}");
@@ -1349,7 +1290,7 @@ namespace Orleans.Runtime
                         SetState(ActivationState.Invalid);
                     }
 
-                    UnregisterFromCatalog();
+                    UnregisterMessageTarget();
                     DeactivationReason = new(DeactivationReasonCode.GrainDirectoryFailure, registrationException, "Failed to register activation in grain directory");
                     _shared.Logger.LogWarning((int)ErrorCode.Runtime_Error_100064, registrationException, "Failed to register grain {Grain} in grain directory", ToString());
                 }
@@ -1371,6 +1312,16 @@ namespace Orleans.Runtime
                 if (State is ActivationState.Deactivating or ActivationState.Invalid or ActivationState.FailedToActivate)
                 {
                     return;
+                }
+
+                if (State is ActivationState.Activating or ActivationState.Create)
+                {
+                    throw new InvalidOperationException("Calling DeactivateOnIdle from within OnActivateAsync is not supported");
+                }
+
+                if (DeactivationReason.Code == DeactivationReasonCode.None)
+                {
+                    DeactivationReason = new(DeactivationReasonCode.ActivationInitiated, "DeactivateOnIdle");
                 }
 
                 DeactivationStartTime = DateTime.UtcNow;
@@ -1438,7 +1389,7 @@ namespace Orleans.Runtime
 
             try
             {
-                UnregisterFromCatalog();
+                UnregisterMessageTarget();
                 await DisposeAsync();
             }
             catch (Exception exception)
@@ -1496,7 +1447,7 @@ namespace Orleans.Runtime
             }
         }
 
-        private void UnregisterFromCatalog()
+        private void UnregisterMessageTarget()
         {
             _shared.InternalRuntime.Catalog.UnregisterMessageTarget(this);
             if (GrainInstance is object)

@@ -41,8 +41,9 @@ namespace UnitTests.SchedulerTests
 
         IAddressable IGrainContext.GrainInstance => throw new NotImplementedException();
 
-        public void Activate(Dictionary<string, object> requestContext, CancellationToken? cancellationToken = null) => throw new NotImplementedException();
-        public Task DeactivateAsync(CancellationToken? cancellationToken = null) => throw new NotImplementedException();
+        public void Activate(Dictionary<string, object> requestContext, CancellationToken? cancellationToken = default) => throw new NotImplementedException();
+        public void Deactivate(CancellationToken? cancellationToken = default) { }
+        public Task Deactivated => Task.CompletedTask;
         public void Dispose() => (Scheduler as IDisposable)?.Dispose();
         public TComponent GetComponent<TComponent>() => throw new NotImplementedException();
         public TTarget GetTarget<TTarget>() => throw new NotImplementedException();

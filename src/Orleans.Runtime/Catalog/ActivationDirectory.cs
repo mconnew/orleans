@@ -12,7 +12,6 @@ namespace Orleans.Runtime
         private readonly ConcurrentDictionary<GrainId, IGrainContext> activations = new();                // Activation data (app grains) only.
         private readonly ConcurrentDictionary<ActivationId, SystemTarget> systemTargets = new();                // SystemTarget only.
         private readonly ConcurrentDictionary<GrainId, List<IGrainContext>> grainToActivationsMap = new();     // Activation data (app grains) only.
-        private readonly ConcurrentDictionary<string, CounterStatistic> grainCounts = new();                    // simple statistics type->count
         private readonly ConcurrentDictionary<string, CounterStatistic> systemTargetCounts = new();             // simple statistics systemTargetTypeName->count
 
         public int Count => activations.Count;
@@ -107,26 +106,6 @@ namespace Orleans.Runtime
                 }
             }
             return null;
-        }
-
-        //TODO
-        //TODO
-        //TODO
-        //TODO
-        //TODO
-        //TODO
-        //TODO
-        //TODO
-        //TODO
-        //TODO
-        //TODO
-        //TODO
-        //TODO
-        public IEnumerable<KeyValuePair<string, long>> GetSimpleGrainStatistics()
-        {
-            return grainCounts
-                .Select(s => new KeyValuePair<string, long>(s.Key, s.Value.GetCurrentValue()))
-                .Where(p => p.Value > 0);
         }
 
         public IEnumerator<KeyValuePair<GrainId, IGrainContext>> GetEnumerator() => activations.GetEnumerator();
