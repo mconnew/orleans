@@ -52,29 +52,26 @@ namespace UnitTests.General
         [Fact]
         public async Task OneWay_Deactivation_CacheInvalidated()
         {
+            IOneWayGrain grainToCallFrom;
             while (true)
             {
-                IOneWayGrain grainToCallFrom;
-                while (true)
+                grainToCallFrom = this.fixture.Client.GetGrain<IOneWayGrain>(Guid.NewGuid());
+                var grainHost = await grainToCallFrom.GetSiloAddress();
+                if (grainHost.Equals(this.fixture.HostedCluster.Primary.SiloAddress))
                 {
-                    grainToCallFrom = this.fixture.Client.GetGrain<IOneWayGrain>(Guid.NewGuid());
-                    var grainHost = await grainToCallFrom.GetSiloAddress();
-                    if (grainHost.Equals(this.fixture.HostedCluster.Primary.SiloAddress))
-                    {
-                        break;
-                    }
+                    break;
                 }
-
-                // Activate the grain & record its address.
-                var grainToDeactivate = await grainToCallFrom.GetOtherGrain();
-
-                var initialActivationId = await grainToDeactivate.GetActivationId();
-                await grainToDeactivate.Deactivate();
-                await grainToCallFrom.SignalSelfViaOther();
-                var (count, finalActivationId) = await grainToCallFrom.WaitForSignal();
-                Assert.Equal(1, count);
-                Assert.NotEqual(initialActivationId, finalActivationId);
             }
+
+            // Activate the grain & record its address.
+            var grainToDeactivate = await grainToCallFrom.GetOtherGrain();
+
+            var initialActivationId = await grainToDeactivate.GetActivationId();
+            await grainToDeactivate.Deactivate();
+            await grainToCallFrom.SignalSelfViaOther();
+            var (count, finalActivationId) = await grainToCallFrom.WaitForSignal();
+            Assert.Equal(1, count);
+            Assert.NotEqual(initialActivationId, finalActivationId);
         }
     }
 }
