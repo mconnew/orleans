@@ -291,5 +291,7 @@ namespace UnitTestGrains
         {
             await completionSource.Task;
         }
+
+        public override Task OnDeactivateAsync() => base.OnDeactivateAsync();
     }
 }

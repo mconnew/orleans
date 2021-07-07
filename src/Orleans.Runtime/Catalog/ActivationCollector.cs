@@ -41,7 +41,7 @@ namespace Orleans.Runtime
             shortestAgeLimit = new(options.Value.ClassSpecificCollectionAge.Values.Aggregate(options.Value.CollectionAge.Ticks, (a, v) => Math.Min(a, v.Ticks)));
             nextTicket = MakeTicketFromDateTime(DateTime.UtcNow);
             this.logger = logger;
-            _collectionTimer = timerFactory.Create(quantum, "Catalog.GCTimer");
+            _collectionTimer = timerFactory.Create(quantum, "ActivationCollector");
         }
 
         // Return the number of activations that were used (touched) in the last recencyPeriod.
@@ -65,10 +65,7 @@ namespace Orleans.Runtime
             return sum;
         }
 
-        public Task CollectActivations(TimeSpan ageLimit)
-        {
-            return CollectActivationsImpl(false, ageLimit);
-        }
+        public Task CollectActivations(TimeSpan ageLimit) => CollectActivationsImpl(false, ageLimit);
 
         public void ScheduleCollection(ICollectibleGrainContext item, TimeSpan timeout)
         {
@@ -199,7 +196,7 @@ namespace Orleans.Runtime
                     lock (activation)
                     {
                         activation.CollectionTicket = default;
-                        if (activation.IsValid)
+                        if (!activation.IsValid)
                         {
                             // Do nothing: don't collect, don't reschedule.
                             // The activation can't be in Created or Activating, since we only ScheduleCollection after successfull activation.

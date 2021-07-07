@@ -1,12 +1,14 @@
+using System;
 using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Orleans.Configuration;
 
 namespace Orleans.Runtime.GrainDirectory
 {
-    internal static class GrainDirectoryCacheFactory
+    public static class GrainDirectoryCacheFactory
     {
-        internal static IGrainDirectoryCache CreateGrainDirectoryCache(GrainDirectoryOptions options)
+        public static IGrainDirectoryCache CreateGrainDirectoryCache(IServiceProvider services, GrainDirectoryOptions options)
         {
             if (options.CacheSize <= 0)
                 return new NullGrainDirectoryCache();
@@ -17,6 +19,8 @@ namespace Orleans.Runtime.GrainDirectory
                     return new NullGrainDirectoryCache();
                 case GrainDirectoryOptions.CachingStrategyType.LRU:
                     return new LRUBasedGrainDirectoryCache(options.CacheSize, options.MaximumCacheTTL);
+                case GrainDirectoryOptions.CachingStrategyType.Custom:
+                    return services.GetRequiredService<IGrainDirectoryCache>();
                 default:
                     return new AdaptiveGrainDirectoryCache(options.InitialCacheTTL, options.MaximumCacheTTL, options.CacheTTLExtensionFactor, options.CacheSize);
             }

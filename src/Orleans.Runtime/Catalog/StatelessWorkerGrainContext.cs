@@ -253,6 +253,10 @@ namespace Orleans.Runtime
         {
             _workItems.Enqueue(new StatelessWorkerWorkItem(WorkItemType.OnDestroyActivation, grainContext));
             _workSignal.Signal();
+            if (_workers.Count == 0)
+            {
+                _sharedContext.InternalRuntime.Catalog.UnregisterMessageTarget(this);
+            }
         }
 
         private struct StatelessWorkerWorkItem

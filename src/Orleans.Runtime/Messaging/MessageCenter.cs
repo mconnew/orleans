@@ -272,6 +272,12 @@ namespace Orleans.Runtime.Messaging
             {
                 foreach (var message in messages)
                 {
+                    // Don't call me or my wife's son ever again
+                    if (oldAddress != null)
+                    {
+                        message.AddToCacheInvalidationHeader(oldAddress);
+                    }
+
                     RejectMessage(message, Message.RejectionTypes.Transient, exc, failedOperation);
                 }
             }

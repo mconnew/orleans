@@ -1,5 +1,6 @@
 
 using System;
+using Orleans.Runtime.GrainDirectory;
 
 namespace Orleans.Configuration
 {
@@ -12,10 +13,15 @@ namespace Orleans.Configuration
         {
             /// <summary>Don't cache.</summary>
             None,
+
             /// <summary>Standard fixed-size LRU.</summary>
             LRU,
+
             /// <summary>Adaptive caching with fixed maximum size and refresh. This option should be used in production.</summary>
-            Adaptive
+            Adaptive,
+
+            /// <summary>Resolve <see cref="IGrainDirectoryCache"/> from the application service provider.</summary>
+            Custom,
         }
 
         /// <summary>

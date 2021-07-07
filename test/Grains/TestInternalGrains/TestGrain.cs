@@ -13,6 +13,7 @@ namespace UnitTests.Grains
 {
     public class TestGrain : Grain, ITestGrain
     {
+        private readonly string _id = Guid.NewGuid().ToString();
         private string label;
         private ILogger logger;
         private IDisposable timer;
@@ -105,7 +106,7 @@ namespace UnitTests.Grains
 
         public Task<string> GetActivationId()
         {
-            return Task.FromResult(Data.ActivationId.ToString());
+            return Task.FromResult(_id);
         }
 
         public Task<ITestGrain> GetGrainReference()
@@ -158,6 +159,8 @@ namespace UnitTests.Grains
 
     internal class GuidTestGrain : Grain, IGuidTestGrain
     {
+        private readonly string _id = Guid.NewGuid().ToString();
+
         private string label;
         private ILogger logger;
 
@@ -200,7 +203,7 @@ namespace UnitTests.Grains
 
         public Task<string> GetActivationId()
         {
-            return Task.FromResult(Data.ActivationId.ToString());
+            return Task.FromResult(_id);
         }
     }
 
@@ -208,9 +211,10 @@ namespace UnitTests.Grains
     {
         private readonly string _id = Guid.NewGuid().ToString();
         private int count;
-        private TaskCompletionSource<int> tcs = new TaskCompletionSource<int>();
+        private TaskCompletionSource<string> tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private IOneWayGrain other;
         private GrainLocator grainLocator;
+        private int _numSignals;
 
         public OneWayGrain(GrainLocator grainLocator) => this.grainLocator = grainLocator;
 
@@ -274,7 +278,8 @@ namespace UnitTests.Grains
                 }
             }
         }
-        public Task<string> GetActivationAddress()
+
+        public Task<string> GetActivationId()
         {
             return Task.FromResult(_id);
         }
@@ -324,7 +329,29 @@ namespace UnitTests.Grains
 
         public void StateChanged(int a, int b)
         {
-            this.tcs.TrySetResult(0);
+            _numSignals++;
+            this.tcs.TrySetResult(null);
+        }
+
+        public async Task SendSignalTo(IOneWayGrain grain)
+        {
+            await grain.Signal(_id);
+        }
+
+        public Task SignalSelfViaOther() => this.other.SendSignalTo(this.AsReference<IOneWayGrain>());
+
+        public async Task<(int NumSignals, string SignallerId)> WaitForSignal()
+        {
+            var signallerId = await this.tcs.Task;
+            this.tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            return (_numSignals, signallerId);
+        }
+
+        public Task Signal(string id)
+        {
+            _numSignals++;
+            tcs.TrySetResult(id);
+            return Task.CompletedTask;
         }
     }
 

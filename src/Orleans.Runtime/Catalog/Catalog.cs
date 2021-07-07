@@ -281,35 +281,6 @@ namespace Orleans.Runtime
                 if (!SiloStatusOracle.CurrentStatus.IsTerminating())
                 {
                     result = this.grainActivator.CreateInstance(address);
-
-                    if (result.PlacementStrategy is StatelessWorkerPlacement st)
-                    {
-                        // Check if there is already enough StatelessWorker created
-                        if (LocalLookup(address.Grain, out var local))
-                        {
-                            if (local.Count >= st.MaxLocal)
-                            {
-                                // Redirect directly to an already created StatelessWorker
-                                // It's a bit hacky since we will return an activation with a different
-                                // ActivationId than the one requested, but StatelessWorker are local only,
-                                // so no need to clear the cache. This will avoid unecessary and costly redirects.
-                                var redirect = StatelessWorkerDirector.PickRandom(local);
-                                if (logger.IsEnabled(LogLevel.Debug))
-                                {
-                                    logger.LogDebug(
-                                        (int)ErrorCode.Catalog_DuplicateActivation,
-                                        "Trying to create too many {GrainType} activations on this silo. Redirecting to activation {RedirectActivation}",
-                                        result.GrainId.ToString(),
-                                        redirect.ActivationId);
-                                }
-
-                                return redirect;
-                            }
-                        }
-
-                        // The newly created StatelessWorker will be registered in RegisterMessageTarget()
-                    }
-
                     RegisterMessageTarget(result);
                 }
             } // End lock

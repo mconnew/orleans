@@ -1,5 +1,10 @@
 using System;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Orleans.Configuration;
+using Orleans.Configuration.Internal;
+using Orleans.Hosting;
+using Orleans.Runtime.GrainDirectory;
 using Orleans.TestingHost;
 using TestExtensions;
 using UnitTests.GrainInterfaces;
@@ -17,7 +22,22 @@ namespace UnitTests.General
             protected override void ConfigureTestCluster(TestClusterBuilder builder)
             {
                 builder.Options.InitialSilosCount = 3;
+                builder.AddSiloBuilderConfigurator<SiloConfiguration>();
             }
+        }
+
+        public class SiloConfiguration : ISiloConfigurator
+        {
+            public void Configure(ISiloBuilder siloBuilder) => siloBuilder.ConfigureServices(services =>
+            {
+                services.Configure<GrainDirectoryOptions>(options =>
+                {
+                    options.CachingStrategy = GrainDirectoryOptions.CachingStrategyType.Custom;
+                });
+
+                services.AddSingleton<TestDirectoryCache>();
+                services.AddFromExisting<IGrainDirectoryCache, TestDirectoryCache>();
+            });
         }
 
         public OneWayDeactivationTests(Fixture fixture)
@@ -47,34 +67,13 @@ namespace UnitTests.General
 
                 // Activate the grain & record its address.
                 var grainToDeactivate = await grainToCallFrom.GetOtherGrain();
-                var initialActivationAddress = await grainToCallFrom.GetActivationAddress(grainToDeactivate);
 
-                // We expect cache invalidation to propagate quickly, but will wait a few seconds just in case.
-                var remainingAttempts = 50;
-                bool cacheUpdated = false;
-                do
-                {
-                    if (!cacheUpdated)
-                    {
-                        await Task.Delay(TimeSpan.FromMilliseconds(1000));
-                    }
-
-                    // Deactivate the grain.
-                    await grainToDeactivate.Deactivate();
-
-                    // Have the first grain make a one-way call to the grain which was deactivated.
-                    // The purpose of this is to trigger a cache invalidation rejection response.
-                    _ = grainToCallFrom.NotifyOtherGrain();
-
-                    // Ask the first grain for its cached value of the second grain's activation address.
-                    // This value should eventually be updated to a new activation because of the cache invalidation.
-                    var activationAddress = await grainToCallFrom.GetActivationAddress(grainToDeactivate);
-
-                    Assert.True(--remainingAttempts > 0);
-
-                    cacheUpdated = !string.Equals(activationAddress, initialActivationAddress);
-
-                } while (!cacheUpdated);
+                var initialActivationId = await grainToDeactivate.GetActivationId();
+                await grainToDeactivate.Deactivate();
+                await grainToCallFrom.SignalSelfViaOther();
+                var (count, finalActivationId) = await grainToCallFrom.WaitForSignal();
+                Assert.Equal(1, count);
+                Assert.NotEqual(initialActivationId, finalActivationId);
             }
         }
     }

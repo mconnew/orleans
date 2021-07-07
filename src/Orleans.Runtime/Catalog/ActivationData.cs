@@ -28,7 +28,7 @@ namespace Orleans.Runtime
         private readonly WorkItemGroup _workItemGroup;
         private readonly List<Message> _waitingRequests = new();
         private readonly Dictionary<Message, DateTime> _runningRequests = new();
-        private readonly SingleWaiterAutoResetEvent _messagesSemaphore = new() { RunContinuationsAsynchronously = true };
+        private readonly SingleWaiterAutoResetEvent _workSignal = new() { RunContinuationsAsynchronously = true };
         private readonly GrainLifecycle lifecycle;
         private List<object> _pendingOperations;
         private Message _blockingRequest;
@@ -383,7 +383,7 @@ namespace Orleans.Runtime
                 _pendingOperations.Add(operation);
             }
 
-            _messagesSemaphore.Signal();
+            _workSignal.Signal();
         }
 
         public void Deactivate(CancellationToken? token = default)
@@ -459,8 +459,6 @@ namespace Orleans.Runtime
                 {
                     timer.Stop();
                 }
-
-                Timers = null;
             }
         }
 
@@ -684,11 +682,11 @@ namespace Orleans.Runtime
         private async Task RunMessageLoop()
         {
             // Note that this loop never terminates. That might look strange, but there is a reason for it:
-            // an activation must always accept and process any incoming messages. How an activation processes
-            // those messages is up to the activation's state to determine. If the activation has not yet
-            // completed activation, it will let the messages continue to queue up until it completes activation.
-            // If the activation failed to activate, messages will be responded to with a rejection.
-            // If the activation has terminated, messages will be forwarded on to a new activation of this grain.
+            // a grain must always accept and process any incoming messages. How a grain processes
+            // those messages is up to the grain's state to determine. If the grain has not yet
+            // completed activating, it will let the messages continue to queue up until it completes activation.
+            // If the grain failed to activate, messages will be responded to with a rejection.
+            // If the grain has terminated, messages will be forwarded on to a new instance of this grain.
             // The loop will eventually be garbage collected when the grain gets deactivated and there are no
             // rooted references to it.
             while (true)
@@ -715,7 +713,7 @@ namespace Orleans.Runtime
 
                     ProcessPendingRequests();
 
-                    await _messagesSemaphore.WaitAsync();
+                    await _workSignal.WaitAsync();
                 }
                 catch (Exception exception)
                 {
@@ -987,7 +985,7 @@ namespace Orleans.Runtime
             }
 
             // Signal the message pump to see if there is another request which can be processed now that this one has completed
-            _messagesSemaphore.Signal();
+            _workSignal.Signal();
         }
 
         public void ReceiveMessage(object message) => ReceiveMessage((Message)message);
@@ -1055,7 +1053,7 @@ namespace Orleans.Runtime
                 _waitingRequests.Add(message);
             }
 
-            _messagesSemaphore.Signal();
+            _workSignal.Signal();
         }
 
         /// <summary>
@@ -1148,7 +1146,7 @@ namespace Orleans.Runtime
             }
             finally
             {
-                _messagesSemaphore.Signal();
+                _workSignal.Signal();
             }
 
             async Task<bool> CallActivateAsync(Dictionary<string, object> requestContextData, CancellationToken cancellationToken)
@@ -1399,7 +1397,7 @@ namespace Orleans.Runtime
 
             // Signal deactivation
             GetDeactivationCompletionSource().TrySetResult(true);
-            _messagesSemaphore.Signal();
+            _workSignal.Signal();
 
             if (_shared.Logger.IsEnabled(LogLevel.Trace))
             {

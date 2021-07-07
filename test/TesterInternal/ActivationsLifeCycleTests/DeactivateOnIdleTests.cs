@@ -15,6 +15,10 @@ using Orleans.Internal;
 using Orleans.Hosting;
 using Orleans.Configuration;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Orleans.Runtime.GrainDirectory;
+using UnitTests.General;
+using Orleans.Configuration.Internal;
 
 namespace UnitTests.ActivationsLifeCycleTests
 {
@@ -230,23 +234,9 @@ namespace UnitTests.ActivationsLifeCycleTests
             await grain.DeactivateSelf();
             await Task.Delay(3000);
 
-            // ReSharper disable once PossibleNullReferenceException
             var thrownException = await Record.ExceptionAsync(() => grain.GetAge());
-            if (forwardCount != 0)
-            {
-                Assert.Null(thrownException);
-                output.WriteLine("\nThe 1st call after DeactivateSelf has NOT thrown any exception as expected, since forwardCount is {0}.\n", forwardCount);
-            }
-            else
-            {
-                Assert.NotNull(thrownException);
-                Assert.IsType<OrleansMessageRejectionException>(thrownException);
-                Assert.Contains("Non-existent activation", thrownException.Message);
-                output.WriteLine("\nThe 1st call after DeactivateSelf has thrown Non-existent activation exception as expected, since forwardCount is {0}.\n", forwardCount);
-
-                // Try sending agan now and see it was fixed.
-                await grain.GetAge();
-            }
+            Assert.Null(thrownException);
+            output.WriteLine("\nThe 1st call after DeactivateSelf has NOT thrown any exception as expected, since forwardCount is {0}.\n", forwardCount);
         }
 
         private async Task<ICollectionTestGrain> PickGrainInNonPrimary()
@@ -285,6 +275,7 @@ namespace UnitTests.ActivationsLifeCycleTests
             var directoryLazyDeregistrationDelay = TimeSpan.FromMilliseconds(-1);
             var builder = new TestClusterBuilder(2);
             builder.AddSiloBuilderConfigurator<NoForwardingSiloConfigurator>();
+            builder.AddSiloBuilderConfigurator<TestDirectoryCacheSiloConfigurator>();
             Initialize(builder);
             for (int i = 0; i < 10; i++)
             {
@@ -308,6 +299,7 @@ namespace UnitTests.ActivationsLifeCycleTests
             var builder = new TestClusterBuilder(1);
             builder.AddSiloBuilderConfigurator<NoForwardingSiloConfigurator>();
             builder.AddSiloBuilderConfigurator<LazyDeregistrationDelaySiloConfigurator>();
+            builder.AddSiloBuilderConfigurator<TestDirectoryCacheSiloConfigurator>();
 
             Initialize(builder);
 
@@ -315,6 +307,20 @@ namespace UnitTests.ActivationsLifeCycleTests
             {
                 await MissingActivation_Runner(i, lazyDeregistrationDelay);
             }
+        }
+
+        public class TestDirectoryCacheSiloConfigurator : ISiloConfigurator
+        {
+            public void Configure(ISiloBuilder siloBuilder) => siloBuilder.ConfigureServices(services =>
+            {
+                services.Configure<GrainDirectoryOptions>(options =>
+                {
+                    options.CachingStrategy = GrainDirectoryOptions.CachingStrategyType.Custom;
+                });
+
+                services.AddSingleton<TestDirectoryCache>();
+                services.AddFromExisting<IGrainDirectoryCache, TestDirectoryCache>();
+            });
         }
 
         public class LazyDeregistrationDelaySiloConfigurator : ISiloConfigurator
@@ -325,7 +331,7 @@ namespace UnitTests.ActivationsLifeCycleTests
             }
         }
 
-        [Fact(Skip = "Needs investigation"), TestCategory("Functional")]
+        [Fact(), TestCategory("Functional")]
         public async Task MissingActivation_WithoutDirectoryLazyDeregistration_MultiSilo_SecondaryFirst()
         {
             var lazyDeregistrationDelay = TimeSpan.FromMilliseconds(-1);
@@ -344,11 +350,11 @@ namespace UnitTests.ActivationsLifeCycleTests
             TimeSpan lazyDeregistrationDelay,
             bool forceCreationInSecondary = false)
         {
-            output.WriteLine("\n\n\n SMissingActivation_Runner.\n\n\n");
+            var primarySilo = this.testCluster.Primary;
+            var directoryCache = ((InProcessSiloHandle)primarySilo).SiloHost.Services.GetRequiredService<TestDirectoryCache>();
+            output.WriteLine("\n\n\n MissingActivation_Runner\n\n\n");
 
             var realGrainId = grainId;
-
-            ITestGrain grain;
 
             var isMultipleSilosPresent = testCluster.SecondarySilos != null && testCluster.SecondarySilos.Count > 0;
 
@@ -362,18 +368,13 @@ namespace UnitTests.ActivationsLifeCycleTests
             var primarySiloAddress = testCluster.Primary.SiloAddress.ToString();
             var secondarySiloAddress = isMultipleSilosPresent
                                            ? testCluster.SecondarySilos[0].SiloAddress.ToString()
-                                           : String.Empty;
+                                           : string.Empty;
 
-            //
-            // We only doing this for multiple silos.
-            //
-
+            // We only do this for multiple silos.
+            ITestGrain grain;
             if (isMultipleSilosPresent && forceCreationInSecondary)
             {
-                //
                 // Make sure that we proceeding with a grain which is created in the secondary silo for first!
-                //
-
                 while (true)
                 {
                     this.output.WriteLine($"GetGrain: {realGrainId}");
@@ -448,11 +449,13 @@ namespace UnitTests.ActivationsLifeCycleTests
             {
                 // Wait a bit
                 TimeSpan pause = lazyDeregistrationDelay.Multiply(2);
-                output.WriteLine($"Pausing for {0} because we are using lazy deregistration", pause);
+                output.WriteLine($"Pausing for {pause} because we are using lazy deregistration");
                 await Task.Delay(pause);
             }
 
             // Now send a message again; it should fail);
+            var allOperations = directoryCache.Operations.ToArray();
+            _ = allOperations;
             var firstEx = await Assert.ThrowsAsync<OrleansMessageRejectionException>(() => grain.GetLabel());
             Assert.Contains("Non-existent activation", firstEx.Message);
             output.WriteLine("Got 1st Non-existent activation Exception, as expected.");

@@ -82,7 +82,8 @@ namespace Orleans.Runtime.GrainDirectory
             Factory<GrainDirectoryPartition> grainDirectoryPartitionFactory,
             IOptions<DevelopmentClusterMembershipOptions> developmentClusterMembershipOptions,
             IOptions<GrainDirectoryOptions> grainDirectoryOptions,
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory,
+            IServiceProvider serviceProvider)
         {
             this.log = loggerFactory.CreateLogger<LocalGrainDirectory>();
 
@@ -93,16 +94,7 @@ namespace Orleans.Runtime.GrainDirectory
             this.grainFactory = grainFactory;
             ClusterId = clusterId;
 
-            DirectoryCache = GrainDirectoryCacheFactory.CreateGrainDirectoryCache(grainDirectoryOptions.Value);
-            /* TODO - investigate dynamic config changes using IOptions - jbragg
-                        clusterConfig.OnConfigChange("Globals/Caching", () =>
-                        {
-                            lock (membershipCache)
-                            {
-                                DirectoryCache = GrainDirectoryCacheFactory<IReadOnlyList<Tuple<SiloAddress, ActivationId>>>.CreateGrainDirectoryCache(globalConfig);
-                            }
-                        });
-            */
+            DirectoryCache = GrainDirectoryCacheFactory.CreateGrainDirectoryCache(serviceProvider, grainDirectoryOptions.Value);
             maintainer =
                 GrainDirectoryCacheFactory.CreateGrainDirectoryCacheMaintainer(
                     this,
