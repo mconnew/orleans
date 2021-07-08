@@ -97,7 +97,7 @@ namespace Orleans.Runtime
 
         public static void CheckRuntimeContext()
         {
-            var context = RuntimeContext.CurrentGrainContext;
+            var context = RuntimeContext.Current;
 
             if (context is null)
             {
