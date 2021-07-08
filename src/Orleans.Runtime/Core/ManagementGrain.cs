@@ -252,7 +252,7 @@ namespace Orleans.Runtime.Management
 
             if (grainLocator.TryLocalLookup(grainId, out var result))
             {
-                return new ValueTask<SiloAddress>(result?.Silo);
+                return new ValueTask<SiloAddress>(result.Silo);
             }
 
             return LookupAsync(grainId, grainLocator);
@@ -260,7 +260,7 @@ namespace Orleans.Runtime.Management
             static async ValueTask<SiloAddress> LookupAsync(GrainId grainId, GrainLocator grainLocator)
             {
                 var result = await grainLocator.Lookup(grainId);
-                return result?.Silo;
+                return result.Silo;
             }
         }
 

@@ -41,7 +41,7 @@ namespace Orleans.SystemTargetInterfaces
             var sb = new StringBuilder();
             sb.Append("[");
             sb.Append(ResponseStatus.ToString());
-            if (ExistingActivationAddress.Address != null) {
+            if (ExistingActivationAddress.Address != default) {
                 sb.Append(" ");
                 sb.Append(ExistingActivationAddress.Address);
                 sb.Append(" ");

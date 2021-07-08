@@ -69,7 +69,7 @@ namespace Orleans.Runtime.GrainDirectory
 
         public ActivationAddress TryAddSingleActivation(ActivationAddress address)
         {
-            if (Activation is { } existing)
+            if (Activation is { IsDefault: false } existing)
             {
                 return existing;
             }
@@ -85,10 +85,10 @@ namespace Orleans.Runtime.GrainDirectory
         public bool RemoveActivation(ActivationId act, UnregistrationCause cause, TimeSpan lazyDeregistrationDelay, out bool wasRemoved)
         {
             wasRemoved = false;
-            if (Activation is { } existing  && existing.Activation.Equals(act) && OkToRemove(cause, lazyDeregistrationDelay))
+            if (Activation is { IsDefault: false } existing  && existing.Activation.Equals(act) && OkToRemove(cause, lazyDeregistrationDelay))
             {
                 wasRemoved = true;
-                Activation = null;
+                Activation = default;
                 VersionTag = ThreadSafeRandom.Next();
             }
 
@@ -98,13 +98,13 @@ namespace Orleans.Runtime.GrainDirectory
         public ActivationAddress Merge(GrainInfo other)
         {
             var otherActivation = other.Activation;
-            if (otherActivation is not null && Activation is null)
+            if (!otherActivation.IsDefault && Activation.IsDefault)
             {
                 Activation = other.Activation;
                 TimeCreated = other.TimeCreated;
                 VersionTag = ThreadSafeRandom.Next();
             }
-            else if (Activation is not null && otherActivation is not null) 
+            else if (!Activation.IsDefault && !otherActivation.IsDefault) 
             {
                 // Grain is supposed to be in single activation mode, but we have two activations!!
                 // Eventually we should somehow delegate handling this to the silo, but for now, we'll arbitrarily pick one value.
@@ -121,7 +121,7 @@ namespace Orleans.Runtime.GrainDirectory
                 return otherActivation;
             }
 
-            return null;
+            return default;
         }
     }
 
@@ -251,7 +251,7 @@ namespace Orleans.Runtime.GrainDirectory
             var result = new AddressAndTag();
             lock (lockable)
             {
-                if (!partitionData.TryGetValue(grain, out var grainInfo) || grainInfo.Activation is null)
+                if (!partitionData.TryGetValue(grain, out var grainInfo) || grainInfo.Activation.IsDefault)
                 {
                     return result;
                 }
@@ -262,7 +262,7 @@ namespace Orleans.Runtime.GrainDirectory
 
             if (!IsValidSilo(result.Address.Silo))
             {
-                result.Address = null;
+                result.Address = default;
             }
 
             return result;
@@ -305,7 +305,7 @@ namespace Orleans.Runtime.GrainDirectory
                     {
                         if (log.IsEnabled(LogLevel.Debug)) log.Debug("While merging two disjoint partitions, same grain " + pair.Key + " was found in both partitions");
                         var activationToDrop = partitionData[pair.Key].Merge(pair.Value);
-                        if (activationToDrop == null) continue;
+                        if (activationToDrop == default) continue;
 
                         activationsToRemove ??= new Dictionary<SiloAddress, List<ActivationAddress>>();
                         if (activationsToRemove.TryGetValue(activationToDrop.Silo, out var activations))
@@ -382,7 +382,7 @@ namespace Orleans.Runtime.GrainDirectory
             {
                 foreach (var pair in partitionData)
                 {
-                    if (pair.Value.Activation is { } address && IsValidSilo(address.Silo))
+                    if (pair.Value.Activation is { IsDefault: false } address && IsValidSilo(address.Silo))
                     {
                         result.Add(address);
                     }
@@ -436,7 +436,7 @@ namespace Orleans.Runtime.GrainDirectory
             {
                 foreach (var grainEntry in partitionData)
                 {
-                    if (grainEntry.Value.Activation is { } activation)
+                    if (grainEntry.Value.Activation is { IsDefault: false } activation)
                     {
                         sb.Append("    ").Append(grainEntry.Key.ToString()).Append("[" + grainEntry.Value.VersionTag + "]").
                             Append(" => ").Append(activation.Grain.ToString()).

@@ -37,7 +37,7 @@ namespace Orleans.Runtime.GrainDirectory
                 return true;
             }
 
-            address = null;
+            address = default;
             return false;
         }
 

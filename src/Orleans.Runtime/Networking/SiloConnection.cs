@@ -122,7 +122,7 @@ namespace Orleans.Runtime.Messaging
                     $"The target silo is no longer active: target was {msg.TargetSilo.ToLongString()}, but this silo is {this.LocalSiloAddress.ToLongString()}. The rejected message is {msg}.");
 
                 // Invalidate the remote caller's activation cache entry.
-                if (msg.TargetAddress != null)
+                if (msg.TargetAddress != default)
                 {
                     rejection.AddToCacheInvalidationHeader(msg.TargetAddress);
                 }

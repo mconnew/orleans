@@ -57,7 +57,7 @@ namespace Orleans.Runtime.GrainDirectory
             // Nothing found
             if (entry is null)
             {
-                return null;
+                return default;
             }
 
             var entryAddress = entry.ToActivationAddress();
@@ -68,7 +68,7 @@ namespace Orleans.Runtime.GrainDirectory
             {
                 // Remove it from the directory
                 await GetGrainDirectory(grainId.Type).Unregister(entry);
-                result = null;
+                result = default;
             }
             else
             {
