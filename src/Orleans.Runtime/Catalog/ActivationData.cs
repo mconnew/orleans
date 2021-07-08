@@ -56,7 +56,12 @@ namespace Orleans.Runtime
             GrainTypeSharedContext shared)
         {
             _shared = shared;
-            Address = addr ?? throw new ArgumentNullException(nameof(addr));
+            if (addr.IsDefault)
+            {
+                throw new ArgumentNullException(nameof(addr));
+            }
+
+            Address = addr;
             lifecycle = new GrainLifecycle(_shared.Logger);
             State = ActivationState.Create;
             serviceScope = applicationServices.CreateScope();
@@ -99,7 +104,7 @@ namespace Orleans.Runtime
 
         public ActivationAddress ForwardingAddress
         {
-            get => _extras?.ForwardingAddress;
+            get => _extras?.ForwardingAddress ?? default;
             set
             {
                 lock (this)
@@ -836,7 +841,7 @@ namespace Orleans.Runtime
                     }
                 }
 
-                if (DeactivationException is null || ForwardingAddress is { })
+                if (DeactivationException is null || !ForwardingAddress.IsDefault)
                 {
                     // Either this was a duplicate activation or it was at some point successfully activated
                     // Forward all pending messages
@@ -1076,7 +1081,7 @@ namespace Orleans.Runtime
                 _shared.InternalRuntime.MessageCenter.ProcessRequestsToInvalidActivation(
                     msgs,
                     Address,
-                    forwardingAddress: null,
+                    forwardingAddress: default,
                     failedOperation: DeactivationReason.Text,
                     exc: DeactivationException,
                     rejectMessages: true);
@@ -1194,7 +1199,7 @@ namespace Orleans.Runtime
                         DeactivationReason = new(DeactivationReasonCode.FailedToActivate, sourceException, "Failed to activate grain");
                     }
 
-                    if (IsUsingGrainDirectory && ForwardingAddress is null)
+                    if (IsUsingGrainDirectory && ForwardingAddress.IsDefault)
                     {
                         try
                         {

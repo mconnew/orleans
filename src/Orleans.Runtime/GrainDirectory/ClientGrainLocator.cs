@@ -34,7 +34,7 @@ namespace Orleans.Runtime.GrainDirectory
 
         private ActivationAddress SelectAddress(List<ActivationAddress> results, GrainId grainId)
         {
-            ActivationAddress unadjustedResult = null;
+            ActivationAddress unadjustedResult = default;
             if (results is { Count: > 0 })
             {
                 foreach (var location in results)
@@ -49,12 +49,12 @@ namespace Orleans.Runtime.GrainDirectory
                 unadjustedResult = results[ThreadSafeRandom.Next(results.Count)];
             }
 
-            if (unadjustedResult is object)
+            if (!unadjustedResult.IsDefault)
             {
                 return ActivationAddress.GetAddress(unadjustedResult.Silo, grainId, unadjustedResult.Activation);
             }
 
-            return null;
+            return default;
         }
 
         public Task<ActivationAddress> Register(ActivationAddress address) => throw new InvalidOperationException($"Cannot register client grain explicitly");
@@ -80,10 +80,10 @@ namespace Orleans.Runtime.GrainDirectory
             if (_clientDirectory.TryLocalLookup(clientGrainId.GrainId, out var addresses))
             {
                 address = SelectAddress(addresses, grainId);
-                return address is not null;
+                return !address.IsDefault;
             }
 
-            address = null;
+            address = default;
             return false;
         }
     }

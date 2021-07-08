@@ -81,7 +81,7 @@ namespace UnitTests.Directory
 
             // Now should be in cache
             Assert.True(this.grainLocator.TryLookupInCache(expected.GrainId, out var result));
-            Assert.NotNull(result);
+            Assert.False(result.IsDefault);
             Assert.Equal(expected.ToActivationAddress(), result);
         }
 
@@ -107,7 +107,7 @@ namespace UnitTests.Directory
 
             // Now should be in cache
             Assert.True(this.grainLocator.TryLookupInCache(expectedAddr.GrainId, out var result));
-            Assert.NotNull(result);
+            Assert.False(result.IsDefault);
             Assert.Equal(expectedAddr.ToActivationAddress(), result);
         }
 
@@ -136,7 +136,7 @@ namespace UnitTests.Directory
 
             // Now should be in cache
             Assert.True(this.grainLocator.TryLookupInCache(expectedAddr.GrainId, out var result));
-            Assert.NotNull(result);
+            Assert.False(result.IsDefault);
             Assert.Equal(expectedAddr.ToActivationAddress(), result);
 
             await this.lifecycle.OnStop();
@@ -161,12 +161,12 @@ namespace UnitTests.Directory
 
             // Do a remote lookup
             var result = await this.grainLocator.Lookup(grainAddress.GrainId);
-            Assert.NotNull(result);
+            Assert.False(result.IsDefault);
             Assert.Equal(grainAddress.ToActivationAddress(), result);
 
             // Now cache should be populated
             Assert.True(this.grainLocator.TryLookupInCache(grainAddress.GrainId, out var cachedValue));
-            Assert.NotNull(cachedValue);
+            Assert.False(cachedValue.IsDefault);
             Assert.Equal(grainAddress.ToActivationAddress(), cachedValue);
         }
 
@@ -185,7 +185,7 @@ namespace UnitTests.Directory
             this.grainDirectory.Lookup(outdatedAddr.GrainId).Returns(outdatedAddr);
 
             var actual = await this.grainLocator.Lookup(outdatedAddr.GrainId);
-            Assert.Null(actual);
+            Assert.True(actual.IsDefault);
 
             await this.grainDirectory.Received(1).Lookup(outdatedAddr.GrainId);
             await this.grainDirectory.Received(1).Unregister(outdatedAddr);
@@ -254,7 +254,7 @@ namespace UnitTests.Directory
             Assert.True(this.grainLocator.TryLookupInCache(expectedAddr.GrainId, out var unused2));
 
             var result = await this.grainLocator.Lookup(expectedAddr.GrainId);
-            Assert.NotNull(result);
+            Assert.False(result.IsDefault);
             Assert.Equal(expectedAddr.ToActivationAddress(), result);
 
             await this.lifecycle.OnStop();

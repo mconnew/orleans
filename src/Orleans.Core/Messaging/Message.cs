@@ -41,9 +41,9 @@ namespace Orleans.Runtime
 
         // Cache values of TargetAddess and SendingAddress as they are used very frequently
         [Id(0)]
-        private ActivationAddress targetAddress;
+        private ActivationAddress? targetAddress;
         [Id(1)]
-        private ActivationAddress sendingAddress;
+        private ActivationAddress? sendingAddress;
         
         static Message()
         {
@@ -168,13 +168,14 @@ namespace Orleans.Runtime
         {
             get
             {
-                if (targetAddress is object) return targetAddress;
+                if (targetAddress.HasValue) return targetAddress.Value;
                 if (!TargetGrain.IsDefault)
                 {
-                    return targetAddress = ActivationAddress.GetAddress(TargetSilo, TargetGrain, TargetActivation);
+                    targetAddress = ActivationAddress.GetAddress(TargetSilo, TargetGrain, TargetActivation);
+                    return targetAddress.Value;
                 }
 
-                return null;
+                return default;
             }
 
             set
@@ -224,7 +225,7 @@ namespace Orleans.Runtime
 
         public ActivationAddress SendingAddress
         {
-            get { return sendingAddress ?? (sendingAddress = ActivationAddress.GetAddress(SendingSilo, SendingGrain, SendingActivation)); }
+            get { return sendingAddress.HasValue ? sendingAddress.Value : (sendingAddress = ActivationAddress.GetAddress(SendingSilo, SendingGrain, SendingActivation)).Value; }
             set
             {
                 SendingGrain = value.Grain;

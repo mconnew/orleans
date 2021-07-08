@@ -272,7 +272,7 @@ namespace Orleans.Runtime.Messaging
             {
                 foreach (var message in messages)
                 {
-                    if (oldAddress != null)
+                    if (oldAddress != default)
                     {
                         message.AddToCacheInvalidationHeader(oldAddress);
                     }
@@ -299,7 +299,7 @@ namespace Orleans.Runtime.Messaging
             bool rejectMessages = false)
         {
             // Just use this opportunity to invalidate local Cache Entry as well. 
-            if (oldAddress != null)
+            if (oldAddress != default)
             {
                 this.localGrainDirectory.InvalidateCacheEntry(oldAddress);
             }
@@ -322,7 +322,7 @@ namespace Orleans.Runtime.Messaging
             {
                 this.messagingTrace.OnDispatcherForwarding(message, oldAddress, forwardingAddress, failedOperation, exc);
 
-                if (oldAddress != null)
+                if (oldAddress != default)
                 {
                     message.AddToCacheInvalidationHeader(oldAddress);
                 }
@@ -380,7 +380,7 @@ namespace Orleans.Runtime.Messaging
             return true;
         }
 
-        private void ResendMessageImpl(Message message, ActivationAddress forwardingAddress = null)
+        private void ResendMessageImpl(Message message, ActivationAddress forwardingAddress = default)
         {
             if (log.IsEnabled(LogLevel.Debug)) log.Debug("Resend {0}", message);
             message.TargetHistory = message.GetTargetHistory();
@@ -390,7 +390,7 @@ namespace Orleans.Runtime.Messaging
                 this.PrepareSystemTargetMessage(message);
                 SendMessage(message);
             }
-            else if (forwardingAddress != null)
+            else if (forwardingAddress != default)
             {
                 message.TargetAddress = forwardingAddress;
                 SendMessage(message);
@@ -547,7 +547,7 @@ namespace Orleans.Runtime.Messaging
                                 msg);
 
                             var nonExistentActivation = msg.TargetAddress;
-                            ProcessRequestToInvalidActivation(msg, nonExistentActivation, null, "Non-existent activation");
+                            ProcessRequestToInvalidActivation(msg, nonExistentActivation, forwardingAddress: default, "Non-existent activation");
                             return;
                         }
 

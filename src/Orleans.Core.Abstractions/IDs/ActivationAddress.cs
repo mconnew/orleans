@@ -5,14 +5,16 @@ namespace Orleans.Runtime
     [Serializable, Immutable]
     [GenerateSerializer]
     [SuppressReferenceTracking]
-    public sealed class ActivationAddress : IEquatable<ActivationAddress>
+    public readonly struct ActivationAddress : IEquatable<ActivationAddress>
     {
         [Id(1)]
-        public GrainId Grain { get; private set; }
+        public GrainId Grain { get; }
+
         [Id(2)]
-        public ActivationId Activation { get; private set; }
+        public ActivationId Activation { get; }
+
         [Id(3)]
-        public SiloAddress Silo { get; private set; }
+        public SiloAddress Silo { get; }
 
         public bool IsComplete => !Grain.IsDefault && Activation != null && Silo != null;
 
@@ -37,9 +39,22 @@ namespace Orleans.Runtime
             return new ActivationAddress(silo, grain, activation);
         }
 
-        public override bool Equals(object obj) => Equals(obj as ActivationAddress);
+        public bool IsDefault => Equals(default(ActivationAddress));
 
-        public bool Equals(ActivationAddress other) => other != null && Matches(other) && (Silo?.Equals(other.Silo) ?? other.Silo is null);
+        public override bool Equals(object obj) => obj is ActivationAddress other && Equals(other);
+
+        public bool Equals(ActivationAddress other)
+        {
+            if (!Matches(other)) return false;
+            if (ReferenceEquals(Silo, other.Silo)) return true;
+            if (Silo is null ^ other.Silo is null) return false;
+            if (!Silo.Equals(other.Silo)) return false;
+            return true;
+        }
+
+        public static bool operator ==(ActivationAddress a, ActivationAddress b) => a.Equals(b);
+
+        public static bool operator !=(ActivationAddress a, ActivationAddress b) => !a.Equals(b);
 
         public override int GetHashCode() => Grain.GetHashCode() ^ (Activation?.GetHashCode() ?? 0) ^ (Silo?.GetHashCode() ?? 0);
 
@@ -57,7 +72,7 @@ namespace Orleans.Runtime
 
         public bool Matches(ActivationAddress other)
         {
-            return Grain.Equals(other.Grain) && (Activation?.Equals(other.Activation) ?? other.Activation is null);
+            return Grain.Equals(other.Grain) && (Activation?.Equals(other.Activation) ?? ReferenceEquals(Activation, other.Activation));
         }
     }
 }

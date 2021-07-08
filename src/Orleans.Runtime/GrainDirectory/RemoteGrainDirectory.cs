@@ -83,7 +83,7 @@ namespace Orleans.Runtime.GrainDirectory
                     // the grain entry has been updated -- fetch and return its current version
                     var lookupResult = partition.LookUpActivation(tuple.GrainId);
                     // validate that the entry is still in the directory (i.e., it was not removed concurrently)
-                    if (lookupResult.Address != null)
+                    if (lookupResult.Address != default)
                     {
                         result.Add(lookupResult);
                     }

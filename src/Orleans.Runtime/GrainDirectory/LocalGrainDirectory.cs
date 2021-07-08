@@ -303,7 +303,7 @@ namespace Orleans.Runtime.GrainDirectory
             foreach (var entry in this.DirectoryPartition.GetItems())
             {
                 var (grain, grainInfo) = (entry.Key, entry.Value);
-                if (grainInfo.Activation is { } address)
+                if (grainInfo.Activation is { IsDefault: false } address)
                 {
                     // Include any activations from dead silos and from predecessors.
                     var siloIsDead = dead && address.Silo.Equals(silo);
@@ -552,7 +552,7 @@ namespace Orleans.Runtime.GrainDirectory
                 // Caching optimization: 
                 // cache the result of a successfull RegisterSingleActivation call, only if it is not a duplicate activation.
                 // this way next local lookup will find this ActivationAddress in the cache and we will save a full lookup!
-                if (result.Address == null) return result;
+                if (result.Address == default) return result;
 
                 if (!address.Equals(result.Address) || !IsValidSilo(address.Silo)) return result;
 
@@ -707,7 +707,7 @@ namespace Orleans.Runtime.GrainDirectory
             {
                 LocalDirectoryLookups.Increment();
                 result = GetLocalDirectoryData(grain);
-                if (result.Address == null)
+                if (result.Address == default)
                 {
                     // it can happen that we cannot find the grain in our partition if there were 
                     // some recent changes in the membership
@@ -723,7 +723,7 @@ namespace Orleans.Runtime.GrainDirectory
             // handle cache
             cacheLookups.Increment();
             var address = GetLocalCacheData(grain);
-            if (address == null)
+            if (address == default)
             {
                 if (log.IsEnabled(LogLevel.Trace)) log.Trace("TryFullLookup else {0}=null", grain);
                 result = default;
@@ -753,7 +753,7 @@ namespace Orleans.Runtime.GrainDirectory
                 return cache;
             }
 
-            return null;
+            return default;
         }
 
         public async Task<AddressAndTag> LookupAsync(GrainId grainId, int hopCount = 0)
@@ -780,7 +780,7 @@ namespace Orleans.Runtime.GrainDirectory
                 // we are the owner
                 LocalDirectoryLookups.Increment();
                 var localResult = DirectoryPartition.LookUpActivation(grainId);
-                if (localResult.Address == null)
+                if (localResult.Address == default)
                 {
                     // it can happen that we cannot find the grain in our partition if there were 
                     // some recent changes in the membership
@@ -806,7 +806,7 @@ namespace Orleans.Runtime.GrainDirectory
                 var result = await GetDirectoryReference(forwardAddress).LookupAsync(grainId, hopCount + 1);
 
                 // update the cache
-                if (result.Address is { } address && IsValidSilo(address.Silo))
+                if (result.Address is { IsDefault: false } address && IsValidSilo(address.Silo))
                 {
                     DirectoryCache.AddOrUpdate(address, result.VersionTag);
                 }
@@ -958,7 +958,7 @@ namespace Orleans.Runtime.GrainDirectory
         }
 
         public void CachePlacementDecision(ActivationAddress activation) => this.DirectoryCache.AddOrUpdate(activation, 0);
-        public bool TryCachedLookup(GrainId grainId, out ActivationAddress address) => (address = GetLocalCacheData(grainId)) is not null;
+        public bool TryCachedLookup(GrainId grainId, out ActivationAddress address) => !(address = GetLocalCacheData(grainId)).IsDefault;
 
         private class DirectoryMembership
         {

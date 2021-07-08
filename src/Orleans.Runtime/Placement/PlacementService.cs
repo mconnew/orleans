@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -156,9 +157,8 @@ namespace Orleans.Runtime.Placement
             private readonly SingleWaiterAutoResetEvent _workSignal = new();
             private readonly ILogger _logger;
             private readonly Task _processLoopTask;
-            private readonly object _lockObj = new();
             private readonly PlacementService _placementService;
-            private List<(Message Message, TaskCompletionSource<bool> Completion)> _messages = new();
+            private readonly ConcurrentQueue<(Message Message, TaskCompletionSource<bool> Completion)> _messages = new();
 
             public PlacementWorker(PlacementService placementService)
             {
@@ -170,29 +170,9 @@ namespace Orleans.Runtime.Placement
             public Task AddressMessage(Message message)
             {
                 var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-                lock (_lockObj)
-                {
-                    _messages ??= new();
-                    _messages.Add((message, completion));
-                }
-
+                _messages.Enqueue((message, completion));
                 _workSignal.Signal();
                 return completion.Task;
-            }
-
-            private List<(Message Message, TaskCompletionSource<bool> Completion)> GetMessages()
-            {
-                lock (_lockObj)
-                {
-                    if (_messages is { Count: > 0 } result)
-                    {
-                        _messages = null;
-                        return result;
-                    }
-
-                    return null;
-                }
             }
 
             private async Task ProcessLoop()
@@ -203,29 +183,25 @@ namespace Orleans.Runtime.Placement
                     try
                     {
                         // Start processing new requests
-                        var messages = GetMessages();
-                        if (messages is not null)
+                        while (_messages.TryDequeue(out var message))
                         {
-                            foreach (var message in messages)
+                            var target = message.Message.TargetGrain;
+                            if (!_inProgress.TryGetValue(target, out var workItem))
                             {
-                                var target = message.Message.TargetGrain;
-                                if (!_inProgress.TryGetValue(target, out var workItem))
-                                {
-                                    _inProgress[target] = workItem = new();
-                                }
+                                _inProgress[target] = workItem = new();
+                            }
 
-                                workItem.Messages.Add(message);
-                                if (workItem.Result is null)
-                                {
-                                    // Note that the first message is used as the target to place the message,
-                                    // so if subsequent messsages do not agree with the first message's interface
-                                    // type or version, then they may be sent to an incompatible silo, which is
-                                    // fine since the remote silo will handle that incompatibility.
-                                    workItem.Result = GetOrPlaceActivationAsync(message.Message);
+                            workItem.Messages.Add(message);
+                            if (workItem.Result is null)
+                            {
+                                // Note that the first message is used as the target to place the message,
+                                // so if subsequent messsages do not agree with the first message's interface
+                                // type or version, then they may be sent to an incompatible silo, which is
+                                // fine since the remote silo will handle that incompatibility.
+                                workItem.Result = GetOrPlaceActivationAsync(message.Message);
 
-                                    // Wake up this processing loop when the task completes
-                                    workItem.Result.SignalOnCompleted(_workSignal);
-                                }
+                                // Wake up this processing loop when the task completes
+                                workItem.Result.SignalOnCompleted(_workSignal);
                             }
                         }
 
@@ -297,7 +273,7 @@ namespace Orleans.Runtime.Placement
 
                 var targetGrain = target.GrainIdentity;
                 var result = await _placementService._grainLocator.Lookup(targetGrain);
-                if (result is not null)
+                if (!result.IsDefault)
                 {
                     return result;
                 }
