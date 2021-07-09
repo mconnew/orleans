@@ -384,11 +384,10 @@ namespace Orleans.Runtime.Messaging
         private void ResendMessageImpl(Message message, ActivationAddress forwardingAddress = default)
         {
             if (log.IsEnabled(LogLevel.Debug)) log.Debug("Resend {0}", message);
-            message.TargetHistory = message.GetTargetHistory();
 
             if (message.TargetGrain.IsSystemTarget())
             {
-                this.PrepareSystemTargetMessage(message);
+                PrepareSystemTargetMessage(message);
                 SendMessage(message);
             }
             else if (forwardingAddress != default)
@@ -401,7 +400,7 @@ namespace Orleans.Runtime.Messaging
                 message.TargetActivation = default;
                 message.TargetSilo = null;
                 message.ClearTargetAddress();
-                _ = this.AddressAndSendMessage(message);
+                _ = AddressAndSendMessage(message);
             }
         }
 
@@ -484,7 +483,7 @@ namespace Orleans.Runtime.Messaging
                 message.TargetSilo = _siloAddress;
             }
 
-            if (message.TargetActivation is null)
+            if (message.TargetActivation.IsDefault)
             {
                 message.TargetActivation = ActivationId.GetDeterministic(message.TargetGrain);
             }
