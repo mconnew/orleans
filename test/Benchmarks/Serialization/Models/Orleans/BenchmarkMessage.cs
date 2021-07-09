@@ -161,7 +161,7 @@ namespace FakeFx.Runtime
             }
         }
         
-        public ActivationId TargetActivation
+        public BenchmarkActivationId TargetActivation
         {
             get { return Headers.TargetActivation; }
             set
@@ -217,7 +217,7 @@ namespace FakeFx.Runtime
             }
         }
         
-        public ActivationId SendingActivation
+        public BenchmarkActivationId SendingActivation
         {
             get { return Headers.SendingActivation; }
             set
@@ -519,13 +519,13 @@ namespace FakeFx.Runtime
             [Id(11)]
             public GrainId _targetGrain;
             [Id(12)]
-            public ActivationId _targetActivation;
+            public BenchmarkActivationId _targetActivation;
             [Id(13)]
             public SiloAddress _sendingSilo;
             [Id(14)]
             public GrainId _sendingGrain;
             [Id(15)]
-            public ActivationId _sendingActivation;
+            public BenchmarkActivationId _sendingActivation;
             public ushort _interfaceVersion;
             public ResponseTypes _result;
             public object _transactionInfo;
@@ -649,7 +649,7 @@ namespace FakeFx.Runtime
                 }
             }
 
-            public ActivationId TargetActivation
+            public BenchmarkActivationId TargetActivation
             {
                 get { return _targetActivation; }
                 set
@@ -676,7 +676,7 @@ namespace FakeFx.Runtime
                 }
             }
 
-            public ActivationId SendingActivation
+            public BenchmarkActivationId SendingActivation
             {
                 get { return _sendingActivation; }
                 set
@@ -811,10 +811,10 @@ namespace FakeFx.Runtime
 
                 headers = _targetSilo == null ? headers & ~Headers.TARGET_SILO : headers | Headers.TARGET_SILO;
                 headers = _targetGrain.IsDefault ? headers & ~Headers.TARGET_GRAIN : headers | Headers.TARGET_GRAIN;
-                headers = _targetActivation is null ? headers & ~Headers.TARGET_ACTIVATION : headers | Headers.TARGET_ACTIVATION;
+                headers = _targetActivation.IsDefault ? headers & ~Headers.TARGET_ACTIVATION : headers | Headers.TARGET_ACTIVATION;
                 headers = _sendingSilo is null ? headers & ~Headers.SENDING_SILO : headers | Headers.SENDING_SILO;
                 headers = _sendingGrain.IsDefault ? headers & ~Headers.SENDING_GRAIN : headers | Headers.SENDING_GRAIN;
-                headers = _sendingActivation is null ? headers & ~Headers.SENDING_ACTIVATION : headers | Headers.SENDING_ACTIVATION;
+                headers = _sendingActivation.IsDefault ? headers & ~Headers.SENDING_ACTIVATION : headers | Headers.SENDING_ACTIVATION;
                 headers = _isReturnedFromRemoteCluster == default(bool) ? headers & ~Headers.IS_RETURNED_FROM_REMOTE_CLUSTER : headers | Headers.IS_RETURNED_FROM_REMOTE_CLUSTER;
                 headers = _interfaceVersion == 0 ? headers & ~Headers.INTERFACE_VERSION : headers | Headers.INTERFACE_VERSION;
                 headers = _result == default(ResponseTypes)? headers & ~Headers.RESULT : headers | Headers.RESULT;
@@ -849,10 +849,10 @@ namespace FakeFx.Runtime
                     && _forwardCount == container._forwardCount
                     && EqualityComparer<SiloAddress>.Default.Equals(_targetSilo, container._targetSilo)
                     && _targetGrain.Equals(container._targetGrain)
-                    && EqualityComparer<ActivationId>.Default.Equals(_targetActivation, container._targetActivation)
+                    && EqualityComparer<BenchmarkActivationId>.Default.Equals(_targetActivation, container._targetActivation)
                     && EqualityComparer<SiloAddress>.Default.Equals(_sendingSilo, container._sendingSilo)
                     && _sendingGrain.Equals(container._sendingGrain)
-                    && EqualityComparer<ActivationId>.Default.Equals(_sendingActivation, container._sendingActivation)
+                    && EqualityComparer<BenchmarkActivationId>.Default.Equals(_sendingActivation, container._sendingActivation)
                     && _interfaceVersion == container._interfaceVersion
                     && _result == container._result
                     && EqualityComparer<object>.Default.Equals(_transactionInfo, container._transactionInfo)

@@ -75,6 +75,23 @@ namespace Orleans.Runtime
             }
         }
 
+        public ValueTask InvokeMethodAsync(GrainReference reference, IInvokable request, InvokeMethodOptions options)
+        {
+            // TODO: Remove expensive interface type check
+            if (filters.Length == 0 && request is not IOutgoingGrainCallFilter)
+            {
+                SetGrainCancellationTokensTarget(reference, request);
+                var copy = this.deepCopier.Copy(request);
+                var responseCompletionSource = ResponseCompletionSourcePool.Get();
+                SendRequest(reference, responseCompletionSource, copy, options);
+                return responseCompletionSource.AsVoidValueTask();
+            }
+            else
+            {
+                return new(InvokeMethodWithFiltersAsync<object>(reference, request, options).AsTask());
+            }
+        }
+
         private async ValueTask<TResult> InvokeMethodWithFiltersAsync<TResult>(GrainReference reference, IInvokable request, InvokeMethodOptions options)
         {
             SetGrainCancellationTokensTarget(reference, request);

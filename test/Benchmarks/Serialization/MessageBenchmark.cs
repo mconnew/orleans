@@ -26,12 +26,12 @@ namespace Benchmarks
             var body = new Response("yess!");
             Value = (new BenchmarkMessage
             {
-                TargetActivation = ActivationId.NewId(),
+                TargetActivation = BenchmarkActivationId.NewId(),
                 TargetSilo = SiloAddress.New(IPEndPoint.Parse("210.50.4.44:40902"), 5423123),
                 TargetGrain = GrainId.Create("sys.mygrain", "borken_thee_doggo"),
                 BodyObject = body,
                 InterfaceType = GrainInterfaceType.Create("imygrain"),
-                SendingActivation = ActivationId.NewId(),
+                SendingActivation = BenchmarkActivationId.NewId(),
                 SendingSilo = SiloAddress.New(IPEndPoint.Parse("10.50.4.44:40902"), 5423123),
                 SendingGrain = GrainId.Create("sys.mygrain", "fluffy_g"),
                 TraceContext = new TraceContext { ActivityId = Guid.NewGuid() },

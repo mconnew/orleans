@@ -11,13 +11,13 @@ namespace FakeFx.Runtime
         [Id(1)]
         public GrainId Grain { get; private set; }
         [Id(2)]
-        public ActivationId Activation { get; private set; }
+        public BenchmarkActivationId Activation { get; private set; }
         [Id(3)]
         public SiloAddress Silo { get; private set; }
 
-        public bool IsComplete => !Grain.IsDefault && Activation != null && Silo != null;
+        public bool IsComplete => !Grain.IsDefault && !Activation.IsDefault && Silo != null;
 
-        private BenchmarkActivationAddress(SiloAddress silo, GrainId grain, ActivationId activation)
+        private BenchmarkActivationAddress(SiloAddress silo, GrainId grain, BenchmarkActivationId activation)
         {
             Silo = silo;
             Grain = grain;
@@ -26,11 +26,11 @@ namespace FakeFx.Runtime
 
         public static BenchmarkActivationAddress NewActivationAddress(SiloAddress silo, GrainId grain)
         {
-            var activation = ActivationId.NewId();
+            var activation = BenchmarkActivationId.NewId();
             return GetAddress(silo, grain, activation);
         }
 
-        public static BenchmarkActivationAddress GetAddress(SiloAddress silo, GrainId grain, ActivationId activation)
+        public static BenchmarkActivationAddress GetAddress(SiloAddress silo, GrainId grain, BenchmarkActivationId activation)
         {
             // Silo part is not mandatory
             if (grain.IsDefault)
@@ -45,7 +45,7 @@ namespace FakeFx.Runtime
 
         public bool Equals(BenchmarkActivationAddress other) => other != null && Matches(other) && (Silo?.Equals(other.Silo) ?? other.Silo is null);
 
-        public override int GetHashCode() => Grain.GetHashCode() ^ (Activation?.GetHashCode() ?? 0) ^ (Silo?.GetHashCode() ?? 0);
+        public override int GetHashCode() => Grain.GetHashCode() ^ Activation.GetHashCode() ^ (Silo?.GetHashCode() ?? 0);
 
         public override string ToString() => $"[{Silo} {Grain} {Activation}]";
 
@@ -61,7 +61,7 @@ namespace FakeFx.Runtime
 
         public bool Matches(BenchmarkActivationAddress other)
         {
-            return Grain.Equals(other.Grain) && (Activation?.Equals(other.Activation) ?? other.Activation is null);
+            return Grain.Equals(other.Grain) && Activation.Equals(other.Activation);
         }
     }
 }
