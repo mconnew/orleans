@@ -148,7 +148,7 @@ namespace Benchmarks
                 Console.WriteLine("## Hosted Client ##");
                 while (!Console.KeyAvailable)
                 {
-                    benchmark.PingConcurrentHostedClient().GetAwaiter().GetResult();
+                    benchmark.PingConcurrentHostedClientLong().GetAwaiter().GetResult();
                 }
 
                 Console.WriteLine("Interrupted by user");
