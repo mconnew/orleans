@@ -1462,6 +1462,12 @@ namespace Orleans.Runtime
             }
         }
 
+        public bool SendMessage(object message)
+        {
+            ReceiveMessage(message);
+            return State is ActivationState.Valid;
+        }
+
         #endregion
 
         /// <summary>
