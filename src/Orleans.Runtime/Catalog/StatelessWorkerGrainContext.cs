@@ -286,5 +286,10 @@ namespace Orleans.Runtime
         private record DeactivatedTaskWorkItemState(TaskCompletionSource<bool> Completion);
         private record DisposeAsyncWorkItemState(TaskCompletionSource<bool> Completion);
 
+        public bool SendMessage(object message)
+        {
+            ReceiveMessage(message);
+            return true;
+        }
     }
 }

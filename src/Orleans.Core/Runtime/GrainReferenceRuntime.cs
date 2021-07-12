@@ -39,23 +39,10 @@ namespace Orleans.Runtime
 
         public IRuntimeClient RuntimeClient { get; private set; }
 
-        /// <inheritdoc />
-        public void InvokeOneWayMethod(GrainReference reference, int methodId, object[] arguments, InvokeMethodOptions options)
-        {
-            throw new NotSupportedException();
-        }
-
-        /// <inheritdoc />
-        public Task<T> InvokeMethodAsync<T>(GrainReference reference, int methodId, object[] arguments, InvokeMethodOptions options)
-        {
-            throw new NotSupportedException();
-        }
-
         public void SendRequest(GrainReference reference, IResponseCompletionSource callback, IInvokable body, InvokeMethodOptions options)
         {
             SetGrainCancellationTokensTarget(reference, body);
-            var copy = body;//this.deepCopier.Copy(body);
-            this.RuntimeClient.SendRequest(reference, copy, callback, options);
+            this.RuntimeClient.SendRequest(reference, body, callback, options);
         }
 
         public ValueTask<TResult> InvokeMethodAsync<TResult>(GrainReference reference, IInvokable request, InvokeMethodOptions options)
