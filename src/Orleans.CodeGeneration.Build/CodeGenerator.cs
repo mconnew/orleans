@@ -92,7 +92,7 @@ namespace Orleans.CodeGeneration
 
         private static void SetupDepsFilesForAppDomain(AppDomain appDomain, FileInfo inputAssembly)
         {
-            var thisAssemblyPath = new Uri(typeof(CodeGenerator).Assembly.CodeBase).LocalPath;
+            var thisAssemblyPath = new Uri(typeof(CodeGenerator).Assembly.Location).LocalPath;
             // Specify the location of dependency context files.
             var codegenDepsFile = Path.Combine(Path.GetDirectoryName(thisAssemblyPath) ?? string.Empty, $"{Path.GetFileNameWithoutExtension(thisAssemblyPath)}.deps.json");
             var appDepsFile = Path.Combine(inputAssembly.DirectoryName, $"{Path.GetFileNameWithoutExtension(inputAssembly.Name)}.deps.json");
@@ -114,7 +114,7 @@ namespace Orleans.CodeGeneration
                 var assembly = typeof(CodeGenerator).Assembly;
 
                 // Create AppDomain.
-                var thisAssemblyPath = new Uri(assembly.CodeBase).LocalPath;
+                var thisAssemblyPath = new Uri(assembly.Location).LocalPath;
                 var appDomainSetup = new AppDomainSetup
                 {
                     ApplicationBase = Path.GetDirectoryName(thisAssemblyPath),
