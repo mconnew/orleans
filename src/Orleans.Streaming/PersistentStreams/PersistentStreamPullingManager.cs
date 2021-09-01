@@ -223,7 +223,17 @@ namespace Orleans.Streams
                     var agentIdNumber = Interlocked.Increment(ref nextAgentId);
                     var agentId = SystemTargetGrainId.Create(Constants.StreamPullingAgentType, this.Silo, $"{streamProviderName}_{agentIdNumber}_{queueId.ToStringWithHashCode()}");
                     IStreamFailureHandler deliveryFailureHandler = await adapterFactory.GetDeliveryFailureHandler(queueId);
-                    var agent = new PersistentStreamPullingAgent(agentId, streamProviderName, this.loggerFactory, pubSub, streamFilter, queueId, this.options, this.Silo,  queueAdapter, queueAdapterCache, deliveryFailureHandler);
+                    var agent = new PersistentStreamPullingAgent(
+                        streamProviderName,
+                        this.loggerFactory,
+                        pubSub,
+                        streamFilter,
+                        queueId,
+                        this.options,
+                        this.Silo,
+                        queueAdapter,
+                        queueAdapterCache,
+                        deliveryFailureHandler);
                     this.ActivationServices.GetRequiredService<Catalog>().RegisterSystemTarget(agent);
                     queuesToAgentsMap.Add(queueId, agent);
                     agents.Add(agent);

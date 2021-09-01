@@ -12,7 +12,7 @@ using Orleans.Streams.Filtering;
 
 namespace Orleans.Streams
 {
-    internal class PersistentStreamPullingAgent : SystemTarget, IPersistentStreamPullingAgent
+    internal class PersistentStreamPullingAgent : Grain, IPersistentStreamPullingAgent
     {
         private static readonly IBackoffProvider DeliveryBackoffProvider = new ExponentialBackoff(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1));
         private static readonly IBackoffProvider ReadLoopBackoff = new ExponentialBackoff(TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(20), TimeSpan.FromSeconds(1));
@@ -23,6 +23,7 @@ namespace Orleans.Streams
         private readonly IStreamFilter streamFilter;
         private readonly Dictionary<InternalStreamId, StreamConsumerCollection> pubSubCache;
         private readonly StreamPullingAgentOptions options;
+        private readonly SiloAddress _siloAddress;
         private readonly ILogger logger;
         private readonly CounterStatistic numReadMessagesCounter;
         private readonly CounterStatistic numSentMessagesCounter;
@@ -41,7 +42,6 @@ namespace Orleans.Streams
         private string StatisticUniquePostfix => streamProviderName + "." + QueueId;
 
         internal PersistentStreamPullingAgent(
-            SystemTargetGrainId id,
             string strProviderName,
             ILoggerFactory loggerFactory,
             IStreamPubSub streamPubSub,
@@ -52,7 +52,6 @@ namespace Orleans.Streams
             IQueueAdapter queueAdapter,
             IQueueAdapterCache queueAdapterCache,
             IStreamFailureHandler streamFailureHandler)
-            : base(id, siloAddress, true, loggerFactory)
         {
             if (strProviderName == null) throw new ArgumentNullException("runtime", "PersistentStreamPullingAgent: strProviderName should not be null");
 
@@ -62,6 +61,7 @@ namespace Orleans.Streams
             this.streamFilter = streamFilter;
             pubSubCache = new Dictionary<InternalStreamId, StreamConsumerCollection>();
             this.options = options;
+            _siloAddress = siloAddress;
             this.queueAdapter = queueAdapter ?? throw new ArgumentNullException(nameof(queueAdapter));
             this.streamFailureHandler = streamFailureHandler ?? throw new ArgumentNullException(nameof(streamFailureHandler)); ;
             numMessages = 0;
@@ -69,7 +69,7 @@ namespace Orleans.Streams
             logger = loggerFactory.CreateLogger($"{this.GetType().Namespace}.{streamProviderName}");
             logger.Info(ErrorCode.PersistentStreamPullingAgent_01,
                 "Created {0} {1} for Stream Provider {2} on silo {3} for Queue {4}.",
-                GetType().Name, ((ISystemTargetBase)this).GrainId.ToString(), streamProviderName, Silo, QueueId.ToStringWithHashCode());
+                GetType().Name, ((ISystemTargetBase)this).GrainId.ToString(), streamProviderName, siloAddress, QueueId.ToStringWithHashCode());
             numReadMessagesCounter = CounterStatistic.FindOrCreate(new StatisticName(StatisticNames.STREAMS_PERSISTENT_STREAM_NUM_READ_MESSAGES, StatisticUniquePostfix));
             numSentMessagesCounter = CounterStatistic.FindOrCreate(new StatisticName(StatisticNames.STREAMS_PERSISTENT_STREAM_NUM_SENT_MESSAGES, StatisticUniquePostfix));
             // TODO: move queue cache size statistics tracking into queue cache implementation once Telemetry APIs and LogStatistics have been reconciled.
@@ -118,7 +118,7 @@ namespace Orleans.Streams
         private void InitializeInternal()
         {
             logger.Info(ErrorCode.PersistentStreamPullingAgent_02, "Init of {0} {1} on silo {2} for queue {3}.",
-                GetType().Name, ((ISystemTargetBase)this).GrainId.ToString(), Silo, QueueId.ToStringWithHashCode());
+                GetType().Name, ((ISystemTargetBase)this).GrainId.ToString(), _siloAddress, QueueId.ToStringWithHashCode());
 
             lastTimeCleanedPubSubCache = DateTime.UtcNow;
 
@@ -137,7 +137,7 @@ namespace Orleans.Streams
             // Setup a reader for a new receiver. 
             // Even if the receiver failed to initialise, treat it as OK and start pumping it. It's receiver responsibility to retry initialization.
             var randomTimerOffset = ThreadSafeRandom.NextTimeSpan(this.options.GetQueueMsgsTimerPeriod);
-            timer = RegisterGrainTimer(AsyncTimerCallback, QueueId, randomTimerOffset, this.options.GetQueueMsgsTimerPeriod);
+            timer = (IGrainTimer)RegisterTimer(AsyncTimerCallback, QueueId, randomTimerOffset, this.options.GetQueueMsgsTimerPeriod);
 
             IntValueStatistic.FindOrCreate(new StatisticName(StatisticNames.STREAMS_PERSISTENT_STREAM_PUBSUB_CACHE_SIZE, StatisticUniquePostfix), () => pubSubCache.Count);
 

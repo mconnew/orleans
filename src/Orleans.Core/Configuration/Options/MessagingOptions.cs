@@ -15,7 +15,7 @@ namespace Orleans.Configuration
         /// </summary>
         public TimeSpan ResponseTimeout
         {
-            get { return Debugger.IsAttached ? ResponseTimeoutWithDebugger : responseTimeout; }
+            get { return responseTimeout; }
             set { this.responseTimeout = value; }
         }
 

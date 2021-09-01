@@ -2,6 +2,7 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Orleans;
 using Orleans.Configuration;
 using Orleans.Hosting;
@@ -31,7 +32,8 @@ namespace Tester.StreamingTests
             {
                 public void Configure(IConfiguration configuration, IClientBuilder clientBuilder) => clientBuilder
                         .AddMemoryStreams<DefaultMemoryMessageBodySerializer>(StreamProviderName, b=>b
-                    .ConfigurePartitioning(partitionCount));
+                    .ConfigurePartitioning(partitionCount))
+                    .ConfigureLogging(logging => logging.SetMinimumLevel(LogLevel.Trace));
             }
 
             private class MySiloBuilderConfigurator : ISiloConfigurator
@@ -39,7 +41,8 @@ namespace Tester.StreamingTests
                 public void Configure(ISiloBuilder hostBuilder)=> hostBuilder.AddMemoryGrainStorage("PubSubStore")
                         .AddMemoryStreams<DefaultMemoryMessageBodySerializer>(StreamProviderName, b=>b
                     .ConfigurePartitioning(partitionCount))
-                    .Configure<SiloMessagingOptions>(options => options.ClientDropTimeout = TimeSpan.FromSeconds(5));
+                    .Configure<SiloMessagingOptions>(options => options.ClientDropTimeout = TimeSpan.FromSeconds(5))
+                    .ConfigureLogging(logging => logging.SetMinimumLevel(LogLevel.Trace));
             }
         }
 
