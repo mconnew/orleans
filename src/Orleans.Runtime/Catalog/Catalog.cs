@@ -303,7 +303,7 @@ namespace Orleans.Runtime
             else
             {
                 // Initialize the new activation asynchronously.
-                result.Activate(requestContextData, CancellationToken.None);
+                result.Activate(requestContextData, cancellationToken: default);
                 return result;
             }
         }

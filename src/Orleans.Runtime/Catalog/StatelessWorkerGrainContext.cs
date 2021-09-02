@@ -180,7 +180,7 @@ namespace Orleans.Runtime
 
                     // If this is a new worker and there is a message in scope, try to get the request context and activate the worker
                     var requestContext = (message as Message)?.RequestContextData ?? new Dictionary<string, object>();
-                    newWorker.Activate(requestContext);
+                    newWorker.Activate(requestContext, cancellationToken: default);
 
                     _workers.Add(newWorker);
                 }
