@@ -1,10 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <PackageId>Microsoft.Orleans.OrleansConsulUtils</PackageId>
     <Title>Microsoft Orleans Membership Consul</Title>
     <Description>Library of utility types for Consul of Microsoft Orleans.</Description>
     <PackageTags>$(PackageTags) Consul</PackageTags>
-    <TargetFrameworks>$(StandardTargetFrameworks)</TargetFrameworks>
+    <TargetFrameworks>$(MultiTargetFrameworks)</TargetFrameworks>
     <AssemblyName>Orleans.Clustering.Consul</AssemblyName>
     <RootNamespace>OrleansConsulUtils</RootNamespace>
   </PropertyGroup>
