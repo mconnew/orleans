@@ -195,6 +195,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Orleans.Transactions.Abstractions", "src\Orleans.Transactions.Abstractions\Orleans.Transactions.Abstractions.csproj", "{17707295-ECEE-4732-B0F3-29DBD5C45E45}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -525,6 +527,10 @@ Global
 		{0ECCC344-21E8-4AD7-9CB9-933054200000}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0ECCC344-21E8-4AD7-9CB9-933054200000}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0ECCC344-21E8-4AD7-9CB9-933054200000}.Release|Any CPU.Build.0 = Release|Any CPU
+		{17707295-ECEE-4732-B0F3-29DBD5C45E45}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{17707295-ECEE-4732-B0F3-29DBD5C45E45}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{17707295-ECEE-4732-B0F3-29DBD5C45E45}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{17707295-ECEE-4732-B0F3-29DBD5C45E45}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -622,6 +628,7 @@ Global
 		{EA49BFD9-6946-4858-AF4B-4138E871447F} = {A6573187-FD0D-4DF7-91D1-03E07E470C0A}
 		{2A9C009B-5219-47DB-A540-106DADF9FC91} = {4CD3AA9E-D937-48CA-BB6C-158E12257D23}
 		{0ECCC344-21E8-4AD7-9CB9-933054200000} = {4CD3AA9E-D937-48CA-BB6C-158E12257D23}
+		{17707295-ECEE-4732-B0F3-29DBD5C45E45} = {3189037B-208D-40A1-A561-169D77D9BB5A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7BFB3429-B5BB-4DB1-95B4-67D77A864952}

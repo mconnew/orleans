@@ -12,5 +12,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Orleans.Runtime\Orleans.Runtime.csproj" />
+    <ProjectReference Include="..\Orleans.Transactions.Abstractions\Orleans.Transactions.Abstractions.csproj" />
   </ItemGroup>
 </Project>

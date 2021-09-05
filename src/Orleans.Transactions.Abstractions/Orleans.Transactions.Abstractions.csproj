@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>Microsoft.Orleans.Transactions.Abstractions</PackageId>
+    <Title>Microsoft Orleans Transactions support</Title>
+    <Description>Core Transaction library of Microsoft Orleans used on the server.</Description>
+    <PackageTags>$(PackageTags) Transactions</PackageTags>
+    <TargetFrameworks>$(StandardTargetFrameworks)</TargetFrameworks>
+    <AssemblyName>Orleans.Transactions.Abstractions</AssemblyName>
+    <RootNamespace>Orleans.Transactions</RootNamespace>
+    <OrleansBuildTimeCodeGen>true</OrleansBuildTimeCodeGen>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Orleans.Core.Abstractions\Orleans.Core.Abstractions.csproj" />
+    <ProjectReference Include="..\Orleans.Serialization.Abstractions\Orleans.Serialization.Abstractions.csproj" />
+    <ProjectReference Include="..\Orleans.Serialization\Orleans.Serialization.csproj" />
+  </ItemGroup>
+</Project>
