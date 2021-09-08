@@ -258,7 +258,7 @@ namespace Benchmarks
                 return;
             }
 
-            if (args.Length == 0 || !_benchmarks.ContainsKey(args[0]))
+            if (args.Length == 0)
             {
                 Console.WriteLine("Please, select benchmark, list of available:");
                 _benchmarks
@@ -268,8 +268,14 @@ namespace Benchmarks
                 Console.WriteLine("All");
                 return;
             }
-
-            _benchmarks[args[0]]();
+            else if (!_benchmarks.ContainsKey(args[0]))
+            {
+                _ = BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
+            }
+            else
+            {
+                _benchmarks[args[0]]();
+            }
         }
 
         private static void RunBenchmark<T>(string name, Func<T> init, Action<T> benchmarkAction, Action<T> tearDown)

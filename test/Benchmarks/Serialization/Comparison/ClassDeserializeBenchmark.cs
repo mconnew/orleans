@@ -11,6 +11,8 @@ using Xunit;
 using SerializerSession = Orleans.Serialization.Session.SerializerSession;
 using Utf8JsonNS = Utf8Json;
 using Hyperion;
+using System.Xml;
+using System.Runtime.Serialization;
 
 namespace Benchmarks.Comparison
 {
@@ -42,6 +44,11 @@ namespace Benchmarks.Comparison
 
         private static readonly byte[] SystemTextJsonInput;
 
+        private static MemoryStream _dcsXmlBuffer = new(4096);
+        private static MemoryStream _dcsBuffer;
+        private static XmlDictionaryReader _dcsReader;
+        private static DataContractSerializer _dcs = new(typeof(IntClass));
+
         static ClassDeserializeBenchmark()
         {
             ProtoInput = new MemoryStream();
@@ -71,6 +78,15 @@ namespace Benchmarks.Comparison
             }
 
             SystemTextJsonInput = stream.ToArray();
+
+            _dcsBuffer = new MemoryStream();
+            var dcsWriter = XmlDictionaryWriter.CreateBinaryWriter(_dcsBuffer);
+            _dcs.WriteObject(dcsWriter, IntClass.Create());
+            dcsWriter.Flush();
+            _dcsBuffer.Position = 0;
+            _dcsReader = XmlDictionaryReader.CreateBinaryReader(_dcsBuffer, new XmlDictionaryReaderQuotas());
+
+            _dcs.WriteObject(_dcsXmlBuffer, IntClass.Create());
         }
 
         private static int SumResult(IntClass result) => result.MyProperty1 +
@@ -89,6 +105,23 @@ namespace Benchmarks.Comparison
         {
             Session.FullReset();
             var instance = Serializer.Deserialize(Input, Session);
+            return SumResult(instance);
+        }
+
+        [Benchmark]
+        public int DataContractSerializer()
+        {
+            _dcsBuffer.Position = 0;
+            _dcsReader = XmlDictionaryReader.CreateBinaryReader(_dcsBuffer, new XmlDictionaryReaderQuotas());
+            var instance = (IntClass)_dcs.ReadObject(_dcsReader);
+            return SumResult(instance);
+        }
+
+        [Benchmark]
+        public int DataContractSerializerXml()
+        {
+            _dcsXmlBuffer.Position = 0;
+            var instance = (IntClass)_dcs.ReadObject(_dcsXmlBuffer);
             return SumResult(instance);
         }
         

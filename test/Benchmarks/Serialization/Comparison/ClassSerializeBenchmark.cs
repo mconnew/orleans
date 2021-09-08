@@ -13,6 +13,8 @@ using SerializerSession = Orleans.Serialization.Session.SerializerSession;
 using Utf8JsonNS = Utf8Json;
 using Hyperion;
 using ZeroFormatter;
+using System.Runtime.Serialization;
+using System.Xml;
 
 namespace Benchmarks.Comparison
 {
@@ -40,9 +42,12 @@ namespace Benchmarks.Comparison
         private static readonly MemoryStream SystemTextJsonOutput = new();
         private static readonly Utf8JsonWriter SystemTextJsonWriter;
 
+        private static MemoryStream _dcsBuffer = new(4096);
+        private static XmlDictionaryWriter _dcsWriter;
+        private static DataContractSerializer _dcs = new(typeof(IntClass));
+
         static ClassSerializeBenchmark()
         {
-            // 
             var services = new ServiceCollection()
                 .AddSerializer()
                 .BuildServiceProvider();
@@ -53,6 +58,8 @@ namespace Benchmarks.Comparison
             HyperionSession = HyperionSerializer.GetSerializerSession();
 
             SystemTextJsonWriter = new Utf8JsonWriter(SystemTextJsonOutput);
+
+            _dcsWriter = XmlDictionaryWriter.CreateBinaryWriter(_dcsBuffer);
         }
 
         [Fact]
@@ -61,6 +68,23 @@ namespace Benchmarks.Comparison
         {
             Session.PartialReset();
             return Serializer.Serialize(Input, Data, Session);
+        }
+
+        [Benchmark]
+        public long DataContractSerializer()
+        {
+            _dcsBuffer.SetLength(0);
+            _dcs.WriteObject(_dcsWriter, Input);
+            _dcsWriter.Flush();
+            return _dcsBuffer.Length;
+        }
+
+        [Benchmark]
+        public long DataContractSerializerXml()
+        {
+            _dcsBuffer.SetLength(0);
+            _dcs.WriteObject(_dcsBuffer, Input);
+            return _dcsBuffer.Length;
         }
 
         [Benchmark]

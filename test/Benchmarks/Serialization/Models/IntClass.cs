@@ -2,6 +2,7 @@ using MessagePack;
 using Orleans;
 using ProtoBuf;
 using System;
+using System.Runtime.Serialization;
 
 namespace Benchmarks.Models
 {
@@ -9,6 +10,7 @@ namespace Benchmarks.Models
     [GenerateSerializer]
     [ProtoContract]
     [MessagePackObject]
+    [DataContract]
     public sealed class IntClass
     {
         public static IntClass Create()
@@ -24,46 +26,55 @@ namespace Benchmarks.Models
         [Id(0)]
         [ProtoMember(1)]
         [Key(0)]
+        [DataMember(Order = 0)]
         public int MyProperty1 { get; set; }
 
         [Id(1)]
         [ProtoMember(2)]
         [Key(1)]
+        [DataMember(Order = 1)]
         public int MyProperty2 { get; set; }
 
         [Id(2)]
         [ProtoMember(3)]
         [Key(2)]
+        [DataMember(Order = 2)]
         public int MyProperty3 { get; set; }
 
         [Id(3)]
         [ProtoMember(4)]
         [Key(3)]
+        [DataMember(Order = 3)]
         public int MyProperty4 { get; set; }
 
         [Id(4)]
         [ProtoMember(5)]
         [Key(4)]
+        [DataMember(Order = 4)]
         public int MyProperty5 { get; set; }
 
         [Id(5)]
         [ProtoMember(6)]
         [Key(5)]
+        [DataMember(Order = 5)]
         public int MyProperty6 { get; set; }
 
         [Id(6)]
         [ProtoMember(7)]
         [Key(6)]
+        [DataMember(Order = 6)]
         public int MyProperty7 { get; set; }
 
         [Id(7)]
         [ProtoMember(8)]
         [Key(7)]
+        [DataMember(Order = 7)]
         public int MyProperty8 { get; set; }
 
         [Id(8)]
         [ProtoMember(9)]
         [Key(8)]
+        [DataMember(Order = 8)]
         public int MyProperty9 { get; set; }
     }
 }
