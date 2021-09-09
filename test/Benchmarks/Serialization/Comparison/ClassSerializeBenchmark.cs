@@ -15,6 +15,7 @@ using Hyperion;
 using ZeroFormatter;
 using System.Runtime.Serialization;
 using System.Xml;
+using Benchmarks.Serialization.Utilities;
 
 namespace Benchmarks.Comparison
 {
@@ -43,6 +44,7 @@ namespace Benchmarks.Comparison
         private static readonly Utf8JsonWriter SystemTextJsonWriter;
 
         private static MemoryStream _dcsBuffer = new(4096);
+        private static TrackingXmlBinaryWriterSession _xmlBinaryWriterSession;
         private static XmlDictionaryWriter _dcsWriter;
         private static DataContractSerializer _dcs = new(typeof(IntClass));
 
@@ -59,7 +61,10 @@ namespace Benchmarks.Comparison
 
             SystemTextJsonWriter = new Utf8JsonWriter(SystemTextJsonOutput);
 
-            _dcsWriter = XmlDictionaryWriter.CreateBinaryWriter(_dcsBuffer);
+            _xmlBinaryWriterSession = new TrackingXmlBinaryWriterSession();
+            _dcsWriter = XmlDictionaryWriter.CreateBinaryWriter(_dcsBuffer, new XmlDictionary(), _xmlBinaryWriterSession, false);
+            _dcs.WriteObject(_dcsWriter, Input);
+            _dcsWriter.Flush();
         }
 
         [Fact]

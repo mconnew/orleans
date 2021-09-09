@@ -13,6 +13,8 @@ using Utf8JsonNS = Utf8Json;
 using Hyperion;
 using System.Xml;
 using System.Runtime.Serialization;
+using Benchmarks.Serialization.Utilities;
+using System.Text;
 
 namespace Benchmarks.Comparison
 {
@@ -47,6 +49,7 @@ namespace Benchmarks.Comparison
         private static MemoryStream _dcsXmlBuffer = new(4096);
         private static MemoryStream _dcsBuffer;
         private static XmlDictionaryReader _dcsReader;
+        private static XmlBinaryReaderSession _xmlBinaryReaderSession;
         private static DataContractSerializer _dcs = new(typeof(IntClass));
 
         static ClassDeserializeBenchmark()
@@ -80,12 +83,23 @@ namespace Benchmarks.Comparison
             SystemTextJsonInput = stream.ToArray();
 
             _dcsBuffer = new MemoryStream();
-            var dcsWriter = XmlDictionaryWriter.CreateBinaryWriter(_dcsBuffer);
+            TrackingXmlBinaryWriterSession xmlBinaryWriterSession = new TrackingXmlBinaryWriterSession();
+            var dcsWriter = XmlDictionaryWriter.CreateBinaryWriter(_dcsBuffer, new XmlDictionary(), xmlBinaryWriterSession, false);
             _dcs.WriteObject(dcsWriter, IntClass.Create());
             dcsWriter.Flush();
-            _dcsBuffer.Position = 0;
-            _dcsReader = XmlDictionaryReader.CreateBinaryReader(_dcsBuffer, new XmlDictionaryReaderQuotas());
+            dcsWriter.Close();
+            _xmlBinaryReaderSession = new XmlBinaryReaderSession();
+            if (xmlBinaryWriterSession.HasNewStrings)
+            {
+                int dictionaryId = 0;
+                foreach (var newString in xmlBinaryWriterSession.NewStrings)
+                {
+                    _xmlBinaryReaderSession.Add(dictionaryId++, newString.Value);
+                }
+            }
 
+            _dcsBuffer.Position = 0;
+            _dcsReader = XmlDictionaryReader.CreateBinaryReader(_dcsBuffer, new XmlDictionary(), XmlDictionaryReaderQuotas.Max, _xmlBinaryReaderSession, null);
             _dcs.WriteObject(_dcsXmlBuffer, IntClass.Create());
         }
 
@@ -112,7 +126,7 @@ namespace Benchmarks.Comparison
         public int DataContractSerializer()
         {
             _dcsBuffer.Position = 0;
-            _dcsReader = XmlDictionaryReader.CreateBinaryReader(_dcsBuffer, new XmlDictionaryReaderQuotas());
+            ((IXmlBinaryReaderInitializer)_dcsReader).SetInput(_dcsBuffer, new XmlDictionary(), XmlDictionaryReaderQuotas.Max, _xmlBinaryReaderSession, null);
             var instance = (IntClass)_dcs.ReadObject(_dcsReader);
             return SumResult(instance);
         }
@@ -124,7 +138,7 @@ namespace Benchmarks.Comparison
             var instance = (IntClass)_dcs.ReadObject(_dcsXmlBuffer);
             return SumResult(instance);
         }
-        
+
         [Benchmark]
         public int Utf8Json() => SumResult(Utf8JsonNS.JsonSerializer.Deserialize<IntClass>(Utf8JsonInput, Utf8JsonResolver));
 
